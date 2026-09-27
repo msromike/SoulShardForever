@@ -17,6 +17,7 @@ local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceTab = LibStub("AceTab-3.0")
+local LSM = LibStub("LibSharedMedia-3.0")
 
 local function Cap() return SSF:GetModule("Cap") end
 local function Bags() return SSF:GetModule("Bags") end
@@ -88,6 +89,67 @@ local function BuildTable()
                 SSF.db.profile.counter = value
                 changed("counter")
             end,
+        },
+        -- Counter look, GUI only. LibSharedMedia supplies the font list and the
+        -- AceGUI SharedMedia widget draws the font dropdown with previews.
+        counterfont = {
+            type = "select",
+            order = 41,
+            cmdHidden = true,
+            descStyle = "hidden",
+            dialogControl = "LSM30_Font",
+            name = L["Counter font"],
+            values = LSM:HashTable("font"),
+            get = function() return SSF.db.profile.counterFont end,
+            set = function(_, value)
+                SSF.db.profile.counterFont = value
+                changed("counterfont")
+            end,
+            disabled = function() return not SSF.db.profile.counter end,
+        },
+        countersize = {
+            type = "range",
+            order = 42,
+            cmdHidden = true,
+            descStyle = "hidden",
+            name = L["Counter size"],
+            min = 10, max = 40, step = 1,
+            width = "full",
+            dialogControl = "SSFStepperSlider",
+            get = function() return SSF.db.profile.counterSize end,
+            set = function(_, value)
+                SSF.db.profile.counterSize = value
+                changed("countersize")
+            end,
+            disabled = function() return not SSF.db.profile.counter end,
+        },
+        countercolor = {
+            type = "color",
+            order = 43,
+            cmdHidden = true,
+            descStyle = "hidden",
+            name = L["Counter color"],
+            get = function() local c = SSF.db.profile.counterColor return c.r, c.g, c.b end,
+            set = function(_, r, g, b)
+                local c = SSF.db.profile.counterColor
+                c.r, c.g, c.b = r, g, b
+                changed("countercolor")
+            end,
+            disabled = function() return not SSF.db.profile.counter end,
+        },
+        counterovercolor = {
+            type = "color",
+            order = 44,
+            cmdHidden = true,
+            descStyle = "hidden",
+            name = L["Counter color when over the cap"],
+            get = function() local c = SSF.db.profile.counterOverColor return c.r, c.g, c.b end,
+            set = function(_, r, g, b)
+                local c = SSF.db.profile.counterOverColor
+                c.r, c.g, c.b = r, g, b
+                changed("counterovercolor")
+            end,
+            disabled = function() return not SSF.db.profile.counter end,
         },
         minimap = {
             type = "toggle",

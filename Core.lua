@@ -22,6 +22,10 @@ local defaults = {
         maxShards = 20,             -- the cap while autoMax is off (1-100)
         autoMax = true,             -- cap follows the soul bag's slot count
         counter = false,            -- number on the far-left bag button
+        counterSize = 20,           -- its font size (10-40); Counter shrinks it to fit the button
+        counterFont = "Arial Narrow",                    -- LibSharedMedia font name (NumberFontNormal's face)
+        counterColor = { r = 1, g = 1, b = 1 },          -- at or under the cap
+        counterOverColor = { r = 1, g = 0.25, b = 0.25 }, -- over the cap
         announce = false,           -- one chat line per deletion
         minimap = { hide = false }, -- LibDBIcon state
         deleteOrder = "front",      -- "front" = backpack first, "back" = far-left bag first; no UI

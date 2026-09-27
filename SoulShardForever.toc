@@ -20,3 +20,4 @@ Modules\DeleteButton.lua
 Modules\Settings.lua
 Modules\Options.lua
 Modules\Broker.lua
+Modules\Counter.lua
