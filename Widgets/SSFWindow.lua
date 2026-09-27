@@ -3,8 +3,9 @@
 -- SSFWindow: an AceGUI container, SSF's own options window. Adapted from AceGUI's Frame
 -- container (Libs/AceGUI-3.0/widgets/AceGUIContainer-Frame.lua, Copyright (c) 2007, Ace3
 -- Development Team, BSD-style license) the same way KeyCheckClear's window was.
--- Differences from Frame: an X close button top-right, no status bar, a centered Close
--- button, Escape closes it, and the window is exactly as tall as its content.
+-- Differences from Frame: an X close button top-right, no status bar, Escape closes it,
+-- and a bottom row of Close (far right), an optional action button (far left, see
+-- SetActionButton) and a small footer line between them (SetFooter).
 -- AceConfigDialog feeds the options table into it: Options:Open() passes this container
 -- to AceConfigDialog:Open(appName, container). Private type; nothing here is shared with
 -- other addons through AceGUI's widget pool.
@@ -62,17 +63,17 @@ local methods = {
         content.width = contentwidth
     end,
 
+    -- 93 = the content's top (35) and bottom (58) insets
     ["OnHeightSet"] = function(self, height)
         local content = self.content
-        local contentheight = height - 79
+        local contentheight = height - 93
         if contentheight < 0 then contentheight = 0 end
         content:SetHeight(contentheight)
         content.height = contentheight
     end,
 
-    -- the window is exactly as tall as its content: 79 = the content's top and bottom insets
     ["LayoutFinished"] = function(self, _, height)
-        if height then self:SetHeight(height + 79) end
+        if height then self:SetHeight(height + 93) end
     end,
 
     ["SetTitle"] = function(self, title)
@@ -82,6 +83,19 @@ local methods = {
 
     ["Hide"] = function(self) self.frame:Hide() end,
     ["Show"] = function(self) self.frame:Show() end,
+
+    -- the bottom-left button; nil text hides it
+    ["SetActionButton"] = function(self, text, onClick)
+        if not text then self.actionbutton:Hide() return end
+        self.actionbutton:SetText(text)
+        self.actionbutton:SetScript("OnClick", onClick)
+        self.actionbutton:Show()
+    end,
+
+    -- the small line between the two bottom buttons
+    ["SetFooter"] = function(self, text)
+        self.footer:SetText(text or "")
+    end,
 
     ["SetStatusTable"] = function(self, status)
         assert(type(status) == "table")
@@ -129,12 +143,26 @@ local function Constructor()
     xbutton:SetPoint("TOPRIGHT", -5, -5)
     xbutton:SetScript("OnClick", Close_OnClick)
 
+    -- bottom: a button row (action far left, Close far right), then the footer line centered
+    -- along the bottom edge under it
+    local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    footer:SetPoint("BOTTOMLEFT", 17, 12)
+    footer:SetPoint("BOTTOMRIGHT", -17, 12)
+    footer:SetJustifyH("CENTER")
+    footer:SetWordWrap(false)
+
     local closebutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     closebutton:SetScript("OnClick", Close_OnClick)
-    closebutton:SetPoint("BOTTOM", 0, 17)
+    closebutton:SetPoint("BOTTOMRIGHT", -17, 30)
     closebutton:SetHeight(22)
     closebutton:SetWidth(100)
     closebutton:SetText(CLOSE)
+
+    local actionbutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    actionbutton:SetPoint("BOTTOMLEFT", 17, 30)
+    actionbutton:SetHeight(22)
+    actionbutton:SetWidth(110)
+    actionbutton:Hide()
 
     local titlebg = frame:CreateTexture(nil, "OVERLAY")
     titlebg:SetTexture(131080) -- Interface\\DialogFrame\\UI-DialogBox-Header
@@ -168,15 +196,17 @@ local function Constructor()
 
     local content = CreateFrame("Frame", nil, frame)
     content:SetPoint("TOPLEFT", 17, -35)
-    content:SetPoint("BOTTOMRIGHT", -17, 44)
+    content:SetPoint("BOTTOMRIGHT", -17, 58) -- clear of the button row and the footer
 
     local widget = {
-        localstatus = {},
-        titletext   = titletext,
-        titlebg     = titlebg,
-        content     = content,
-        frame       = frame,
-        type        = Type,
+        localstatus  = {},
+        titletext    = titletext,
+        titlebg      = titlebg,
+        content      = content,
+        actionbutton = actionbutton,
+        footer       = footer,
+        frame        = frame,
+        type         = Type,
     }
     for method, func in pairs(methods) do
         widget[method] = func

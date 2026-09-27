@@ -13,6 +13,7 @@ embeds.xml
 Locales\enUS.lua
 Widgets\SSFStepperSlider.lua
 Widgets\SSFWindow.lua
+Widgets\SSFCentered.lua
 Core.lua
 Modules\Bags.lua
 Modules\Cap.lua

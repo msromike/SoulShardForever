@@ -5,6 +5,11 @@
 -- completes the command words. Keys are the slash words; GUI-only entries carry cmdHidden.
 -- Modules that show state (Counter, Broker) listen for SSF_OPTIONS_CHANGED.
 --
+-- Window layout: status line, then three inline groups (Cap, Bag count, Low shard glow) and
+-- Other, then a small version/credit line. Every toggle is full width so no label truncates.
+-- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
+-- window; their GUI twins live inside the groups.
+--
 -- Stateful settings (cap, announce) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
@@ -38,141 +43,167 @@ local function changed(key)
     Options:SendMessage("SSF_OPTIONS_CHANGED", key)
 end
 
+-- a full-width, GUI-only, tooltip-free checkbox, indented 10px inside its group unless
+-- `control` names another dialogControl (see Widgets\SSFCentered.lua)
+local function Toggle(order, name, get, set, disabled, control)
+    return {
+        type = "toggle", order = order, width = "full",
+        cmdHidden = true, descStyle = "hidden", dialogControl = control or "SSFIndentCheckBox",
+        name = name, get = get, set = set, disabled = disabled,
+    }
+end
+
 local function BuildTable()
+    local Settings = SSF:GetModule("Settings")
+
+    local setmaxGui, setmaxCmd = Settings:Define("setmax", {
+        order = 1, kind = "range",
+        name = L["Shards to keep"],
+        desc = L["The cap. Shards over this number are deleted one per press."],
+        min = Cap().MIN, max = Cap().MAX, step = 1,
+        get = function() return Cap():Get() end,
+        extra = function() return L["(in bags: %s)"]:format(Value(Bags():Count())) end,
+        apply = function(value)
+            SSF.db.profile.autoMax = false
+            Cap():SetManual(value)
+        end,
+        -- greyed in the GUI while AutoMax binds to a soul bag; the chat form always works
+        disabled = function() return Cap():IsAuto() end,
+    })
+
+    local announceGui, announceCmd = Settings:Define("announce", {
+        order = 1, kind = "toggle",
+        name = L["Announce deletions in chat"],
+        desc = L["One chat line per deleted shard, for addons that watch chat."],
+        get = function() return SSF.db.profile.announce end,
+        apply = function(value) SSF.db.profile.announce = value end,
+    })
+    announceGui.width = "full"
+    announceGui.dialogControl = "SSFIndentCheckBox"
+
     local args = {
-        header = {
-            type = "description",
-            order = 0,
-            cmdHidden = true,
-            fontSize = "medium",
-            name = function()
-                local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-                return L["Soul Shard Forever"] .. " " .. version .. "\n"
-            end,
-        },
-        credit = { -- small, last
-            type = "description",
-            order = 999,
-            cmdHidden = true,
-            fontSize = "small",
-            name = function() return "\n" .. L["Started as a fork of SoulSort by Anilusion. Rewritten from scratch."] end,
-        },
         status = {
             type = "description",
-            order = 5,
+            order = 0,
+            width = "full",
             cmdHidden = true,
             fontSize = "large",
+            dialogControl = "SSFCenteredLabel", -- Widgets\SSFCentered.lua
             name = function() return Options:StatusText() .. "\n" end,
         },
+
+        cap = {
+            type = "group", inline = true, order = 10, cmdHidden = true,
+            name = L["Soul shard cap"],
+            args = {
+                setmaxGui = setmaxGui,
+                automax = Toggle(2, -- centered in its row, see Widgets\SSFCentered.lua
+                    function()
+                        if Bags():SoulBagSlots() > 0 then return L["Match soul bag size"] end
+                        return L["Match soul bag size (no soul bag)"]
+                    end,
+                    function() return SSF.db.profile.autoMax end,
+                    function(_, value)
+                        SSF.db.profile.autoMax = value
+                        Cap():Recompute()
+                        changed("automax")
+                    end,
+                    function() return Bags():SoulBagSlots() == 0 end,
+                    "SSFCenteredCheckBox"),
+            },
+        },
+
+        bagcount = {
+            type = "group", inline = true, order = 20, cmdHidden = true,
+            name = L["Shards in bag count"],
+            args = {
+                counter = Toggle(1, L["Show shard count on bag bar"],
+                    function() return SSF.db.profile.counter end,
+                    function(_, value)
+                        SSF.db.profile.counter = value
+                        changed("counter")
+                    end),
+                colorize = Toggle(2, L["Colorize bag count"],
+                    function() return SSF.db.profile.counterColorize end,
+                    function(_, value)
+                        SSF.db.profile.counterColorize = value
+                        changed("countercolorize")
+                    end,
+                    function() return not SSF.db.profile.counter end),
+                -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws
+                -- the dropdown with previews. Size auto-fits the button.
+                font = {
+                    type = "select",
+                    order = 3,
+                    width = "full",
+                    cmdHidden = true,
+                    descStyle = "hidden",
+                    dialogControl = "LSM30_Font",
+                    name = L["Bag counter font"],
+                    values = LSM:HashTable("font"),
+                    get = function() return SSF.db.profile.counterFont end,
+                    set = function(_, value)
+                        SSF.db.profile.counterFont = value
+                        changed("counterfont")
+                    end,
+                    disabled = function() return not SSF.db.profile.counter end,
+                },
+            },
+        },
+
+        glow = {
+            type = "group", inline = true, order = 30, cmdHidden = true,
+            name = L["Low shard glow"],
+            args = {
+                lowglow = Toggle(1, L["Glow bag button when low"],
+                    function() return SSF.db.profile.lowGlow end,
+                    function(_, value)
+                        SSF.db.profile.lowGlow = value
+                        changed("lowglow")
+                    end),
+                lowmark = {
+                    type = "range",
+                    order = 2,
+                    cmdHidden = true,
+                    descStyle = "hidden",
+                    name = L["Low shard warn"],
+                    min = 1, max = 20, step = 1,
+                    width = "full",
+                    dialogControl = "SSFStepperSlider",
+                    get = function() return SSF.db.profile.lowMark end,
+                    set = function(_, value)
+                        SSF.db.profile.lowMark = value
+                        changed("lowmark")
+                    end,
+                    disabled = function() return not SSF.db.profile.lowGlow end,
+                },
+            },
+        },
+
+        other = {
+            type = "group", inline = true, order = 40, cmdHidden = true,
+            name = L["Other settings"],
+            args = {
+                announceGui = announceGui,
+                minimap = Toggle(2, L["Minimap button"],
+                    function() return not SSF.db.profile.minimap.hide end,
+                    function(_, value)
+                        SSF.db.profile.minimap.hide = not value
+                        changed("minimap")
+                    end),
+            },
+        },
+
+        -- chat commands, hidden from the window
+        setmax = setmaxCmd,
+        announce = announceCmd,
         delete = {
             type = "execute",
-            order = 10,
-            descStyle = "hidden",
+            order = 1,
+            dialogHidden = true,
             name = L["Delete Shard"],
             desc = L["Delete one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."],
             func = function() SSF:GetModule("Trimmer"):Delete() end,
-        },
-        automax = {
-            type = "toggle",
-            order = 30,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = function()
-                if Bags():SoulBagSlots() > 0 then return L["Match soul bag size"] end
-                return L["Match soul bag size (no soul bag equipped)"]
-            end,
-            desc = L["While a soul bag is equipped, the cap is its slot count. Without one, the slider rules."],
-            disabled = function() return Bags():SoulBagSlots() == 0 end,
-            get = function() return SSF.db.profile.autoMax end,
-            set = function(_, value)
-                SSF.db.profile.autoMax = value
-                Cap():Recompute()
-                changed("automax")
-            end,
-        },
-        counter = {
-            type = "toggle",
-            order = 40,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Show shard count on bag bar"],
-            get = function() return SSF.db.profile.counter end,
-            set = function(_, value)
-                SSF.db.profile.counter = value
-                changed("counter")
-            end,
-        },
-        -- Counter look, GUI only. Size is auto-fit to the button.
-        countercolorize = {
-            type = "toggle",
-            order = 41,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Colorize bag count"],
-            get = function() return SSF.db.profile.counterColorize end,
-            set = function(_, value)
-                SSF.db.profile.counterColorize = value
-                changed("countercolorize")
-            end,
-            disabled = function() return not SSF.db.profile.counter end,
-        },
-        -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws the
-        -- dropdown with previews.
-        counterfont = {
-            type = "select",
-            order = 42,
-            cmdHidden = true,
-            descStyle = "hidden",
-            dialogControl = "LSM30_Font",
-            name = L["Counter font"],
-            values = LSM:HashTable("font"),
-            get = function() return SSF.db.profile.counterFont end,
-            set = function(_, value)
-                SSF.db.profile.counterFont = value
-                changed("counterfont")
-            end,
-            disabled = function() return not SSF.db.profile.counter end,
-        },
-        -- Low-shard glow, GUI only.
-        lowglow = {
-            type = "toggle",
-            order = 46,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Glow bag button when low"],
-            get = function() return SSF.db.profile.lowGlow end,
-            set = function(_, value)
-                SSF.db.profile.lowGlow = value
-                changed("lowglow")
-            end,
-        },
-        lowmark = {
-            type = "range",
-            order = 47,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Low mark"],
-            min = 1, max = 20, step = 1,
-            width = "full",
-            dialogControl = "SSFStepperSlider",
-            get = function() return SSF.db.profile.lowMark end,
-            set = function(_, value)
-                SSF.db.profile.lowMark = value
-                changed("lowmark")
-            end,
-            disabled = function() return not SSF.db.profile.lowGlow end,
-        },
-        minimap = {
-            type = "toggle",
-            order = 60,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Minimap button"],
-            get = function() return not SSF.db.profile.minimap.hide end,
-            set = function(_, value)
-                SSF.db.profile.minimap.hide = not value
-                changed("minimap")
-            end,
         },
         options = {
             type = "execute",
@@ -192,29 +223,6 @@ local function BuildTable()
         },
     }
 
-    args.setmaxGui, args.setmax = SSF:GetModule("Settings"):Define("setmax", {
-        order = 20, kind = "range",
-        name = L["Shards to keep"],
-        desc = L["The cap. Shards over this number are deleted one per press."],
-        min = Cap().MIN, max = Cap().MAX, step = 1,
-        get = function() return Cap():Get() end,
-        extra = function() return L["(in bags: %s)"]:format(Value(Bags():Count())) end,
-        apply = function(value)
-            SSF.db.profile.autoMax = false
-            Cap():SetManual(value)
-        end,
-        -- greyed in the GUI while AutoMax binds to a soul bag; the chat form always works
-        disabled = function() return Cap():IsAuto() end,
-    })
-
-    args.announceGui, args.announce = SSF:GetModule("Settings"):Define("announce", {
-        order = 50, kind = "toggle",
-        name = L["Announce deletions in chat"],
-        desc = L["One chat line per deleted shard, for addons that watch chat."],
-        get = function() return SSF.db.profile.announce end,
-        apply = function(value) SSF.db.profile.announce = value end,
-    })
-
     return { type = "group", name = L["Soul Shard Forever"], args = args }
 end
 
@@ -227,11 +235,11 @@ function Options:OnInitialize()
         if strtrim(input or "") == "" then SSF:Print(Options:StatusText()) end
         AceConfigCmd:HandleCommand("ssf", ADDON, input)
     end)
-    AceConfigDialog:SetDefaultSize(ADDON, 420, 380)
+    AceConfigDialog:SetDefaultSize(ADDON, 310, 590)
     AceConfigDialog:AddToBlizOptions(ADDON, L["Soul Shard Forever"])
 
     -- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
-    -- AceConfigCmd exposes (entries without cmdHidden).
+    -- AceConfigCmd exposes (root entries without cmdHidden).
     AceTab:RegisterTabCompletion("SSF", "/ssf ", function(words)
         for key, entry in pairs(options.args) do
             if not entry.cmdHidden then words[#words + 1] = key end
@@ -263,6 +271,10 @@ end
 function Options:Open()
     if not self.window then
         self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
+        -- bottom row: Delete Shard far left, version and credit in the middle, Close far right
+        self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end)
+        local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
+        self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
     end
     AceConfigDialog:Open(ADDON, self.window)
 end
