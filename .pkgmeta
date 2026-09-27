@@ -30,4 +30,5 @@ ignore:
   - README.md
   - ORIGINAL_FEATURES.md
   - BAG_API_NOTES.md
+  - media/ssf.png
   - .vscode

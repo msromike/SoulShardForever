@@ -14,6 +14,9 @@ local ADDON = "SoulShardForever"
 local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
+-- Label for the Bindings.xml row in Blizzard's Key Bindings screen (a global by Blizzard's rule)
+BINDING_NAME_SSF_DELETE = L["Delete Shard"]
+
 SSF.SHARD_ITEM_ID = 6265
 SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
 

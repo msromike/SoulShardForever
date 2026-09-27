@@ -1,0 +1,9 @@
+<Bindings>
+	<!-- Soul Shard Forever (SSF). MIT, see LICENSE.
+	     One row in Blizzard's Key Bindings screen, unbound until the player picks a key.
+	     The keypress is a hardware event, so the delete is allowed; it goes through the same
+	     SSFDelete button that /click uses. The button only exists on a warlock. -->
+	<Binding name="SSF_DELETE" category="Soul Shard Forever">
+		if SSFDelete then SSFDelete:Click() end
+	</Binding>
+</Bindings>
