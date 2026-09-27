@@ -36,6 +36,6 @@ function Trimmer:Delete()
 
     self:SendMessage("SSF_SHARD_DELETED", count - 1, cap)
     if SSF.db.profile.announce then
-        SSF:Print(L["Deleted a Soul Shard (%d/%d)."]:format(count - 1, cap))
+        SSF:Print(L["Deleted a Soul Shard."] .. " " .. SSF:GetModule("Options"):StatusText())
     end
 end

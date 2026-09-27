@@ -11,6 +11,7 @@
 
 embeds.xml
 Locales\enUS.lua
+Widgets\SSFStepperSlider.lua
 Core.lua
 Modules\Bags.lua
 Modules\Cap.lua

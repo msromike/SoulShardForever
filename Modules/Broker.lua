@@ -17,7 +17,7 @@ local RED = "|cffff4040%d|r"
 function Broker:Refresh()
     local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
     local shown = count > cap and RED:format(count) or tostring(count)
-    self.object.text = shown .. " / " .. cap
+    self.object.text = L["%s (cap %d)"]:format(shown, cap)
     self.object.value = count
 end
 

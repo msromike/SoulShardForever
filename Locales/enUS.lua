@@ -6,7 +6,10 @@ if not L then return end
 
 L["Soul Shard Forever"] = true
 L["SSF"] = true
-L["Deleted a Soul Shard (%d/%d)."] = true
+L["Deleted a Soul Shard."] = true
+L["Soul Shards: %d (cap %d)"] = true
+L["%s (cap %d)"] = true
+L["Match soul bag size (no soul bag equipped)"] = true
 
 -- Options
 L["Fork of SoulSort by Anilusion. GPLv3."] = true
@@ -23,7 +26,6 @@ L["One chat line per deleted shard, for addons that watch chat."] = true
 L["Minimap button"] = true
 L["Open options"] = true
 L["Open the options window."] = true
-L["The options window arrives in Stage 2."] = true
 
 -- Broker
 L["Soul Shards"] = true
