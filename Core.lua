@@ -33,46 +33,4 @@ function SSF:OnInitialize()
     end
 
     self.db = LibStub("AceDB-3.0"):New("SoulStoneSortForeverDB", defaults) -- per-character profiles
-
-    self:SetupProbe() -- chunk 1a only
-end
-
--- ===== Chunk 1a probe. THROWAWAY: removed in chunk 1d when Trimmer and DeleteButton land. =====
--- Deletes the last shard found in bags 0-4, unconditionally, one per call, and reports
--- exactly what happened so the slash-vs-click and combat questions get a clean answer.
-
-local function ProbeDelete(via)
-    ClearCursor()
-    for bag = 4, 0, -1 do
-        for slot = C_Container.GetContainerNumSlots(bag), 1, -1 do
-            local id = C_Container.GetContainerItemID(bag, slot)
-            if type(id) == "number" and id == SSF.SHARD_ITEM_ID then
-                C_Container.PickupContainerItem(bag, slot)
-                local kind, cursorID = GetCursorInfo()
-                if kind ~= "item" or cursorID ~= SSF.SHARD_ITEM_ID then
-                    SSF:Print(("probe via %s: pickup failed (cursor holds %s %s)"):format(via, tostring(kind), tostring(cursorID)))
-                    ClearCursor()
-                    return
-                end
-                local ok, err = pcall(DeleteCursorItem)
-                local stillHeld = GetCursorInfo()
-                ClearCursor()
-                if not ok then
-                    SSF:Print(("probe via %s: DeleteCursorItem errored: %s"):format(via, tostring(err)))
-                elseif stillHeld then
-                    SSF:Print(("probe via %s: delete refused, shard still on cursor (bag %d slot %d)"):format(via, bag, slot))
-                else
-                    SSF:Print(("probe via %s: deleted shard from bag %d slot %d"):format(via, bag, slot))
-                end
-                return
-            end
-        end
-    end
-    SSF:Print(("probe via %s: no shard found"):format(via))
-end
-
-function SSF:SetupProbe()
-    self:RegisterChatCommand("ssfprobe", function() ProbeDelete("slash") end)
-    local button = CreateFrame("Button", "SSFProbe", UIParent)
-    button:SetScript("OnClick", function() ProbeDelete("click") end)
 end

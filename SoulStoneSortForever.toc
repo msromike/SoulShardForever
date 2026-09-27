@@ -14,3 +14,5 @@ Locales\enUS.lua
 Core.lua
 Modules\Bags.lua
 Modules\Cap.lua
+Modules\Trimmer.lua
+Modules\DeleteButton.lua

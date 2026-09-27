@@ -6,3 +6,4 @@ if not L then return end
 
 L["SoulStone Sort Forever"] = true
 L["SSF"] = true
+L["Deleted a Soul Shard (%d/%d)."] = true
