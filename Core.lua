@@ -10,7 +10,7 @@ local SSF = LibStub("AceAddon-3.0"):NewAddon(ADDON, "AceConsole-3.0", "AceEvent-
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 SSF.SHARD_ITEM_ID = 6265
-SSF.ICON = "Interface\\Icons\\spell_shadow_soulgem"
+SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
 
 local defaults = {
     profile = {
