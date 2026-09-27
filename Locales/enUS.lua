@@ -6,8 +6,14 @@ if not L then return end
 
 L["Soul Shard Forever"] = true
 L["SSF"] = true
+L["Soul Shard Forever (SSF) v%s by msromike. Type /ssf for options."] = true
 L["Deleted a Soul Shard."] = true
-L["Soul Shards: %d (cap %d)"] = true
+L["ON"] = true
+L["OFF"] = true
+L["Use: /ssf %s on|off"] = true
+L["Use: /ssf %s %d-%d"] = true
+L["Soul Shards: %s (cap %s)"] = true
+L["(in bags: %s)"] = true
 L["%s (cap %d)"] = true
 L["Match soul bag size (no soul bag equipped)"] = true
 

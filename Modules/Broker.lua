@@ -6,7 +6,7 @@
 -- Fields: type, label, icon, text "N / cap", value = N. No suffix, no per-bag breakdown.
 
 local ADDON = "SoulShardForever"
-local SSF = LibStub("AceAddon-3.0"):GetAddon(ADDON)
+local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Broker = SSF:NewModule("Broker", "AceEvent-3.0", "AceBucket-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local LDB = LibStub("LibDataBroker-1.1")

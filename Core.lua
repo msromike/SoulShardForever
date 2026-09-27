@@ -2,11 +2,16 @@
 -- Fork of SoulSort by Anilusion (GPLv3), rewritten on Ace3 for Forever only.
 -- GPLv3, see LICENSE.
 --
+-- HOUSE RULE: Ace everywhere. If an Ace3 library (or LibDBIcon/LDB) does a job, use it;
+-- never hand-roll a replacement or reach around it. One way to print (AceConsole), one
+-- settings table (AceConfig), one event path (AceEvent/AceBucket), one db (AceDB).
+--
 -- Core: the addon object, the warlock gate and the saved settings. Nothing else.
 -- The work is in the modules under Modules\.
 
 local ADDON = "SoulShardForever"
-local SSF = LibStub("AceAddon-3.0"):NewAddon(ADDON, "AceConsole-3.0", "AceEvent-3.0")
+-- Registered as "SSF": AceConsole prefixes every chat line with the registered name.
+local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 SSF.SHARD_ITEM_ID = 6265
@@ -33,4 +38,9 @@ function SSF:OnInitialize()
     end
 
     self.db = LibStub("AceDB-3.0"):New("SoulShardForeverDB", defaults) -- per-character profiles
+end
+
+function SSF:OnEnable()
+    local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
+    self:Printf(L["Soul Shard Forever (SSF) v%s by msromike. Type /ssf for options."], version)
 end

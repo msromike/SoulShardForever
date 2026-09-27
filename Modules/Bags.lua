@@ -4,7 +4,7 @@
 -- or deletes anything. Every other module reads the bags through these methods.
 -- API facts behind this file: BAG_API_NOTES.md.
 
-local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardForever")
+local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Bags = SSF:NewModule("Bags")
 
 local SHARD = SSF.SHARD_ITEM_ID

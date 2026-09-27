@@ -6,9 +6,10 @@
 -- In combat it does nothing: the server reverts in-combat deletes when combat ends.
 -- Silent unless the announce option is on. Sends SSF_SHARD_DELETED after a delete.
 
-local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardForever")
+local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Trimmer = SSF:NewModule("Trimmer", "AceEvent-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardForever")
+local ADDON = "SoulShardForever"
+local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 local SHARD = SSF.SHARD_ITEM_ID
 

@@ -17,5 +17,6 @@ Modules\Bags.lua
 Modules\Cap.lua
 Modules\Trimmer.lua
 Modules\DeleteButton.lua
+Modules\Settings.lua
 Modules\Options.lua
 Modules\Broker.lua
