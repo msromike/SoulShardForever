@@ -24,3 +24,8 @@ L["Minimap button"] = true
 L["Open options"] = true
 L["Open the options window."] = true
 L["The options window arrives in Stage 2."] = true
+
+-- Broker
+L["Soul Shards"] = true
+L["Cap"] = true
+L["Over by %d. The next press trims one."] = true
