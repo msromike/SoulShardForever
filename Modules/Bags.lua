@@ -2,7 +2,7 @@
 --
 -- Bags: read-only queries over the player's bags 0-4. No state, no events, never moves
 -- or deletes anything. Every other module reads the bags through these methods.
--- API facts behind this file: BAG_API_NOTES.md.
+-- API facts behind this file: .docs/BAG_API_NOTES.md.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Bags = SSF:NewModule("Bags")
