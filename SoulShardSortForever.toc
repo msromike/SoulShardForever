@@ -7,7 +7,7 @@
 ## X-License: GPLv3
 ## X-Credits: Fork of SoulSort by Anilusion (GPLv3)
 ## SavedVariables: SoulShardSortForeverDB
-## IconTexture: Interface\Icons\spell_shadow_soulgem
+## IconTexture: Interface\Icons\inv_misc_gem_amethyst_02
 
 embeds.xml
 Locales\enUS.lua
