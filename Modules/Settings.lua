@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- Settings: turns ONE definition of a stateful setting into the two AceConfig entries it
 -- needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from

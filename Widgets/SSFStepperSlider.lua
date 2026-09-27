@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- SSFStepperSlider: an AceGUI widget. The stock AceGUI Slider with a step-down arrow on its
 -- left edge and a step-up arrow on its right, for fine tuning after a rough slide.

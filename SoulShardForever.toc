@@ -4,14 +4,15 @@
 ## Notes: Soul Shard cap for warlocks. /ssf delete in a macro removes one shard over the cap.
 ## Author: msromike
 ## Version: 0.1.0
-## X-License: GPLv3
-## X-Credits: Fork of SoulSort by Anilusion (GPLv3)
+## X-License: MIT
+## X-Credits: Started as a fork of SoulSort by Anilusion
 ## SavedVariables: SoulShardForeverDB
 ## IconTexture: Interface\Icons\inv_misc_gem_amethyst_02
 
 embeds.xml
 Locales\enUS.lua
 Widgets\SSFStepperSlider.lua
+Widgets\SSFWindow.lua
 Core.lua
 Modules\Bags.lua
 Modules\Cap.lua
@@ -21,3 +22,4 @@ Modules\Settings.lua
 Modules\Options.lua
 Modules\Broker.lua
 Modules\Counter.lua
+Modules\LowGlow.lua

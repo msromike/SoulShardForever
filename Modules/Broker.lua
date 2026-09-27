@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- Broker: the LibDataBroker data object and the LibDBIcon minimap button. Listens only:
 -- SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED and a bucketed BAG_UPDATE
@@ -17,7 +17,8 @@ local RED = "|cffff4040%d|r"
 function Broker:Refresh()
     local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
     local shown = count > cap and RED:format(count) or tostring(count)
-    self.object.text = L["%s (cap %d)"]:format(shown, cap)
+    local full = count >= cap and (" " .. L["Full"]) or ""
+    self.object.text = L["%s (cap %d)"]:format(shown, cap) .. full
     self.object.value = count
 end
 
@@ -36,7 +37,7 @@ function Broker:OnEnable()
                 tooltip:AddDoubleLine(L["Soul Shards"], count, 0.8, 0.8, 0.8, 1, 1, 1)
                 tooltip:AddDoubleLine(L["Cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
                 if count > cap then
-                    tooltip:AddLine(L["Over by %d. The next press trims one."]:format(count - cap), 1, 0.25, 0.25)
+                    tooltip:AddDoubleLine(L["Over by"], count - cap, 1, 0.25, 0.25, 1, 0.25, 0.25)
                 end
             end,
         })

@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- Bags: read-only queries over the player's bags 0-4. No state, no events, never moves
 -- or deletes anything. Every other module reads the bags through these methods.

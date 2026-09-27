@@ -3,9 +3,9 @@
 Soul Shard cap for warlocks on WoW Forever. Set how many shards to keep, put one line in
 your macros, and every press deletes one shard over the cap. Nothing else.
 
-SSF is a fork of [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management)
-by Anilusion, rewritten for WoW Forever on Ace3. It runs only on Forever (Interface 16001).
-For Classic Era and its variants, use the original.
+SSF runs only on WoW Forever (Interface 16001). For Classic Era and its variants, use
+[SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion,
+which SSF started from.
 
 ## Using it
 
@@ -47,7 +47,9 @@ Settings are per character.
 
 ## License
 
-GPLv3, see [LICENSE](LICENSE). SoulSort is copyright Anilusion and released under GPLv3;
-SSF is a modified version, first published 2026, and stays GPLv3.
+MIT, see [LICENSE](LICENSE).
+
+SSF started as a fork of [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management)
+by Anilusion and was rewritten from scratch; no original code remains.
 
 Bundles Ace3 and LibDBIcon (BSD-style), LibDataBroker and LibStub. Each keeps its own license.

@@ -16,6 +16,7 @@ externals:
   Libs/AceTab-3.0: https://repos.wowace.com/wow/ace3/trunk/AceTab-3.0
   Libs/LibSharedMedia-3.0: https://repos.wowace.com/wow/libsharedmedia-3-0/trunk/LibSharedMedia-3.0
   Libs/AceGUI-3.0-SharedMediaWidgets: https://repos.wowace.com/wow/ace-gui-3-0-shared-media-widgets/trunk/AceGUI-3.0-SharedMediaWidgets
+  Libs/LibCustomGlow-1.0: https://github.com/Stanzilla/LibCustomGlow
   Libs/LibDataBroker-1.1:
     url: https://github.com/tekkub/libdatabroker-1-1
     tag: v1.1.4

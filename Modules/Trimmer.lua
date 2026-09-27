@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- Trimmer: Delete() removes one Soul Shard when the count is over the cap. Nothing else.
 -- Runs only inside a hardware event (a slash command or a button click), because

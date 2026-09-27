@@ -1,6 +1,6 @@
 -- Soul Shard Forever (SSF): a Soul Shard cap for warlocks on WoW Forever.
--- Fork of SoulSort by Anilusion (GPLv3), rewritten on Ace3 for Forever only.
--- GPLv3, see LICENSE.
+-- Started as a fork of SoulSort by Anilusion; rewritten from scratch on Ace3 for Forever
+-- only. No original code remains. MIT, see LICENSE.
 --
 -- HOUSE RULE: Ace everywhere. If an Ace3 library (or LibDBIcon/LDB) does a job, use it;
 -- never hand-roll a replacement or reach around it. One way to print (AceConsole), one
@@ -22,10 +22,10 @@ local defaults = {
         maxShards = 20,             -- the cap while autoMax is off (1-100)
         autoMax = true,             -- cap follows the soul bag's slot count
         counter = false,            -- number on the far-left bag button
-        counterSize = 20,           -- its font size (10-40); Counter shrinks it to fit the button
-        counterFont = "Arial Narrow",                    -- LibSharedMedia font name (NumberFontNormal's face)
-        counterColor = { r = 1, g = 1, b = 1 },          -- at or under the cap
-        counterOverColor = { r = 1, g = 0.25, b = 0.25 }, -- over the cap
+        counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
+        counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
+        lowGlow = true,               -- glow the bag button while shards are below the low mark
+        lowMark = 4,                  -- the low mark (1-20)
         announce = false,           -- one chat line per deletion
         minimap = { hide = false }, -- LibDBIcon state
         deleteOrder = "front",      -- "front" = backpack first, "back" = far-left bag first; no UI
@@ -46,5 +46,6 @@ end
 
 function SSF:OnEnable()
     local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-    self:Printf(L["Soul Shard Forever (SSF) v%s by msromike. Type /ssf for options."], version)
+    local author = self:GetModule("Settings"):Value("msromike")
+    self:Printf(L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."], version, author)
 end

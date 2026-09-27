@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- Options: the one settings table. AceConfigCmd turns it into the /ssf commands, AceConfigDialog
 -- turns the same table into the options window and the Interface Options entry, AceTab
@@ -16,6 +16,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+local AceConfigCmd = LibStub("AceConfigCmd-3.0")
 local AceTab = LibStub("AceTab-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
@@ -24,9 +25,13 @@ local function Bags() return SSF:GetModule("Bags") end
 
 local function Value(v) return SSF:GetModule("Settings"):Value(v) end
 
--- The one count/cap wording, used by the window and the announce line. Values green.
+-- The one count/cap wording, used by the window and the announce line. The count takes
+-- the counter's state color (grey / green / yellow, or white when colorizing is off) so the
+-- window shows the effect of a cap change without looking at the bag; the cap is green.
 function Options:StatusText()
-    return L["Soul Shards: %s (cap %s)"]:format(Value(Bags():Count()), Value(Cap():Get()))
+    local count, cap = Bags():Count(), Cap():Get()
+    local _, _, _, hex = SSF:GetModule("Counter"):StateColor(count, cap)
+    return L["Soul Shards: %s (cap %s)"]:format("|cff" .. hex .. count .. "|r", Value(cap))
 end
 
 local function changed(key)
@@ -42,8 +47,15 @@ local function BuildTable()
             fontSize = "medium",
             name = function()
                 local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-                return L["Soul Shard Forever"] .. " " .. version .. "\n" .. L["Fork of SoulSort by Anilusion. GPLv3."] .. "\n"
+                return L["Soul Shard Forever"] .. " " .. version .. "\n"
             end,
+        },
+        credit = { -- small, last
+            type = "description",
+            order = 999,
+            cmdHidden = true,
+            fontSize = "small",
+            name = function() return "\n" .. L["Started as a fork of SoulSort by Anilusion. Rewritten from scratch."] end,
         },
         status = {
             type = "description",
@@ -90,11 +102,25 @@ local function BuildTable()
                 changed("counter")
             end,
         },
-        -- Counter look, GUI only. LibSharedMedia supplies the font list and the
-        -- AceGUI SharedMedia widget draws the font dropdown with previews.
+        -- Counter look, GUI only. Size is auto-fit to the button.
+        countercolorize = {
+            type = "toggle",
+            order = 41,
+            cmdHidden = true,
+            descStyle = "hidden",
+            name = L["Colorize bag count"],
+            get = function() return SSF.db.profile.counterColorize end,
+            set = function(_, value)
+                SSF.db.profile.counterColorize = value
+                changed("countercolorize")
+            end,
+            disabled = function() return not SSF.db.profile.counter end,
+        },
+        -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws the
+        -- dropdown with previews.
         counterfont = {
             type = "select",
-            order = 41,
+            order = 42,
             cmdHidden = true,
             descStyle = "hidden",
             dialogControl = "LSM30_Font",
@@ -107,49 +133,34 @@ local function BuildTable()
             end,
             disabled = function() return not SSF.db.profile.counter end,
         },
-        countersize = {
-            type = "range",
-            order = 42,
+        -- Low-shard glow, GUI only.
+        lowglow = {
+            type = "toggle",
+            order = 46,
             cmdHidden = true,
             descStyle = "hidden",
-            name = L["Counter size"],
-            min = 10, max = 40, step = 1,
+            name = L["Glow bag button when low"],
+            get = function() return SSF.db.profile.lowGlow end,
+            set = function(_, value)
+                SSF.db.profile.lowGlow = value
+                changed("lowglow")
+            end,
+        },
+        lowmark = {
+            type = "range",
+            order = 47,
+            cmdHidden = true,
+            descStyle = "hidden",
+            name = L["Low mark"],
+            min = 1, max = 20, step = 1,
             width = "full",
             dialogControl = "SSFStepperSlider",
-            get = function() return SSF.db.profile.counterSize end,
+            get = function() return SSF.db.profile.lowMark end,
             set = function(_, value)
-                SSF.db.profile.counterSize = value
-                changed("countersize")
+                SSF.db.profile.lowMark = value
+                changed("lowmark")
             end,
-            disabled = function() return not SSF.db.profile.counter end,
-        },
-        countercolor = {
-            type = "color",
-            order = 43,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Counter color"],
-            get = function() local c = SSF.db.profile.counterColor return c.r, c.g, c.b end,
-            set = function(_, r, g, b)
-                local c = SSF.db.profile.counterColor
-                c.r, c.g, c.b = r, g, b
-                changed("countercolor")
-            end,
-            disabled = function() return not SSF.db.profile.counter end,
-        },
-        counterovercolor = {
-            type = "color",
-            order = 44,
-            cmdHidden = true,
-            descStyle = "hidden",
-            name = L["Counter color when over the cap"],
-            get = function() local c = SSF.db.profile.counterOverColor return c.r, c.g, c.b end,
-            set = function(_, r, g, b)
-                local c = SSF.db.profile.counterOverColor
-                c.r, c.g, c.b = r, g, b
-                changed("counterovercolor")
-            end,
-            disabled = function() return not SSF.db.profile.counter end,
+            disabled = function() return not SSF.db.profile.lowGlow end,
         },
         minimap = {
             type = "toggle",
@@ -169,6 +180,14 @@ local function BuildTable()
             dialogHidden = true,
             name = L["Open options"],
             desc = L["Open the options window."],
+            func = function() Options:Open() end,
+        },
+        settings = { -- alias of options (S9)
+            type = "execute",
+            order = 71,
+            dialogHidden = true,
+            name = L["Open options"],
+            desc = L["Same as options."],
             func = function() Options:Open() end,
         },
     }
@@ -201,7 +220,13 @@ end
 
 function Options:OnInitialize()
     local options = BuildTable()
-    AceConfig:RegisterOptionsTable(ADDON, options, "ssf")
+    AceConfig:RegisterOptionsTable(ADDON, options) -- no slashcmd here: /ssf is registered below
+    -- /ssf: naked prints the status line, then AceConfigCmd's command list; anything else
+    -- goes straight to AceConfigCmd, which parses and dispatches to the table.
+    SSF:RegisterChatCommand("ssf", function(input)
+        if strtrim(input or "") == "" then SSF:Print(Options:StatusText()) end
+        AceConfigCmd:HandleCommand("ssf", ADDON, input)
+    end)
     AceConfigDialog:SetDefaultSize(ADDON, 420, 380)
     AceConfigDialog:AddToBlizOptions(ADDON, L["Soul Shard Forever"])
 
@@ -218,8 +243,13 @@ end
 -- NOT on SSF_CAP_CHANGED: AceConfigDialog calls the slider's set on every drag tick, and a
 -- rebuild from inside that loop recreates the slider under the mouse. AceConfig already
 -- refreshes after a release or a button click; the bag bucket covers everything else.
+-- NotifyChange covers the Interface Options panel; the standalone window is our own
+-- container, which AceConfigDialog does not track, so it is re-fed here while shown.
 function Options:Refresh()
     AceConfigRegistry:NotifyChange(ADDON)
+    if self.window and self.window.frame:IsShown() then
+        AceConfigDialog:Open(ADDON, self.window)
+    end
 end
 
 function Options:OnEnable()
@@ -227,7 +257,12 @@ function Options:OnEnable()
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
 end
 
--- The small standalone window: minimap click, /ssf options, the Options button.
+-- The small standalone window: minimap click, /ssf options, /ssf settings. Our own
+-- SSFWindow container (X button, no status bar, sized to content), created once and
+-- re-fed on every open.
 function Options:Open()
-    AceConfigDialog:Open(ADDON)
+    if not self.window then
+        self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
+    end
+    AceConfigDialog:Open(ADDON, self.window)
 end

@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- DeleteButton: the global button "SSFDelete". A click, or "/click SSFDelete" from a macro,
 -- keybind addon or WeakAura, runs Trimmer:Delete() inside a real hardware event. Invisible,
