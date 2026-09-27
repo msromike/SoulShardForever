@@ -1,12 +1,12 @@
 ## Interface: 16001
-## Title: SoulShard Sort Forever (SSF)
+## Title: Soul Shard Forever (SSF)
 ## Category: Class
 ## Notes: Soul Shard cap for warlocks. /ssf delete in a macro removes one shard over the cap.
 ## Author: msromike
 ## Version: 0.1.0
 ## X-License: GPLv3
 ## X-Credits: Fork of SoulSort by Anilusion (GPLv3)
-## SavedVariables: SoulShardSortForeverDB
+## SavedVariables: SoulShardForeverDB
 ## IconTexture: Interface\Icons\inv_misc_gem_amethyst_02
 
 embeds.xml

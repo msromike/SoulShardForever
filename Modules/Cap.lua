@@ -1,4 +1,4 @@
--- SoulShard Sort Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). GPLv3, see LICENSE.
 --
 -- Cap: answers one question, "what is the cap right now".
 --   AutoMax on AND a soul bag equipped -> the soul bags' slot total.
@@ -6,7 +6,7 @@
 -- Recomputes at login and on bag changes and sends SSF_CAP_CHANGED when the number moves.
 -- Trimmer calls Get() fresh on every press, so a missed event can never stale a delete.
 
-local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardSortForever")
+local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardForever")
 local Cap = SSF:NewModule("Cap", "AceEvent-3.0", "AceBucket-3.0")
 
 Cap.MIN, Cap.MAX = 1, 100

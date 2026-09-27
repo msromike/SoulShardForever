@@ -1,4 +1,4 @@
--- SoulShard Sort Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). GPLv3, see LICENSE.
 --
 -- Trimmer: Delete() removes one Soul Shard when the count is over the cap. Nothing else.
 -- Runs only inside a hardware event (a slash command or a button click), because
@@ -6,9 +6,9 @@
 -- In combat it does nothing: the server reverts in-combat deletes when combat ends.
 -- Silent unless the announce option is on. Sends SSF_SHARD_DELETED after a delete.
 
-local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardSortForever")
+local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardForever")
 local Trimmer = SSF:NewModule("Trimmer", "AceEvent-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardSortForever")
+local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardForever")
 
 local SHARD = SSF.SHARD_ITEM_ID
 

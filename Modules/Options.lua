@@ -1,11 +1,11 @@
--- SoulShard Sort Forever (SSF). GPLv3, see LICENSE.
+-- Soul Shard Forever (SSF). GPLv3, see LICENSE.
 --
 -- Options: the one settings table. AceConfigCmd turns it into the /ssf commands and
 -- AceConfigDialog (Stage 2) turns the same table into the options window and the
 -- Interface Options entry. Keys are the slash words; GUI-only entries carry cmdHidden.
 -- Modules that show state (Counter, Broker) listen for SSF_OPTIONS_CHANGED.
 
-local ADDON = "SoulShardSortForever"
+local ADDON = "SoulShardForever"
 local SSF = LibStub("AceAddon-3.0"):GetAddon(ADDON)
 local Options = SSF:NewModule("Options", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
@@ -20,7 +20,7 @@ end
 local function BuildTable()
     return {
         type = "group",
-        name = L["SoulShard Sort Forever"],
+        name = L["Soul Shard Forever"],
         args = {
             header = {
                 type = "description",
@@ -29,7 +29,7 @@ local function BuildTable()
                 fontSize = "medium",
                 name = function()
                     local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-                    return L["SoulShard Sort Forever"] .. " " .. version .. "\n" .. L["Fork of SoulSort by Anilusion. GPLv3."] .. "\n"
+                    return L["Soul Shard Forever"] .. " " .. version .. "\n" .. L["Fork of SoulSort by Anilusion. GPLv3."] .. "\n"
                 end,
             },
             delete = {

@@ -91,7 +91,7 @@ install; the rest are documented API behavior to confirm during the chunk that f
 
 ## Addon metadata
 
-- `C_AddOns.GetAddOnMetadata("SoulShardSortForever", "Version")` → the TOC version string.
+- `C_AddOns.GetAddOnMetadata("SoulShardForever", "Version")` → the TOC version string.
   The global `GetAddOnMetadata` does not exist on this engine.
 - `C_AddOns.IsAddOnLoaded(name)` likewise replaces the global.
 
