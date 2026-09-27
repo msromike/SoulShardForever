@@ -1,10 +1,10 @@
--- SoulStone Sort Forever (SSF). GPLv3, see LICENSE.
+-- SoulShard Sort Forever (SSF). GPLv3, see LICENSE.
 --
 -- DeleteButton: the global button "SSFDelete". A click, or "/click SSFDelete" from a macro,
 -- keybind addon or WeakAura, runs Trimmer:Delete() inside a real hardware event. Invisible,
 -- sizeless; it exists only to be clicked.
 
-local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulStoneSortForever")
+local SSF = LibStub("AceAddon-3.0"):GetAddon("SoulShardSortForever")
 local DeleteButton = SSF:NewModule("DeleteButton")
 
 function DeleteButton:OnEnable()

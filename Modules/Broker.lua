@@ -1,11 +1,11 @@
--- SoulStone Sort Forever (SSF). GPLv3, see LICENSE.
+-- SoulShard Sort Forever (SSF). GPLv3, see LICENSE.
 --
 -- Broker: the LibDataBroker data object and the LibDBIcon minimap button. Listens only:
 -- SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED and a bucketed BAG_UPDATE
 -- refresh the text. Click opens the options window.
 -- Fields: type, label, icon, text "N / cap", value = N. No suffix, no per-bag breakdown.
 
-local ADDON = "SoulStoneSortForever"
+local ADDON = "SoulShardSortForever"
 local SSF = LibStub("AceAddon-3.0"):GetAddon(ADDON)
 local Broker = SSF:NewModule("Broker", "AceEvent-3.0", "AceBucket-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
@@ -32,7 +32,7 @@ function Broker:OnEnable()
             OnClick = function() SSF:GetModule("Options"):Open() end,
             OnTooltipShow = function(tooltip)
                 local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
-                tooltip:AddLine(L["SoulStone Sort Forever"])
+                tooltip:AddLine(L["SoulShard Sort Forever"])
                 tooltip:AddDoubleLine(L["Soul Shards"], count, 0.8, 0.8, 0.8, 1, 1, 1)
                 tooltip:AddDoubleLine(L["Cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
                 if count > cap then

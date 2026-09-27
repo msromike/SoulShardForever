@@ -1,4 +1,4 @@
-# SoulStone Sort Forever (SSF)
+# SoulShard Sort Forever (SSF)
 
 Soul Shard cap for warlocks on WoW Forever. Set how many shards to keep, put one line in
 your macros, and every press deletes one shard over the cap. Nothing else.

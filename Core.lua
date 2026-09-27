@@ -1,11 +1,11 @@
--- SoulStone Sort Forever (SSF): a Soul Shard cap for warlocks on WoW Forever.
+-- SoulShard Sort Forever (SSF): a Soul Shard cap for warlocks on WoW Forever.
 -- Fork of SoulSort by Anilusion (GPLv3), rewritten on Ace3 for Forever only.
 -- GPLv3, see LICENSE.
 --
 -- Core: the addon object, the warlock gate and the saved settings. Nothing else.
 -- The work is in the modules under Modules\.
 
-local ADDON = "SoulStoneSortForever"
+local ADDON = "SoulShardSortForever"
 local SSF = LibStub("AceAddon-3.0"):NewAddon(ADDON, "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
@@ -32,5 +32,5 @@ function SSF:OnInitialize()
         return
     end
 
-    self.db = LibStub("AceDB-3.0"):New("SoulStoneSortForeverDB", defaults) -- per-character profiles
+    self.db = LibStub("AceDB-3.0"):New("SoulShardSortForeverDB", defaults) -- per-character profiles
 end

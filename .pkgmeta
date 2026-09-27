@@ -1,4 +1,4 @@
-package-as: SoulStoneSortForever
+package-as: SoulShardSortForever
 enable-nolib-creation: no
 
 externals:
