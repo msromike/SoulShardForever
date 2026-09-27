@@ -12,7 +12,8 @@
 -- Takes:   Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name,
 --          desc, get(), apply(value), optional extra() -> text appended to the chat echo,
 --          and for range: min, max, step, disabled }.
---          Settings:Value(v) -> v as the green value string used everywhere.
+--          Settings:Value(v) -> v as the neutral (white) value string used for settings.
+--          Settings:Accent(v) -> v in the green branding accent (login line author).
 -- Returns: gui, cmd -- two entries for Options to place in its args table.
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply.
 -- Registers: AceTab completion of "on"/"off" after "/ssf <key> " for every toggle.
@@ -24,12 +25,15 @@ local Settings = SSF:NewModule("Settings", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceTab = LibStub("AceTab-3.0")
 
-local GREEN, RED = "|cff00ff00%s|r", "|cffff0000%s|r"
+local GREEN, RED, WHITE = "|cff00ff00%s|r", "|cffff0000%s|r", "|cffffffff%s|r"
 local function OnOff(b) return b and GREEN:format(L["ON"]) or RED:format(L["OFF"]) end
 
--- The one way a value is colored in chat and in the window: green. Other modules use it
--- so every number reads the same.
-function Settings:Value(v) return GREEN:format(tostring(v)) end
+-- A setting's value in chat or the window: a neutral white highlight. Green and red are
+-- reserved for state (ON/OFF here; the count scale in Counter:StateColor).
+function Settings:Value(v) return WHITE:format(tostring(v)) end
+
+-- Branding accent (the author on the login line): green by Mike's call, not a state.
+function Settings:Accent(v) return GREEN:format(tostring(v)) end
 
 -- AceTab usage callback shared by every completion set: on an ambiguous Tab, list the
 -- candidates on one line. (Passing `true` instead trips a nil concat inside AceTab when

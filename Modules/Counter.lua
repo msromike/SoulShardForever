@@ -5,8 +5,9 @@
 -- bag bar" option is on. If the far-left button is not shown (collapsed bag bar), it
 -- anchors to the backpack button instead.
 -- Font is the profile's LibSharedMedia font name. Size is the largest that fits inside the
--- button face with a margin; the button is the bound. Colorized by default: grey at zero,
--- green at or under the cap, yellow over it; white when the "Colorize" option is off.
+-- button face with a margin; the button is the bound. Colorized by default on the one state
+-- scale (red below the low mark, green in range, yellow over the cap; see StateColor);
+-- white when the "Colorize" option is off.
 --
 -- The FontString is raw: AceGUI builds widgets inside its own windows and cannot draw on a
 -- Blizzard button. This and DeleteButton are the two frames in SSF not built by Ace.
@@ -20,16 +21,23 @@ local LSM = LibStub("LibSharedMedia-3.0")
 
 local MARGIN = 2 -- px kept between the number and the button edge
 local MAX_SIZE, MIN_SIZE = 48, 6
--- State colors: zero / at or under the cap / over the cap; white when colorizing is off.
--- Shared with the options window's status line through Counter:StateColor.
-local GREY, GREEN, YELLOW = { 0.6, 0.6, 0.6, "999999" }, { 0, 1, 0, "00ff00" }, { 1, 0.82, 0, "ffd100" }
+-- The one state scale for a shard count, used everywhere a count is shown (bag button,
+-- status line, broker text, tooltip):
+--   below the low mark (zero included)  red     you're running out, go farm
+--   low mark up to the cap              green   fine
+--   over the cap                        yellow  excess, the next press trims one
+-- White when the colorize option is off. No grey: grey reads as "disabled".
+local RED, GREEN, YELLOW = { 1, 0.25, 0.25, "ff4040" }, { 0, 1, 0, "00ff00" }, { 1, 0.82, 0, "ffd100" }
 local WHITE = { 1, 1, 1, "ffffff" }
 
--- r, g, b, hex for a count against a cap, honoring the colorize option.
+-- r, g, b, hex for a count against the cap and the low mark, honoring the colorize option.
 function Counter:StateColor(count, cap)
     local c = WHITE
     if SSF.db.profile.counterColorize then
-        c = count == 0 and GREY or count > cap and YELLOW or GREEN
+        -- over the cap wins: with a low mark set above the cap, "too many" is the true state
+        if count > cap then c = YELLOW
+        elseif count < SSF.db.profile.lowMark then c = RED
+        else c = GREEN end
     end
     return c[1], c[2], c[3], c[4]
 end

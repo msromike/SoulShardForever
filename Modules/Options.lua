@@ -14,7 +14,8 @@
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
 
-local ADDON = "SoulShardForever"
+local ADDON = "SoulShardForever" -- the folder: TOC metadata and the locale
+local APP = "SSF"                -- the AceConfig app: every line AceConfigCmd prints is prefixed with it
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceBucket-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
@@ -31,8 +32,9 @@ local function Bags() return SSF:GetModule("Bags") end
 local function Value(v) return SSF:GetModule("Settings"):Value(v) end
 
 -- The one count/cap wording, used by the window and the announce line. The count takes
--- the counter's state color (grey / green / yellow, or white when colorizing is off) so the
--- window shows the effect of a cap change without looking at the bag; the cap is green.
+-- the one state color (Counter:StateColor: red / green / yellow, or white when colorizing
+-- is off) so the window shows the effect of a cap change without looking at the bag; the
+-- cap is a setting, so it gets the neutral value color.
 function Options:StatusText()
     local count, cap = Bags():Count(), Cap():Get()
     local _, _, _, hex = SSF:GetModule("Counter"):StateColor(count, cap)
@@ -228,15 +230,15 @@ end
 
 function Options:OnInitialize()
     local options = BuildTable()
-    AceConfig:RegisterOptionsTable(ADDON, options) -- no slashcmd here: /ssf is registered below
+    AceConfig:RegisterOptionsTable(APP, options) -- no slashcmd here: /ssf is registered below
     -- /ssf: naked prints the status line, then AceConfigCmd's command list; anything else
     -- goes straight to AceConfigCmd, which parses and dispatches to the table.
     SSF:RegisterChatCommand("ssf", function(input)
         if strtrim(input or "") == "" then SSF:Print(Options:StatusText()) end
-        AceConfigCmd:HandleCommand("ssf", ADDON, input)
+        AceConfigCmd:HandleCommand("ssf", APP, input)
     end)
-    AceConfigDialog:SetDefaultSize(ADDON, 310, 590)
-    AceConfigDialog:AddToBlizOptions(ADDON, L["Soul Shard Forever"])
+    AceConfigDialog:SetDefaultSize(APP, 310, 590)
+    AceConfigDialog:AddToBlizOptions(APP, L["Soul Shard Forever"])
 
     -- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
     -- AceConfigCmd exposes (root entries without cmdHidden).
@@ -254,9 +256,9 @@ end
 -- NotifyChange covers the Interface Options panel; the standalone window is our own
 -- container, which AceConfigDialog does not track, so it is re-fed here while shown.
 function Options:Refresh()
-    AceConfigRegistry:NotifyChange(ADDON)
+    AceConfigRegistry:NotifyChange(APP)
     if self.window and self.window.frame:IsShown() then
-        AceConfigDialog:Open(ADDON, self.window)
+        AceConfigDialog:Open(APP, self.window)
     end
 end
 
@@ -276,5 +278,5 @@ function Options:Open()
         local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
         self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
     end
-    AceConfigDialog:Open(ADDON, self.window)
+    AceConfigDialog:Open(APP, self.window)
 end

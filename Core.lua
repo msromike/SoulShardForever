@@ -49,6 +49,6 @@ end
 
 function SSF:OnEnable()
     local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-    local author = self:GetModule("Settings"):Value("msromike")
+    local author = self:GetModule("Settings"):Accent("msromike")
     self:Printf(L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."], version, author)
 end
