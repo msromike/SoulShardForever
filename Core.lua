@@ -19,6 +19,8 @@ local defaults = {
         counter = false,            -- number on the far-left bag button
         announce = false,           -- one chat line per deletion
         minimap = { hide = false }, -- LibDBIcon state
+        deleteOrder = "front",      -- "front" = backpack first, "back" = far-left bag first; no UI
+        -- 1-100 is what the slider allows; any other value is clamped by Cap.
     },
 }
 

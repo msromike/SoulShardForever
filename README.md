@@ -26,8 +26,8 @@ full and the loot space is what gets freed.
 Open with `/ssf options`, the minimap button, or Interface Options > AddOns.
 
 - **Shards to keep**: the cap, 1 to 100.
-- **Match soul bag size**: cap follows your soul bag's slot count (or your last bag if you
-  have no soul bag). On by default.
+- **Match soul bag size**: while a soul bag is equipped, the cap is its slot count. Without
+  a soul bag the slider rules. On by default.
 - **Show shard count on bag bar**: one number on the far-left bag button.
 - **Announce deletions in chat**: one chat line per deletion, off by default.
 - **Minimap button**.

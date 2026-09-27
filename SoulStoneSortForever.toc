@@ -12,3 +12,4 @@
 embeds.xml
 Locales\enUS.lua
 Core.lua
+Modules\Bags.lua
