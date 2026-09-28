@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.0.1 (2026-09-28)
+
+- Non-warlock characters no longer get Lua errors from SSF at login ("attempt to index
+  field 'db'" in Cap, Broker, Counter and LowGlow). The warlock check now switches off
+  every module too, so on other classes SSF sets up nothing: no `/ssf`, no Interface
+  Options entry, no minimap button, no `SSFDelete` button.
+
 ## 1.0.0 (2026-09-27)
 
 Initial release. WoW Forever only.

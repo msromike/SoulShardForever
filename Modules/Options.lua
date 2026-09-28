@@ -228,7 +228,9 @@ local function BuildTable()
     return { type = "group", name = L["Soul Shard Forever"], args = args }
 end
 
-function Options:OnInitialize()
+-- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
+-- Core's warlock gate has switched the module off, so /ssf would register on other classes.
+function Options:OnEnable()
     local options = BuildTable()
     AceConfig:RegisterOptionsTable(APP, options) -- no slashcmd here: /ssf is registered below
     -- /ssf: naked prints the status line, then AceConfigCmd's command list; anything else
@@ -247,6 +249,9 @@ function Options:OnInitialize()
             if not entry.cmdHidden then words[#words + 1] = key end
         end
     end, SSF:GetModule("Settings").TabUsage)
+
+    self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
+    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
 end
 
 -- Keep the status line and the AutoMax state fresh while a window is open.
@@ -260,11 +265,6 @@ function Options:Refresh()
     if self.window and self.window.frame:IsShown() then
         AceConfigDialog:Open(APP, self.window)
     end
-end
-
-function Options:OnEnable()
-    self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
-    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
 end
 
 -- The small standalone window: minimap click, /ssf options, /ssf settings. Our own

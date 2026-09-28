@@ -38,9 +38,14 @@ local defaults = {
 
 function SSF:OnInitialize()
     -- Warlock gate. On any other class nothing is set up and the addon never enables,
-    -- so no saved variables, no slash command, no button, no message.
+    -- so no saved variables, no slash command, no button, no message. Ace3 queues each
+    -- module as its own addon with its own enabled state, so they are switched off too;
+    -- modules therefore do their setup in OnEnable, never OnInitialize.
     if UnitClassBase("player") ~= "WARLOCK" then
         self:SetEnabledState(false)
+        for _, module in self:IterateModules() do
+            module:SetEnabledState(false)
+        end
         return
     end
 
