@@ -44,6 +44,7 @@ local defaults = {
 function SSF:ApplyLanguage()
     local code = self.db.profile.language or GetLocale()
     if code == "enGB" then code = "enUS" end -- AceLocale's own rule
+    if code == "esES" then code = "esMX" end -- one Spanish table for both clients
     local chosen = NS.locales[code] or NS.locales.enUS
     for key, value in pairs(NS.locales.enUS.strings) do
         L[key] = value == true and key or value

@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.1 (2026-10-05)
+
+- Brazilian Portuguese and Russian, with Blizzard's own terms (Estilhaço de Alma, Осколок
+  души).
+- The Spanish (Spain) client now gets Spanish. Before, it fell back to English.
+- Language setting: Português and Русский added to the list.
+
 ## 1.2.0 (2026-10-05)
 
 - German, French and Latin American Spanish. SSF follows the client language; Blizzard's

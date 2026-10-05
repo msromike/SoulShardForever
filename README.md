@@ -2,7 +2,7 @@
 
 **\*\*\* Changelog \*\*\***
 
-1.2.0: German, French and Latin American Spanish, with a Language setting to pick one.
+1.2.1: Brazilian Portuguese and Russian; Spanish now on the Spain client too.
 
 [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
@@ -48,7 +48,7 @@ Every press sorts first, then deletes. The sort moves each shard into a free slo
 - **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm before you need them.
 - **Low shard warn** is the number of shards to activate the warning glow. 1 to 20. Same slider and − and + as the cap.
 - **Announce deletions in chat** is off by default, turn on if you want to see that or for addons that watch chat (like MSBT).
-- **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français or Español to override it.
+- **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.
 
 The minimap button opens the window; its tooltip shows the count and the cap. Settings are per character.
 
