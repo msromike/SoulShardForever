@@ -34,9 +34,11 @@ local function Value(v) return SSF:GetModule("Settings"):Value(v) end
 -- The one count/cap wording, used by the window and the announce line. The count takes
 -- the one state color (Counter:StateColor: red / green / yellow, or white when colorizing
 -- is off) so the window shows the effect of a cap change without looking at the bag; the
--- cap is a setting, so it gets the neutral value color.
-function Options:StatusText()
-    local count, cap = Bags():Count(), Cap():Get()
+-- cap is a setting, so it gets the neutral value color. Both arguments are optional: the
+-- Trimmer passes the count it knows right after a delete, when the bags still show the
+-- deleted shard until the server confirms.
+function Options:StatusText(count, cap)
+    count, cap = count or Bags():Count(), cap or Cap():Get()
     local _, _, _, hex = SSF:GetModule("Counter"):StateColor(count, cap)
     return L["Soul Shards: %s (cap %s)"]:format("|cff" .. hex .. count .. "|r", Value(cap))
 end

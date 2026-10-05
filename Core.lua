@@ -23,7 +23,7 @@ SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
 local defaults = {
     profile = {
         maxShards = 20,             -- the cap while autoMax is off (1-100)
-        autoMax = true,             -- cap follows the soul bag's slot count
+        autoMax = false,            -- cap follows the soul bags' slot total
         counter = false,            -- number on the far-left bag button
         counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
         counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
@@ -31,7 +31,6 @@ local defaults = {
         lowMark = 4,                  -- the low mark (1-20)
         announce = false,           -- one chat line per deletion
         minimap = { hide = false }, -- LibDBIcon state
-        deleteOrder = "front",      -- "front" = backpack first, "back" = far-left bag first; no UI
         -- 1-100 is what the slider allows; any other value is clamped by Cap.
     },
 }

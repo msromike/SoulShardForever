@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.1.0 (2026-10-04)
+
+- Soul bags work. On Forever a soul pouch equips in the reagent bag slot, which SSF did
+  not scan; its shards were not counted and it was never seen as a soul bag. Every count,
+  the cap and the delete now cover all bags, backpack through the reagent slot.
+- Every press sorts first: each shard outside a soul bag moves into a free soul bag slot,
+  then into free slots in bag 4, 3, 2, 1, then the backpack; bottom slots first. Only free
+  slots are used; nothing else in your bags is touched. Then, if you are over the cap, one
+  shard is deleted: the top-most shard in the bag nearest the backpack, which after a sort
+  is always the same spot. Nothing moves or deletes in combat.
+- "Match soul bag size" is off by default and, when on, the cap is the slot total of every
+  equipped soul bag.
+- The chat line after a delete showed the count before the delete; it now shows the count
+  after.
+- Removed the hidden `deleteOrder` setting; the delete spot follows the sort order.
+
 ## 1.0.1 (2026-09-28)
 
 - Non-warlock characters no longer get Lua errors from SSF at login ("attempt to index

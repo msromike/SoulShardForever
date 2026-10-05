@@ -14,7 +14,9 @@ install; the rest are documented API behavior to confirm during the chunk that f
 
 ## Bags
 
-- Player bags are IDs 0 (backpack) through 4. Bank is never touched. `NUM_BAG_SLOTS` is 4.
+- Player bags are IDs 0 (backpack) through `Enum.BagIndex.ReagentBag` (5, the reagent bag
+  slot). **Tested**: on Forever a Small Soul Pouch (14 slots, family 4) equips in the
+  reagent slot, so SSF scans 0 through 5. Bank is never touched. `NUM_BAG_SLOTS` is 4.
 - `C_Container.GetContainerNumSlots(bag)` → slot count. 0 for an empty bag slot.
 - `C_Container.GetContainerItemID(bag, slot)` → item ID or nil. On this engine a value can be
   a **secret value** in restricted situations; treat anything that is not `type() == "number"`
@@ -29,8 +31,23 @@ install; the rest are documented API behavior to confirm during the chunk that f
   this is the bit that soul bags accept.
 - A bag is a soul bag when `bit.band(bagFamily, C_Item.GetItemFamily(6265)) ~= 0`. No
   hardcoded bit number, so it holds whatever value Forever assigns.
-- Not yet testable: no soul bag is obtainable on Forever during the beta. The branch exists in
-  `Modules\Bags.lua` and is verified in the deferred 1.1.0 stage.
+- **Tested** 2026-10-04 with a Small Soul Pouch: `C_Item.GetItemFamily(6265)` is 4, the pouch
+  reports family 4, every regular bag reports 0, an empty reagent slot reports nil.
+
+## Moving items (the sort)
+
+- A move is `C_Container.PickupContainerItem(srcBag, srcSlot)`, then
+  `C_Container.PickupContainerItem(dstBag, dstSlot)` on a free slot, then `ClearCursor()`.
+  **Tested**: works from `/run`, from a slash handler, and several in one handler; needs no
+  hardware event; a move and a `DeleteCursorItem` coexist in the same press.
+- The move is asynchronous. Until the server confirms, the source slot still reports the
+  item (locked: `C_Item.IsLocked(ItemLocation:CreateFromBagAndSlot(bag, slot))`) and the
+  target may not report it yet. So a pass plans every move from one snapshot, fires them
+  all, and never reads the bags back between moves; leftovers are picked up on the next
+  bucketed `BAG_UPDATE`. Any count taken right after a move or a delete can be off by the
+  items in flight; take it before.
+- Nothing moves in combat (the Sorter does not try; Baganator's author reports sorting
+  breaks in combat).
 
 ## Fill order (client behavior, no addon involved)
 

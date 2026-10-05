@@ -28,6 +28,7 @@ manual-changelog:
 
 ignore:
   - README.md
+  - HANDOFF.md
   - .docs
   - media
   - .vscode

@@ -1,6 +1,8 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
--- Trimmer: Delete() removes one Soul Shard when the count is over the cap. Nothing else.
+-- Trimmer: Delete() is the press. Out of combat it runs one Sorter pass, then removes one
+-- Soul Shard if the count is over the cap: the shard furthest along the sort order
+-- (Bags:LastShard), which after a sort is always the same spot. Nothing else.
 -- Runs only inside a hardware event (a slash command or a button click), because
 -- DeleteCursorItem is limited to one delete per hardware event on this engine.
 -- In combat it does nothing: the server reverts in-combat deletes when combat ends.
@@ -17,10 +19,12 @@ function Trimmer:Delete()
     if InCombatLockdown() then return end
 
     local Bags, Cap = SSF:GetModule("Bags"), SSF:GetModule("Cap")
+    -- count before the sort: a shard in flight can show at its source and its target
     local count, cap = Bags:Count(), Cap:Get()
+    SSF:GetModule("Sorter"):Pass()
     if count <= cap then return end
 
-    local bag, slot = Bags:PickVictim(SSF.db.profile.deleteOrder)
+    local bag, slot = Bags:LastShard()
     if not bag then return end
 
     ClearCursor()
@@ -37,6 +41,6 @@ function Trimmer:Delete()
 
     self:SendMessage("SSF_SHARD_DELETED", count - 1, cap)
     if SSF.db.profile.announce then
-        SSF:Print(L["Deleted a Soul Shard."] .. " " .. SSF:GetModule("Options"):StatusText())
+        SSF:Print(L["Deleted a Soul Shard."] .. " " .. SSF:GetModule("Options"):StatusText(count - 1, cap))
     end
 end

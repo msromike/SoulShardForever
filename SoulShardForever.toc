@@ -1,9 +1,9 @@
 ## Interface: 16001
 ## Title: Soul Shard Forever (SSF)
 ## Category: Class
-## Notes: Soul Shard cap for warlocks. /ssf delete in a macro removes one shard over the cap.
+## Notes: Soul Shard cap for warlocks. /ssf delete in a macro sorts shards into the soul bag and removes one over the cap.
 ## Author: msromike
-## Version: 1.0.1
+## Version: 1.1.0
 ## X-License: MIT
 ## X-Curse-Project-ID: 1715240
 ## X-Credits: Started as a fork of SoulSort by Anilusion
@@ -18,6 +18,7 @@ Widgets\SSFCentered.lua
 Core.lua
 Modules\Bags.lua
 Modules\Cap.lua
+Modules\Sorter.lua
 Modules\Trimmer.lua
 Modules\DeleteButton.lua
 Modules\Settings.lua
