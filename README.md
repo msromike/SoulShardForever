@@ -73,4 +73,4 @@ Tab autocompletes the SSF commands in chat (try it, I hate typing). `/click SSFD
 
 MIT, see [LICENSE](https://github.com/msromike/SoulShardForever/blob/main/LICENSE). Started as a fork of SoulSort by Anilusion, rewritten from scratch; no original code remains.
 
-Bundles Ace3, LibDBIcon, LibSharedMedia and LibCustomGlow (BSD-style and MIT), LibDataBroker and LibStub. Each keeps its own license.
+Bundles Ace3 (with CallbackHandler), AceGUI-3.0-SharedMediaWidgets, LibSharedMedia, LibCustomGlow, LibDataBroker, LibDBIcon and LibStub. Each keeps its own license.
