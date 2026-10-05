@@ -1,8 +1,14 @@
 # Soul Shard Forever (SSF)
 
-NEW in 1.2.0: German, French and Latin American Spanish, with a Language setting to pick one. [Changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
+**\*\*\* Changelog \*\*\***
 
-NOW with Soul Bag support!
+1.2.0: German, French and Latin American Spanish, with a Language setting to pick one.
+
+[Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
+
+---
+
+**NEW with Soul Bag support!**
 
 This is a Warlock class addon that deletes Soul Shards over a specified cap and sorts shards into your soul bag (one keypress or action, one sort and one delete). Every `/ssf delete` sorts; the delete happens only when you're over the cap. It also can warn when running low. It can display on your left bag how many shards are in inventory and can color code that number. It can also glow the bag if you are below your minimum on-hand count. Almost all of these options are toggleable.
 
