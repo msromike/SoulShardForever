@@ -2,7 +2,7 @@
 
 ## 1.1.1 (2026-10-04)
 
-- Same code as 1.1.0, repackaged. The 1.1.0 tag never reached CurseForge.
+- Same code as 1.1.0, repackaged after the 1.1.0 tag was pushed twice.
 
 ## 1.1.0 (2026-10-04)
 
