@@ -6,14 +6,11 @@
 
 1.2.1: Added Brazilian Portuguese and Russian; Spanish now on the Spain client too.
 
-1.2.0: Localization:  German, French and Latin American Spanish. SSF follows the client language.
-
-1.1.0: Every SSF action sorts first. Soul bags work and "Match soul bag size" is off by default.
-
-[Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
+[..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
 
+- **NEW: SoulSort legacy mode.**
 - **NEW: Language localization.**
 - **NEW: Soul Bag support!**
 
