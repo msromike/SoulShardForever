@@ -6,18 +6,24 @@
 -- Modules that show state (Counter, Broker) listen for SSF_OPTIONS_CHANGED.
 --
 -- Window layout: status line, then three inline groups (Cap, Bag count, Low shard glow) and
--- Other, then a small version/credit line. Every toggle is full width so no label truncates.
+-- Other, then a small version/credit line. Every toggle is full width, and a label that does
+-- not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself to the
+-- content after every feed (Feed -> SSFWindow:FitToContent), so it never scrolls.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
 -- window; their GUI twins live inside the groups.
 --
 -- Stateful settings (cap, announce) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
+--
+-- Language (in Other, GUI-only): the strings in this table are read from L when it is built,
+-- so a change goes Core:ApplyLanguage -> Options:Rebuild, which builds and re-registers the
+-- table and re-feeds the open window. Everything else reads L live.
 
-local ADDON = "SoulShardForever" -- the folder: TOC metadata and the locale
+local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list
 local APP = "SSF"                -- the AceConfig app: every line AceConfigCmd prints is prefixed with it
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceBucket-3.0")
+local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceBucket-3.0", "AceTimer-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
@@ -195,6 +201,34 @@ local function BuildTable()
                         SSF.db.profile.minimap.hide = not value
                         changed("minimap")
                     end),
+                -- Auto follows the client; a code forces that locale (Core:ApplyLanguage).
+                -- Names are each language's own, never translated. The rebuild is deferred
+                -- a tick: AceConfigDialog is still inside this set when it returns.
+                language = {
+                    type = "select",
+                    order = 3,
+                    width = "full",
+                    cmdHidden = true,
+                    descStyle = "hidden",
+                    name = L["Language"],
+                    values = function()
+                        local values = { auto = L["Auto"] }
+                        for code, locale in pairs(NS.locales) do values[code] = locale.name end
+                        return values
+                    end,
+                    sorting = function()
+                        local order = { "auto" }
+                        for _, code in ipairs(NS.localeOrder) do order[#order + 1] = code end
+                        return order
+                    end,
+                    get = function() return SSF.db.profile.language or "auto" end,
+                    set = function(_, value)
+                        SSF.db.profile.language = value ~= "auto" and value or nil
+                        SSF:ApplyLanguage()
+                        Options:ScheduleTimer("Rebuild", 0)
+                        changed("language")
+                    end,
+                },
             },
         },
 
@@ -233,27 +267,52 @@ end
 -- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
 -- Core's warlock gate has switched the module off, so /ssf would register on other classes.
 function Options:OnEnable()
-    local options = BuildTable()
-    AceConfig:RegisterOptionsTable(APP, options) -- no slashcmd here: /ssf is registered below
+    self.table = BuildTable()
+    AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
     -- /ssf: naked prints the status line, then AceConfigCmd's command list; anything else
     -- goes straight to AceConfigCmd, which parses and dispatches to the table.
     SSF:RegisterChatCommand("ssf", function(input)
         if strtrim(input or "") == "" then SSF:Print(Options:StatusText()) end
         AceConfigCmd:HandleCommand("ssf", APP, input)
     end)
-    AceConfigDialog:SetDefaultSize(APP, 310, 590)
+    AceConfigDialog:SetDefaultSize(APP, 310, 590) -- the width; the height is replaced by the first fit
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shard Forever"])
 
     -- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
     -- AceConfigCmd exposes (root entries without cmdHidden).
     AceTab:RegisterTabCompletion("SSF", "/ssf ", function(words)
-        for key, entry in pairs(options.args) do
+        for key, entry in pairs(Options.table.args) do
             if not entry.cmdHidden then words[#words + 1] = key end
         end
     end, SSF:GetModule("Settings").TabUsage)
 
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
+end
+
+-- After a Language change: the table captured its strings when built, so build it again
+-- and re-register (AceConfigRegistry replaces by app name; Settings:Define's AceTab
+-- registrations are no-ops the second time). The window's own two strings are reset here
+-- too. The Interface Options category keeps the name it was added under until a reload.
+function Options:Rebuild()
+    self.table = BuildTable()
+    AceConfig:RegisterOptionsTable(APP, self.table)
+    if self.window then self:DressWindow() end
+    self:Refresh()
+end
+
+-- The window's own strings, outside the options table: the two bottom buttons and the footer.
+function Options:DressWindow()
+    self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end)
+    self.window:SetCloseText(L["Close"])
+    local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
+    self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
+end
+
+-- Feed the table into the window, then size the window to it (see SSFWindow:FitToContent).
+function Options:Feed()
+    AceConfigDialog:Open(APP, self.window)
+    self.window:FitToContent()
 end
 
 -- Keep the status line and the AutoMax state fresh while a window is open.
@@ -265,7 +324,7 @@ end
 function Options:Refresh()
     AceConfigRegistry:NotifyChange(APP)
     if self.window and self.window.frame:IsShown() then
-        AceConfigDialog:Open(APP, self.window)
+        self:Feed()
     end
 end
 
@@ -276,9 +335,7 @@ function Options:Open()
     if not self.window then
         self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
         -- bottom row: Delete Shard far left, version and credit in the middle, Close far right
-        self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end)
-        local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-        self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
+        self:DressWindow()
     end
-    AceConfigDialog:Open(APP, self.window)
+    self:Feed()
 end

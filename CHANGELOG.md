@@ -1,5 +1,15 @@
 # Changelog
 
+## 1.2.0 (2026-10-05)
+
+- German, French and Latin American Spanish. SSF follows the client language; Blizzard's
+  own terms (Seelensplitter, Fragment d'âme, Fragmento de alma) throughout.
+- Language setting under Other settings: Auto, English, Deutsch, Français, Español. Takes
+  effect at once; the Interface Options category name follows after a reload.
+- The options window sizes itself to its content, so it never shows a scrollbar. A label
+  too long for its row wraps and the row grows. The Delete Shard and Close buttons size to
+  their text, and Close is translated.
+
 ## 1.1.1 (2026-10-04)
 
 - Same code as 1.1.0, repackaged after the 1.1.0 tag was pushed twice.

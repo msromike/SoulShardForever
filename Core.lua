@@ -6,10 +6,10 @@
 -- never hand-roll a replacement or reach around it. One way to print (AceConsole), one
 -- settings table (AceConfig), one event path (AceEvent/AceBucket), one db (AceDB).
 --
--- Core: the addon object, the warlock gate and the saved settings. Nothing else.
--- The work is in the modules under Modules\.
+-- Core: the addon object, the warlock gate, the saved settings and the Language switch
+-- (ApplyLanguage). Nothing else. The work is in the modules under Modules\.
 
-local ADDON = "SoulShardForever"
+local ADDON, NS = ... -- NS: the addon-private table; Locales\Register.lua fills NS.locales
 -- Registered as "SSF": AceConsole prefixes every chat line with the registered name.
 local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
@@ -31,9 +31,28 @@ local defaults = {
         lowMark = 4,                  -- the low mark (1-20)
         announce = false,           -- one chat line per deletion
         minimap = { hide = false }, -- LibDBIcon state
+        -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         -- 1-100 is what the slider allows; any other value is clamped by Cap.
     },
 }
+
+-- The Language setting. Rewrites the one AceLocale table every module holds, in place:
+-- English first (the default, key = string), then the chosen locale over it, which is
+-- exactly what AceLocale built at load for the client's locale. Auto = the client's locale,
+-- so switching back restores the stock result. Callers that cached strings rebuild
+-- afterwards (Options:Rebuild); modules that read L live need nothing.
+function SSF:ApplyLanguage()
+    local code = self.db.profile.language or GetLocale()
+    if code == "enGB" then code = "enUS" end -- AceLocale's own rule
+    local chosen = NS.locales[code] or NS.locales.enUS
+    for key, value in pairs(NS.locales.enUS.strings) do
+        L[key] = value == true and key or value
+    end
+    if chosen ~= NS.locales.enUS then
+        for key, value in pairs(chosen.strings) do L[key] = value end
+    end
+    BINDING_NAME_SSF_DELETE = L["Delete Shard"]
+end
 
 function SSF:OnInitialize()
     -- Warlock gate. On any other class nothing is set up and the addon never enables,
@@ -49,6 +68,7 @@ function SSF:OnInitialize()
     end
 
     self.db = LibStub("AceDB-3.0"):New("SoulShardForeverDB", defaults) -- per-character profiles
+    self:ApplyLanguage() -- before any module's OnEnable reads L
 end
 
 function SSF:OnEnable()

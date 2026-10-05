@@ -1,6 +1,8 @@
 # Soul Shard Forever (SSF)
 
-NEW: Now with soul bag support.
+NEW in 1.2.0: German, French and Latin American Spanish, with a Language setting to pick one. [Changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
+
+NOW with Soul Bag support!
 
 This is a Warlock class addon that deletes Soul Shards over a specified cap and sorts shards into your soul bag (one keypress or action, one sort and one delete). Every `/ssf delete` sorts; the delete happens only when you're over the cap. It also can warn when running low. It can display on your left bag how many shards are in inventory and can color code that number. It can also glow the bag if you are below your minimum on-hand count. Almost all of these options are toggleable.
 
@@ -8,7 +10,7 @@ Why did I write it? I used Soul Sort for 10 or more years and it's not ported to
 
 This is for Forever only, I will not backport it because the original works well. On Classic Era use [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion, which is the addon SSF started from.
 
-<a href="media/01_window_green.png"><img src="media/01_window_green.png" width="220" alt="The SSF window, with the shard count on the bag bar below it"></a>
+<a href="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_green.png"><img src="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_green.png" width="220" alt="The SSF window, with the shard count on the bag bar below it"></a>
 
 ## Using it
 
@@ -40,6 +42,7 @@ Every press sorts first, then deletes. The sort moves each shard into a free slo
 - **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm before you need them.
 - **Low shard warn** is the number of shards to activate the warning glow. 1 to 20. Same slider and − and + as the cap.
 - **Announce deletions in chat** is off by default, turn on if you want to see that or for addons that watch chat (like MSBT).
+- **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français or Español to override it.
 
 The minimap button opens the window; its tooltip shows the count and the cap. Settings are per character.
 
@@ -57,6 +60,6 @@ Tab autocompletes the SSF commands in chat (try it, I hate typing). `/click SSFD
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Started as a fork of SoulSort by Anilusion, rewritten from scratch; no original code remains.
+MIT, see [LICENSE](https://github.com/msromike/SoulShardForever/blob/main/LICENSE). Started as a fork of SoulSort by Anilusion, rewritten from scratch; no original code remains.
 
 Bundles Ace3, LibDBIcon, LibSharedMedia and LibCustomGlow (BSD-style and MIT), LibDataBroker and LibStub. Each keeps its own license.

@@ -4,8 +4,11 @@
 -- container (Libs/AceGUI-3.0/widgets/AceGUIContainer-Frame.lua, Copyright (c) 2007, Ace3
 -- Development Team, BSD-style license) the same way KeyCheckClear's window was.
 -- Differences from Frame: an X close button top-right, no status bar, Escape closes it,
--- and a bottom row of Close (far right), an optional action button (far left, see
--- SetActionButton) and a small footer line between them (SetFooter).
+-- and a bottom row of Close (far right, SetCloseText), an optional action button (far left,
+-- SetActionButton) and a small footer line between them (SetFooter). Both buttons size to
+-- their text. The window sizes to its content: FitToContent, called by the owner after each
+-- AceConfigDialog:Open, measures the ScrollFrame AceConfigDialog adds and sets the height,
+-- so no scrollbar can show.
 -- AceConfigDialog feeds the options table into it: Options:Open() passes this container
 -- to AceConfigDialog:Open(appName, container). Private type; nothing here is shared with
 -- other addons through AceGUI's widget pool.
@@ -14,6 +17,14 @@ local Type, Version = "SSFWindow", 1
 local AceGUI = LibStub("AceGUI-3.0")
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
+local CHROME = 93                     -- the content's top (35) and bottom (58) insets
+local BUTTON_PAD = 30                 -- a bottom button is its text plus this
+local BUTTON_MIN = 80                 -- but never narrower than this
+
+local function FitButton(button, text)
+    button:SetText(text)
+    button:SetWidth(math.max(BUTTON_MIN, (button:GetFontString():GetStringWidth() or 0) + BUTTON_PAD))
+end
 
 local function Close_OnClick(frame)
     PlaySound(799) -- SOUNDKIT.GS_TITLE_OPTION_EXIT
@@ -63,17 +74,31 @@ local methods = {
         content.width = contentwidth
     end,
 
-    -- 93 = the content's top (35) and bottom (58) insets
     ["OnHeightSet"] = function(self, height)
         local content = self.content
-        local contentheight = height - 93
+        local contentheight = height - CHROME
         if contentheight < 0 then contentheight = 0 end
         content:SetHeight(contentheight)
         content.height = contentheight
     end,
 
     ["LayoutFinished"] = function(self, _, height)
-        if height then self:SetHeight(height + 93) end
+        if height then self:SetHeight(height + CHROME) end
+    end,
+
+    -- Size the window to what AceConfigDialog fed in. It wraps the root group in a ScrollFrame
+    -- that fills the content, so LayoutFinished above only ever echoes our own height back;
+    -- the real content height is the ScrollFrame's scroll child, measured here after
+    -- AceConfigDialog:Open returns (its layout runs inside Open). Saved to the status table
+    -- so the next ApplyStatus starts at this size. The view then always equals the content,
+    -- so the ScrollFrame never shows its bar.
+    ["FitToContent"] = function(self)
+        local scroll = self.children[1]
+        if not (scroll and scroll.content) then return end
+        local height = scroll.content:GetHeight() + CHROME
+        self:SetHeight(height)
+        local status = self.status or self.localstatus
+        status.height = height
     end,
 
     ["SetTitle"] = function(self, title)
@@ -84,12 +109,17 @@ local methods = {
     ["Hide"] = function(self) self.frame:Hide() end,
     ["Show"] = function(self) self.frame:Show() end,
 
-    -- the bottom-left button; nil text hides it
+    -- the bottom-left button, sized to its text; nil text hides it
     ["SetActionButton"] = function(self, text, onClick)
         if not text then self.actionbutton:Hide() return end
-        self.actionbutton:SetText(text)
+        FitButton(self.actionbutton, text)
         self.actionbutton:SetScript("OnClick", onClick)
         self.actionbutton:Show()
+    end,
+
+    -- the bottom-right button's text (Blizzard's CLOSE until set), sized to its text
+    ["SetCloseText"] = function(self, text)
+        FitButton(self.closebutton, text or CLOSE)
     end,
 
     -- the small line between the two bottom buttons
@@ -155,13 +185,11 @@ local function Constructor()
     closebutton:SetScript("OnClick", Close_OnClick)
     closebutton:SetPoint("BOTTOMRIGHT", -17, 30)
     closebutton:SetHeight(22)
-    closebutton:SetWidth(100)
-    closebutton:SetText(CLOSE)
+    FitButton(closebutton, CLOSE)
 
     local actionbutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
     actionbutton:SetPoint("BOTTOMLEFT", 17, 30)
     actionbutton:SetHeight(22)
-    actionbutton:SetWidth(110)
     actionbutton:Hide()
 
     local titlebg = frame:CreateTexture(nil, "OVERLAY")
@@ -204,6 +232,7 @@ local function Constructor()
         titlebg      = titlebg,
         content      = content,
         actionbutton = actionbutton,
+        closebutton  = closebutton,
         footer       = footer,
         frame        = frame,
         type         = Type,

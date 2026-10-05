@@ -2,8 +2,11 @@
 ## Title: Soul Shard Forever (SSF)
 ## Category: Class
 ## Notes: Soul Shard cap for warlocks. /ssf delete in a macro sorts shards into the soul bag and removes one over the cap.
+## Notes-deDE: Seelensplitter-Limit für Hexenmeister. /ssf delete in einem Makro sortiert die Splitter in die Seelentasche und löscht einen über dem Limit.
+## Notes-frFR: Limite de fragments d'âme pour démonistes. /ssf delete dans une macro range les fragments dans le sac d'âme et en supprime un au-delà de la limite.
+## Notes-esMX: Límite de fragmentos de alma para brujos. /ssf delete en un macro ordena los fragmentos en la bolsa de almas y elimina uno por encima del límite.
 ## Author: msromike
-## Version: 1.1.1
+## Version: 1.2.0
 ## X-License: MIT
 ## X-Curse-Project-ID: 1715240
 ## X-Credits: Started as a fork of SoulSort by Anilusion
@@ -11,7 +14,11 @@
 ## IconTexture: Interface\Icons\inv_misc_gem_amethyst_02
 
 embeds.xml
+Locales\Register.lua
 Locales\enUS.lua
+Locales\deDE.lua
+Locales\frFR.lua
+Locales\esMX.lua
 Widgets\SSFStepperSlider.lua
 Widgets\SSFWindow.lua
 Widgets\SSFCentered.lua

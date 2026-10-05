@@ -1,8 +1,9 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
--- English strings. Every user-facing string lives here; modules read L["..."].
+-- English strings, the default. Every user-facing string lives here; modules read L["..."].
+-- Registered at the bottom through Locales\Register.lua.
 
-local L = LibStub("AceLocale-3.0"):NewLocale("SoulShardForever", "enUS", true)
-if not L then return end
+local _, NS = ...
+local L = {}
 
 L["Soul Shard Forever"] = true
 L["SSF"] = true
@@ -37,12 +38,17 @@ L["Bag counter font"] = true
 L["Announce deletions in chat"] = true
 L["One chat line per deleted shard, for addons that watch chat."] = true
 L["Minimap button"] = true
+L["Language"] = true
+L["Auto"] = true
 L["Open options"] = true
 L["Open the options window."] = true
 L["Same as options."] = true
+L["Close"] = true
 L["Full"] = true
 
 -- Broker
 L["Soul Shards"] = true
 L["Cap"] = true
 L["Over by"] = true
+
+NS.RegisterLocale("enUS", "English", L, true)
