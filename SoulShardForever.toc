@@ -3,7 +3,7 @@
 ## Category: Class
 ## Notes: Soul Shard cap for warlocks. /ssf delete in a macro sorts shards into the soul bag and removes one over the cap.
 ## Author: msromike
-## Version: 1.1.0
+## Version: 1.1.1
 ## X-License: MIT
 ## X-Curse-Project-ID: 1715240
 ## X-Credits: Started as a fork of SoulSort by Anilusion

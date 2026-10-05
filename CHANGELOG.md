@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (2026-10-04)
+
+- Same code as 1.1.0, repackaged. The 1.1.0 tag never reached CurseForge.
+
 ## 1.1.0 (2026-10-04)
 
 - Soul bags work. On Forever a soul pouch equips in the reagent bag slot, which SSF did
