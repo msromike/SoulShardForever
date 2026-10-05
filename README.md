@@ -2,17 +2,22 @@
 
 **\*\*\* Changelog \*\*\***
 
-1.2.1: Brazilian Portuguese and Russian; Spanish now on the Spain client too.
+1.2.1: Added Brazilian Portuguese and Russian; Spanish now on the Spain client too.
+
+1.2.0: Localization:  German, French and Latin American Spanish. SSF follows the client language.
+
+1.1.0: Every SSF action sorts first. Soul bags work and "Match soul bag size" is off by default.
 
 [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
 
-**NEW with Soul Bag support!**
+- **NEW: Language localization.**
+- **NEW: Soul Bag support!**
 
 This is a Warlock class addon that deletes Soul Shards over a specified cap and sorts shards into your soul bag (one keypress or action, one sort and one delete). Every `/ssf delete` sorts; the delete happens only when you're over the cap. It also can warn when running low. It can display on your left bag how many shards are in inventory and can color code that number. It can also glow the bag if you are below your minimum on-hand count. Almost all of these options are toggleable.
 
-Why did I write it? I used Soul Sort for 10 or more years and it's not ported to Forever. There are a handful of addons that do all this, but they tend to be hard to configure or have features not related to the task at hand, deleting soul shards and warning you when low.
+Why did I write it? I used SoulSort for 10 or more years and it's not ported to Forever. There are a handful of addons that do all this, but they tend to be hard to configure or have features not related to the task at hand, deleting soul shards and warning you when low.
 
 This is for Forever only, I will not backport it because the original works well. On Classic Era use [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion, which is the addon SSF started from.
 
