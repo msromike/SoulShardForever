@@ -12,7 +12,7 @@
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
 -- window; their GUI twins live inside the groups.
 --
--- Stateful settings (cap, announce) are defined once through the Settings module, which
+-- Stateful settings (cap, announce, soulsort) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
 --
@@ -88,8 +88,19 @@ local function BuildTable()
         get = function() return SSF.db.profile.announce end,
         apply = function(value) SSF.db.profile.announce = value end,
     })
+    announceGui.order = 3 -- GUI only: the SoulSort pair sits above it in Other; the chat order stays
     announceGui.width = "full"
     announceGui.dialogControl = "SSFIndentCheckBox"
+
+    local soulsortGui, soulsortCmd = Settings:Define("soulsort", {
+        order = 1, kind = "toggle",
+        name = L["SoulSort legacy method"],
+        desc = L["Sort shards the way SoulSort does: other items in the way swap places with them. Normal or Reverse is set in the options window."],
+        get = function() return SSF.db.profile.soulsortLegacy end,
+        apply = function(value) SSF.db.profile.soulsortLegacy = value end,
+    })
+    soulsortGui.width = "full"
+    soulsortGui.dialogControl = "SSFIndentCheckBox"
 
     local args = {
         status = {
@@ -194,8 +205,33 @@ local function BuildTable()
             type = "group", inline = true, order = 40, cmdHidden = true,
             name = L["Other settings"],
             args = {
+                soulsortGui = soulsortGui,
+                -- SoulSort's one sort option (SortReverse); greyed and blank until the
+                -- checkbox above is ticked
+                soulsortorder = {
+                    type = "select",
+                    order = 2,
+                    width = "full",
+                    cmdHidden = true,
+                    descStyle = "hidden",
+                    name = L["SoulSort fill order"],
+                    values = {
+                        normal = L["Normal (top to bottom)"],
+                        reverse = L["Reverse (bottom to top)"],
+                    },
+                    sorting = { "normal", "reverse" },
+                    get = function()
+                        if not SSF.db.profile.soulsortLegacy then return nil end
+                        return SSF.db.profile.soulsortReverse and "reverse" or "normal"
+                    end,
+                    set = function(_, value)
+                        SSF.db.profile.soulsortReverse = value == "reverse"
+                        changed("soulsortorder")
+                    end,
+                    disabled = function() return not SSF.db.profile.soulsortLegacy end,
+                },
                 announceGui = announceGui,
-                minimap = Toggle(2, L["Minimap button"],
+                minimap = Toggle(4, L["Minimap button"],
                     function() return not SSF.db.profile.minimap.hide end,
                     function(_, value)
                         SSF.db.profile.minimap.hide = not value
@@ -206,7 +242,7 @@ local function BuildTable()
                 -- a tick: AceConfigDialog is still inside this set when it returns.
                 language = {
                     type = "select",
-                    order = 3,
+                    order = 5,
                     width = "full",
                     cmdHidden = true,
                     descStyle = "hidden",
@@ -235,6 +271,7 @@ local function BuildTable()
         -- chat commands, hidden from the window
         setmax = setmaxCmd,
         announce = announceCmd,
+        soulsort = soulsortCmd,
         delete = {
             type = "execute",
             order = 1,
@@ -287,6 +324,7 @@ function Options:OnEnable()
     end, SSF:GetModule("Settings").TabUsage)
 
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
+    self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
 end
 
@@ -326,6 +364,12 @@ function Options:Refresh()
     if self.window and self.window.frame:IsShown() then
         self:Feed()
     end
+end
+
+-- A chat command changed a setting: redraw so an open window shows it. Only for "chat":
+-- a GUI change sends the same message on every slider drag tick (see Refresh).
+function Options:OnOptionsChanged(_, _, source)
+    if source == "chat" then self:Refresh() end
 end
 
 -- The small standalone window: minimap click, /ssf options, /ssf settings. Our own

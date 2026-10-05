@@ -29,6 +29,8 @@ local defaults = {
         counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
         lowGlow = true,               -- glow the bag button while shards are below the low mark
         lowMark = 4,                  -- the low mark (1-20)
+        soulsortLegacy = false,     -- sort like SoulSort: shards swap with other items
+        soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
         announce = false,           -- one chat line per deletion
         minimap = { hide = false }, -- LibDBIcon state
         -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it

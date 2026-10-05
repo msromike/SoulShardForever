@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.0 (2026-10-05)
+
+- SoulSort legacy method (Other settings, `/ssf soulsort on|off`), off by default. Sorts
+  the way SoulSort does: shards take every slot in order and an item in the way swaps
+  into the shard's old slot. A dropdown picks SoulSort's Normal (top to bottom) or
+  Reverse (bottom to top). A soul bag still fills first.
+- A chat command now updates the options window while it is open.
+
 ## 1.2.1 (2026-10-05)
 
 - Brazilian Portuguese and Russian, with Blizzard's own terms (Estilhaço de Alma, Осколок

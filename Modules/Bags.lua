@@ -5,8 +5,10 @@
 -- anything. Every other module reads the bags through these methods.
 --
 -- Sort order (the one order everything uses): every soul bag, then every regular bag from
--- bag 4 down to the backpack; inside a bag, the bottom slot (highest number) first. The
--- Sorter fills along it; the Trimmer deletes from its far end (LastShard).
+-- bag 4 down to the backpack; inside a bag, the bottom slot (highest number) first. With
+-- topFirst (SoulSort legacy, Normal), the top slot comes first inside each regular bag;
+-- soul bags keep bottom first. The caller passes topFirst; Bags reads no settings. The
+-- Sorter fills along the order; the Trimmer deletes from its far end (LastShard).
 -- API facts behind this file: .docs/BAG_API_NOTES.md.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -45,6 +47,13 @@ function Bags:IsLocked(bag, slot)
     return true
 end
 
+-- A plain, known item that is not a shard and not locked: one a shard may swap with
+-- (SoulSort legacy). A slot with a secret value in it is not one.
+function Bags:IsSwappableAt(bag, slot)
+    local id = num(C_Container.GetContainerItemID(bag, slot))
+    return id ~= nil and id ~= SHARD and not self:IsLocked(bag, slot)
+end
+
 -- The bag's family bitfield: 0 for a regular bag, nonzero for a special bag.
 local function Family(bag)
     local _, family = C_Container.GetContainerNumFreeSlots(bag)
@@ -79,12 +88,14 @@ function Bags:SortOrder()
     return order
 end
 
--- Walks every slot in sort order, bottom slot first inside each bag, calling
--- fn(bag, slot, position) where position is the bag's 1-based index in SortOrder().
--- fn returning true stops the walk.
-function Bags:ForEachSlot(fn)
+-- Walks every slot in sort order, calling fn(bag, slot, position) where position is the
+-- bag's 1-based index in SortOrder(). Bottom slot first inside each bag; top slot first
+-- inside a regular bag when topFirst. fn returning true stops the walk.
+function Bags:ForEachSlot(fn, topFirst)
     for position, bag in ipairs(self:SortOrder()) do
-        for slot = self:NumSlots(bag), 1, -1 do
+        local from, to, step = self:NumSlots(bag), 1, -1
+        if topFirst and not self:IsSoulBag(bag) then from, to, step = 1, self:NumSlots(bag), 1 end
+        for slot = from, to, step do
             if fn(bag, slot, position) then return end
         end
     end
@@ -114,15 +125,16 @@ function Bags:SoulBagSlots()
     return n
 end
 
--- The shard furthest along the sort order that is not locked: the top-most shard in the
--- backpack-most bag that has one. After a sort this is always the same spot. Returns
--- bag, slot, or nil when there is none.
-function Bags:LastShard()
+-- The shard furthest along the sort order (topFirst as in ForEachSlot) that is not locked:
+-- in the backpack-most bag that has one, the top-most shard, or the bottom-most when
+-- topFirst. After a sort this is always the same spot. Returns bag, slot, or nil when
+-- there is none.
+function Bags:LastShard(topFirst)
     local vbag, vslot
     self:ForEachSlot(function(bag, slot)
         if self:IsShardAt(bag, slot) and not self:IsLocked(bag, slot) then
             vbag, vslot = bag, slot
         end
-    end)
+    end, topFirst)
     return vbag, vslot
 end

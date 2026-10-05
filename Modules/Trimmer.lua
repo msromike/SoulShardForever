@@ -2,7 +2,8 @@
 --
 -- Trimmer: Delete() is the press. Out of combat it runs one Sorter pass, then removes one
 -- Soul Shard if the count is over the cap: the shard furthest along the sort order
--- (Bags:LastShard), which after a sort is always the same spot. Nothing else.
+-- (Bags:LastShard, top slot first under SoulSort legacy Normal), which after a sort is
+-- always the same spot. Nothing else.
 -- Runs only inside a hardware event (a slash command or a button click), because
 -- DeleteCursorItem is limited to one delete per hardware event on this engine.
 -- In combat it does nothing: the server reverts in-combat deletes when combat ends.
@@ -24,7 +25,8 @@ function Trimmer:Delete()
     SSF:GetModule("Sorter"):Pass()
     if count <= cap then return end
 
-    local bag, slot = Bags:LastShard()
+    local profile = SSF.db.profile
+    local bag, slot = Bags:LastShard(profile.soulsortLegacy and not profile.soulsortReverse)
     if not bag then return end
 
     ClearCursor()

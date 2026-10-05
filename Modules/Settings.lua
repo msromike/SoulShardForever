@@ -15,7 +15,8 @@
 --          Settings:Value(v) -> v as the neutral (white) value string used for settings.
 --          Settings:Accent(v) -> v in the green branding accent (login line author).
 -- Returns: gui, cmd -- two entries for Options to place in its args table.
--- Sends:   SSF_OPTIONS_CHANGED with the key after every apply.
+-- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
+--          command applied it (Options redraws an open window only then).
 -- Registers: AceTab completion of "on"/"off" after "/ssf <key> " for every toggle.
 -- Prints:  through AceConsole only. Owns no state, no events, no frames.
 
@@ -66,9 +67,9 @@ function Settings:Define(key, def)
         local extra = def.extra and (" " .. def.extra()) or ""
         SSF:Printf("%s: %s%s", def.name, shown, extra)
     end
-    local function set(value)
+    local function set(value, source)
         def.apply(value)
-        self:SendMessage("SSF_OPTIONS_CHANGED", key)
+        self:SendMessage("SSF_OPTIONS_CHANGED", key, source)
     end
 
     local gui = {
@@ -102,7 +103,7 @@ function Settings:Define(key, def)
             if input == "" then echo() return end
             local value, usage = Parse(key, def, input)
             if value == nil then SSF:Print(usage) return end
-            set(value)
+            set(value, "chat")
             echo()
         end,
     }
