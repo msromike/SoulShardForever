@@ -22,7 +22,7 @@ Why did I write it? I used SoulSort for 10 or more years and it's not ported to 
 
 This is for Forever only, I will not backport it because the original works well. On Classic Era use [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion, which is the addon SSF started from.
 
-<a href="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_green.png"><img src="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_green.png" width="220" alt="The SSF window, with the shard count on the bag bar below it"></a>
+<a href="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_in_range_green.png"><img src="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_in_range_green.png" width="220" alt="The SSF window, with the shard count on the bag bar below it"></a>
 
 ## Using it
 

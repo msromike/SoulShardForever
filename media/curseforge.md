@@ -18,4 +18,4 @@ Same text as README.md, with the screenshot omitted.
 - License: MIT
 - Game version: WoW Forever 1.60.1
 - Logo: media/ssf.png
-- Screenshots, in order: media/01_window_green.png, 02_window_over_cap.png, 03_window_low_glow.png, 04_minimap_tooltip.png, 05_keybinding.png
+- Screenshots, in order: media/01_window_in_range_green.png, 02_match_soul_bag_over_cap.png, 03_low_shard_glow.png, 04_soulsort_legacy_reverse.png, 05_language_menu.png, 06_minimap_tooltip.png, 07_chat_commands.png, 08_keybinding.png
