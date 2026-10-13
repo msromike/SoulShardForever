@@ -17,6 +17,9 @@ install; the rest are documented API behavior to confirm during the chunk that f
 - Player bags are IDs 0 (backpack) through `Enum.BagIndex.ReagentBag` (5, the reagent bag
   slot). **Tested**: on Forever a Small Soul Pouch (14 slots, family 4) equips in the
   reagent slot, so SSF scans 0 through 5. Bank is never touched. `NUM_BAG_SLOTS` is 4.
+- **Tested** 2026-10-12: a reagent bag (6 slots) in the reagent slot reports family 0, the same
+  as a regular bag, but accepts only reagents ("Only Reagents can be placed in Reagent Bags").
+  So the regular-bag walk stops at `NUM_BAG_SLOTS`; slot 5 is only ever a soul bag.
 - `C_Container.GetContainerNumSlots(bag)` → slot count. 0 for an empty bag slot.
 - `C_Container.GetContainerItemID(bag, slot)` → item ID or nil. On this engine a value can be
   a **secret value** in restricted situations; treat anything that is not `type() == "number"`

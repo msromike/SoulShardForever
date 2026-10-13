@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.3.1 (2026-10-12)
+
+- A reagent bag in the reagent bag slot no longer causes "Only Reagents can be placed in
+  Reagent Bags" errors. SSF took it for a regular bag and tried to sort shards into it on
+  every press, and again on bag changes right after one (buying, selling, moving items).
+  Shards now go to bag 4, 3, 2, 1, then the backpack, as 1.1.0 intended; the reagent slot
+  is used only when a soul pouch is in it.
+
 ## 1.3.0 (2026-10-05)
 
 - SoulSort legacy method (Other settings, `/ssf soulsort on|off`), off by default. Sorts

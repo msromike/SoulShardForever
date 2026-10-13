@@ -2,6 +2,8 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.3.1: Fixed unexpected reagent bag bug.
+
 1.3.0: SoulSort legacy method for SoulSort die-hards, Normal or Reverse.
 
 1.2.1: Added Brazilian Portuguese and Russian; Spanish now on the Spain client too.

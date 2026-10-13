@@ -82,7 +82,7 @@ function Bags:SortOrder()
     for bag = FIRST_BAG, LAST_BAG do
         if self:IsSoulBag(bag) then order[#order + 1] = bag end
     end
-    for bag = LAST_BAG, FIRST_BAG, -1 do
+    for bag = NUM_BAG_SLOTS, FIRST_BAG, -1 do -- the reagent slot holds a soul pouch or reagents, never a regular target
         if self:IsRegularBag(bag) then order[#order + 1] = bag end
     end
     return order
