@@ -5,14 +5,20 @@
 -- completes the command words. Keys are the slash words; GUI-only entries carry cmdHidden.
 -- Modules that show state (Counter, Broker) listen for SSF_OPTIONS_CHANGED.
 --
--- Window layout: status line, then three inline groups (Cap, Bag count, Low shard glow) and
+-- Window layout: status line, then inline groups (Pause, Cap, Low shard glow, Bag count) and
 -- Other, then a small version/credit line. Every toggle is full width, and a label that does
 -- not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself to the
 -- content after every feed (Feed -> SSFWindow:FitToContent), so it never scrolls.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
 -- window; their GUI twins live inside the groups.
 --
--- Stateful settings (cap, announce, soulsort) are defined once through the Settings module, which
+-- Pause: the "pause" setting (/ssf pause, the checkbox in the cap group) stops every press
+-- from sorting or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
+-- key binding's entry (Bindings.xml SSF_PAUSE); it goes through the chat command's own
+-- path, so it applies, redraws an open window and prints the same echo. A bare /ssf prints
+-- PauseText ("SSF actions - ON/OFF") on its own line above StatusText.
+--
+-- Stateful settings (cap, announce, soulsort, pause) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
 --
@@ -49,6 +55,19 @@ function Options:StatusText(count, cap)
     return L["Soul Shards: %s (cap %s)"]:format("|cff" .. hex .. count .. "|r", Value(cap))
 end
 
+-- The first line of a bare /ssf: "SSF actions - ON" (green) while presses work,
+-- "- OFF" (red) while paused.
+function Options:PauseText()
+    local on = not SSF.db.profile.paused
+    return L["SSF actions"] .. " - " .. SSF:GetModule("Settings"):OnOff(on)
+end
+
+-- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
+function Options:TogglePause()
+    if not self.pauseCmd then return end
+    self.pauseCmd.set(nil, SSF.db.profile.paused and "off" or "on")
+end
+
 local function changed(key)
     Options:SendMessage("SSF_OPTIONS_CHANGED", key)
 end
@@ -62,6 +81,49 @@ local function Toggle(order, name, get, set, disabled, control, indent)
         cmdHidden = true, descStyle = "hidden", dialogControl = control or "SSFIndentCheckBox",
         name = name, get = get, set = set, disabled = disabled, arg = indent,
     }
+end
+
+-- The window title and the group titles are in the warlock class color: nothing else in
+-- the window uses it (gold is for control labels, white for option text, green and red
+-- for state).
+local function ClassColor()
+    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARLOCK
+    if c then return c.r, c.g, c.b end
+    return 0.53, 0.53, 0.93
+end
+
+-- A faint dark strip behind every title (each group title, and the window title in its
+-- header), so the class color reads on any scenery behind the window. One darkness for all.
+local TITLE_BAND = 0.45 -- alpha of the black strip
+
+-- the group strip's shape: the same art and insets as AceGUI's InlineGroup box (its
+-- PaneBackdrop), so the strip has the box's width and rounded corners; both its fill and
+-- its edge are the strip's black, so no frame line shows
+local BAND_BACKDROP = {
+    bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+    tile = true, tileSize = 16, edgeSize = 16,
+    insets = { left = 3, right = 3, top = 5, bottom = 3 },
+}
+
+-- an entry with a narrower width than its builder gave it, so a second control fits on its row
+local function Width(entry, width)
+    entry.width = width
+    return entry
+end
+
+-- Pause sound volume levels: each one half the one before, about 6 dB apart, so the steps
+-- sound even to the ear (tested by ear against evenly spaced levels). Keys are what the
+-- dropdown stores; the volume goes into profile.pauseSoundVolume.
+-- (A fifth level, 0.06, was too faint to be useful and was dropped.)
+local VOLUME_ORDER = { "full", "loud", "medium", "quiet" }
+local VOLUMES = { full = 1, loud = 0.5, medium = 0.25, quiet = 0.12 }
+
+local function VolumeKey(volume)
+    for key, value in pairs(VOLUMES) do
+        if value == volume then return key end
+    end
+    return "full"
 end
 
 local function BuildTable()
@@ -89,19 +151,32 @@ local function BuildTable()
         get = function() return SSF.db.profile.announce end,
         apply = function(value) SSF.db.profile.announce = value end,
     })
-    announceGui.order = 3 -- GUI only: the SoulSort pair sits above it in Other; the chat order stays
+    announceGui.order = 2 -- GUI only: Other is minimap, announce, the SoulSort pair, language; the chat order stays
     announceGui.width = "full"
     announceGui.dialogControl = "SSFIndentCheckBox"
 
     local soulsortGui, soulsortCmd = Settings:Define("soulsort", {
         order = 1, kind = "toggle",
-        name = L["SoulSort legacy method"],
+        name = L["Use legacy SoulSort method"],
         desc = L["Sort shards the way SoulSort does: other items in the way swap places with them. Normal or Reverse is set in the options window."],
         get = function() return SSF.db.profile.soulsortLegacy end,
         apply = function(value) SSF.db.profile.soulsortLegacy = value end,
     })
+    soulsortGui.order = 3 -- GUI only: after announce in Other
     soulsortGui.width = "full"
     soulsortGui.dialogControl = "SSFIndentCheckBox"
+
+    local pauseGui, pauseCmd = Settings:Define("pause", {
+        order = 1, kind = "toggle",
+        name = L["Pause all SSF actions"],
+        desc = L["Stop every press from sorting or deleting shards, until you turn it off."],
+        get = function() return SSF.db.profile.paused end,
+        apply = function(value) SSF.db.profile.paused = value end,
+    })
+    pauseGui.order = 1 -- GUI only: first in the Pause group
+    pauseGui.width = "full"
+    pauseGui.dialogControl = "SSFIndentCheckBox"
+    Options.pauseCmd = pauseCmd -- for TogglePause; replaced on every rebuild
 
     local args = {
         status = {
@@ -114,12 +189,71 @@ local function BuildTable()
             name = function() return Options:StatusText() .. "\n" end,
         },
 
+        -- a blank line between each pair of groups, so the sections stand apart (plain
+        -- description entries: no widget is restyled for the spacing)
+        gap0 = { type = "description", order = 3, name = " ", width = "full", cmdHidden = true },
+        gap1 = { type = "description", order = 7, name = " ", width = "full", cmdHidden = true },
+        gap2 = { type = "description", order = 15, name = " ", width = "full", cmdHidden = true },
+        gap3 = { type = "description", order = 25, name = " ", width = "full", cmdHidden = true },
+        gap4 = { type = "description", order = 35, name = " ", width = "full", cmdHidden = true },
+
+        -- keyed pausegroup: "pause" is the chat command's key in this same table
+        pausegroup = {
+            type = "group", inline = true, order = 5, cmdHidden = true,
+            name = L["Pause"],
+            args = {
+                pauseGui = pauseGui,
+                -- the sound, its volume and the chat line hang off the pause box: indented one
+                -- step, greyed while not paused (their values are kept)
+                pausesound = Width(Toggle(2, L["Play pause sound"],
+                    function() return SSF.db.profile.pauseSound end,
+                    function(_, value)
+                        local p = SSF.db.profile
+                        p.pauseSound = value
+                        -- ticking it on plays the sound at the selected level, as a preview
+                        if value then
+                            SSF:GetModule("Sounds"):Play(p.pauseSoundName, p.pauseSoundVolume)
+                        end
+                        changed("pausesound")
+                    end,
+                    function() return not SSF.db.profile.paused end, nil, 2), "normal"),
+                -- on the same row as Play pause sound; picking a level plays the sound at it
+                pausevolume = {
+                    type = "select", order = 3, width = "half",
+                    cmdHidden = true, descStyle = "hidden", name = "",
+                    values = {
+                        full = L["Full volume"], loud = L["Loud"], medium = L["Medium"],
+                        quiet = L["Quiet"],
+                    },
+                    sorting = VOLUME_ORDER,
+                    get = function() return VolumeKey(SSF.db.profile.pauseSoundVolume) end,
+                    set = function(_, key)
+                        local p = SSF.db.profile
+                        p.pauseSoundVolume = VOLUMES[key] or 1
+                        SSF:GetModule("Sounds"):Play(p.pauseSoundName, p.pauseSoundVolume)
+                        changed("pausevolume")
+                    end,
+                    disabled = function()
+                        local p = SSF.db.profile
+                        return not (p.paused and p.pauseSound)
+                    end,
+                },
+                pauselog = Toggle(4, L["Log pause to chat"],
+                    function() return SSF.db.profile.pauseLog end,
+                    function(_, value)
+                        SSF.db.profile.pauseLog = value
+                        changed("pauselog")
+                    end,
+                    function() return not SSF.db.profile.paused end, nil, 2),
+            },
+        },
+
         cap = {
             type = "group", inline = true, order = 10, cmdHidden = true,
             name = L["Soul shard cap"],
             args = {
                 setmaxGui = setmaxGui,
-                automax = Toggle(2, -- centered in its row, see Widgets\SSFCentered.lua
+                automax = Toggle(2, -- left-aligned like every other checkbox
                     function()
                         if Bags():SoulBagSlots() > 0 then return L["Match soul bag size"] end
                         return L["Match soul bag size (no soul bag)"]
@@ -130,14 +264,13 @@ local function BuildTable()
                         Cap():Recompute()
                         changed("automax")
                     end,
-                    function() return Bags():SoulBagSlots() == 0 end,
-                    "SSFCenteredCheckBox"),
+                    function() return Bags():SoulBagSlots() == 0 end),
             },
         },
 
         bagcount = {
-            type = "group", inline = true, order = 20, cmdHidden = true,
-            name = L["Shards in bag count"],
+            type = "group", inline = true, order = 30, cmdHidden = true,
+            name = L["Shard bag counter"],
             args = {
                 counter = Toggle(1, L["Show shard count on bag bar"],
                     function() return SSF.db.profile.counter end,
@@ -147,7 +280,7 @@ local function BuildTable()
                     end),
                 -- the number follows an equipped soul bag (Counter:Anchor); greyed with the
                 -- count off, but never for a missing soul bag: it waits for one to go on
-                soulbag = Toggle(2, L["Show on soul bag when equipped"],
+                soulbag = Toggle(3, L["Show on soul bag when equipped"],
                     function() return SSF.db.profile.counterSoulBag end,
                     function(_, value)
                         SSF.db.profile.counterSoulBag = value
@@ -155,13 +288,15 @@ local function BuildTable()
                     end,
                     function() return not SSF.db.profile.counter end,
                     nil, 2),
-                colorize = Toggle(3, L["Colorize bag count"],
+                -- colorize and soul bag both hang off the count checkbox: one step in, colorize first
+                colorize = Toggle(2, L["Colorize bag count"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
                         SSF.db.profile.counterColorize = value
                         changed("countercolorize")
                     end,
-                    function() return not SSF.db.profile.counter end),
+                    function() return not SSF.db.profile.counter end,
+                    nil, 2),
                 -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {
@@ -183,11 +318,13 @@ local function BuildTable()
             },
         },
 
+        -- right under the cap group, so the two sliders sit together; slider first, its
+        -- checkbox below it, the same shape as the cap group
         glow = {
-            type = "group", inline = true, order = 30, cmdHidden = true,
+            type = "group", inline = true, order = 20, cmdHidden = true,
             name = L["Low shard glow"],
             args = {
-                lowglow = Toggle(1, L["Glow bag button when low"],
+                lowglow = Toggle(2, L["Glow bag button when low"],
                     function() return SSF.db.profile.lowGlow end,
                     function(_, value)
                         SSF.db.profile.lowGlow = value
@@ -195,11 +332,12 @@ local function BuildTable()
                     end),
                 lowmark = {
                     type = "range",
-                    order = 2,
+                    order = 1,
                     cmdHidden = true,
                     descStyle = "hidden",
                     name = L["Low shard warn"],
-                    min = 1, max = 20, step = 1,
+                    -- the cap's own range: a warlock holding 96 shards may want a warning at 40
+                    min = 1, max = 100, step = 1,
                     width = "full",
                     dialogControl = "SSFStepperSlider",
                     get = function() return SSF.db.profile.lowMark end,
@@ -221,11 +359,11 @@ local function BuildTable()
                 -- checkbox above is ticked
                 soulsortorder = {
                     type = "select",
-                    order = 2,
+                    order = 4,
                     width = "full",
                     cmdHidden = true,
                     descStyle = "hidden",
-                    name = L["SoulSort fill order"],
+                    name = L["Legacy SoulSort fill order"],
                     values = {
                         normal = L["Normal (top to bottom)"],
                         reverse = L["Reverse (bottom to top)"],
@@ -242,7 +380,7 @@ local function BuildTable()
                     disabled = function() return not SSF.db.profile.soulsortLegacy end,
                 },
                 announceGui = announceGui,
-                minimap = Toggle(4, L["Minimap button"],
+                minimap = Toggle(1, L["Show minimap button"],
                     function() return not SSF.db.profile.minimap.hide end,
                     function(_, value)
                         SSF.db.profile.minimap.hide = not value
@@ -283,6 +421,7 @@ local function BuildTable()
         setmax = setmaxCmd,
         announce = announceCmd,
         soulsort = soulsortCmd,
+        pause = pauseCmd,
         delete = {
             type = "execute",
             order = 1,
@@ -315,28 +454,84 @@ end
 -- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
 -- Core's warlock gate has switched the module off, so /ssf would register on other classes.
 function Options:OnEnable()
+    -- a saved volume that is no longer a level (the dropped Faint) goes back to Full
+    local p = SSF.db.profile
+    if VolumeKey(p.pauseSoundVolume) == "full" then p.pauseSoundVolume = VOLUMES.full end
+    p.window.open = nil -- left over from a dropped reopen-after-reload try
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
-    -- /ssf: naked prints the status line, then AceConfigCmd's command list; anything else
-    -- goes straight to AceConfigCmd, which parses and dispatches to the table.
+    -- /ssf: naked prints the pause line, the status line and a pointer to help.
+    -- "/ssf help" or "/ssf ?" prints AceConfigCmd's command list. An unknown first word
+    -- prints one error line, then the list. Anything else goes straight to AceConfigCmd,
+    -- which parses and dispatches to the table.
     SSF:RegisterChatCommand("ssf", function(input)
-        if strtrim(input or "") == "" then SSF:Print(Options:StatusText()) end
+        input = strtrim(input or "")
+        -- WoW's chat never shows the slash command typed, so SSF echoes it in grey after a
+        -- "> " prompt, above its answer, the way a terminal does. Not for "delete": macros run it before
+        -- every cast, and an echo there would flood chat.
+        local first = (input:match("^(%S+)") or ""):lower()
+        if first ~= "delete" then
+            SSF:Print("|cff808080> /ssf" .. (input ~= "" and (" " .. input) or "") .. "|r")
+        end
+        if input == "" then
+            SSF:Print(Options:PauseText())
+            SSF:Print(Options:StatusText())
+            SSF:Print(L["Type /ssf help for commands."])
+            return
+        end
+        local word = input:match("^(%S+)"):lower()
+        if word == "help" or word == "?" then
+            AceConfigCmd:HandleCommand("ssf", APP, "")
+            return
+        end
+        local entry = Options.table.args[word]
+        if not entry or entry.cmdHidden then
+            SSF:Print(L['Unknown command "%s".']:format(word))
+            AceConfigCmd:HandleCommand("ssf", APP, "")
+            return
+        end
         AceConfigCmd:HandleCommand("ssf", APP, input)
     end)
     AceConfigDialog:SetDefaultSize(APP, 310, 590) -- the width; the height is replaced by the first fit
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shard Forever"])
 
     -- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
-    -- AceConfigCmd exposes (root entries without cmdHidden).
+    -- AceConfigCmd exposes (root entries without cmdHidden), plus "help".
     AceTab:RegisterTabCompletion("SSF", "/ssf ", function(words)
         for key, entry in pairs(Options.table.args) do
             if not entry.cmdHidden then words[#words + 1] = key end
         end
+        words[#words + 1] = "help"
     end, SSF:GetModule("Settings").TabUsage)
+
+    self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
+end
+
+-- Login and reload: the same two lines as a bare /ssf, once, after the version line. The
+-- count needs the bag contents. On a reload they are there when the world is entered; on
+-- a fresh login they are not (tested: it counted 0), so the lines wait for the game's
+-- BAG_UPDATE_DELAYED, with a timer in case that never comes.
+function Options:PLAYER_ENTERING_WORLD(_, isInitialLogin)
+    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
+    if isInitialLogin then
+        self:RegisterEvent("BAG_UPDATE_DELAYED", "PrintLoginStatus")
+        self.loginTimer = self:ScheduleTimer("PrintLoginStatus", 10)
+    else
+        self:PrintLoginStatus()
+    end
+end
+
+function Options:PrintLoginStatus()
+    if self.loginStatusPrinted then return end
+    self.loginStatusPrinted = true
+    self:UnregisterEvent("BAG_UPDATE_DELAYED")
+    if self.loginTimer then self:CancelTimer(self.loginTimer) end
+    SSF:Print(self:PauseText())
+    SSF:Print(self:StatusText())
 end
 
 -- After a Language change: the table captured its strings when built, so build it again
@@ -350,17 +545,90 @@ function Options:Rebuild()
     self:Refresh()
 end
 
+-- Blizzard's Key Bindings page, scrolled to SSF's section and opened expanded. There is no
+-- function to expand a section, so the section's own flag (initializer.data.expanded) is
+-- set first; tested in game, and a key bound there afterwards stuck through a reload with
+-- nothing blocked. The section name is Bindings.xml's category. SSF's window closes first:
+-- it draws above the settings panel.
+local BINDING_SECTION = "Soul Shard Forever"
+
+function Options:OpenKeyBindings()
+    if self.window then self.window:Hide() end
+    local id = Settings.KEYBINDINGS_CATEGORY_ID
+    local category = id and Settings.GetCategory(id)
+    local layout = category and SettingsPanel:GetLayout(category)
+    if layout then
+        for _, initializer in ipairs(layout:GetInitializers()) do
+            if initializer.data and initializer.data.name == BINDING_SECTION then
+                initializer.data.expanded = true
+            end
+        end
+    end
+    Settings.OpenToCategory(id, BINDING_SECTION)
+end
+
 -- The window's own strings, outside the options table: the two bottom buttons and the footer.
+-- Bottom right is Blizzard's own "Key Bindings" label (SETTINGS_KEYBINDINGS_LABEL, the key
+-- binding page's own title, translated by the game); the X and Escape close the window.
 function Options:DressWindow()
     self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end)
-    self.window:SetCloseText(L["Close"])
+    local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
+    self.window:SetRightButton(label, function() Options:OpenKeyBindings() end)
+    self.window:SetTitleColor(ClassColor()) -- "Soul Shard Forever" at the top, as the group titles
+    self.window:SetTitleBand(TITLE_BAND)    -- the same dark strip behind it
     local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
     self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
+end
+
+-- Group titles one font size up in SSF's own window, so the sections stand apart. The boxes
+-- are AceGUI's stock InlineGroup, which AceConfigDialog builds and which every addon shares
+-- through one pool. So each one gets its stock title font back (GameFontNormal, as the
+-- widget creates it) through its OnRelease callback, which AceGUI fires as it takes the
+-- box back; no other addon ever receives a restyled box. Blizzard's Interface Options
+-- panel for SSF is not touched.
+-- the strip SSF added to a shared box, keyed by the box's frame; reused if Ace hands SSF
+-- the same box again, hidden whenever Ace takes it back
+local bands = setmetatable({}, { __mode = "k" })
+
+local function RestoreTitle(group)
+    group.titletext:SetFontObject(GameFontNormal)
+    group.titletext:SetTextColor(GameFontNormal:GetTextColor())
+    local band = bands[group.frame]
+    if band then band:Hide() end
+end
+
+local function StyleGroupTitles(container)
+    for _, child in ipairs(container.children or {}) do
+        if child.type == "InlineGroup" and child.titletext then
+            child.titletext:SetFontObject(GameFontNormalLarge)
+            child.titletext:SetTextColor(ClassColor())
+            local band = bands[child.frame]
+            if not band then
+                -- across the title row, the same left and right edges as the box below it
+                -- (Ace anchors the box at 0 and -1)
+                band = CreateFrame("Frame", nil, child.frame, "BackdropTemplate")
+                band:SetPoint("TOPLEFT", child.frame, "TOPLEFT", 0, 1)
+                band:SetPoint("TOPRIGHT", child.frame, "TOPRIGHT", -1, 1)
+                band:SetHeight(20)
+                band:SetBackdrop(BAND_BACKDROP)
+                bands[child.frame] = band
+            end
+            -- one level under the group's own frame, so the title (a region of that frame)
+            -- draws on top of the strip
+            band:SetFrameLevel(math.max(0, child.frame:GetFrameLevel() - 1))
+            band:SetBackdropColor(0, 0, 0, TITLE_BAND)
+            band:SetBackdropBorderColor(0, 0, 0, TITLE_BAND)
+            band:Show()
+            child:SetCallback("OnRelease", RestoreTitle)
+        end
+    end
 end
 
 -- Feed the table into the window, then size the window to it (see SSFWindow:FitToContent).
 function Options:Feed()
     AceConfigDialog:Open(APP, self.window)
+    local scroll = self.window.children[1] -- the ScrollFrame AceConfigDialog puts in
+    if scroll then StyleGroupTitles(scroll) end
     self.window:FitToContent()
 end
 
@@ -386,11 +654,60 @@ end
 -- The small standalone window: minimap click, /ssf options, /ssf settings. Our own
 -- SSFWindow container (X button, no status bar, sized to content), created once and
 -- re-fed on every open.
+-- The minimap button and broker click: close the window if it is showing, else open it.
+function Options:Toggle()
+    if self.window and self.window.frame:IsShown() then
+        self.window:Hide()
+    else
+        self:Open()
+    end
+end
+
 function Options:Open()
+    -- the saved position goes into AceConfigDialog's status table, which Feed hands to the
+    -- window; a drag saves it back (OnMoved below)
+    local saved, status = SSF.db.profile.window, AceConfigDialog:GetStatusTable(APP)
+    if saved.top and saved.left then
+        -- The spot is in UI units, which change meaning with the UI scale or the
+        -- resolution, and the clamp only acts on a drag. So the spot is used only on the
+        -- same screen size it was saved on; otherwise the window opens centered and the
+        -- next drag saves a new spot.
+        local w, h = UIParent:GetWidth(), UIParent:GetHeight()
+        if saved.width and saved.height
+           and math.abs(saved.width - w) < 1 and math.abs(saved.height - h) < 1 then
+            status.top, status.left = saved.top, saved.left
+        else
+            status.top, status.left = nil, nil
+        end
+    else
+        status.top, status.left = nil, nil -- never dragged: centered
+    end
     if not self.window then
         self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
+        -- AceConfigDialog rebuilds the window by itself after any setting change, without
+        -- going through Feed (tested: the titles came back stock gold after a click). Its
+        -- rebuild adds the empty ScrollFrame first, which is when this layout signal fires
+        -- (AceGUI AddChild -> DoLayout), and only then feeds the groups into it
+        -- (AceConfigDialog FeedToContainer). The rebuild runs without pausing, so the
+        -- styling waits one frame, when every group exists.
+        self.window:SetCallback("OnLayoutFinished", function()
+            C_Timer.After(0, function()
+                local scroll = Options.window and Options.window.children[1]
+                if scroll then StyleGroupTitles(scroll) end
+            end)
+        end)
+        self.window:SetCallback("OnMoved", function(_, _, top, left)
+            local window = SSF.db.profile.window
+            window.top, window.left = top, left
+            -- the screen size the spot belongs to (see Open)
+            window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
+        end)
         -- bottom row: Delete Shard far left, version and credit in the middle, Close far right
         self:DressWindow()
+        -- The first open of a session measures before every text size is settled (the
+        -- window has not been drawn yet), which leaves a gap above the buttons. Feed again
+        -- one frame later, after the first draw, so the fit is measured on settled sizes.
+        self:ScheduleTimer("Feed", 0)
     end
     self:Feed()
 end

@@ -8,18 +8,39 @@
 -- SetActionButton) and a small footer line between them (SetFooter). Both buttons size to
 -- their text. The window sizes to its content: FitToContent, called by the owner after each
 -- AceConfigDialog:Open, measures the ScrollFrame AceConfigDialog adds and sets the height,
--- so no scrollbar can show.
+-- so no scrollbar shows, up to the screen's height minus SCREEN_MARGIN. Past that the
+-- window stops growing and the ScrollFrame shows its own scrollbar (a small screen or a
+-- large UI scale).
+-- After a drag it fires "OnMoved"(top, left); the owner keeps that across sessions and
+-- puts it in the status table before the next open, which places the window there.
+-- It can be dragged partly off any edge, but never lost: the top edge (the title, the drag
+-- handle) stays on screen, and at least GRAB pixels of it stay on screen sideways and
+-- from the bottom (UpdateClamp, clamp rect insets sized to the window).
 -- AceConfigDialog feeds the options table into it: Options:Open() passes this container
 -- to AceConfigDialog:Open(appName, container). Private type; nothing here is shared with
 -- other addons through AceGUI's widget pool.
 
-local Type, Version = "SSFWindow", 1
+local Type, Version = "SSFWindow", 2
 local AceGUI = LibStub("AceGUI-3.0")
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
 local CHROME = 93                     -- the content's top (35) and bottom (58) insets
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
+local SCREEN_MARGIN = 40              -- the window is never taller than the screen minus this
+local GRAB = 60                       -- px of the window that always stay on screen
+
+-- The frame may hang off the left, right and bottom edges, but keeps GRAB px on screen;
+-- the top edge stays on screen, so the title bar can always be grabbed. Clamp rect insets
+-- shrink the area the game keeps on screen: positive left/bottom and negative right move
+-- those edges inward. Called whenever the size changes.
+local function UpdateClamp(self)
+    local frame = self.frame
+    local w, h = frame:GetWidth() or 0, frame:GetHeight() or 0
+    local x = math.max(0, w - GRAB)
+    local y = math.max(0, h - GRAB)
+    frame:SetClampRectInsets(x, -x, 0, y)
+end
 
 local function FitButton(button, text)
     button:SetText(text)
@@ -49,6 +70,7 @@ local function Mover_OnMouseUp(mover)
     status.height = frame:GetHeight()
     status.top = frame:GetTop()
     status.left = frame:GetLeft()
+    self:Fire("OnMoved", status.top, status.left) -- the owner saves it across sessions
 end
 
 local methods = {
@@ -72,6 +94,7 @@ local methods = {
         if contentwidth < 0 then contentwidth = 0 end
         content:SetWidth(contentwidth)
         content.width = contentwidth
+        UpdateClamp(self)
     end,
 
     ["OnHeightSet"] = function(self, height)
@@ -80,10 +103,14 @@ local methods = {
         if contentheight < 0 then contentheight = 0 end
         content:SetHeight(contentheight)
         content.height = contentheight
+        UpdateClamp(self)
     end,
 
     ["LayoutFinished"] = function(self, _, height)
         if height then self:SetHeight(height + CHROME) end
+        -- every rebuild ends here, including the ones AceConfigDialog does by itself after
+        -- a setting changes; the owner restyles on it
+        self:Fire("OnLayoutFinished")
     end,
 
     -- Size the window to what AceConfigDialog fed in. It wraps the root group in a ScrollFrame
@@ -96,6 +123,8 @@ local methods = {
         local scroll = self.children[1]
         if not (scroll and scroll.content) then return end
         local height = scroll.content:GetHeight() + CHROME
+        -- never taller than the screen: past that the ScrollFrame scrolls
+        height = math.min(height, UIParent:GetHeight() - SCREEN_MARGIN)
         self:SetHeight(height)
         local status = self.status or self.localstatus
         status.height = height
@@ -104,6 +133,16 @@ local methods = {
     ["SetTitle"] = function(self, title)
         self.titletext:SetText(title)
         self.titlebg:SetWidth((self.titletext:GetWidth() or 0) + 10)
+    end,
+
+    -- the title text's color (private widget, never pooled across addons: nothing to reset)
+    ["SetTitleColor"] = function(self, r, g, b)
+        self.titletext:SetTextColor(r, g, b)
+    end,
+
+    -- a black strip behind the title text inside the header art; alpha 0 = none
+    ["SetTitleBand"] = function(self, alpha)
+        self.titleband:SetColorTexture(0, 0, 0, alpha or 0)
     end,
 
     ["Hide"] = function(self) self.frame:Hide() end,
@@ -120,6 +159,13 @@ local methods = {
     -- the bottom-right button's text (Blizzard's CLOSE until set), sized to its text
     ["SetCloseText"] = function(self, text)
         FitButton(self.closebutton, text or CLOSE)
+    end,
+
+    -- turns the bottom-right button into an action button, sized to its text; the X and
+    -- Escape still close the window
+    ["SetRightButton"] = function(self, text, onClick)
+        FitButton(self.closebutton, text)
+        self.closebutton:SetScript("OnClick", onClick)
     end,
 
     -- the small line between the two bottom buttons
@@ -160,6 +206,7 @@ local function Constructor()
     frame:Hide()
     frame:EnableMouse(true)
     frame:SetMovable(true)
+    frame:SetClampedToScreen(true) -- with UpdateClamp's insets: hangs off an edge, never lost
     frame:SetFrameStrata("FULLSCREEN_DIALOG")
     frame:SetFrameLevel(100)
     frame:SetBackdrop(FrameBackdrop)
@@ -208,6 +255,13 @@ local function Constructor()
     local titletext = title:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     titletext:SetPoint("TOP", titlebg, "TOP", 0, -14)
 
+    -- SetTitleBand's strip: on the title frame, so above the header art; BACKGROUND, so
+    -- under the title text; a few px around the text
+    local titleband = title:CreateTexture(nil, "BACKGROUND")
+    titleband:SetPoint("TOPLEFT", titletext, "TOPLEFT", -8, 3)
+    titleband:SetPoint("BOTTOMRIGHT", titletext, "BOTTOMRIGHT", 8, -3)
+    titleband:SetColorTexture(0, 0, 0, 0)
+
     local titlebg_l = frame:CreateTexture(nil, "OVERLAY")
     titlebg_l:SetTexture(131080)
     titlebg_l:SetTexCoord(0.21, 0.31, 0, 0.63)
@@ -229,6 +283,7 @@ local function Constructor()
     local widget = {
         localstatus  = {},
         titletext    = titletext,
+        titleband    = titleband,
         titlebg      = titlebg,
         content      = content,
         actionbutton = actionbutton,

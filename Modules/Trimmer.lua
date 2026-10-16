@@ -7,6 +7,9 @@
 -- Runs only inside a hardware event (a slash command or a button click), because
 -- DeleteCursorItem is limited to one delete per hardware event on this engine.
 -- In combat it does nothing: the server reverts in-combat deletes when combat ends.
+-- Paused (profile.paused), a press neither sorts nor deletes; every paused press out of
+-- combat plays the pause sound, if profile.pauseSound is on, and prints "All SSF actions
+-- paused. Soul Shards: N (cap M)", if profile.pauseLog is on, whatever the count.
 -- Silent unless the announce option is on. Sends SSF_SHARD_DELETED after a delete.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -20,6 +23,16 @@ function Trimmer:Delete()
     if InCombatLockdown() then return end
 
     local Bags, Cap = SSF:GetModule("Bags"), SSF:GetModule("Cap")
+    local p = SSF.db.profile
+    if p.paused then -- every paused press: the sound and the chat line, each if switched on
+        if p.pauseSound then
+            SSF:GetModule("Sounds"):Play(p.pauseSoundName, p.pauseSoundVolume)
+        end
+        if p.pauseLog then
+            SSF:Print(L["All SSF actions paused"] .. ". " .. SSF:GetModule("Options"):StatusText())
+        end
+        return
+    end
     -- count before the sort: a shard in flight can show at its source and its target
     local count, cap = Bags:Count(), Cap:Get()
     SSF:GetModule("Sorter"):Pass()

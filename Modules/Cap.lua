@@ -32,6 +32,15 @@ function Cap:Get()
     return clamp(SSF.db.profile.maxShards)
 end
 
+-- The low mark in use: the saved Low shard warn, but never above the cap. A low mark over
+-- the cap would make a count both "over the cap" and "low" at once (Match soul bag size
+-- can drop the cap under it). The saved value is not touched, so when the cap rises again
+-- the saved low mark is back by itself, the way the slider cap comes back after AutoMax.
+-- The count color (Counter:StateColor) and the glow (LowGlow) both read this.
+function Cap:LowMark()
+    return math.min(SSF.db.profile.lowMark, self:Get())
+end
+
 -- Sets the slider value. Called by Options (slider, /ssf setmax). Turning AutoMax off is
 -- the caller's job; this only stores the number.
 function Cap:SetManual(n)

@@ -1,9 +1,16 @@
 <Bindings>
 	<!-- Soul Shard Forever (SSF). MIT, see LICENSE.
-	     One row in Blizzard's Key Bindings screen, unbound until the player picks a key.
-	     The keypress is a hardware event, so the delete is allowed; it goes through the same
-	     SSFDelete button that /click uses. The button only exists on a warlock. -->
+	     Two rows in Blizzard's Key Bindings screen, unbound until the player picks keys.
+	     SSF_DELETE: the keypress is a hardware event, so the delete is allowed; it goes
+	     through the same SSFDelete button that /click uses. The button only exists on a
+	     warlock.
+	     SSF_PAUSE: toggles the pause through Options:TogglePause, the same path as
+	     "/ssf pause on|off". Does nothing where SSF is not enabled (a non-warlock). -->
 	<Binding name="SSF_DELETE" category="Soul Shard Forever">
 		if SSFDelete then SSFDelete:Click() end
+	</Binding>
+	<Binding name="SSF_PAUSE" category="Soul Shard Forever">
+		local s = LibStub("AceAddon-3.0"):GetAddon("SSF", true)
+		if s and s:IsEnabled() then s:GetModule("Options"):TogglePause() end
 	</Binding>
 </Bindings>

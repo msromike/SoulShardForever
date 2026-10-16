@@ -2,9 +2,10 @@
 --
 -- Broker: the LibDataBroker data object and the LibDBIcon minimap button. Listens only:
 -- SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED and a bucketed BAG_UPDATE
--- refresh the text. Click opens the options window.
+-- refresh the text. Click toggles the options window (opens it, or closes it if open).
 -- Fields: type, label "SSF", icon, text "N (cap M)" (+ " Full" at or over the cap, the
 -- count in the state color), value = N. No suffix, no per-bag breakdown.
+-- Tooltip: count, cap, over-by when over, and "All SSF actions paused" while paused.
 
 local ADDON = "SoulShardForever" -- the folder: the locale
 local NAME = "SSF"               -- the broker object and minimap button: what bar addons list
@@ -31,7 +32,7 @@ function Broker:OnEnable()
             icon = SSF.ICON,
             text = "",
             value = 0,
-            OnClick = function() SSF:GetModule("Options"):Open() end,
+            OnClick = function() SSF:GetModule("Options"):Toggle() end, -- open, or close if open
             OnTooltipShow = function(tooltip)
                 local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
                 local r, g, b = SSF:GetModule("Counter"):StateColor(count, cap)
@@ -40,6 +41,9 @@ function Broker:OnEnable()
                 tooltip:AddDoubleLine(L["Cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
                 if count > cap then
                     tooltip:AddDoubleLine(L["Over by"], count - cap, r, g, b, r, g, b)
+                end
+                if SSF.db.profile.paused then
+                    tooltip:AddLine(L["All SSF actions paused"], 1, 0.82, 0)
                 end
             end,
         })

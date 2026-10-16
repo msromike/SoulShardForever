@@ -1,5 +1,28 @@
 # Changelog
 
+## 1.5.0 (2026-10-16)
+
+- Pause all SSF actions: a new Pause group at the top of the options window, `/ssf pause
+  on|off`, and its own key binding. While paused a press neither sorts nor deletes, and
+  the cap stays as it is. Play pause sound plays a soft bag thunk on every paused press,
+  at Full, Loud, Medium or Quiet volume. Log pause to chat prints a line instead, or as
+  well. In combat a press still does nothing.
+- `/ssf` shows the pause state and the count. `/ssf help` (or `/ssf ?`) lists the
+  commands. A mistyped command says so and lists them. The same two status lines print
+  at login and reload.
+- Options window: the two sliders sit together with their checkboxes under them, the
+  section titles are larger and in the warlock color, every label lines up on the left,
+  and several labels are clearer (Show minimap button, Use legacy SoulSort method,
+  Legacy SoulSort fill order, Shard bag counter).
+- Low shard warn goes up to 100, the same range as the cap, for warlocks who carry a lot of
+  shards. While the cap is lower than it (Match soul bag size with a small pouch), the cap
+  is used as the low mark, so the count and the glow always agree. Your setting comes back
+  when the cap goes back up.
+- The window remembers where you put it, never grows taller than the screen (it scrolls
+  instead), and can't be dragged out of reach. The minimap button opens and closes it.
+- The window's Close button is now Keybindings: it opens Blizzard's key binding page right
+  at SSF's section, already expanded. The X and Escape still close the window.
+
 ## 1.4.0 (2026-10-16)
 
 - Show on soul bag when equipped: a new tick under "Show shard count on bag bar". With it

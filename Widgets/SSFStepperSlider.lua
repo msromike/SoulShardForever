@@ -6,8 +6,10 @@
 -- AceConfigDialog drives it exactly like a Slider: SetLabel, SetSliderValues, SetIsPercent,
 -- SetValue, SetDisabled, and the OnValueChanged / OnMouseUp / OnEnter / OnLeave callbacks.
 -- Built by composition: the real Slider widget fills this one and every call is forwarded.
+-- The label is left-justified (the stock Slider centers it), so it lines up with the
+-- dropdown labels and checkboxes in the window.
 
-local Type, Version = "SSFStepperSlider", 1
+local Type, Version = "SSFStepperSlider", 2
 local AceGUI = LibStub("AceGUI-3.0")
 
 local BUTTON = 20      -- +/- button size
@@ -30,6 +32,7 @@ local methods = {
     ["OnAcquire"] = function(self)
         self:SetWidth(200)
         self:SetHeight(44 + VALUE_GAP)
+        self.inner.label:SetJustifyH("LEFT")
         self:SetDisabled(false)
         self:SetIsPercent(nil)
         self:SetSliderValues(0, 100, 1)

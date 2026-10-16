@@ -14,6 +14,7 @@
 --          and for range: min, max, step, disabled }.
 --          Settings:Value(v) -> v as the neutral (white) value string used for settings.
 --          Settings:Accent(v) -> v in the green branding accent (login line author).
+--          Settings:OnOff(b) -> b as green ON / red OFF.
 -- Returns: gui, cmd -- two entries for Options to place in its args table.
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
 --          command applied it (Options redraws an open window only then).
@@ -28,6 +29,10 @@ local AceTab = LibStub("AceTab-3.0")
 
 local GREEN, RED, WHITE = "|cff00ff00%s|r", "|cffff0000%s|r", "|cffffffff%s|r"
 local function OnOff(b) return b and GREEN:format(L["ON"]) or RED:format(L["OFF"]) end
+
+-- A boolean as green ON / red OFF, the one state wording in chat (the echo below, and
+-- the "SSF actions" line of a bare /ssf).
+function Settings:OnOff(b) return OnOff(b) end
 
 -- A setting's value in chat or the window: a neutral white highlight. Green and red are
 -- reserved for state (ON/OFF here; the count scale in Counter:StateColor).

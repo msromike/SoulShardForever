@@ -14,8 +14,9 @@ local ADDON, NS = ... -- NS: the addon-private table; Locales\Register.lua fills
 local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
--- Label for the Bindings.xml row in Blizzard's Key Bindings screen (a global by Blizzard's rule)
+-- Labels for the Bindings.xml rows in Blizzard's Key Bindings screen (globals by Blizzard's rule)
 BINDING_NAME_SSF_DELETE = L["Delete Shard"]
+BINDING_NAME_SSF_PAUSE = L["Pause all SSF actions"]
 
 SSF.SHARD_ITEM_ID = 6265
 SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
@@ -29,11 +30,17 @@ local defaults = {
         counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
         counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
         lowGlow = true,               -- glow the bag button while shards are below the low mark
-        lowMark = 4,                  -- the low mark (1-20)
+        lowMark = 4,                  -- the low mark (1-100, the cap's range)
         soulsortLegacy = false,     -- sort like SoulSort: shards swap with other items
         soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
         announce = false,           -- one chat line per deletion
+        paused = false,             -- a press neither sorts nor deletes
+        pauseSound = true,          -- while paused, a press that would have deleted plays a sound
+        pauseLog = false,           -- ... and prints a chat line
+        pauseSoundName = "SSF: Bag thunk", -- LibSharedMedia sound name (Sounds module)
+        pauseSoundVolume = 1,       -- 0-1; applies to SSF's own sounds only (Sounds module)
         minimap = { hide = false }, -- LibDBIcon state
+        window = {},                -- options window position: top, left (set after a drag)
         -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         -- 1-100 is what the slider allows; any other value is clamped by Cap.
     },
@@ -56,6 +63,7 @@ function SSF:ApplyLanguage()
         for key, value in pairs(chosen.strings) do L[key] = value end
     end
     BINDING_NAME_SSF_DELETE = L["Delete Shard"]
+    BINDING_NAME_SSF_PAUSE = L["Pause all SSF actions"]
 end
 
 function SSF:OnInitialize()

@@ -9,7 +9,7 @@
 ## Notes-ptBR: Limite de Estilhaços de Alma para bruxos. /ssf delete em uma macro organiza os estilhaços na Bolsa de Almas e exclui um acima do limite.
 ## Notes-ruRU: Лимит осколков души для чернокнижников. /ssf delete в макросе складывает осколки в сумку душ и удаляет один сверх лимита.
 ## Author: msromike
-## Version: 1.4.0
+## Version: 1.5.0
 ## X-License: MIT
 ## X-Curse-Project-ID: 1715240
 ## X-Credits: Started as a fork of SoulSort by Anilusion
@@ -31,6 +31,7 @@ Core.lua
 Modules\Bags.lua
 Modules\Cap.lua
 Modules\Sorter.lua
+Modules\Sounds.lua
 Modules\Trimmer.lua
 Modules\DeleteButton.lua
 Modules\Settings.lua

@@ -2,6 +2,8 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.5.0: Option to pause all SSF actions, with an optional sound and chat line. UI rework and polish. Added button to open keybinds from GUI.
+
 1.4.0: Shard count can sit on your soul bag or the far-left bag.
 
 1.3.1: Fixed unexpected reagent bag bug.
@@ -12,6 +14,7 @@
 
 ---
 
+- **NEW: Pause all SSF actions so you can stockpile for raid night.**
 - **NEW: Shard count on your soul bag.**
 - **NEW: SoulSort legacy mode.**
 - **NEW: Language localization.**
@@ -19,17 +22,17 @@
 
 ## Description
 
-This is a Warlock class addon that deletes Soul Shards over a specified cap and optionally sorts shards into your soul bag (one keypress or action, one sort and one delete). Every `/ssf delete` sorts; the delete happens only when you're over the cap. It also can warn when running low on shards. It can display on your left bag how many shards are in inventory and can also color code that number. It also can glow the bag counter if you are below your defined minimum on-hand count. Almost all of these options are toggleable.
+A Warlock addon that keeps your Soul Shards at a cap you set. Each press of a key, a macro line or a button sorts your shards into your soul bag and deletes one if you're over the cap, but never in combat. It can show your shard count on the bag bar, color-coded, and glow the bag button when you're running low. A new feature is a pause so you can stockpile for an instance or summoning session without dragging your sliders around.
 
-Why did I write it? I used SoulSort for 10 or more years and it's not ported to Forever. There are a handful of addons that do all this, but they tend to be hard to configure or have features not related to the task at hand, deleting soul shards and warning you when low.
+Why did I write it? I used SoulSort for a long time, but it's not ported to Forever. There are a handful of addons that do shard management, but they tend to be hard to configure or have features not related to the task at hand. So this addon is focused on one thing only: deleting soul shards and warning you when low.
 
-This is for Forever only, I will not backport it because the original works well. On Classic Era use [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion, which is the addon SSF started from.
+This is for Forever only. I will not backport it because the original works well. On Classic Era use [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion, which is the addon SSF started from.
 
 ## Using it
 
-The game lets an addon destroy one item per keypress, and none in combat. SSF deletes one shard per event, but only when you're over the cap, and it does nothing while you're fighting. It always sorts when out of combat, cap or not. Call it however you like:
+The game lets an addon destroy one item per keypress, and none in combat. SSF deletes one shard per event, but only when you're over the cap, and it does nothing while you're fighting. It always sorts when out of combat and not paused, cap or not. Call it however you like:
 
-- **A key.** Escape > Options > Key Bindings > Soul Shard Forever > Delete Shard. Bind anything.
+- **A key.** Open the options window (`/ssf options` or the minimap button) and click Keybindings. Bind Delete Shard, and Pause all SSF actions if you want it.
 - **From chat.** `/ssf delete`
 - **A macro.** On the line before an ability you spam. Every press sorts, and trims one shard when you're over the cap.
 
@@ -47,34 +50,37 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
 
 - **The Delete Shard button** in the GUI window.
 
-Every press sorts first, then deletes. The sort moves each shard into a free slot in your soul bag, then bag 4, 3, 2, 1, then the backpack, bottom slots first; nothing else in your bags is touched. Then, if you're over the cap, the shard nearest the backpack is deleted. So the soul bag stays full and the one that goes is always in the same spot. With **SoulSort legacy method** on, SSF sorts the way SoulSort does instead: shards take every slot along the same bag order, and anything in the way swaps places with them.
+Every press sorts first, then deletes if over cap. The sort moves each shard into a free slot in your soul bag, then bag 4, 3, 2, 1, and finally the backpack. They go to the bottom slots first. Nothing else in your bags is touched unless in Legacy SoulSort mode. If you are over the cap, the shard nearest the backpack is deleted.
 
+- **Pause all SSF actions** stops every press from sorting or deleting, for when you want to stockpile shards (raid night: soulstones, healthstones, summons). Your cap stays as it is. **Play pause sound** plays a soft bag thunk on every paused press, at the volume you pick. **Log pause to chat** prints a line to chat as well. In combat a press does nothing, paused or not.
 - **Shards to keep** is the cap, 1 to 100. Use the slider or use the − and + to fine tune.
 - **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one).
-- **Show shard count on bag bar** puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. Tick **Show on soul bag when equipped** and the number sits on your soul bag instead, in whatever slot it's in.
-- **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm before you need them.
-- **Low shard warn** is the number of shards to activate the warning glow. 1 to 20. Same slider and − and + as the cap.
-- **SoulSort legacy method** is off by default. It's for SoulSort die-hards: SSF sorts the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block. **SoulSort fill order** picks SoulSort's Normal (top to bottom) or Reverse (bottom to top). A soul bag still fills first.
-- **Announce deletions in chat** is off by default, turn on if you want to see that or for addons that watch chat (like MSBT).
+- **Low shard warn** is your low mark, 1 to 100. Below it the shard count turns red and the bag button can glow. If your cap is lower than this, the cap is used as the low mark until the cap goes back up. Same slider and − and + as the cap.
+- **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm shards before you run out.
+- **Show shard count on bag bar** is off by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. Tick **Show on soul bag when equipped** and the number sits on your soul bag instead, in whatever slot it's in.
+- **Use legacy SoulSort method** is off by default. When enabled, SSF sorts the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block. **Legacy SoulSort fill order** picks SoulSort's Normal (top to bottom) or Reverse (bottom to top). A soul bag still fills first.
+- **Announce deletions in chat** is off by default. Turn it on to see a chat line for each deleted shard, or for addons that watch chat (like MSBT).
 - **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.
 
-The minimap button opens the window; its tooltip shows the count and the cap. Settings are per character.
+The minimap button opens and closes the window. Its tooltip shows the count and the cap, and indicates paused status. Settings are per character.
 
 ## Commands
 
 | Command | What it does |
 |---|---|
-| `/ssf` | Count, cap, and this list |
+| `/ssf` | Pause state, count and cap |
+| `/ssf help` | This list (`/ssf ?` does as well) |
 | `/ssf delete` | Sort shards, then delete one if over the cap |
-| `/ssf setmax N` | Set the cap; naked shows cap |
-| `/ssf announce on/off` | Chat line per deletion; naked shows status |
-| `/ssf soulsort on/off` | SoulSort legacy method; naked shows status |
+| `/ssf pause on/off` | Pause all SSF actions. Naked shows status |
+| `/ssf setmax N` | Set the cap, and turn off Match soul bag size. Naked shows cap |
+| `/ssf announce on/off` | Chat line per deletion. Naked shows status |
+| `/ssf soulsort on/off` | Use legacy SoulSort method. Naked shows status |
 | `/ssf options` | Opens the GUI window (`/ssf settings` does as well) |
 
 Tab autocompletes the SSF commands in chat (try it, I hate typing). `/click SSFDelete` does the same as `/ssf delete` (for keybind addons that can't run slash commands).
 
 ## License
 
-MIT, see [LICENSE](https://github.com/msromike/SoulShardForever/blob/main/LICENSE). Started as a fork of SoulSort by Anilusion, rewritten from scratch; no original code remains.
+MIT, see [LICENSE](https://github.com/msromike/SoulShardForever/blob/main/LICENSE). Started as a fork of SoulSort by Anilusion, rewritten from scratch. No original code remains.
 
 Bundles Ace3 (with CallbackHandler), AceGUI-3.0-SharedMediaWidgets, LibSharedMedia, LibCustomGlow, LibDataBroker, LibDBIcon and LibStub. Each keeps its own license.

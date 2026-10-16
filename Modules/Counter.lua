@@ -44,7 +44,7 @@ function Counter:StateColor(count, cap)
     if SSF.db.profile.counterColorize then
         -- over the cap wins: with a low mark set above the cap, "too many" is the true state
         if count > cap then c = YELLOW
-        elseif count < SSF.db.profile.lowMark then c = RED
+        elseif count < math.min(SSF.db.profile.lowMark, cap) then c = RED -- Cap:LowMark's rule
         else c = GREEN end
     end
     return c[1], c[2], c[3], c[4]

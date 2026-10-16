@@ -6,7 +6,8 @@
 -- "Glow bag button when low" option.
 --
 -- Listens: bucketed BAG_UPDATE, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED.
--- Reads: Bags:Count(), Counter:Anchor(). Touches nothing else.
+-- Reads: Bags:Count(), Cap:LowMark() (the low mark in use, never above the cap),
+-- Counter:Anchor(). Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local LowGlow = SSF:NewModule("LowGlow", "AceEvent-3.0", "AceBucket-3.0")
@@ -15,7 +16,8 @@ local LCG = LibStub("LibCustomGlow-1.0")
 function LowGlow:Refresh()
     local p = SSF.db.profile
     local button = SSF:GetModule("Counter"):Anchor()
-    local low = p.lowGlow and SSF:GetModule("Bags"):Count() < p.lowMark
+    -- the low mark in use, never above the cap, so the glow and the count color agree
+    local low = p.lowGlow and SSF:GetModule("Bags"):Count() < SSF:GetModule("Cap"):LowMark()
 
     -- the anchor can change (bag bar collapsed): stop the old button before starting a new one
     if self.button and (self.button ~= button or not low) then
