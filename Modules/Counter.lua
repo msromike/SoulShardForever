@@ -1,9 +1,17 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
--- Counter: one number on the far-left bag button (bag 4, CharacterBag3Slot), the total
--- shard count, centered on the button face. Shown only while the "Show shard count on
--- bag bar" option is on. If the far-left button is not shown (collapsed bag bar), it
--- anchors to the backpack button instead.
+-- Counter: one number, the total shard count, centered on one bag button. Shown only while
+-- the "Show shard count on bag bar" option is on. Where it sits (Anchor):
+--   "Show on soul bag when equipped" ticked and a soul bag equipped: that soul bag's button,
+--     the reagent slot first, then bag 4 down to bag 1. The bag's slot does not matter.
+--   otherwise: the far-left bag button (bag 4, CharacterBag3Slot), or the backpack button
+--     when that one is not shown (collapsed bag bar).
+-- LowGlow sits on the same button.
+-- On a soul bag button the game draws its own number (CharacterReagentBag0SlotCount on the
+-- reagent slot). While the counter sits on a soul bag button, that number is set to alpha 0
+-- (alpha, because the game calls Show() on it by itself); it is set back to 1 the moment the
+-- counter leaves that button or the option is turned off. Bag 4 and the backpack are never
+-- touched.
 -- Font is the profile's LibSharedMedia font name. Size is the largest that fits inside the
 -- button face with a margin; the button is the bound. Colorized by default on the one state
 -- scale (red below the low mark, green in range, yellow over the cap; see StateColor);
@@ -42,14 +50,63 @@ function Counter:StateColor(count, cap)
     return c[1], c[2], c[3], c[4]
 end
 
--- The button the counter (and LowGlow) sits on: the far-left bag button, or the backpack
--- when the bag bar is collapsed.
+-- The bag bar button for an equipped bag: bags 1-4 are CharacterBag0Slot-CharacterBag3Slot,
+-- the reagent slot is CharacterReagentBag0Slot.
+local function BagButton(bag)
+    if bag == Enum.BagIndex.ReagentBag then return CharacterReagentBag0Slot end
+    return _G["CharacterBag" .. (bag - 1) .. "Slot"]
+end
+
+-- The first equipped soul bag's button, if it is shown: the reagent slot first, then bag 4
+-- down to bag 1 (the backpack is never a soul bag). Nil when there is none.
+function Counter:SoulBagButton()
+    local Bags = SSF:GetModule("Bags")
+    local function Try(bag)
+        if not Bags:IsSoulBag(bag) then return nil end
+        local button = BagButton(bag)
+        if button and button:IsShown() then return button end
+    end
+    local button = Try(Enum.BagIndex.ReagentBag)
+    if button then return button end
+    for bag = NUM_BAG_SLOTS, 1, -1 do
+        button = Try(bag)
+        if button then return button end
+    end
+end
+
+-- The button the counter (and LowGlow) sits on, and true when it is a soul bag's button.
+-- A soul bag only while the counter and "Show on soul bag" are both on; otherwise the
+-- far-left bag button, or the backpack when the bag bar is collapsed.
 function Counter:Anchor()
+    local p = SSF.db.profile
+    if p.counter and p.counterSoulBag then
+        local soulBag = self:SoulBagButton()
+        if soulBag then return soulBag, true end
+    end
     local farLeft = CharacterBag3Slot
-    if farLeft and farLeft:IsShown() then return farLeft end
-    return MainMenuBarBackpackButton
+    if farLeft and farLeft:IsShown() then return farLeft, false end
+    return MainMenuBarBackpackButton, false
 end
 local function Anchor() return Counter:Anchor() end
+
+-- The game's own number on a bag button (the ItemButton's Count text), or nil.
+local function GameCount(button)
+    return button and (button.Count or _G[(button:GetName() or "") .. "Count"]) or nil
+end
+
+-- Hides the game's own number on `button` (a soul bag button the counter sits on), and
+-- gives back the one hidden before if it was on another button. Nil gives it back only.
+function Counter:HideGameCount(button)
+    local text = GameCount(button)
+    if self.hiddenCount and self.hiddenCount ~= text then
+        self.hiddenCount:SetAlpha(1)
+        self.hiddenCount = nil
+    end
+    if text then
+        text:SetAlpha(0)
+        self.hiddenCount = text
+    end
+end
 
 -- Applies the profile font at MAX_SIZE, then steps the size down until the number fits
 -- inside the button face with the margin.
@@ -67,10 +124,13 @@ end
 function Counter:Refresh()
     local p = SSF.db.profile
     if not p.counter then
+        self:HideGameCount(nil) -- count off: the game's number is always back
         if self.text then self.text:Hide() end
         return
     end
-    local parent = Anchor()
+    local parent, onSoulBag = Anchor()
+    -- only a soul bag button loses the game's number; bag 4 and the backpack keep theirs
+    self:HideGameCount(onSoulBag and parent or nil)
     if not parent then return end
     if not self.text then
         self.text = parent:CreateFontString(nil, "OVERLAY")

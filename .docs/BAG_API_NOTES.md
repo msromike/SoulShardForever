@@ -103,6 +103,9 @@ install; the rest are documented API behavior to confirm during the chunk that f
 - `MainMenuBarBackpackButton` is the backpack. `CharacterBag0Slot` through
   `CharacterBag3Slot` are bags 1 through 4. On the default bar the backpack is rightmost and
   `CharacterBag3Slot` (bag 4) is the **far-left** button, where the counter goes.
+- `CharacterReagentBag0Slot` is the reagent slot button (bag 5), 45 x 45, directly left of
+  `CharacterBag3Slot`. **Tested** 2026-10-02: with a soul pouch in it, the game draws its own
+  number on it (`CharacterReagentBag0SlotCount`, "14" on a 14-slot pouch).
 - The 12.x engine can collapse the bag bar to the backpack alone; when `CharacterBag3Slot` is
   not shown, anchor to `MainMenuBarBackpackButton` instead.
 - Nothing enabled on this install (Baganator, EllesmereUIActionBars) hides or moves those

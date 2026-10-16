@@ -29,6 +29,7 @@ L["The cap. Shards over this number are deleted one per press."] = "Лимит. 
 L["Match soul bag size"] = "По сумке душ"
 L["While a soul bag is equipped, the cap is its slot count. Without one, the slider rules."] = "Пока надета сумка душ, лимит равен числу ее ячеек. Без нее действует ползунок."
 L["Show shard count on bag bar"] = "Счетчик на панели сумок"
+L["Show on soul bag when equipped"] = "На сумке душ, если надета"
 L["Shards in bag count"] = "Счетчик осколков"
 L["Low shard glow"] = "Подсветка при нехватке"
 L["Other settings"] = "Прочие настройки"

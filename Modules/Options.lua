@@ -54,12 +54,13 @@ local function changed(key)
 end
 
 -- a full-width, GUI-only, tooltip-free checkbox, indented 10px inside its group unless
--- `control` names another dialogControl (see Widgets\SSFCentered.lua)
-local function Toggle(order, name, get, set, disabled, control)
+-- `control` names another dialogControl (see Widgets\SSFCentered.lua). `indent` is the
+-- SSFIndentCheckBox level (2 = 20px), passed as the option's `arg`; nil is level 1.
+local function Toggle(order, name, get, set, disabled, control, indent)
     return {
         type = "toggle", order = order, width = "full",
         cmdHidden = true, descStyle = "hidden", dialogControl = control or "SSFIndentCheckBox",
-        name = name, get = get, set = set, disabled = disabled,
+        name = name, get = get, set = set, disabled = disabled, arg = indent,
     }
 end
 
@@ -144,7 +145,17 @@ local function BuildTable()
                         SSF.db.profile.counter = value
                         changed("counter")
                     end),
-                colorize = Toggle(2, L["Colorize bag count"],
+                -- the number follows an equipped soul bag (Counter:Anchor); greyed with the
+                -- count off, but never for a missing soul bag: it waits for one to go on
+                soulbag = Toggle(2, L["Show on soul bag when equipped"],
+                    function() return SSF.db.profile.counterSoulBag end,
+                    function(_, value)
+                        SSF.db.profile.counterSoulBag = value
+                        changed("countersoulbag")
+                    end,
+                    function() return not SSF.db.profile.counter end,
+                    nil, 2),
+                colorize = Toggle(3, L["Colorize bag count"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
                         SSF.db.profile.counterColorize = value
@@ -155,7 +166,7 @@ local function BuildTable()
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {
                     type = "select",
-                    order = 3,
+                    order = 4,
                     width = "full",
                     cmdHidden = true,
                     descStyle = "hidden",

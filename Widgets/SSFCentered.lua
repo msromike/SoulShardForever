@@ -5,6 +5,8 @@
 --   SSFCenteredLabel    : a Label with centered text (the status line).
 --   SSFCenteredCheckBox : a CheckBox sized to its text and centered in its row.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
+--                         An option's `arg` sets the indent level (2 = 20px); no `arg` is
+--                         level 1. AceConfigDialog hands `arg` to SetCustomData.
 -- All are built by composition: the real widget sits inside ours and every call is
 -- forwarded, the same pattern as SSFStepperSlider.
 --
@@ -136,24 +138,26 @@ end
 -- SSFIndentCheckBox
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFIndentCheckBox", 1
-    local INDENT = 10
+    local Type, Version = "SSFIndentCheckBox", 2
+    local INDENT = 10 -- one indent level, in px
 
     -- the inner box fills the row past the indent; the label wraps at the row's edge and the
     -- row grows, with the box centered vertically so the (box-centered) label stays inside
     local function Fit(self, width)
-        local inner, text = self.inner, self.inner.text
-        inner:SetWidth(width - INDENT)
+        local inner, text, indent = self.inner, self.inner.text, self.indent
+        inner:SetWidth(width - indent)
         text:SetWordWrap(true)
-        text:SetWidth(width - INDENT - 24)
+        text:SetWidth(width - indent - 24)
         local height = math.max(24, text:GetStringHeight() + 4)
         self:SetHeight(height)
         inner.frame:ClearAllPoints()
-        inner.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", INDENT, -(height - 24) / 2)
+        inner.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", indent, -(height - 24) / 2)
     end
 
     local methods = {
         ["OnAcquire"] = function(self)
+            -- AceGUI pools widgets: back to level 1, or a deeper indent leaks to another row
+            self.indent = INDENT
             self:SetWidth(200)
             self:SetHeight(24)
             self.inner:SetType()
@@ -176,11 +180,16 @@ do
         ["SetDescription"] = function(self, v) self.inner:SetDescription(v) end,
         ["SetType"] = function(self, v) self.inner:SetType(v) end,
         ["SetImage"] = function(self, ...) self.inner:SetImage(...) end,
+        -- the option's `arg`: the indent level (AceConfigDialog InjectInfo calls this)
+        ["SetCustomData"] = function(self, level)
+            self.indent = INDENT * (tonumber(level) or 1)
+            if self.frame.width then Fit(self, self.frame.width) end
+        end,
     }
 
     local function Constructor()
         local frame = CreateFrame("Frame", nil, UIParent)
-        local widget = { frame = frame, type = Type }
+        local widget = { frame = frame, type = Type, indent = INDENT }
         local inner = AceGUI:Create("CheckBox")
         inner.frame:SetParent(frame)
         inner.frame:ClearAllPoints()

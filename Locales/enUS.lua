@@ -28,6 +28,7 @@ L["The cap. Shards over this number are deleted one per press."] = true
 L["Match soul bag size"] = true
 L["While a soul bag is equipped, the cap is its slot count. Without one, the slider rules."] = true
 L["Show shard count on bag bar"] = true
+L["Show on soul bag when equipped"] = true
 L["Shards in bag count"] = true
 L["Low shard glow"] = true
 L["Other settings"] = true

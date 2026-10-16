@@ -25,6 +25,7 @@ local defaults = {
         maxShards = 20,             -- the cap while autoMax is off (1-100)
         autoMax = false,            -- cap follows the soul bags' slot total
         counter = false,            -- number on the far-left bag button
+        counterSoulBag = false,     -- under counter: the number sits on a soul bag while one is equipped
         counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
         counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
         lowGlow = true,               -- glow the bag button while shards are below the low mark

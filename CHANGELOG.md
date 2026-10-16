@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.4.0 (2026-10-16)
+
+- Show on soul bag when equipped: a new tick under "Show shard count on bag bar". With it
+  on, the count sits on your soul bag in whatever slot it's in, bag 1 to 4 or the reagent
+  slot, and goes back to bag 4 when no soul bag is equipped. The low shard glow moves with
+  it. Off by default.
+- While the count sits on a soul bag, the game's own number on that bag button is hidden,
+  so only one number shows. Any other bag in the reagent slot keeps the game's number.
+
 ## 1.3.1 (2026-10-12)
 
 - A reagent bag in the reagent bag slot no longer causes "Only Reagents can be placed in

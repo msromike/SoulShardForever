@@ -29,6 +29,7 @@ L["The cap. Shards over this number are deleted one per press."] = "Das Limit. S
 L["Match soul bag size"] = "An Seelentasche anpassen"
 L["While a soul bag is equipped, the cap is its slot count. Without one, the slider rules."] = "Mit angelegter Seelentasche ist das Limit ihre Platzzahl. Ohne Tasche gilt der Schieberegler."
 L["Show shard count on bag bar"] = "Splitterzahl auf der Taschenleiste"
+L["Show on soul bag when equipped"] = "Auf Seelentasche, wenn angelegt"
 L["Shards in bag count"] = "Splitterzähler"
 L["Low shard glow"] = "Leuchten bei wenigen Splittern"
 L["Other settings"] = "Weitere Einstellungen"

@@ -2,16 +2,17 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.4.0: Shard count can sit on your soul bag or the far-left bag.
+
 1.3.1: Fixed unexpected reagent bag bug.
 
 1.3.0: SoulSort legacy method for SoulSort die-hards, Normal or Reverse.
-
-1.2.1: Added Brazilian Portuguese and Russian; Spanish now on the Spain client too.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
 
+- **NEW: Shard count on your soul bag.**
 - **NEW: SoulSort legacy mode.**
 - **NEW: Language localization.**
 - **NEW: Soul Bag support!**
@@ -50,7 +51,7 @@ Every press sorts first, then deletes. The sort moves each shard into a free slo
 
 - **Shards to keep** is the cap, 1 to 100. Use the slider or use the − and + to fine tune.
 - **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one).
-- **Show shard count on bag bar** puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off.
+- **Show shard count on bag bar** puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. Tick **Show on soul bag when equipped** and the number sits on your soul bag instead, in whatever slot it's in.
 - **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm before you need them.
 - **Low shard warn** is the number of shards to activate the warning glow. 1 to 20. Same slider and − and + as the cap.
 - **SoulSort legacy method** is off by default. It's for SoulSort die-hards: SSF sorts the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block. **SoulSort fill order** picks SoulSort's Normal (top to bottom) or Reverse (bottom to top). A soul bag still fills first.

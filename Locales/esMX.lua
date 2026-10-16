@@ -29,6 +29,7 @@ L["The cap. Shards over this number are deleted one per press."] = "El límite. 
 L["Match soul bag size"] = "Según la bolsa de almas"
 L["While a soul bag is equipped, the cap is its slot count. Without one, the slider rules."] = "Con una bolsa de almas equipada, el límite es su número de casillas. Sin ella, manda el control deslizante."
 L["Show shard count on bag bar"] = "Contador en la barra de bolsas"
+L["Show on soul bag when equipped"] = "En la bolsa de almas si está equipada"
 L["Shards in bag count"] = "Contador de fragmentos"
 L["Low shard glow"] = "Brillo con pocos fragmentos"
 L["Other settings"] = "Otros ajustes"
