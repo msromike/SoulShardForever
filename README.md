@@ -18,13 +18,11 @@
 
 ## Description
 
-This is a Warlock class addon that deletes Soul Shards over a specified cap and sorts shards into your soul bag (one keypress or action, one sort and one delete). Every `/ssf delete` sorts; the delete happens only when you're over the cap. It also can warn when running low. It can display on your left bag how many shards are in inventory and can color code that number. It can also glow the bag if you are below your minimum on-hand count. Almost all of these options are toggleable.
+This is a Warlock class addon that deletes Soul Shards over a specified cap and optionally sorts shards into your soul bag (one keypress or action, one sort and one delete). Every `/ssf delete` sorts; the delete happens only when you're over the cap. It also can warn when running low on shards. It can display on your left bag how many shards are in inventory and can also color code that number. It also can glow the bag counter if you are below your defined minimum on-hand count. Almost all of these options are toggleable.
 
 Why did I write it? I used SoulSort for 10 or more years and it's not ported to Forever. There are a handful of addons that do all this, but they tend to be hard to configure or have features not related to the task at hand, deleting soul shards and warning you when low.
 
 This is for Forever only, I will not backport it because the original works well. On Classic Era use [SoulSort](https://www.curseforge.com/wow/addons/soulsort-easy-soul-shard-management) by Anilusion, which is the addon SSF started from.
-
-<a href="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_in_range_green.png"><img src="https://raw.githubusercontent.com/msromike/SoulShardForever/main/media/01_window_in_range_green.png" width="220" alt="The SSF window, with the shard count on the bag bar below it"></a>
 
 ## Using it
 
