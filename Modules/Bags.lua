@@ -9,7 +9,6 @@
 -- topFirst (SoulSort legacy, Normal), the top slot comes first inside each regular bag;
 -- soul bags keep bottom first. The caller passes topFirst; Bags reads no settings. The
 -- Sorter fills along the order; the Trimmer deletes from its far end (LastShard).
--- API facts behind this file: .docs/BAG_API_NOTES.md.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Bags = SSF:NewModule("Bags")

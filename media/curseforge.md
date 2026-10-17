@@ -1,12 +1,12 @@
-## Summary
+## <span style="color:#8788EE">Summary</span>
 
 This addon helps you prune excess Warlock Soul Shards held in your bags in WoW Forever. Set the cap, tap a key (or macro), done. Works out of the box with minimal setup. Multi-language support.
 
-## Description
+## <span style="color:#8788EE">Description</span>
 
 Keeps your Soul Shards at the cap you set, one press at a time. Never in combat (Blizzard limitation). Displays shard count, and can be paused.
 
-## Why this one
+## <span style="color:#8788EE">Why this one</span>
 
 There are other shard addons. This one is built to disappear.
 
@@ -14,24 +14,29 @@ There are other shard addons. This one is built to disappear.
 - “It just works™.” Install it and the defaults get you going.
 - One job: keep shards at your cap, a warning when you're low. Pause whenever you need. Nothing else.
 
-## Features
+## <span style="color:#8788EE">Feature set</span>
 
-Five main features:
+### <span style="color:#8788EE">Core features</span>
 
 - Delete shards with a key or a macro.
 - Display shard count on your bag bar or your soul bag (optional).
-- Cap follows your soul bag size, if you want it.
+- Warn you when you're running low (red count, and the bag button can glow).
 - Pause for raid night (farming shards for healthstones and summons duty).
-- Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
 
-## Set it up
+### <span style="color:#8788EE">QOL features</span>
+
+- Cap follows your soul bag size, if you want it.
+- Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
+- For those who lean that way, the everyday actions have slash commands too. Type `/ssf help` to see them, and Tab completes the command words.
+
+## <span style="color:#8788EE">Set it up</span>
 
 Click the SSF button on your minimap. Then:
 
 - Set *Shards to keep*.
 - Click Keybindings and bind *Delete Shard* and, if you want it, *Pause all SSF actions*.
 
-## Keep shards at your cap
+## <span style="color:#8788EE">Keep shards at your cap</span>
 
 Every keybind press or macro click sorts your shards into your soul bag (if equipped) and deletes one if you're over the cap.
 
@@ -47,7 +52,7 @@ Every keybind press or macro click sorts your shards into your soul bag (if equi
 - Set the cap slider or select use soul bag size(s) as cap: a 24-slot bag means a cap of 24, no slider.
 - Legacy SoulSort layout, if that's what you prefer.
 
-## See how many you have
+## <span style="color:#8788EE">See how many you have</span>
 
 Displays shard count:
 
@@ -56,7 +61,7 @@ Displays shard count:
 - Glow the bag button when you're low.
 - Your font, or no colors, or no count at all. Up to you.
 
-## Pause for raid night
+## <span style="color:#8788EE">Pause for raid night</span>
 
 When you're stockpiling for soulstones, healthstones and summons, SSF stops deleting.
 
@@ -65,3 +70,5 @@ When you're stockpiling for soulstones, healthstones and summons, SSF stops dele
 - Your cap stays where it was when you resume SSF.
 
 This is only for WoW Forever. On Classic Era use SoulSort by Anilusion, which the idea for SSF came from.
+
+The code lives on [GitHub](https://github.com/msromike/SoulShardForever). Have a look, tell me what you'd change, or send a PR. Happy to hear from you.
