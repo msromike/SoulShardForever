@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.1 (2026-10-17)
+
+- Options window: three section titles renamed so the shard groups line up. Pause is now
+  Pause SSF, Low shard glow is now Soul shard warning, and Shard bag counter is now Soul
+  shard counter. All six languages updated.
+
 ## 1.5.0 (2026-10-16)
 
 - Pause all SSF actions: a new Pause group at the top of the options window, `/ssf pause

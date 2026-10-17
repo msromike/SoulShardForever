@@ -2,13 +2,11 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.5.1: Clearer section titles in the options window.
+
 1.5.0: Option to pause all SSF actions, with an optional sound and chat line. UI rework and polish. Added button to open keybinds from GUI.
 
 1.4.0: Shard count can sit on your soul bag or the far-left bag.
-
-1.3.1: Fixed unexpected reagent bag bug.
-
-1.3.0: SoulSort legacy method for SoulSort die-hards, Normal or Reverse.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 

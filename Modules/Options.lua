@@ -200,7 +200,7 @@ local function BuildTable()
         -- keyed pausegroup: "pause" is the chat command's key in this same table
         pausegroup = {
             type = "group", inline = true, order = 5, cmdHidden = true,
-            name = L["Pause"],
+            name = L["Pause SSF"],
             args = {
                 pauseGui = pauseGui,
                 -- the sound, its volume and the chat line hang off the pause box: indented one
@@ -270,7 +270,7 @@ local function BuildTable()
 
         bagcount = {
             type = "group", inline = true, order = 30, cmdHidden = true,
-            name = L["Shard bag counter"],
+            name = L["Soul shard counter"],
             args = {
                 counter = Toggle(1, L["Show shard count on bag bar"],
                     function() return SSF.db.profile.counter end,
@@ -322,7 +322,7 @@ local function BuildTable()
         -- checkbox below it, the same shape as the cap group
         glow = {
             type = "group", inline = true, order = 20, cmdHidden = true,
-            name = L["Low shard glow"],
+            name = L["Soul shard warning"],
             args = {
                 lowglow = Toggle(2, L["Glow bag button when low"],
                     function() return SSF.db.profile.lowGlow end,
