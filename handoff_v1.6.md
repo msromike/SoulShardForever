@@ -1,8 +1,9 @@
 # Handoff: SSF 1.6.0 (SSF mode + one shard-mode selector)
 
 Status: plan approved by Mike, nothing built yet. Build on his "build" or "go".
-Before tagging: this file is not in `.pkgmeta`'s ignore list, so it would ship in the
-CurseForge zip. Delete it or add it to the ignore list.
+Delete this file when 1.6 is done: after Mike's "tested works" and before the release tag.
+It is not in `.pkgmeta`'s ignore list, so if it is still here at tag time it ships in the
+CurseForge zip.
 
 ## Why
 
