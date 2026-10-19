@@ -19,10 +19,10 @@ There are other shard addons. This one is built to disappear.
 
 ### <span style="color:#8788EE">Core features</span>
 
-- Delete shards with a key or a macro.
-- Display shard count on your bag bar or your soul bag (optional).
-- Warn you when you're running low (red count, and the bag button can glow).
-- Pause for raid night (farming shards for healthstones and summons duty).
+- Deletes shards with a key or a macro.
+- Displays shard count on the bag bar, and offers some placement and appearance options.
+- Warns you when you're running low (red count, and the bag button can glow).
+- Offers a "pause" feature. Use it for raid night or whenever you need to farm shards for healthstones and summons duty.
 
 ### <span style="color:#8788EE">QOL features</span>
 

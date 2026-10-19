@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.6.1 (2026-10-19)
+
+- New defaults: Shards to keep is 8 (was 20), Show shard count on bag bar and Show on soul
+  bag when equipped are on, and Play pause sound is off. A new install shows the colored
+  count on your soul bag, or on your far-left bag without one, right away.
+- These apply to you too wherever your setting was still the old default. If your Shards
+  to keep was 20, it is now 8, and your next presses delete shards down to 8; set it back
+  in the options window to keep more.
+
 ## 1.6.0 (2026-10-18)
 
 - How shards move: one selector in Other settings replaces Use legacy SoulSort method and

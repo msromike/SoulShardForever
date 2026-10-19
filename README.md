@@ -2,11 +2,11 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.6.1: New defaults: a cap of 8, the shard count on your soul bag, and no pause sound.
+
 1.6.0: SSF Mode moves shards into your soul bag and nothing else. One selector for how shards move. `/ssf` opens the window.
 
 1.5.1: Clearer section titles in the options window.
-
-1.5.0: Option to pause all SSF actions, with an optional sound and chat line. UI rework and polish. Added button to open keybinds from GUI.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
@@ -56,7 +56,7 @@ Every press deletes first if you're over the cap: the shard nearest the backpack
 - **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one).
 - **Low shard warn** is your low mark, 1 to 100. Below it the shard count turns red and the bag button can glow. If your cap is lower than this, the cap is used as the low mark until the cap goes back up. Same slider and − and + as the cap.
 - **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm shards before you run out.
-- **Show shard count on bag bar** is off by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. Tick **Show on soul bag when equipped** and the number sits on your soul bag instead, in whatever slot it's in.
+- **Show shard count on bag bar** is on by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. **Show on soul bag when equipped** is on by default too: the number sits on your soul bag instead, in whatever slot it's in. Untick it to keep the number on your far-left bag.
 - **How shards move** is SSF Mode by default: shards move into your soul bag, and nothing else in your bags moves. **SoulSort Normal** and **SoulSort Reverse** sort the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block, from the top down or the bottom up. A soul bag still fills first. Hover a choice for a short description.
 - **Announce deletions in chat** is off by default. Turn it on to see a chat line for each deleted shard, or for addons that watch chat (like MSBT).
 - **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.

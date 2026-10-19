@@ -23,10 +23,10 @@ SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
 
 local defaults = {
     profile = {
-        maxShards = 20,             -- the cap while autoMax is off (1-100)
+        maxShards = 8,              -- the cap while autoMax is off (1-100)
         autoMax = false,            -- cap follows the soul bags' slot total
-        counter = false,            -- number on the far-left bag button
-        counterSoulBag = false,     -- under counter: the number sits on a soul bag while one is equipped
+        counter = true,             -- number on the far-left bag button
+        counterSoulBag = true,      -- under counter: the number sits on a soul bag while one is equipped
         counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
         counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
         lowGlow = true,               -- glow the bag button while shards are below the low mark
@@ -35,7 +35,7 @@ local defaults = {
         soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
         announce = false,           -- one chat line per deletion
         paused = false,             -- a press neither moves nor deletes
-        pauseSound = true,          -- while paused, a press that would have deleted plays a sound
+        pauseSound = false,         -- while paused, a press that would have deleted plays a sound
         pauseLog = false,           -- ... and prints a chat line
         pauseSoundName = "SSF: Bag thunk", -- LibSharedMedia sound name (Sounds module)
         pauseSoundVolume = 1,       -- 0-1; applies to SSF's own sounds only (Sounds module)
