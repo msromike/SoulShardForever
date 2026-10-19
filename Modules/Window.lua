@@ -14,12 +14,13 @@
 -- AceConfigDialog's own default and the fit sets both.
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings),
---          Toggle() (the minimap icon and broker click), Refresh().
+--          Toggle() (the minimap icon and broker click), Refresh(),
+--          ShowNote(title, body, note) (open with a note beside it: Welcome's).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and a
 --          bucketed BAG_UPDATE (refresh the status line).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
---          saved on); profile.welcomed once the first-load welcome has shown.
+--          saved on).
 
 local ADDON = "SoulShardForever"
 local APP = "SSF" -- the AceConfig app Options registers
@@ -284,27 +285,16 @@ function Window:Open()
     self:Feed()
 end
 
--- The first-load welcome: the first time a character loads SSF, the window opens by itself
--- with a note beside it pointing at the help button, once. Players updating from an older
--- SSF see it once too. Waits for the loading screen to go, so the window opens into a drawn,
--- shown UI.
-
-function Window:LOADING_SCREEN_DISABLED()
-    self:UnregisterEvent("LOADING_SCREEN_DISABLED")
-    SSF.db.profile.welcomed = true
-    -- first run starts with help on: the "i" shows blue, and every option explains itself
-    local Options = SSF:GetModule("Options")
-    if not Options:IsHelpOn() then Options:ToggleHelp() end
+-- Open the window with a note beside it (SSFWindow:ShowSidePanel). Welcome fills it.
+function Window:ShowNote(titleText, bodyText, noteText)
     self:Open()
-    self.window:ShowSidePanel(L["Welcome to SSF"], L["Click for in-game tooltip help."],
-        L["You'll only see this once."])
+    self.window:ShowSidePanel(titleText, bodyText, noteText)
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
 -- before OnEnable, so other classes never get the window.
 function Window:OnEnable()
     SSF.db.profile.window.open = nil -- left over from a dropped reopen-after-reload try
-    if not SSF.db.profile.welcomed then self:RegisterEvent("LOADING_SCREEN_DISABLED") end
 
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
