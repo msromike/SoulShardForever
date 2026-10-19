@@ -13,12 +13,12 @@
 -- window; their GUI twins live inside the groups.
 --
 -- Pause: the "pause" setting (/ssf pause, the checkbox in the cap group) stops every press
--- from sorting or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
+-- from moving or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
 -- key binding's entry (Bindings.xml SSF_PAUSE); it goes through the chat command's own
--- path, so it applies, redraws an open window and prints the same echo. A bare /ssf prints
--- PauseText ("SSF actions - ON/OFF") on its own line above StatusText.
+-- path, so it applies, redraws an open window and prints the same echo. A bare /ssf opens
+-- the window and prints PauseText ("SSF actions - ON/OFF") on its own line above StatusText.
 --
--- Stateful settings (cap, announce, soulsort, pause) are defined once through the Settings module, which
+-- Stateful settings (cap, announce, pause) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
 --
@@ -64,7 +64,6 @@ end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
-    if not self.pauseCmd then return end
     self.pauseCmd.set(nil, SSF.db.profile.paused and "off" or "on")
 end
 
@@ -151,25 +150,14 @@ local function BuildTable()
         get = function() return SSF.db.profile.announce end,
         apply = function(value) SSF.db.profile.announce = value end,
     })
-    announceGui.order = 2 -- GUI only: Other is minimap, announce, the SoulSort pair, language; the chat order stays
+    announceGui.order = 2 -- GUI only: Other is minimap, announce, How shards move, language; the chat order stays
     announceGui.width = "full"
     announceGui.dialogControl = "SSFIndentCheckBox"
-
-    local soulsortGui, soulsortCmd = Settings:Define("soulsort", {
-        order = 1, kind = "toggle",
-        name = L["Use legacy SoulSort method"],
-        desc = L["Sort shards the way SoulSort does: other items in the way swap places with them. Normal or Reverse is set in the options window."],
-        get = function() return SSF.db.profile.soulsortLegacy end,
-        apply = function(value) SSF.db.profile.soulsortLegacy = value end,
-    })
-    soulsortGui.order = 3 -- GUI only: after announce in Other
-    soulsortGui.width = "full"
-    soulsortGui.dialogControl = "SSFIndentCheckBox"
 
     local pauseGui, pauseCmd = Settings:Define("pause", {
         order = 1, kind = "toggle",
         name = L["Pause all SSF actions"],
-        desc = L["Stop every press from sorting or deleting shards, until you turn it off."],
+        desc = L["Stop every press from moving or deleting shards, until you turn it off."],
         get = function() return SSF.db.profile.paused end,
         apply = function(value) SSF.db.profile.paused = value end,
     })
@@ -354,41 +342,52 @@ local function BuildTable()
             type = "group", inline = true, order = 40, cmdHidden = true,
             name = L["Other settings"],
             args = {
-                soulsortGui = soulsortGui,
-                -- SoulSort's one sort option (SortReverse); greyed and blank until the
-                -- checkbox above is ticked
-                soulsortorder = {
+                -- How shards move: SSF Mode, or SoulSort's sort in its Normal or Reverse
+                -- order (soulsortLegacy, soulsortReverse). Each line's tooltip is in arg
+                -- (Widgets\SSFDropdownItemTip.lua). SSF Mode leaves soulsortReverse as it is.
+                shardmode = {
                     type = "select",
-                    order = 4,
+                    order = 3,
                     width = "full",
                     cmdHidden = true,
                     descStyle = "hidden",
-                    name = L["Legacy SoulSort fill order"],
+                    name = L["How shards move"],
                     values = {
-                        normal = L["Normal (top to bottom)"],
-                        reverse = L["Reverse (bottom to top)"],
+                        ssf = L["SSF Mode"],
+                        normal = L["SoulSort Normal"],
+                        reverse = L["SoulSort Reverse"],
                     },
-                    sorting = { "normal", "reverse" },
+                    sorting = { "ssf", "normal", "reverse" },
+                    itemControl = "SSFDropdownItemTip",
+                    arg = {
+                        ssf = L["Shards move to soul bag. SSF does not sort."],
+                        normal = L["Shards move to soul bag. Shards sort top down."],
+                        reverse = L["Shards move to soul bag. Shards sort bottom up."],
+                    },
                     get = function()
-                        if not SSF.db.profile.soulsortLegacy then return nil end
-                        return SSF.db.profile.soulsortReverse and "reverse" or "normal"
+                        local p = SSF.db.profile
+                        if not p.soulsortLegacy then return "ssf" end
+                        return p.soulsortReverse and "reverse" or "normal"
                     end,
                     set = function(_, value)
-                        SSF.db.profile.soulsortReverse = value == "reverse"
-                        changed("soulsortorder")
+                        local p = SSF.db.profile
+                        p.soulsortLegacy = value ~= "ssf"
+                        if value ~= "ssf" then p.soulsortReverse = value == "reverse" end
+                        changed("shardmode")
                     end,
-                    disabled = function() return not SSF.db.profile.soulsortLegacy end,
                 },
                 announceGui = announceGui,
-                minimap = Toggle(1, L["Show minimap button"],
+                minimap = Toggle(1, L["Show minimap icon"],
                     function() return not SSF.db.profile.minimap.hide end,
                     function(_, value)
                         SSF.db.profile.minimap.hide = not value
                         changed("minimap")
                     end),
                 -- Auto follows the client; a code forces that locale (Core:ApplyLanguage).
-                -- Names are each language's own, never translated. The rebuild is deferred
-                -- a tick: AceConfigDialog is still inside this set when it returns.
+                -- Names are each language's own, never translated, and so is "Auto": it is
+                -- the way back for a player stuck in a language they cannot read. The
+                -- rebuild is deferred a tick: AceConfigDialog is still inside this set when
+                -- it returns.
                 language = {
                     type = "select",
                     order = 5,
@@ -397,7 +396,7 @@ local function BuildTable()
                     descStyle = "hidden",
                     name = L["Language"],
                     values = function()
-                        local values = { auto = L["Auto"] }
+                        local values = { auto = "Auto" }
                         for code, locale in pairs(NS.locales) do values[code] = locale.name end
                         return values
                     end,
@@ -420,7 +419,6 @@ local function BuildTable()
         -- chat commands, hidden from the window
         setmax = setmaxCmd,
         announce = announceCmd,
-        soulsort = soulsortCmd,
         pause = pauseCmd,
         delete = {
             type = "execute",
@@ -453,6 +451,15 @@ end
 
 -- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
 -- Core's warlock gate has switched the module off, so /ssf would register on other classes.
+-- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
+-- AceConfigCmd exposes (root entries without cmdHidden), plus "help".
+local function CommandWords(words)
+    for key, entry in pairs(Options.table.args) do
+        if not entry.cmdHidden then words[#words + 1] = key end
+    end
+    words[#words + 1] = "help"
+end
+
 function Options:OnEnable()
     -- a saved volume that is no longer a level (the dropped Faint) goes back to Full
     local p = SSF.db.profile
@@ -460,7 +467,8 @@ function Options:OnEnable()
     p.window.open = nil -- left over from a dropped reopen-after-reload try
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
-    -- /ssf: naked prints the pause line, the status line and a pointer to help.
+    -- /ssf: naked opens the window (open only, never a toggle) and prints the pause line,
+    -- the status line and a pointer to help.
     -- "/ssf help" or "/ssf ?" prints AceConfigCmd's command list. An unknown first word
     -- prints one error line, then the list. Anything else goes straight to AceConfigCmd,
     -- which parses and dispatches to the table.
@@ -474,6 +482,7 @@ function Options:OnEnable()
             SSF:Print("|cff808080> /ssf" .. (input ~= "" and (" " .. input) or "") .. "|r")
         end
         if input == "" then
+            Options:Open()
             SSF:Print(Options:PauseText())
             SSF:Print(Options:StatusText())
             SSF:Print(L["Type /ssf help for commands."])
@@ -495,14 +504,7 @@ function Options:OnEnable()
     AceConfigDialog:SetDefaultSize(APP, 310, 590) -- the width; the height is replaced by the first fit
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shard Forever"])
 
-    -- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
-    -- AceConfigCmd exposes (root entries without cmdHidden), plus "help".
-    AceTab:RegisterTabCompletion("SSF", "/ssf ", function(words)
-        for key, entry in pairs(Options.table.args) do
-            if not entry.cmdHidden then words[#words + 1] = key end
-        end
-        words[#words + 1] = "help"
-    end, SSF:GetModule("Settings").TabUsage)
+    AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, SSF:GetModule("Settings").TabUsage)
 
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
@@ -557,11 +559,9 @@ function Options:OpenKeyBindings()
     local id = Settings.KEYBINDINGS_CATEGORY_ID
     local category = id and Settings.GetCategory(id)
     local layout = category and SettingsPanel:GetLayout(category)
-    if layout then
-        for _, initializer in ipairs(layout:GetInitializers()) do
-            if initializer.data and initializer.data.name == BINDING_SECTION then
-                initializer.data.expanded = true
-            end
+    for _, initializer in ipairs(layout and layout:GetInitializers() or {}) do
+        if initializer.data and initializer.data.name == BINDING_SECTION then
+            initializer.data.expanded = true
         end
     end
     Settings.OpenToCategory(id, BINDING_SECTION)
@@ -597,38 +597,60 @@ local function RestoreTitle(group)
     if band then band:Hide() end
 end
 
+-- across the title row, the same left and right edges as the box below it (Ace anchors the
+-- box at 0 and -1)
+local function NewBand(group)
+    local band = CreateFrame("Frame", nil, group.frame, "BackdropTemplate")
+    band:SetPoint("TOPLEFT", group.frame, "TOPLEFT", 0, 1)
+    band:SetPoint("TOPRIGHT", group.frame, "TOPRIGHT", -1, 1)
+    band:SetHeight(20)
+    band:SetBackdrop(BAND_BACKDROP)
+    bands[group.frame] = band
+    return band
+end
+
+local function StyleTitle(group)
+    group.titletext:SetFontObject(GameFontNormalLarge)
+    group.titletext:SetTextColor(ClassColor())
+    local band = bands[group.frame] or NewBand(group)
+    -- one level under the group's own frame, so the title (a region of that frame) draws on
+    -- top of the strip
+    band:SetFrameLevel(math.max(0, group.frame:GetFrameLevel() - 1))
+    band:SetBackdropColor(0, 0, 0, TITLE_BAND)
+    band:SetBackdropBorderColor(0, 0, 0, TITLE_BAND)
+    band:Show()
+    group:SetCallback("OnRelease", RestoreTitle)
+end
+
 local function StyleGroupTitles(container)
-    for _, child in ipairs(container.children or {}) do
-        if child.type == "InlineGroup" and child.titletext then
-            child.titletext:SetFontObject(GameFontNormalLarge)
-            child.titletext:SetTextColor(ClassColor())
-            local band = bands[child.frame]
-            if not band then
-                -- across the title row, the same left and right edges as the box below it
-                -- (Ace anchors the box at 0 and -1)
-                band = CreateFrame("Frame", nil, child.frame, "BackdropTemplate")
-                band:SetPoint("TOPLEFT", child.frame, "TOPLEFT", 0, 1)
-                band:SetPoint("TOPRIGHT", child.frame, "TOPRIGHT", -1, 1)
-                band:SetHeight(20)
-                band:SetBackdrop(BAND_BACKDROP)
-                bands[child.frame] = band
-            end
-            -- one level under the group's own frame, so the title (a region of that frame)
-            -- draws on top of the strip
-            band:SetFrameLevel(math.max(0, child.frame:GetFrameLevel() - 1))
-            band:SetBackdropColor(0, 0, 0, TITLE_BAND)
-            band:SetBackdropBorderColor(0, 0, 0, TITLE_BAND)
-            band:Show()
-            child:SetCallback("OnRelease", RestoreTitle)
-        end
+    for _, child in ipairs(container.children) do
+        if child.type == "InlineGroup" and child.titletext then StyleTitle(child) end
     end
+end
+
+-- AceConfigDialog rebuilds the window by itself after any setting change, through its own
+-- Open(APP, window), without going through Feed (tested: the titles came back stock gold
+-- after a click). A hook on Open styles the titles as soon as any Open of the window
+-- returns, Feed's included, in the same frame, so the stock titles never draw. Re-hooked
+-- when Open has been replaced: a newer AceConfigDialog loaded by another addon redefines it.
+-- The container can be nil: Ace calls Open(APP) with none after a change made in Blizzard's
+-- Interface Options panel, before our window may exist (nil == nil).
+local function AfterDialogOpen(_, app, container)
+    if app ~= APP or not container or container ~= Options.window then return end
+    StyleGroupTitles(container.children[1]) -- the ScrollFrame AceConfigDialog puts in
+end
+
+local hookedOpen
+local function HookDialogOpen()
+    if AceConfigDialog.Open == hookedOpen then return end
+    hooksecurefunc(AceConfigDialog, "Open", AfterDialogOpen)
+    hookedOpen = AceConfigDialog.Open
 end
 
 -- Feed the table into the window, then size the window to it (see SSFWindow:FitToContent).
 function Options:Feed()
+    HookDialogOpen()
     AceConfigDialog:Open(APP, self.window)
-    local scroll = self.window.children[1] -- the ScrollFrame AceConfigDialog puts in
-    if scroll then StyleGroupTitles(scroll) end
     self.window:FitToContent()
 end
 
@@ -651,10 +673,10 @@ function Options:OnOptionsChanged(_, _, source)
     if source == "chat" then self:Refresh() end
 end
 
--- The small standalone window: minimap click, /ssf options, /ssf settings. Our own
+-- The small standalone window: minimap click, /ssf, /ssf options, /ssf settings. Our own
 -- SSFWindow container (X button, no status bar, sized to content), created once and
 -- re-fed on every open.
--- The minimap button and broker click: close the window if it is showing, else open it.
+-- The minimap icon and broker click: close the window if it is showing, else open it.
 function Options:Toggle()
     if self.window and self.window.frame:IsShown() then
         self.window:Hide()
@@ -684,18 +706,6 @@ function Options:Open()
     end
     if not self.window then
         self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
-        -- AceConfigDialog rebuilds the window by itself after any setting change, without
-        -- going through Feed (tested: the titles came back stock gold after a click). Its
-        -- rebuild adds the empty ScrollFrame first, which is when this layout signal fires
-        -- (AceGUI AddChild -> DoLayout), and only then feeds the groups into it
-        -- (AceConfigDialog FeedToContainer). The rebuild runs without pausing, so the
-        -- styling waits one frame, when every group exists.
-        self.window:SetCallback("OnLayoutFinished", function()
-            C_Timer.After(0, function()
-                local scroll = Options.window and Options.window.children[1]
-                if scroll then StyleGroupTitles(scroll) end
-            end)
-        end)
         self.window:SetCallback("OnMoved", function(_, _, top, left)
             local window = SSF.db.profile.window
             window.top, window.left = top, left

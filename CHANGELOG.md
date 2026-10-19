@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.6.0 (2026-10-18)
+
+- How shards move: one selector in Other settings replaces Use legacy SoulSort method and
+  Legacy SoulSort fill order. Pick SSF Mode (the default), SoulSort Normal or SoulSort
+  Reverse; hover a choice for a short description. Your setting carries over.
+- SSF Mode moves shards only into free slots in your soul bag. Without a soul bag, or with
+  a full one, nothing moves, and nothing else in your bags ever moves. Shards are no longer
+  gathered into bag 4, and loose shards are deleted before your soul bag's. For one solid
+  block, pick SoulSort Normal or Reverse.
+- Fixed: a press over the cap always deletes a shard now, even when shards also need to
+  move. Before, that press only moved them and the delete waited for a later press.
+- `/ssf` opens the options window as well as printing the status. It only opens: an open
+  window stays open. The minimap icon still opens and closes it.
+- `/ssf soulsort` is gone. The mode is set in the options window.
+- Options window: the section titles no longer flicker when you click a setting.
+- Language: Auto always reads "Auto", like the language names, so you can find your way
+  back from a language you can't read.
+- Show minimap button is now Show minimap icon. All six languages updated.
+
 ## 1.5.1 (2026-10-17)
 
 - Options window: three section titles renamed so the shard groups line up. Pause is now

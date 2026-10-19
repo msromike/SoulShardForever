@@ -18,10 +18,7 @@ local GAP = 4          -- between a button and the value box
 
 local function Step(self, dir)
     if self.disabled then return end
-    local step = self.step or 1
-    local value = (self.value or 0) + dir * step
-    if self.min and value < self.min then value = self.min end
-    if self.max and value > self.max then value = self.max end
+    local value = math.min(self.max, math.max(self.min, self.value + dir * self.step))
     if value == self.value then return end
     self:SetValue(value)
     self:Fire("OnValueChanged", value) -- AceConfigDialog calls set

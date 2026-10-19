@@ -1,6 +1,6 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
--- Broker: the LibDataBroker data object and the LibDBIcon minimap button. Listens only:
+-- Broker: the LibDataBroker data object and the LibDBIcon minimap icon. Listens only:
 -- SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED and a bucketed BAG_UPDATE
 -- refresh the text. Click toggles the options window (opens it, or closes it if open).
 -- Fields: type, label "SSF", icon, text "N (cap M)" (+ " Full" at or over the cap, the
@@ -8,12 +8,27 @@
 -- Tooltip: count, cap, over-by when over, and "All SSF actions paused" while paused.
 
 local ADDON = "SoulShardForever" -- the folder: the locale
-local NAME = "SSF"               -- the broker object and minimap button: what bar addons list
+local NAME = "SSF"               -- the broker object and minimap icon: what bar addons list
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Broker = SSF:NewModule("Broker", "AceEvent-3.0", "AceBucket-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local LDB = LibStub("LibDataBroker-1.1")
 local DBIcon = LibStub("LibDBIcon-1.0")
+
+-- The minimap and broker tooltip: count, cap, over-by when over, paused while paused.
+local function ShowTooltip(tooltip)
+    local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
+    local r, g, b = SSF:GetModule("Counter"):StateColor(count, cap)
+    tooltip:AddLine(L["Soul Shard Forever"])
+    tooltip:AddDoubleLine(L["Soul Shards"], count, 0.8, 0.8, 0.8, r, g, b)
+    tooltip:AddDoubleLine(L["Cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
+    if count > cap then
+        tooltip:AddDoubleLine(L["Over by"], count - cap, r, g, b, r, g, b)
+    end
+    if SSF.db.profile.paused then
+        tooltip:AddLine(L["All SSF actions paused"], 1, 0.82, 0)
+    end
+end
 
 -- The count takes the one state color (Counter:StateColor) wherever it is shown here.
 function Broker:Refresh()
@@ -24,31 +39,19 @@ function Broker:Refresh()
     self.object.value = count
 end
 
+-- OnEnable runs once: SSF never disables and re-enables a module (Core's warlock gate only
+-- switches them off at load).
 function Broker:OnEnable()
-    if not self.object then
-        self.object = LDB:NewDataObject(NAME, {
-            type = "data source",
-            label = L["SSF"],
-            icon = SSF.ICON,
-            text = "",
-            value = 0,
-            OnClick = function() SSF:GetModule("Options"):Toggle() end, -- open, or close if open
-            OnTooltipShow = function(tooltip)
-                local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
-                local r, g, b = SSF:GetModule("Counter"):StateColor(count, cap)
-                tooltip:AddLine(L["Soul Shard Forever"])
-                tooltip:AddDoubleLine(L["Soul Shards"], count, 0.8, 0.8, 0.8, r, g, b)
-                tooltip:AddDoubleLine(L["Cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
-                if count > cap then
-                    tooltip:AddDoubleLine(L["Over by"], count - cap, r, g, b, r, g, b)
-                end
-                if SSF.db.profile.paused then
-                    tooltip:AddLine(L["All SSF actions paused"], 1, 0.82, 0)
-                end
-            end,
-        })
-        DBIcon:Register(NAME, self.object, SSF.db.profile.minimap)
-    end
+    self.object = LDB:NewDataObject(NAME, {
+        type = "data source",
+        label = L["SSF"],
+        icon = SSF.ICON,
+        text = "",
+        value = 0,
+        OnClick = function() SSF:GetModule("Options"):Toggle() end, -- open, or close if open
+        OnTooltipShow = ShowTooltip,
+    })
+    DBIcon:Register(NAME, self.object, SSF.db.profile.minimap)
     self:RegisterMessage("SSF_CAP_CHANGED", "Refresh")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")

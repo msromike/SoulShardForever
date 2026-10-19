@@ -87,6 +87,15 @@ function Bags:SortOrder()
     return order
 end
 
+-- Walks one bag's slots from `from` to `to`, calling fn(bag, slot, position). Returns true
+-- when fn returned true, which stops the caller's walk too.
+local function WalkSlots(bag, from, to, step, fn, position)
+    for slot = from, to, step do
+        if fn(bag, slot, position) then return true end
+    end
+    return false
+end
+
 -- Walks every slot in sort order, calling fn(bag, slot, position) where position is the
 -- bag's 1-based index in SortOrder(). Bottom slot first inside each bag; top slot first
 -- inside a regular bag when topFirst. fn returning true stops the walk.
@@ -94,18 +103,15 @@ function Bags:ForEachSlot(fn, topFirst)
     for position, bag in ipairs(self:SortOrder()) do
         local from, to, step = self:NumSlots(bag), 1, -1
         if topFirst and not self:IsSoulBag(bag) then from, to, step = 1, self:NumSlots(bag), 1 end
-        for slot = from, to, step do
-            if fn(bag, slot, position) then return end
-        end
+        if WalkSlots(bag, from, to, step, fn, position) then return end
     end
 end
 
 -- Walks every shard in every bag, in bag and slot order; fn(bag, slot) returning true stops.
 function Bags:ForEachShard(fn)
+    local function onSlot(bag, slot) return self:IsShardAt(bag, slot) and fn(bag, slot) end
     for bag = FIRST_BAG, LAST_BAG do
-        for slot = 1, self:NumSlots(bag) do
-            if self:IsShardAt(bag, slot) and fn(bag, slot) then return end
-        end
+        if WalkSlots(bag, 1, self:NumSlots(bag), 1, onSlot) then return end
     end
 end
 
@@ -126,8 +132,7 @@ end
 
 -- The shard furthest along the sort order (topFirst as in ForEachSlot) that is not locked:
 -- in the backpack-most bag that has one, the top-most shard, or the bottom-most when
--- topFirst. After a sort this is always the same spot. Returns bag, slot, or nil when
--- there is none.
+-- topFirst. Returns bag, slot, or nil when there is none.
 function Bags:LastShard(topFirst)
     local vbag, vslot
     self:ForEachSlot(function(bag, slot)

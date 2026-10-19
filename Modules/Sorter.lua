@@ -1,11 +1,11 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
--- Sorter: one pass moves shards toward the front of the sort order (Bags header): every
--- shard that sits in a later bag than a free slot is picked up, dropped into that free
--- slot, cursor cleared. Only into free slots; other items are never touched; a shard
--- already in the frontmost possible bag stays put. Shards the server still has locked are
--- skipped. Nothing runs in combat and nothing is queued: a pass in combat does nothing and
--- forgets any leftovers; the next press out of combat finishes the job.
+-- Sorter: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits
+-- in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into
+-- that slot, cursor cleared. Only into free soul bag slots; other items are never touched;
+-- with no soul bag, or no free slot in one, nothing moves. Shards the server still has
+-- locked are skipped. Nothing runs in combat and nothing is queued: a pass in combat does
+-- nothing and forgets any leftovers; the next press out of combat finishes the job.
 --
 -- SoulSort legacy (soulsortLegacy on): SoulSort's sort instead. A shard goes to any earlier
 -- slot in the order, in its own bag too, and the slot may hold another item: that item
@@ -36,19 +36,19 @@ function Sorter:Pass()
 
     -- snapshot, in sort order: target slots and movable shards, each with its rank: the
     -- bag position (a shard moves only to an earlier bag), or under legacy the slot's
-    -- place in the walk (a shard moves to any earlier slot). Targets are free slots, and
-    -- under legacy also slots holding a swappable item.
+    -- place in the walk (a shard moves to any earlier slot). Targets are free soul bag
+    -- slots, or under legacy any free slot or slot holding a swappable item.
     local free, shards, locked, n = {}, {}, false, 0
     Bags:ForEachSlot(function(bag, slot, position)
         n = n + 1
         local rank = legacy and n or position
-        if Bags:IsShardAt(bag, slot) then
-            if Bags:IsLocked(bag, slot) then
-                locked = true
-            else
-                shards[#shards + 1] = { bag, slot, rank }
-            end
-        elseif Bags:IsFreeAt(bag, slot) or (legacy and Bags:IsSwappableAt(bag, slot)) then
+        local shard = Bags:IsShardAt(bag, slot)
+        if shard and Bags:IsLocked(bag, slot) then
+            locked = true
+        elseif shard then
+            shards[#shards + 1] = { bag, slot, rank }
+        elseif legacy and (Bags:IsFreeAt(bag, slot) or Bags:IsSwappableAt(bag, slot))
+            or (not legacy and Bags:IsSoulBag(bag) and Bags:IsFreeAt(bag, slot)) then
             free[#free + 1] = { bag, slot, rank }
         end
     end, topFirst)

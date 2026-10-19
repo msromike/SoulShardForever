@@ -109,7 +109,7 @@ local methods = {
     ["LayoutFinished"] = function(self, _, height)
         if height then self:SetHeight(height + CHROME) end
         -- every rebuild ends here, including the ones AceConfigDialog does by itself after
-        -- a setting changes; the owner restyles on it
+        -- a setting changes
         self:Fire("OnLayoutFinished")
     end,
 
