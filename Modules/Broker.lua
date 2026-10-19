@@ -48,7 +48,7 @@ function Broker:OnEnable()
         icon = SSF.ICON,
         text = "",
         value = 0,
-        OnClick = function() SSF:GetModule("Options"):Toggle() end, -- open, or close if open
+        OnClick = function() SSF:GetModule("Window"):Toggle() end, -- open, or close if open
         OnTooltipShow = ShowTooltip,
     })
     DBIcon:Register(NAME, self.object, SSF.db.profile.minimap)

@@ -9,12 +9,16 @@
 -- The label is left-justified (the stock Slider centers it), so it lines up with the
 -- dropdown labels and checkboxes in the window.
 
-local Type, Version = "SSFStepperSlider", 2
+-- MinWidth(): the narrowest it stays usable, its label on one line or the "-", box, "+" row,
+-- whichever is wider (SSFWindow:FitWidth sizes the window to it).
+
+local Type, Version = "SSFStepperSlider", 3
 local AceGUI = LibStub("AceGUI-3.0")
 
 local BUTTON = 20      -- +/- button size
 local VALUE_GAP = 5    -- px between the bar and the value row
 local GAP = 4          -- between a button and the value box
+local VALUE_BOX = 44   -- the value box: room for three digits
 
 local function Step(self, dir)
     if self.disabled then return end
@@ -58,6 +62,11 @@ local methods = {
     end,
 
     ["SetIsPercent"] = function(self, value) self.inner:SetIsPercent(value) end,
+
+    ["MinWidth"] = function(self)
+        local label = self.inner.label:GetUnboundedStringWidth() or 0
+        return math.max(label, 2 * (BUTTON + GAP) + VALUE_BOX)
+    end,
 }
 
 local function Constructor()
@@ -87,7 +96,7 @@ local function Constructor()
 
     -- the value box only needs room for three digits, and sits VALUE_GAP below the bar so
     -- the row of "-", box, "+" has air between it and the bar's min/max labels
-    inner.editbox:SetWidth(44)
+    inner.editbox:SetWidth(VALUE_BOX)
     inner.editbox:ClearAllPoints()
     inner.editbox:SetPoint("TOP", inner.slider, "BOTTOM", 0, -VALUE_GAP)
 

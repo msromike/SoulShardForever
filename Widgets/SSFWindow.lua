@@ -6,7 +6,8 @@
 -- Differences from Frame: an X close button top-right, no status bar, Escape closes it,
 -- and a bottom row of Close (far right, SetCloseText), an optional action button (far left,
 -- SetActionButton) and a small footer line between them (SetFooter). Both buttons size to
--- their text. The window sizes to its content: FitToContent, called by the owner after each
+-- their text. The window's width fits its content (FitWidth: every text on one line, see
+-- there). Its height too: FitToContent, called by the owner after each
 -- AceConfigDialog:Open, measures the ScrollFrame AceConfigDialog adds and sets the height,
 -- so no scrollbar shows, up to the screen's height minus SCREEN_MARGIN. Past that the
 -- window stops growing and the ScrollFrame shows its own scrollbar (a small screen or a
@@ -16,18 +17,25 @@
 -- It can be dragged partly off any edge, but never lost: the top edge (the title, the drag
 -- handle) stays on screen, and at least GRAB pixels of it stay on screen sideways and
 -- from the bottom (UpdateClamp, clamp rect insets sized to the window).
--- AceConfigDialog feeds the options table into it: Options:Open() passes this container
+-- AceConfigDialog feeds the options table into it: Window:Open() passes this container
 -- to AceConfigDialog:Open(appName, container). Private type; nothing here is shared with
 -- other addons through AceGUI's widget pool.
 
-local Type, Version = "SSFWindow", 2
+local Type, Version = "SSFWindow", 3
 local AceGUI = LibStub("AceGUI-3.0")
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
 local CHROME = 93                     -- the content's top (35) and bottom (58) insets
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
-local SCREEN_MARGIN = 40              -- the window is never taller than the screen minus this
+local SCREEN_MARGIN = 40              -- the window is never taller or wider than the screen minus this
+local BUTTON_GAP = 8                  -- px kept between the two bottom buttons
+local EDGE = 17                       -- the content's, buttons' and footer's inset from the sides
+local TITLE_CAP = 30                  -- each end cap of the header art (titlebg_l, titlebg_r)
+-- px added to a measured width: AceGUI's Flow layout compares widths exactly, and frame
+-- sizes come back with float error (measured in game: 255.0001 for 255), so a row measured
+-- to the pixel could still wrap
+local ROUNDING = 1
 local GRAB = 60                       -- px of the window that always stay on screen
 
 -- The frame may hang off the left, right and bottom edges, but keeps GRAB px on screen;
@@ -128,6 +136,74 @@ local methods = {
         self:SetHeight(height)
         local status = self.status or self.localstatus
         status.height = height
+    end,
+
+    -- Size the window's width to what AceConfigDialog fed in: the width at which every text
+    -- shows on one line, never "..." and never wrapped, up to the screen's width minus
+    -- SCREEN_MARGIN. Measured from the widgets after AceConfigDialog:Open returns, so the
+    -- owner styles its titles first. Each piece sets a window width it needs:
+    --   a full-width widget grows 1:1 with the window, so it needs the window wider by
+    --     whatever its text lacks (MinWidth() for SSF's widgets; for stock ones, each of its
+    --     title, label and text strings on one line), or allows it narrower by its slack;
+    --   widgets sharing a row (not full width) need the row's total width;
+    --   the window's own title, bottom buttons and footer.
+    -- Saved to the status table, so the next ApplyStatus starts at this width. Returns true
+    -- when the width changed: the owner feeds again, since the layout depends on the width.
+    ["FitWidth"] = function(self)
+        local width = self.frame:GetWidth() or 0
+        local need = 0
+        local function Need(n) if n > need then need = n end end
+        local function Text(fs) -- a string on one line: the window width it needs
+            if type(fs) == "table" and fs.GetObjectType and fs:GetObjectType() == "FontString" then
+                Need(width + (fs:GetUnboundedStringWidth() or 0) - (fs:GetWidth() or 0))
+            end
+        end
+        local function Visit(widget)
+            if widget.width == "fill" then
+                if widget.MinWidth then
+                    Need(width + widget:MinWidth() - (widget.frame.width or widget.frame:GetWidth() or 0))
+                else
+                    Text(widget.titletext)
+                    Text(widget.label)
+                    Text(widget.text)
+                    Text(widget.frame.label)
+                    Text(widget.frame.text)
+                end
+            end
+            if not widget.children then return end
+            local content, run = widget.content, 0
+            local avail = content and (content.width or content:GetWidth()) or 0
+            for _, child in ipairs(widget.children) do
+                if child.width == "fill" then
+                    run = 0
+                else -- shares a row with its neighbours: the row's total
+                    run = run + (child.frame.width or child.frame:GetWidth() or 0)
+                    Need(width + run - avail)
+                end
+                Visit(child)
+            end
+        end
+        for _, child in ipairs(self.children) do Visit(child) end
+
+        -- the title in its header art, which must stay clear of the X on its right
+        local x = self.xbutton
+        local clear = 2 * ((x:GetWidth() or 0) + 5) -- the X sits 5 px in from the corner
+        -- (the header's middle is the text plus 10, as SetTitle sizes it)
+        Need((self.titletext:GetUnboundedStringWidth() or 0) + 10 + 2 * TITLE_CAP + clear)
+        -- the bottom row: the two buttons, EDGE px in from each side, and the footer under them
+        local buttons = self.closebutton:GetWidth() or 0
+        if self.actionbutton:IsShown() then
+            buttons = buttons + BUTTON_GAP + (self.actionbutton:GetWidth() or 0)
+        end
+        Need(2 * EDGE + buttons)
+        Text(self.footer)
+
+        local new = math.min(need + ROUNDING, UIParent:GetWidth() - SCREEN_MARGIN)
+        if math.abs(new - width) < ROUNDING then return false end
+        self:SetWidth(new)
+        local status = self.status or self.localstatus
+        status.width = new
+        return true
     end,
 
     ["SetTitle"] = function(self, title)
@@ -288,6 +364,7 @@ local function Constructor()
         content      = content,
         actionbutton = actionbutton,
         closebutton  = closebutton,
+        xbutton      = xbutton,
         footer       = footer,
         frame        = frame,
         type         = Type,

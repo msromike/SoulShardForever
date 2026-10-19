@@ -37,6 +37,8 @@ Modules\Trimmer.lua
 Modules\DeleteButton.lua
 Modules\Settings.lua
 Modules\Options.lua
+Modules\Status.lua
+Modules\Window.lua
 Modules\Broker.lua
 Modules\Counter.lua
 Modules\LowGlow.lua

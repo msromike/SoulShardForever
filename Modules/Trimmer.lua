@@ -41,7 +41,7 @@ local function TrimOne(count, cap)
 
     Trimmer:SendMessage("SSF_SHARD_DELETED", count - 1, cap)
     if profile.announce then
-        SSF:Print(L["Deleted a Soul Shard."] .. " " .. SSF:GetModule("Options"):StatusText(count - 1, cap))
+        SSF:Print(L["Deleted a Soul Shard."] .. " " .. SSF:GetModule("Status"):StatusText(count - 1, cap))
     end
 end
 
@@ -55,7 +55,7 @@ function Trimmer:Delete()
             SSF:GetModule("Sounds"):Play(p.pauseSoundName, p.pauseSoundVolume)
         end
         if p.pauseLog then
-            SSF:Print(L["All SSF actions paused"] .. ". " .. SSF:GetModule("Options"):StatusText())
+            SSF:Print(L["All SSF actions paused"] .. ". " .. SSF:GetModule("Status"):StatusText())
         end
         return
     end

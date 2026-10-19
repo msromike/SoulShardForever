@@ -1,14 +1,13 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
--- Options: the one settings table. AceConfigCmd turns it into the /ssf commands, AceConfigDialog
--- turns the same table into the options window and the Interface Options entry, AceTab
+-- Options: the one settings table and the /ssf command. AceConfigCmd turns it into the /ssf
+-- commands, AceConfigDialog
+-- turns the same table into the options window (fed by the Window module) and the Interface
+-- Options entry, AceTab
 -- completes the command words. Keys are the slash words; GUI-only entries carry cmdHidden.
--- Modules that show state (Counter, Broker) listen for SSF_OPTIONS_CHANGED.
+-- Modules that show state (Counter, Broker, Window) listen for SSF_OPTIONS_CHANGED.
 --
--- Window layout: status line, then inline groups (Pause, Cap, Low shard glow, Bag count) and
--- Other, then a small version/credit line. Every toggle is full width, and a label that does
--- not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself to the
--- content after every feed (Feed -> SSFWindow:FitToContent), so it never scrolls.
+-- The window's layout and life cycle are in Modules\Window.lua.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
 -- window; their GUI twins live inside the groups.
 --
@@ -16,7 +15,8 @@
 -- from moving or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
 -- key binding's entry (Bindings.xml SSF_PAUSE); it goes through the chat command's own
 -- path, so it applies, redraws an open window and prints the same echo. A bare /ssf opens
--- the window and prints PauseText ("SSF actions - ON/OFF") on its own line above StatusText.
+-- the window and prints Status:PauseText ("SSF actions - ON/OFF") on its own line above
+-- Status:StatusText.
 --
 -- Stateful settings (cap, announce, pause) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
@@ -24,16 +24,16 @@
 --
 -- Language (in Other, GUI-only): the strings in this table are read from L when it is built,
 -- so a change goes Core:ApplyLanguage -> Options:Rebuild, which builds and re-registers the
--- table and re-feeds the open window. Everything else reads L live.
+-- table and sends SSF_OPTIONS_REBUILT (Window re-dresses and re-feeds an open window).
+-- Everything else reads L live.
 
 local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list
 local APP = "SSF"                -- the AceConfig app: every line AceConfigCmd prints is prefixed with it
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceBucket-3.0", "AceTimer-3.0")
+local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceTimer-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
-local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 local AceConfigCmd = LibStub("AceConfigCmd-3.0")
 local AceTab = LibStub("AceTab-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
@@ -42,25 +42,6 @@ local function Cap() return SSF:GetModule("Cap") end
 local function Bags() return SSF:GetModule("Bags") end
 
 local function Value(v) return SSF:GetModule("Settings"):Value(v) end
-
--- The one count/cap wording, used by the window and the announce line. The count takes
--- the one state color (Counter:StateColor: red / green / yellow, or white when colorizing
--- is off) so the window shows the effect of a cap change without looking at the bag; the
--- cap is a setting, so it gets the neutral value color. Both arguments are optional: the
--- Trimmer passes the count it knows right after a delete, when the bags still show the
--- deleted shard until the server confirms.
-function Options:StatusText(count, cap)
-    count, cap = count or Bags():Count(), cap or Cap():Get()
-    local _, _, _, hex = SSF:GetModule("Counter"):StateColor(count, cap)
-    return L["Soul Shards: %s (cap %s)"]:format("|cff" .. hex .. count .. "|r", Value(cap))
-end
-
--- The first line of a bare /ssf: "SSF actions - ON" (green) while presses work,
--- "- OFF" (red) while paused.
-function Options:PauseText()
-    local on = not SSF.db.profile.paused
-    return L["SSF actions"] .. " - " .. SSF:GetModule("Settings"):OnOff(on)
-end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
@@ -81,29 +62,6 @@ local function Toggle(order, name, get, set, disabled, control, indent)
         name = name, get = get, set = set, disabled = disabled, arg = indent,
     }
 end
-
--- The window title and the group titles are in the warlock class color: nothing else in
--- the window uses it (gold is for control labels, white for option text, green and red
--- for state).
-local function ClassColor()
-    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARLOCK
-    if c then return c.r, c.g, c.b end
-    return 0.53, 0.53, 0.93
-end
-
--- A faint dark strip behind every title (each group title, and the window title in its
--- header), so the class color reads on any scenery behind the window. One darkness for all.
-local TITLE_BAND = 0.45 -- alpha of the black strip
-
--- the group strip's shape: the same art and insets as AceGUI's InlineGroup box (its
--- PaneBackdrop), so the strip has the box's width and rounded corners; both its fill and
--- its edge are the strip's black, so no frame line shows
-local BAND_BACKDROP = {
-    bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-    edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-    tile = true, tileSize = 16, edgeSize = 16,
-    insets = { left = 3, right = 3, top = 5, bottom = 3 },
-}
 
 -- an entry with a narrower width than its builder gave it, so a second control fits on its row
 local function Width(entry, width)
@@ -174,7 +132,7 @@ local function BuildTable()
             cmdHidden = true,
             fontSize = "large",
             dialogControl = "SSFCenteredLabel", -- Widgets\SSFCentered.lua
-            name = function() return Options:StatusText() .. "\n" end,
+            name = function() return SSF:GetModule("Status"):StatusText() .. "\n" end,
         },
 
         -- a blank line between each pair of groups, so the sections stand apart (plain
@@ -204,6 +162,8 @@ local function BuildTable()
                         end
                         changed("pausesound")
                     end,
+                    -- not full width, so the checkbox is as wide as its label (SSFIndentCheckBox)
+                    -- and the window widens to fit this row (SSFWindow:FitWidth)
                     function() return not SSF.db.profile.paused end, nil, 2), "normal"),
                 -- on the same row as Play pause sound; picking a level plays the sound at it
                 pausevolume = {
@@ -434,7 +394,7 @@ local function BuildTable()
             dialogHidden = true,
             name = L["Open options"],
             desc = L["Open the options window."],
-            func = function() Options:Open() end,
+            func = function() SSF:GetModule("Window"):Open() end,
         },
         settings = { -- alias of options (S9)
             type = "execute",
@@ -442,7 +402,7 @@ local function BuildTable()
             dialogHidden = true,
             name = L["Open options"],
             desc = L["Same as options."],
-            func = function() Options:Open() end,
+            func = function() SSF:GetModule("Window"):Open() end,
         },
     }
 
@@ -464,7 +424,6 @@ function Options:OnEnable()
     -- a saved volume that is no longer a level (the dropped Faint) goes back to Full
     local p = SSF.db.profile
     if VolumeKey(p.pauseSoundVolume) == "full" then p.pauseSoundVolume = VOLUMES.full end
-    p.window.open = nil -- left over from a dropped reopen-after-reload try
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
     -- /ssf: naked opens the window (open only, never a toggle) and prints the pause line,
@@ -482,9 +441,10 @@ function Options:OnEnable()
             SSF:Print("|cff808080> /ssf" .. (input ~= "" and (" " .. input) or "") .. "|r")
         end
         if input == "" then
-            Options:Open()
-            SSF:Print(Options:PauseText())
-            SSF:Print(Options:StatusText())
+            SSF:GetModule("Window"):Open()
+            local Status = SSF:GetModule("Status")
+            SSF:Print(Status:PauseText())
+            SSF:Print(Status:StatusText())
             SSF:Print(L["Type /ssf help for commands."])
             return
         end
@@ -501,223 +461,20 @@ function Options:OnEnable()
         end
         AceConfigCmd:HandleCommand("ssf", APP, input)
     end)
-    AceConfigDialog:SetDefaultSize(APP, 310, 590) -- the width; the height is replaced by the first fit
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shard Forever"])
 
     AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, SSF:GetModule("Settings").TabUsage)
 
-    self:RegisterEvent("PLAYER_ENTERING_WORLD")
 
-    self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
-    self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
-    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
-end
-
--- Login and reload: the same two lines as a bare /ssf, once, after the version line. The
--- count needs the bag contents. On a reload they are there when the world is entered; on
--- a fresh login they are not (tested: it counted 0), so the lines wait for the game's
--- BAG_UPDATE_DELAYED, with a timer in case that never comes.
-function Options:PLAYER_ENTERING_WORLD(_, isInitialLogin)
-    self:UnregisterEvent("PLAYER_ENTERING_WORLD")
-    if isInitialLogin then
-        self:RegisterEvent("BAG_UPDATE_DELAYED", "PrintLoginStatus")
-        self.loginTimer = self:ScheduleTimer("PrintLoginStatus", 10)
-    else
-        self:PrintLoginStatus()
-    end
-end
-
-function Options:PrintLoginStatus()
-    if self.loginStatusPrinted then return end
-    self.loginStatusPrinted = true
-    self:UnregisterEvent("BAG_UPDATE_DELAYED")
-    if self.loginTimer then self:CancelTimer(self.loginTimer) end
-    SSF:Print(self:PauseText())
-    SSF:Print(self:StatusText())
 end
 
 -- After a Language change: the table captured its strings when built, so build it again
 -- and re-register (AceConfigRegistry replaces by app name; Settings:Define's AceTab
--- registrations are no-ops the second time). The window's own two strings are reset here
--- too. The Interface Options category keeps the name it was added under until a reload.
+-- registrations are no-ops the second time). Window resets the window's own strings and
+-- redraws on SSF_OPTIONS_REBUILT. The Interface Options category keeps the name it was added
+-- under until a reload.
 function Options:Rebuild()
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table)
-    if self.window then self:DressWindow() end
-    self:Refresh()
-end
-
--- Blizzard's Key Bindings page, scrolled to SSF's section and opened expanded. There is no
--- function to expand a section, so the section's own flag (initializer.data.expanded) is
--- set first; tested in game, and a key bound there afterwards stuck through a reload with
--- nothing blocked. The section name is Bindings.xml's category. SSF's window closes first:
--- it draws above the settings panel.
-local BINDING_SECTION = "Soul Shard Forever"
-
-function Options:OpenKeyBindings()
-    if self.window then self.window:Hide() end
-    local id = Settings.KEYBINDINGS_CATEGORY_ID
-    local category = id and Settings.GetCategory(id)
-    local layout = category and SettingsPanel:GetLayout(category)
-    for _, initializer in ipairs(layout and layout:GetInitializers() or {}) do
-        if initializer.data and initializer.data.name == BINDING_SECTION then
-            initializer.data.expanded = true
-        end
-    end
-    Settings.OpenToCategory(id, BINDING_SECTION)
-end
-
--- The window's own strings, outside the options table: the two bottom buttons and the footer.
--- Bottom right is Blizzard's own "Key Bindings" label (SETTINGS_KEYBINDINGS_LABEL, the key
--- binding page's own title, translated by the game); the X and Escape close the window.
-function Options:DressWindow()
-    self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end)
-    local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
-    self.window:SetRightButton(label, function() Options:OpenKeyBindings() end)
-    self.window:SetTitleColor(ClassColor()) -- "Soul Shard Forever" at the top, as the group titles
-    self.window:SetTitleBand(TITLE_BAND)    -- the same dark strip behind it
-    local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-    self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
-end
-
--- Group titles one font size up in SSF's own window, so the sections stand apart. The boxes
--- are AceGUI's stock InlineGroup, which AceConfigDialog builds and which every addon shares
--- through one pool. So each one gets its stock title font back (GameFontNormal, as the
--- widget creates it) through its OnRelease callback, which AceGUI fires as it takes the
--- box back; no other addon ever receives a restyled box. Blizzard's Interface Options
--- panel for SSF is not touched.
--- the strip SSF added to a shared box, keyed by the box's frame; reused if Ace hands SSF
--- the same box again, hidden whenever Ace takes it back
-local bands = setmetatable({}, { __mode = "k" })
-
-local function RestoreTitle(group)
-    group.titletext:SetFontObject(GameFontNormal)
-    group.titletext:SetTextColor(GameFontNormal:GetTextColor())
-    local band = bands[group.frame]
-    if band then band:Hide() end
-end
-
--- across the title row, the same left and right edges as the box below it (Ace anchors the
--- box at 0 and -1)
-local function NewBand(group)
-    local band = CreateFrame("Frame", nil, group.frame, "BackdropTemplate")
-    band:SetPoint("TOPLEFT", group.frame, "TOPLEFT", 0, 1)
-    band:SetPoint("TOPRIGHT", group.frame, "TOPRIGHT", -1, 1)
-    band:SetHeight(20)
-    band:SetBackdrop(BAND_BACKDROP)
-    bands[group.frame] = band
-    return band
-end
-
-local function StyleTitle(group)
-    group.titletext:SetFontObject(GameFontNormalLarge)
-    group.titletext:SetTextColor(ClassColor())
-    local band = bands[group.frame] or NewBand(group)
-    -- one level under the group's own frame, so the title (a region of that frame) draws on
-    -- top of the strip
-    band:SetFrameLevel(math.max(0, group.frame:GetFrameLevel() - 1))
-    band:SetBackdropColor(0, 0, 0, TITLE_BAND)
-    band:SetBackdropBorderColor(0, 0, 0, TITLE_BAND)
-    band:Show()
-    group:SetCallback("OnRelease", RestoreTitle)
-end
-
-local function StyleGroupTitles(container)
-    for _, child in ipairs(container.children) do
-        if child.type == "InlineGroup" and child.titletext then StyleTitle(child) end
-    end
-end
-
--- AceConfigDialog rebuilds the window by itself after any setting change, through its own
--- Open(APP, window), without going through Feed (tested: the titles came back stock gold
--- after a click). A hook on Open styles the titles as soon as any Open of the window
--- returns, Feed's included, in the same frame, so the stock titles never draw. Re-hooked
--- when Open has been replaced: a newer AceConfigDialog loaded by another addon redefines it.
--- The container can be nil: Ace calls Open(APP) with none after a change made in Blizzard's
--- Interface Options panel, before our window may exist (nil == nil).
-local function AfterDialogOpen(_, app, container)
-    if app ~= APP or not container or container ~= Options.window then return end
-    StyleGroupTitles(container.children[1]) -- the ScrollFrame AceConfigDialog puts in
-end
-
-local hookedOpen
-local function HookDialogOpen()
-    if AceConfigDialog.Open == hookedOpen then return end
-    hooksecurefunc(AceConfigDialog, "Open", AfterDialogOpen)
-    hookedOpen = AceConfigDialog.Open
-end
-
--- Feed the table into the window, then size the window to it (see SSFWindow:FitToContent).
-function Options:Feed()
-    HookDialogOpen()
-    AceConfigDialog:Open(APP, self.window)
-    self.window:FitToContent()
-end
-
--- Keep the status line and the AutoMax state fresh while a window is open.
--- NOT on SSF_CAP_CHANGED: AceConfigDialog calls the slider's set on every drag tick, and a
--- rebuild from inside that loop recreates the slider under the mouse. AceConfig already
--- refreshes after a release or a button click; the bag bucket covers everything else.
--- NotifyChange covers the Interface Options panel; the standalone window is our own
--- container, which AceConfigDialog does not track, so it is re-fed here while shown.
-function Options:Refresh()
-    AceConfigRegistry:NotifyChange(APP)
-    if self.window and self.window.frame:IsShown() then
-        self:Feed()
-    end
-end
-
--- A chat command changed a setting: redraw so an open window shows it. Only for "chat":
--- a GUI change sends the same message on every slider drag tick (see Refresh).
-function Options:OnOptionsChanged(_, _, source)
-    if source == "chat" then self:Refresh() end
-end
-
--- The small standalone window: minimap click, /ssf, /ssf options, /ssf settings. Our own
--- SSFWindow container (X button, no status bar, sized to content), created once and
--- re-fed on every open.
--- The minimap icon and broker click: close the window if it is showing, else open it.
-function Options:Toggle()
-    if self.window and self.window.frame:IsShown() then
-        self.window:Hide()
-    else
-        self:Open()
-    end
-end
-
-function Options:Open()
-    -- the saved position goes into AceConfigDialog's status table, which Feed hands to the
-    -- window; a drag saves it back (OnMoved below)
-    local saved, status = SSF.db.profile.window, AceConfigDialog:GetStatusTable(APP)
-    if saved.top and saved.left then
-        -- The spot is in UI units, which change meaning with the UI scale or the
-        -- resolution, and the clamp only acts on a drag. So the spot is used only on the
-        -- same screen size it was saved on; otherwise the window opens centered and the
-        -- next drag saves a new spot.
-        local w, h = UIParent:GetWidth(), UIParent:GetHeight()
-        if saved.width and saved.height
-           and math.abs(saved.width - w) < 1 and math.abs(saved.height - h) < 1 then
-            status.top, status.left = saved.top, saved.left
-        else
-            status.top, status.left = nil, nil
-        end
-    else
-        status.top, status.left = nil, nil -- never dragged: centered
-    end
-    if not self.window then
-        self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
-        self.window:SetCallback("OnMoved", function(_, _, top, left)
-            local window = SSF.db.profile.window
-            window.top, window.left = top, left
-            -- the screen size the spot belongs to (see Open)
-            window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
-        end)
-        -- bottom row: Delete Shard far left, version and credit in the middle, Close far right
-        self:DressWindow()
-        -- The first open of a session measures before every text size is settled (the
-        -- window has not been drawn yet), which leaves a gap above the buttons. Feed again
-        -- one frame later, after the first draw, so the fit is measured on settled sizes.
-        self:ScheduleTimer("Feed", 0)
-    end
-    self:Feed()
+    self:SendMessage("SSF_OPTIONS_REBUILT")
 end

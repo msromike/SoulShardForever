@@ -6,7 +6,10 @@
 --   SSFCenteredCheckBox : a CheckBox sized to its text and centered in its row.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
 --                         An option's `arg` sets the indent level (2 = 20px); no `arg` is
---                         level 1. AceConfigDialog hands `arg` to SetCustomData.
+--                         level 1. AceConfigDialog hands `arg` to SetCustomData. Not full
+--                         width (sharing a row), it is as wide as its label on one line.
+-- SSFCenteredLabel and SSFIndentCheckBox report MinWidth(): the width their text needs on
+-- one line, which SSFWindow:FitWidth sizes the window to.
 -- All are built by composition: the real widget sits inside ours and every call is
 -- forwarded, the same pattern as SSFStepperSlider.
 --
@@ -47,6 +50,8 @@ do
         ["SetColor"] = function(self, ...) self.inner:SetColor(...) end,
         ["SetImage"] = function(self, ...) self.inner:SetImage(...) SyncHeight(self) end,
         ["SetImageSize"] = function(self, ...) self.inner:SetImageSize(...) SyncHeight(self) end,
+        -- the width the text needs on one line (SSFWindow:FitWidth)
+        ["MinWidth"] = function(self) return self.inner.label:GetUnboundedStringWidth() or 0 end,
     }
 
     local function Constructor()
@@ -138,20 +143,35 @@ end
 -- SSFIndentCheckBox
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFIndentCheckBox", 2
+    local Type, Version = "SSFIndentCheckBox", 3
     local INDENT = 10 -- one indent level, in px
+    local BOX = 24    -- the stock CheckBox's box; its label starts right of it
+    local GAP = 12    -- after the label, when the checkbox shares its row: air before the next control
 
-    -- the inner box fills the row past the indent; the label wraps at the row's edge and the
-    -- row grows, with the box centered vertically so the (box-centered) label stays inside
+    -- the label on one line, in px from the widget's left edge
+    local function Natural(self)
+        return self.indent + BOX + (self.inner.text:GetUnboundedStringWidth() or 0)
+    end
+
+    -- Full width ("fill"): the inner box fills the row past the indent; the label wraps at the
+    -- row's edge and the row grows, with the box centered vertically so the (box-centered)
+    -- label stays inside. Any other width (a checkbox sharing its row): the widget is as wide
+    -- as its label on one line, whatever width it was given, so a longer language widens it
+    -- instead of wrapping it.
     local function Fit(self, width)
         local inner, text, indent = self.inner, self.inner.text, self.indent
+        if self.width ~= "fill" then
+            width = Natural(self) + GAP
+            self.frame:SetWidth(width)
+            self.frame.width = width
+        end
         inner:SetWidth(width - indent)
         text:SetWordWrap(true)
-        text:SetWidth(width - indent - 24)
-        local height = math.max(24, text:GetStringHeight() + 4)
+        text:SetWidth(width - indent - BOX)
+        local height = math.max(BOX, text:GetStringHeight() + 4)
         self:SetHeight(height)
         inner.frame:ClearAllPoints()
-        inner.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", indent, -(height - 24) / 2)
+        inner.frame:SetPoint("TOPLEFT", self.frame, "TOPLEFT", indent, -(height - BOX) / 2)
     end
 
     local methods = {
@@ -173,6 +193,8 @@ do
             self.inner:SetLabel(text)
             if self.frame.width then Fit(self, self.frame.width) end
         end,
+        -- the width this checkbox needs to show its label on one line (SSFWindow:FitWidth)
+        ["MinWidth"] = function(self) return Natural(self) end,
         ["SetValue"] = function(self, value) self.inner:SetValue(value) end,
         ["GetValue"] = function(self) return self.inner:GetValue() end,
         ["SetTriState"] = function(self, v) self.inner:SetTriState(v) end,
