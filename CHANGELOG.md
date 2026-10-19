@@ -1,5 +1,21 @@
 # Changelog
 
+## 1.7.0 (2026-10-19)
+
+- In-game help: the gold "i" next to the window's X turns tooltip help on and off. While
+  it is on (the "i" turns blue), hovering any option, Delete Shard or Keybindings shows
+  what it does; Delete Shard's tip carries a sample macro. Off by default, and a /reload
+  turns it off again.
+- First-load welcome: the first time a character loads SSF, the window opens by itself
+  with help on and a short note beside it pointing at the "i". You see it once per
+  character, and players updating from 1.6 see it once too.
+- The window's width now fits its contents in every language: no section title is cut
+  short with "..." any more.
+- How shards move: the always-on tooltips on its three choices are gone. With help on,
+  the option's own tooltip describes all three.
+- `/ssf help`: the cap, pause, announce and delete lines use the new tooltip wording.
+- Russian: the Full volume level reads "Полная" (was "Макс.").
+
 ## 1.6.1 (2026-10-19)
 
 - New defaults: Shards to keep is 8 (was 20), Show shard count on bag bar and Show on soul

@@ -27,15 +27,16 @@ There are other shard addons. This one is built to disappear.
 ### <span style="color:#8788EE">QOL features</span>
 
 - Cap follows your soul bag size, if you want it.
+- In-game help: click the "i" in the window, then hover any option to see what it does.
+- For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list, and Tab will complete the command.
 - Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
-- For those who lean that way, SSF has slash commands too. Type `/ssf help` for the list, and Tab will complete the command.
 
 ## <span style="color:#8788EE">Set it up</span>
 
 Click the SSF icon on the minimap (or type `/ssf`). Then:
 
 - Set *Shards to keep*.
-- Click *Key Bindings*, bind *Delete Shard*, and bind *Pause all SSF actions* if you want.
+- Click *Keybindings*, bind *Delete Shard*, and bind *Pause all SSF actions* if you want.
 
 ## <span style="color:#8788EE">Keep shards at your cap</span>
 

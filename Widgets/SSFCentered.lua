@@ -1,9 +1,11 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
--- Three AceGUI widgets that reposition their stock counterpart, for use from the options
+-- Four AceGUI widgets that reposition their stock counterpart, for use from the options
 -- table through `dialogControl`. AceConfigDialog drives them exactly like the originals.
 --   SSFCenteredLabel    : a Label with centered text (the status line).
 --   SSFCenteredCheckBox : a CheckBox sized to its text and centered in its row.
+--   SSFUnlabeledDropdown: a Dropdown whose label never shows; its name is only the title
+--                         of its tooltip.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
 --                         An option's `arg` sets the indent level (2 = 20px); no `arg` is
 --                         level 1. AceConfigDialog hands `arg` to SetCustomData. Not full
@@ -134,6 +136,27 @@ do
         inner:SetCallback("OnLeave", function() widget:Fire("OnLeave") end)
         for method, func in pairs(methods) do widget[method] = func end
         return AceGUI:RegisterAsWidget(widget)
+    end
+
+    AceGUI:RegisterWidgetType(Type, Constructor, Version)
+end
+
+-------------------------------------------------------------------------------
+-- SSFUnlabeledDropdown
+-------------------------------------------------------------------------------
+-- The stock Dropdown, built by its own constructor and re-typed so it pools under this
+-- type, that never shows its label: the option still has a name, which AceConfigDialog
+-- puts at the top of the option's tooltip, but the row stays a bare dropdown beside the
+-- control it belongs to (the pause volume beside Play pause sound).
+do
+    local Type, Version = "SSFUnlabeledDropdown", 1
+
+    local function Constructor()
+        local widget = AceGUI.WidgetRegistry["Dropdown"]()
+        widget.type = Type
+        local stockSetLabel = widget.SetLabel
+        widget.SetLabel = function(self) stockSetLabel(self, nil) end -- nil: the stock no-label layout
+        return widget
     end
 
     AceGUI:RegisterWidgetType(Type, Constructor, Version)

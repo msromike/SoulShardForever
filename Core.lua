@@ -40,6 +40,7 @@ local defaults = {
         pauseSoundName = "SSF: Bag thunk", -- LibSharedMedia sound name (Sounds module)
         pauseSoundVolume = 1,       -- 0-1; applies to SSF's own sounds only (Sounds module)
         minimap = { hide = false }, -- LibDBIcon state
+        welcomed = false,           -- the first-load welcome has shown on this character (Window)
         window = {},                -- options window position: top, left (set after a drag)
         -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         -- 1-100 is what the slider allows; any other value is clamped by Cap.

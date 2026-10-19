@@ -3,7 +3,9 @@
 -- SSFWindow: an AceGUI container, SSF's own options window. Adapted from AceGUI's Frame
 -- container (Libs/AceGUI-3.0/widgets/AceGUIContainer-Frame.lua, Copyright (c) 2007, Ace3
 -- Development Team, BSD-style license) the same way KeyCheckClear's window was.
--- Differences from Frame: an X close button top-right, no status bar, Escape closes it,
+-- Differences from Frame: an X close button top-right with an optional help button left of
+-- it (SetHelpButton: Blizzard's "i", gold while off, blue while on), an optional note on its
+-- right edge (ShowSidePanel), no status bar, Escape closes it,
 -- and a bottom row of Close (far right, SetCloseText), an optional action button (far left,
 -- SetActionButton) and a small footer line between them (SetFooter). Both buttons size to
 -- their text. The window's width fits its content (FitWidth: every text on one line, see
@@ -23,6 +25,7 @@
 
 local Type, Version = "SSFWindow", 3
 local AceGUI = LibStub("AceGUI-3.0")
+local LCG = LibStub("LibCustomGlow-1.0") -- the side panel's glow while it shows
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
 local CHROME = 93                     -- the content's top (35) and bottom (58) insets
@@ -31,6 +34,21 @@ local BUTTON_MIN = 80                 -- but never narrower than this
 local SCREEN_MARGIN = 40              -- the window is never taller or wider than the screen minus this
 local BUTTON_GAP = 8                  -- px kept between the two bottom buttons
 local EDGE = 17                       -- the content's, buttons' and footer's inset from the sides
+local HELP_ART = 616343               -- Interface\Common\help-i: Blizzard's own help button, a gold "i"
+local HELP_SIZE = 22                  -- the help button, square: the visible "i" circle, in px
+local HELP_CROP = { 14 / 64, 49 / 64 } -- the circle's edges in the 64 px art (measured); the rest is transparent
+local HELP_DROP = 6                   -- px below the X's middle, so the circle clears the frame's top border
+local HELP_GAP = 4                    -- px between the circle and the X
+local SIDE_PAD = 14                   -- the side panel's text inset from its border
+local SIDE_GAP = 8                    -- px between the window's right edge and the side panel
+local SIDE_ROW_GAP = 8                -- px between the side panel's title, divider, arrow row and text
+local SIDE_ICON = 20                  -- the side panel's copy of the "i"; the arrow is as tall
+local SIDE_ICON_GAP = 6               -- px between the arrow and the "i"
+local ARROW_ART = 131906              -- Interface\Glues\Login\UI-BackArrow: a gold arrow pointing left
+local ARROW_CROP = { 2 / 64, 1, 10 / 64, 50 / 64 } -- the arrow in its 64 px art (measured): 62 x 40
+local HELP_ON = { 0.35, 0.65, 1 }     -- the "i" while help is on: blue (the art greyed, then tinted); off it is its own gold
+-- where every tooltip in the window sits: above-right of the cursor, TIP_X px to its right
+local TIP_ANCHOR, TIP_X, TIP_Y = "ANCHOR_CURSOR_RIGHT", 60, 0
 local TITLE_CAP = 30                  -- each end cap of the header art (titlebg_l, titlebg_r)
 -- px added to a measured width: AceGUI's Flow layout compares widths exactly, and frame
 -- sizes come back with float error (measured in game: 255.0001 for 255), so a row measured
@@ -53,6 +71,33 @@ end
 local function FitButton(button, text)
     button:SetText(text)
     button:SetWidth(math.max(BUTTON_MIN, (button:GetFontString():GetStringWidth() or 0) + BUTTON_PAD))
+end
+
+-- A bottom button's help line: the same look and place as an option's tooltip (the button's
+-- name in gold, the line in white, above-right of the cursor). No line, no tooltip: the
+-- owner hands one over only while help is on.
+local function ButtonTip_OnEnter(button)
+    if not button.tipText then return end
+    GameTooltip:SetOwner(button, TIP_ANCHOR, TIP_X, TIP_Y)
+    GameTooltip:SetText(button:GetText() or "", 1, 0.82, 0, 1, true)
+    GameTooltip:AddLine(button.tipText, 1, 1, 1, true) -- its own breaks; a long line wraps by itself
+    GameTooltip:Show()
+end
+
+local function ButtonTip_OnLeave(button)
+    if GameTooltip:IsOwned(button) then GameTooltip:Hide() end
+end
+
+local function SetButtonTip(button, tipText)
+    button.tipText = tipText
+    if not button.tipHooked then
+        button:HookScript("OnEnter", ButtonTip_OnEnter)
+        button:HookScript("OnLeave", ButtonTip_OnLeave)
+        button.tipHooked = true
+    end
+    if GameTooltip:IsOwned(button) then
+        if tipText then ButtonTip_OnEnter(button) else GameTooltip:Hide() end
+    end
 end
 
 local function Close_OnClick(frame)
@@ -185,9 +230,12 @@ local methods = {
         end
         for _, child in ipairs(self.children) do Visit(child) end
 
-        -- the title in its header art, which must stay clear of the X on its right
+        -- the title in its header art, which must stay clear of the X and the help button on
+        -- its right (both sides kept equal: the title is centered)
         local x = self.xbutton
-        local clear = 2 * ((x:GetWidth() or 0) + 5) -- the X sits 5 px in from the corner
+        local clear = (x:GetWidth() or 0) + 5 -- the X sits 5 px in from the corner
+        if self.helpbutton:IsShown() then clear = clear + HELP_GAP + self.helpbutton:GetWidth() end
+        clear = 2 * clear
         -- (the header's middle is the text plus 10, as SetTitle sizes it)
         Need((self.titletext:GetUnboundedStringWidth() or 0) + 10 + 2 * TITLE_CAP + clear)
         -- the bottom row: the two buttons, EDGE px in from each side, and the footer under them
@@ -211,9 +259,11 @@ local methods = {
         self.titlebg:SetWidth((self.titletext:GetWidth() or 0) + 10)
     end,
 
-    -- the title text's color (private widget, never pooled across addons: nothing to reset)
+    -- the title text's color (private widget, never pooled across addons: nothing to reset);
+    -- kept for the side panel's glow too
     ["SetTitleColor"] = function(self, r, g, b)
         self.titletext:SetTextColor(r, g, b)
+        self.titleColor = { r, g, b }
     end,
 
     -- a black strip behind the title text inside the header art; alpha 0 = none
@@ -224,11 +274,13 @@ local methods = {
     ["Hide"] = function(self) self.frame:Hide() end,
     ["Show"] = function(self) self.frame:Show() end,
 
-    -- the bottom-left button, sized to its text; nil text hides it
-    ["SetActionButton"] = function(self, text, onClick)
+    -- the bottom-left button, sized to its text; nil text hides it. tipText: its help line
+    -- (ButtonTip), nil for none
+    ["SetActionButton"] = function(self, text, onClick, tipText)
         if not text then self.actionbutton:Hide() return end
         FitButton(self.actionbutton, text)
         self.actionbutton:SetScript("OnClick", onClick)
+        SetButtonTip(self.actionbutton, tipText)
         self.actionbutton:Show()
     end,
 
@@ -238,11 +290,70 @@ local methods = {
     end,
 
     -- turns the bottom-right button into an action button, sized to its text; the X and
-    -- Escape still close the window
-    ["SetRightButton"] = function(self, text, onClick)
+    -- Escape still close the window. tipText: as SetActionButton
+    ["SetRightButton"] = function(self, text, onClick, tipText)
         FitButton(self.closebutton, text)
         self.closebutton:SetScript("OnClick", onClick)
+        SetButtonTip(self.closebutton, tipText)
     end,
+
+    -- The help button left of the X: what a click does, whether help is on (blue) or off (gold), and
+    -- its own tooltip (always shown on hover). The owner calls it again after every toggle;
+    -- an open tooltip takes the new text at once. Never called: the button stays hidden.
+    ["SetHelpButton"] = function(self, onClick, isOn, tipText)
+        local button = self.helpbutton
+        button.tipText = tipText
+        button:SetScript("OnClick", onClick)
+        local art = button:GetNormalTexture()
+        art:SetDesaturated(isOn)
+        if isOn then art:SetVertexColor(unpack(HELP_ON)) else art:SetVertexColor(1, 1, 1) end
+        button:Show()
+        if GameTooltip:IsOwned(button) then button:GetScript("OnEnter")(button) end
+    end,
+
+    -- A small note beside the window's top-right corner, SIDE_GAP px out (the first-load
+    -- welcome). Too near the screen's right edge for it, the window goes to the center of the
+    -- screen; that goes in the status table, so the next ApplyStatus keeps it this session
+    -- (a drag still saves the window's spot). It closes with the window and stays closed.
+    ["ShowSidePanel"] = function(self, titleText, bodyText, noteText)
+        local panel, frame = self.sidepanel, self.frame
+        panel.title:SetText(titleText)
+        if self.titleColor then panel.title:SetTextColor(unpack(self.titleColor)) end
+        panel.body:SetText(bodyText)
+        panel.note:SetText(noteText or "")
+        -- as wide as its widest line, unwrapped, plus the inset on both sides; the centered
+        -- title keeps clear of the X in the top-right corner (the X's width on both sides)
+        local clearX = 2 * (panel.close:GetWidth() or 0)
+        local width = math.max(2 * SIDE_PAD + (panel.body:GetUnboundedStringWidth() or 0),
+            2 * SIDE_PAD + (panel.note:GetUnboundedStringWidth() or 0),
+            clearX + (panel.title:GetUnboundedStringWidth() or 0))
+        panel:SetWidth(width)
+        panel.title:SetWidth(width - 2 * SIDE_PAD)
+        panel.body:SetWidth(width - 2 * SIDE_PAD)
+        panel.divider:SetWidth(width - 2 * SIDE_PAD)
+        panel.note:SetWidth(width - 2 * SIDE_PAD)
+        panel:SetFrameLevel(frame:GetFrameLevel() + 20) -- above the window and its widgets
+        panel.textlayer:SetFrameLevel(panel:GetFrameLevel() + 20) -- the text above the glow
+        -- no room on the right: the window goes to the center of the screen (the window
+        -- itself, the note beside it as usual)
+        if (frame:GetRight() or 0) + SIDE_GAP + width > UIParent:GetRight() then
+            local status = self.status or self.localstatus
+            status.top, status.left = nil, nil -- ApplyStatus: no spot is the center
+            self:ApplyStatus()
+        end
+        panel:Show()
+        -- it is seen once, so it asks to be noticed: LibCustomGlow's pixel glow, its defaults
+        -- but 10% faster (0.275 laps a second, default 0.25) and the line 2 px wide (default
+        -- 1), until the window closes
+        -- the crawling lines in the window's title color (warlock purple), the backing line the
+        -- library's own near-black
+        local color = self.titleColor and { self.titleColor[1], self.titleColor[2], self.titleColor[3], 1 }
+        LCG.PixelGlow_Start(panel, color, nil, 0.275, nil, 2)
+    end,
+
+    -- where tooltips in this window sit, as SetOwner / SetAnchorType arguments: the owner
+    -- re-anchors tooltips it does not draw itself (AceConfigDialog's) with these
+    ["TooltipAnchor"] = function() return TIP_ANCHOR, TIP_X, TIP_Y end,
 
     -- the small line between the two bottom buttons
     ["SetFooter"] = function(self, text)
@@ -295,6 +406,104 @@ local function Constructor()
     local xbutton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
     xbutton:SetPoint("TOPRIGHT", -5, -5)
     xbutton:SetScript("OnClick", Close_OnClick)
+
+    -- the help button, left of the X; gold while help is off, blue while on (SetHelpButton)
+    local helpbutton = CreateFrame("Button", nil, frame)
+    helpbutton:SetSize(HELP_SIZE, HELP_SIZE)
+    helpbutton:SetPoint("RIGHT", xbutton, "LEFT", -HELP_GAP, -HELP_DROP)
+    helpbutton:SetNormalTexture(HELP_ART)
+    helpbutton:SetHighlightTexture(HELP_ART, "ADD")
+    -- only the circle: the button's box is the visible "i", nothing transparent around it
+    local lo, hi = HELP_CROP[1], HELP_CROP[2]
+    helpbutton:GetNormalTexture():SetTexCoord(lo, hi, lo, hi)
+    helpbutton:GetHighlightTexture():SetTexCoord(lo, hi, lo, hi)
+    helpbutton:SetScript("OnEnter", function(button)
+        GameTooltip:SetOwner(button, TIP_ANCHOR, TIP_X, TIP_Y)
+        GameTooltip:SetText(button.tipText or "", 1, 1, 1, 1, true)
+        GameTooltip:Show()
+    end)
+    helpbutton:SetScript("OnLeave", function(button)
+        if GameTooltip:IsOwned(button) then GameTooltip:Hide() end
+    end)
+    helpbutton:Hide()
+
+    -- the side panel (ShowSidePanel): the window's own background and a tooltip-weight border,
+    -- SIDE_GAP px right of the window, tops level; hidden whenever the window closes
+    local sidepanel = CreateFrame("Frame", nil, frame, "BackdropTemplate")
+    sidepanel:SetPoint("TOPLEFT", frame, "TOPRIGHT", SIDE_GAP, 0)
+    sidepanel:SetBackdrop({
+        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
+        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
+        tile = true, tileSize = 32, edgeSize = 16,
+        insets = { left = 4, right = 4, top = 4, bottom = 4 },
+    })
+    -- top to bottom, all centered: a title (the window's title color), a divider, an arrow
+    -- pointing left at the help button beside a copy of its "i", then the body text on one
+    -- line. ShowSidePanel sets every width from the text.
+    -- Everything sits on its own layer, raised above the glow when the panel shows.
+    local layer = CreateFrame("Frame", nil, sidepanel)
+    layer:SetAllPoints()
+    sidepanel.textlayer = layer
+
+    local title = layer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
+    title:SetPoint("TOP", 0, -SIDE_PAD)
+    title:SetJustifyH("CENTER")
+    sidepanel.title = title
+
+    local divider = layer:CreateTexture(nil, "OVERLAY")
+    divider:SetColorTexture(1, 1, 1, 0.25)
+    divider:SetHeight(1)
+    divider:SetPoint("TOP", title, "BOTTOM", 0, -SIDE_ROW_GAP)
+    sidepanel.divider = divider
+
+    -- the "i" centered on the panel, the arrow left of it pointing at the real one
+    local icon = layer:CreateTexture(nil, "OVERLAY")
+    icon:SetTexture(HELP_ART)
+    icon:SetTexCoord(HELP_CROP[1], HELP_CROP[2], HELP_CROP[1], HELP_CROP[2])
+    icon:SetSize(SIDE_ICON, SIDE_ICON)
+    icon:SetPoint("TOP", divider, "BOTTOM", 0, -SIDE_ROW_GAP)
+    local arrow = layer:CreateTexture(nil, "OVERLAY")
+    arrow:SetTexture(ARROW_ART)
+    arrow:SetTexCoord(unpack(ARROW_CROP))
+    arrow:SetSize(SIDE_ICON * 62 / 40, SIDE_ICON) -- the art's own shape
+    arrow:SetPoint("RIGHT", icon, "LEFT", -SIDE_ICON_GAP, 0)
+
+    local body = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    body:SetPoint("TOP", icon, "BOTTOM", 0, -SIDE_ROW_GAP)
+    body:SetJustifyH("CENTER")
+    body:SetWordWrap(false) -- one line: the panel widens to it (ShowSidePanel)
+    sidepanel.body = body
+
+    -- the last line, in gold so it stands out (the one-time notice)
+    local note = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    note:SetPoint("TOP", body, "BOTTOM", 0, -SIDE_ROW_GAP)
+    note:SetJustifyH("CENTER")
+    note:SetWordWrap(false)
+    sidepanel.note = note
+
+    -- its height fits the content, measured each time it shows (the welcome waits for the
+    -- loading screen to go, so the fonts measure true)
+    sidepanel:SetScript("OnShow", function(p)
+        p:SetHeight(2 * SIDE_PAD + p.title:GetStringHeight() + 1 + SIDE_ICON
+            + p.body:GetStringHeight() + p.note:GetStringHeight() + 4 * SIDE_ROW_GAP)
+    end)
+    sidepanel:Hide()
+
+    local function CloseSidePanel()
+        sidepanel:Hide()
+        LCG.PixelGlow_Stop(sidepanel)
+    end
+    -- its own X, the one players expect: closes the note, the window stays
+    local sideclose = CreateFrame("Button", nil, layer, "UIPanelCloseButton")
+    sideclose:SetPoint("TOPRIGHT", 0, 0)
+    sideclose:SetScript("OnClick", CloseSidePanel)
+    sidepanel.close = sideclose
+    -- closed with the window too: only when the window itself hides. OnHide also fires when
+    -- the whole UI hides around a loading screen, and the window comes back from that.
+    frame:HookScript("OnHide", function(f)
+        if f:IsShown() or not sidepanel:IsShown() then return end
+        CloseSidePanel()
+    end)
 
     -- bottom: a button row (action far left, Close far right), then the footer line centered
     -- along the bottom edge under it
@@ -365,6 +574,8 @@ local function Constructor()
         actionbutton = actionbutton,
         closebutton  = closebutton,
         xbutton      = xbutton,
+        helpbutton   = helpbutton,
+        sidepanel    = sidepanel,
         footer       = footer,
         frame        = frame,
         type         = Type,

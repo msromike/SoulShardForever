@@ -2,16 +2,17 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.7.0: In-game tooltip help (the "i" by the X), a one-time welcome, and a window that fits every language.
+
 1.6.1: New defaults: a cap of 8, the shard count on your soul bag, and no pause sound.
 
 1.6.0: SSF Mode moves shards into your soul bag and nothing else. One selector for how shards move. `/ssf` opens the window.
-
-1.5.1: Clearer section titles in the options window.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
 
+- **NEW: In-game tooltip help: click the "i" in the window.**
 - **NEW: SSF Mode: shards move into your soul bag, and nothing else in your bags moves.**
 - **NEW: Pause all SSF actions so you can stockpile for raid night.**
 - **NEW: Shard count on your soul bag.**
@@ -57,9 +58,11 @@ Every press deletes first if you're over the cap: the shard nearest the backpack
 - **Low shard warn** is your low mark, 1 to 100. Below it the shard count turns red and the bag button can glow. If your cap is lower than this, the cap is used as the low mark until the cap goes back up. Same slider and − and + as the cap.
 - **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm shards before you run out.
 - **Show shard count on bag bar** is on by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. **Show on soul bag when equipped** is on by default too: the number sits on your soul bag instead, in whatever slot it's in. Untick it to keep the number on your far-left bag.
-- **How shards move** is SSF Mode by default: shards move into your soul bag, and nothing else in your bags moves. **SoulSort Normal** and **SoulSort Reverse** sort the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block, from the top down or the bottom up. A soul bag still fills first. Hover a choice for a short description.
+- **How shards move** is SSF Mode by default: shards move into your soul bag, and nothing else in your bags moves. **SoulSort Normal** and **SoulSort Reverse** sort the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block, from the top down or the bottom up. A soul bag still fills first. With help on, its tooltip describes each choice.
 - **Announce deletions in chat** is off by default. Turn it on to see a chat line for each deleted shard, or for addons that watch chat (like MSBT).
 - **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.
+
+The gold "i" next to the window's X turns tooltip help on: hover any option, Delete Shard or Keybindings to see what it does. It turns blue while on, and it's off again after a /reload. The first time a character loads SSF, the window opens with help already on and a short welcome note beside it, once.
 
 The minimap icon opens and closes the window. Its tooltip shows the count and the cap, and indicates paused status. Settings are per character.
 

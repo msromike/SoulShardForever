@@ -1,7 +1,8 @@
 -- Soul Shard Forever (SSF). MIT, see LICENSE.
 --
 -- Window: SSF's own options window. Opens it, feeds it the options table, keeps it fresh
--- while shown, dresses its buttons and footer, styles its titles. The table itself is
+-- while shown, dresses its buttons and footer, styles its titles, anchors its tooltips
+-- above-right of the cursor. The table itself is
 -- Options'; this module reaches it only through AceConfigDialog / AceConfigRegistry by the
 -- app name "SSF".
 --
@@ -18,7 +19,7 @@
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and a
 --          bucketed BAG_UPDATE (refresh the status line).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
---          saved on).
+--          saved on); profile.welcomed once the first-load welcome has shown.
 
 local ADDON = "SoulShardForever"
 local APP = "SSF" -- the AceConfig app Options registers
@@ -74,12 +75,34 @@ end
 -- The window's own strings, outside the options table: the two bottom buttons and the footer.
 -- Bottom right is Blizzard's own "Key Bindings" label (SETTINGS_KEYBINDINGS_LABEL, the key
 -- binding page's own title, translated by the game); the X and Escape close the window.
+-- Each bottom button gets its help line only while help is on, like every option.
+local LIFE_TAP = 1454 -- the sample macro's spell, by ID so its name is the client's language
+
 function Window:DressWindow()
-    self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end)
+    local Options = SSF:GetModule("Options")
+    local on = Options:IsHelpOn()
+
+    -- Delete Shard's help line: what it does, then a sample macro
+    local deleteTip
+    if on then
+        local spell = C_Spell.GetSpellName(LIFE_TAP) or "Life Tap" -- this client has no GetSpellInfo
+        deleteTip = L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."]
+            .. "\n\n#showtooltip\n/ssf delete\n/cast " .. spell
+    end
+    self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end, deleteTip)
+
     local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
-    self.window:SetRightButton(label, function() Window:OpenKeyBindings() end)
+    -- the two binding names in gold, as they look on the key bindings page
+    local bindTip = on and L["Opens WoW's key bindings menu to bind %s and %s."]
+        :format(Options.Gold(L["Delete Shard"]), Options.Gold(L["Pause all SSF actions"])) or nil
+    self.window:SetRightButton(label, function() Window:OpenKeyBindings() end, bindTip)
+
     self.window:SetTitleColor(ClassColor()) -- "Soul Shard Forever" at the top, as the group titles
     self.window:SetTitleBand(TITLE_BAND)    -- the same dark strip behind it
+    -- the help button: toggles help mode (Options), blue while on, its tooltip says which
+    self.window:SetHelpButton(function() Options:ToggleHelp() end, on,
+        on and L["Help ON: Click to hide tooltip help."]
+        or L["Help OFF: Click to show tooltip help when you hover over an option."])
     local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
     self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
 end
@@ -151,11 +174,36 @@ local function HookDialogOpen()
     hookedOpen = AceConfigDialog.Open
 end
 
+-- Every tooltip in the window sits above-right of the cursor, offset to the right
+-- (SSFWindow:TooltipAnchor, the one place that says where), the help button's included.
+-- AceConfigDialog shows an option's help line in its own
+-- tooltip, which it anchors ANCHOR_TOPRIGHT and every addon shares, so it is re-anchored as
+-- it shows, and only while its owner is inside this window.
+local function InWindow(frame)
+    local window = Window.window and Window.window.frame
+    while frame do
+        if frame == window then return true end
+        frame = frame:GetParent()
+    end
+    return false
+end
+
+local hookedTooltip
+local function HookOptionTooltip()
+    local tooltip = AceConfigDialog.tooltip
+    if not tooltip or tooltip == hookedTooltip then return end
+    tooltip:HookScript("OnShow", function(self)
+        if InWindow(self:GetOwner()) then self:SetAnchorType(Window.window:TooltipAnchor()) end
+    end)
+    hookedTooltip = tooltip
+end
+
 -- Feed the table into the window, then size the window to it: the width first (every text
 -- on one line, SSFWindow:FitWidth; the layout depends on the width, so a changed width is
 -- fed again), then the height (SSFWindow:FitToContent).
 function Window:Feed()
     HookDialogOpen()
+    HookOptionTooltip()
     AceConfigDialog:Open(APP, self.window)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
     self.window:FitToContent()
@@ -236,10 +284,27 @@ function Window:Open()
     self:Feed()
 end
 
+-- The first-load welcome: the first time a character loads SSF, the window opens by itself
+-- with a note beside it pointing at the help button, once. Players updating from an older
+-- SSF see it once too. Waits for the loading screen to go, so the window opens into a drawn,
+-- shown UI.
+
+function Window:LOADING_SCREEN_DISABLED()
+    self:UnregisterEvent("LOADING_SCREEN_DISABLED")
+    SSF.db.profile.welcomed = true
+    -- first run starts with help on: the "i" shows blue, and every option explains itself
+    local Options = SSF:GetModule("Options")
+    if not Options:IsHelpOn() then Options:ToggleHelp() end
+    self:Open()
+    self.window:ShowSidePanel(L["Welcome to SSF"], L["Click for in-game tooltip help."],
+        L["You'll only see this once."])
+end
+
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
 -- before OnEnable, so other classes never get the window.
 function Window:OnEnable()
     SSF.db.profile.window.open = nil -- left over from a dropped reopen-after-reload try
+    if not SSF.db.profile.welcomed then self:RegisterEvent("LOADING_SCREEN_DISABLED") end
 
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")

@@ -18,6 +18,9 @@
 -- the window and prints Status:PauseText ("SSF actions - ON/OFF") on its own line above
 -- Status:StatusText.
 --
+-- Help mode (IsHelpOn, ToggleHelp; the window's help button): each option's help line, its
+-- desc, shows as a hover tooltip while on. Off at load; nothing saved.
+--
 -- Stateful settings (cap, announce, pause) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
@@ -48,11 +51,39 @@ function Options:TogglePause()
     self.pauseCmd.set(nil, SSF.db.profile.paused and "off" or "on")
 end
 
+-- Help mode, the window's help button: while on, every option in the window shows its help
+-- line (its desc) as a hover tooltip; while off, none does. For the session only: nil at
+-- load, so a /reload turns it off, and nothing is saved.
+function Options:IsHelpOn() return self.help == true end
+
+function Options:ToggleHelp()
+    self.help = not self.help
+    self:Rebuild() -- the tooltips are set when the table is built (ApplyHelp)
+end
+
+-- Every entry the window shows that has a help line gets a tooltip, or none, per help mode.
+-- descStyle has to be a plain string (AceConfigRegistry), so it is set on every build. Chat
+-- commands (dialogHidden) are skipped: their desc is AceConfigCmd's help text.
+local function ApplyHelp(group, style)
+    for _, entry in pairs(group.args) do
+        if entry.args then
+            ApplyHelp(entry, style)
+        elseif entry.desc and not entry.dialogHidden then
+            entry.descStyle = style
+        end
+    end
+end
+
+-- a name in a help line, in the game's gold (NORMAL_FONT_COLOR, the labels' color), so it
+-- stands out the way it looks where the player will find it
+function Options.Gold(text) return "|cffffd100" .. text .. "|r" end
+local Gold = Options.Gold
+
 local function changed(key)
     Options:SendMessage("SSF_OPTIONS_CHANGED", key)
 end
 
--- a full-width, GUI-only, tooltip-free checkbox, indented 10px inside its group unless
+-- a full-width, GUI-only checkbox, indented 10px inside its group unless
 -- `control` names another dialogControl (see Widgets\SSFCentered.lua). `indent` is the
 -- SSFIndentCheckBox level (2 = 20px), passed as the option's `arg`; nil is level 1.
 local function Toggle(order, name, get, set, disabled, control, indent)
@@ -89,7 +120,7 @@ local function BuildTable()
     local setmaxGui, setmaxCmd = Settings:Define("setmax", {
         order = 1, kind = "range",
         name = L["Shards to keep"],
-        desc = L["The cap. Shards over this number are deleted one per press."],
+        desc = L["Your shard cap. Shards over this number are deleted one per press."],
         min = Cap().MIN, max = Cap().MAX, step = 1,
         get = function() return Cap():Get() end,
         extra = function() return L["(in bags: %s)"]:format(Value(Bags():Count())) end,
@@ -104,7 +135,7 @@ local function BuildTable()
     local announceGui, announceCmd = Settings:Define("announce", {
         order = 1, kind = "toggle",
         name = L["Announce deletions in chat"],
-        desc = L["One chat line per deleted shard, for addons that watch chat."],
+        desc = L["Writes a line to chat every time a shard is deleted."],
         get = function() return SSF.db.profile.announce end,
         apply = function(value) SSF.db.profile.announce = value end,
     })
@@ -115,7 +146,7 @@ local function BuildTable()
     local pauseGui, pauseCmd = Settings:Define("pause", {
         order = 1, kind = "toggle",
         name = L["Pause all SSF actions"],
-        desc = L["Stop every press from moving or deleting shards, until you turn it off."],
+        desc = L["Pause stops SSF from moving or deleting shards until you unpause."],
         get = function() return SSF.db.profile.paused end,
         apply = function(value) SSF.db.profile.paused = value end,
     })
@@ -166,9 +197,11 @@ local function BuildTable()
                     -- and the window widens to fit this row (SSFWindow:FitWidth)
                     function() return not SSF.db.profile.paused end, nil, 2), "normal"),
                 -- on the same row as Play pause sound; picking a level plays the sound at it
+                -- the name titles its tooltip only: the widget never shows a label
                 pausevolume = {
                     type = "select", order = 3, width = "half",
-                    cmdHidden = true, descStyle = "hidden", name = "",
+                    cmdHidden = true, descStyle = "hidden", name = L["Volume"],
+                    dialogControl = "SSFUnlabeledDropdown", -- Widgets\SSFCentered.lua
                     values = {
                         full = L["Full volume"], loud = L["Loud"], medium = L["Medium"],
                         quiet = L["Quiet"],
@@ -303,8 +336,8 @@ local function BuildTable()
             name = L["Other settings"],
             args = {
                 -- How shards move: SSF Mode, or SoulSort's sort in its Normal or Reverse
-                -- order (soulsortLegacy, soulsortReverse). Each line's tooltip is in arg
-                -- (Widgets\SSFDropdownItemTip.lua). SSF Mode leaves soulsortReverse as it is.
+                -- order (soulsortLegacy, soulsortReverse). What each choice does is in its help
+                -- line, with the others' (help table below). SSF Mode leaves soulsortReverse as it is.
                 shardmode = {
                     type = "select",
                     order = 3,
@@ -318,12 +351,6 @@ local function BuildTable()
                         reverse = L["SoulSort Reverse"],
                     },
                     sorting = { "ssf", "normal", "reverse" },
-                    itemControl = "SSFDropdownItemTip",
-                    arg = {
-                        ssf = L["Shards move to soul bag. SSF does not sort."],
-                        normal = L["Shards move to soul bag. Shards sort top down."],
-                        reverse = L["Shards move to soul bag. Shards sort bottom up."],
-                    },
                     get = function()
                         local p = SSF.db.profile
                         if not p.soulsortLegacy then return "ssf" end
@@ -385,7 +412,7 @@ local function BuildTable()
             order = 1,
             dialogHidden = true,
             name = L["Delete Shard"],
-            desc = L["Delete one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."],
+            desc = L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."],
             func = function() SSF:GetModule("Trimmer"):Delete() end,
         },
         options = {
@@ -406,7 +433,51 @@ local function BuildTable()
         },
     }
 
-    return { type = "group", name = L["Soul Shard Forever"], args = args }
+    -- Help lines: each option's tooltip while help mode is on (ApplyHelp), by group and key.
+    -- The cap, Pause and Announce lines come with their Settings:Define above. Plain
+    -- sentences: the tooltip wraps them itself. Only How shards move keeps one line per choice.
+    local lowWarn = L["Low shard warn"] -- quoted by name in two lines, in the player's language
+    local bullet = "\226\128\162 "     -- "• "
+    local help = {
+        pausegroup = {
+            pausesound = L["Each press while paused plays a sound."],
+            pausevolume = L["Sets how loud the pause sound is."],
+            pauselog = L["Each press while paused prints a chat line."],
+        },
+        cap = {
+            automax = L["Sets cap automatically to the size of all soul bags (one or multiple)."],
+        },
+        glow = {
+            lowmark = L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."],
+            lowglow = L['The bag button glows while you are below "%s".']:format(lowWarn),
+        },
+        bagcount = {
+            counter = L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."],
+            colorize = L['Red when below "%s," green in range, and yellow over the cap.']:format(lowWarn),
+            soulbag = L["Moves the counter to your soul bag, whatever slot it's in."],
+            font = L["The font used on the shard counter."],
+        },
+        other = {
+            -- the intro, then one bullet per choice with a blank line between, each led by
+            -- the choice's own name in gold
+            shardmode = L["How a macro or keybind moves shards."] .. " " .. L["Shards move to soul bag."]
+                .. "\n\n" .. bullet .. Gold(L["SSF Mode"] .. ":") .. " "
+                .. L["SSF does not sort (does NOT change item positions in bags)."]
+                .. "\n\n" .. bullet .. Gold(L["SoulSort Normal"] .. ":") .. " "
+                .. L["Shards sort top down (CHANGES item positions in your bags)."]
+                .. "\n\n" .. bullet .. Gold(L["SoulSort Reverse"] .. ":") .. " "
+                .. L["Shards sort bottom up (CHANGES item positions in your bags)."],
+            minimap = L["Enables SSF minimap icon."],
+            language = L["Auto uses game client language."],
+        },
+    }
+    for group, lines in pairs(help) do
+        for key, text in pairs(lines) do args[group].args[key].desc = text end
+    end
+
+    local root = { type = "group", name = L["Soul Shard Forever"], args = args }
+    ApplyHelp(root, Options.help and "tooltip" or "hidden")
+    return root
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when

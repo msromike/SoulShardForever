@@ -81,8 +81,9 @@ function Settings:Define(key, def)
         type = def.kind,
         order = def.order,
         cmdHidden = true,
-        descStyle = "hidden",
+        descStyle = "hidden", -- Options.lua's ApplyHelp shows desc as a tooltip in help mode
         name = def.name,
+        desc = def.desc,
         get = function() return def.get() end,
         set = function(_, value) set(value) end,
         disabled = def.disabled,
