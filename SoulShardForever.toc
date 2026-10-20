@@ -37,6 +37,8 @@ Modules\DeleteButton.lua
 Modules\Settings.lua
 Modules\Options.lua
 Modules\Status.lua
+Modules\Macros.lua
+Modules\DeleteHelp.lua
 Modules\Window.lua
 Modules\Welcome.lua
 Modules\Broker.lua

@@ -41,6 +41,7 @@ local defaults = {
         pauseSoundVolume = 1,       -- 0-1; applies to SSF's own sounds only (Sounds module)
         minimap = { hide = false }, -- LibDBIcon state
         welcomed = false,           -- the first-load welcome has shown on this character (Welcome)
+        macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
         window = {},                -- options window position: top, left (set after a drag)
         -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         -- 1-100 is what the slider allows; any other value is clamped by Cap.

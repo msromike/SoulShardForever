@@ -126,6 +126,31 @@ local function Mover_OnMouseUp(mover)
     self:Fire("OnMoved", status.top, status.left) -- the owner saves it across sessions
 end
 
+-- The side panel's widths from its text: as wide as its widest line, unwrapped, plus the
+-- inset on both sides, but never wider than the window: past that the text wraps. The
+-- centered title keeps clear of the X in the top-right corner (the X's width on both
+-- sides). Run when the panel shows and whenever the window's width changes (the first open
+-- re-fits the window a frame later). Returns the width.
+local function LayoutSidePanel(self)
+    local panel = self.sidepanel
+    local clearX = 2 * (panel.close:GetWidth() or 0)
+    local width = math.max(2 * SIDE_PAD + (panel.body:GetUnboundedStringWidth() or 0),
+        2 * SIDE_PAD + (panel.note:GetUnboundedStringWidth() or 0),
+        2 * SIDE_PAD + (panel.extra:IsShown() and panel.extra:GetUnboundedStringWidth() or 0),
+        clearX + (panel.title:GetUnboundedStringWidth() or 0))
+    width = math.min(width, self.frame:GetWidth() or width)
+    panel:SetWidth(width)
+    panel.title:SetWidth(width - 2 * SIDE_PAD)
+    panel.body:SetWidth(width - 2 * SIDE_PAD)
+    panel.divider:SetWidth(width - 2 * SIDE_PAD)
+    panel.note:SetWidth(width - 2 * SIDE_PAD)
+    panel.extra:SetWidth(width - 2 * SIDE_PAD)
+    panel.button:SetWidth(width - 2 * SIDE_PAD)
+    panel.buttonNote:SetWidth(width - 2 * SIDE_PAD)
+    panel:Fit()
+    return width
+end
+
 local methods = {
     ["OnAcquire"] = function(self)
         self.frame:SetParent(UIParent)
@@ -148,6 +173,7 @@ local methods = {
         content:SetWidth(contentwidth)
         content.width = contentwidth
         UpdateClamp(self)
+        if self.sidepanel:IsShown() then LayoutSidePanel(self) end
     end,
 
     ["OnHeightSet"] = function(self, height)
@@ -311,27 +337,31 @@ local methods = {
         if GameTooltip:IsOwned(button) then button:GetScript("OnEnter")(button) end
     end,
 
-    -- A small note beside the window's top-right corner, SIDE_GAP px out (the first-load
-    -- welcome). Too near the screen's right edge for it, the window goes to the center of the
-    -- screen; that goes in the status table, so the next ApplyStatus keeps it this session
-    -- (a drag still saves the window's spot). It closes with the window and stays closed.
-    ["ShowSidePanel"] = function(self, titleText, bodyText, noteText)
+    -- A note beside the window's top-right corner, SIDE_GAP px out (the first-load welcome).
+    -- opts, all optional: extra (a left-justified block under the gold note line), button
+    -- and onClick (a full-width button under that), buttonNote (a small line under the
+    -- button), buttonDisabled (greys the button out). Too near the screen's right edge for
+    -- it, the window goes to the center of the screen; that goes in the status table, so the
+    -- next ApplyStatus keeps it this session (a drag still saves the window's spot). It
+    -- closes with the window and stays closed.
+    ["ShowSidePanel"] = function(self, titleText, bodyText, noteText, opts)
+        opts = opts or {}
         local panel, frame = self.sidepanel, self.frame
         panel.title:SetText(titleText)
         if self.titleColor then panel.title:SetTextColor(unpack(self.titleColor)) end
         panel.body:SetText(bodyText)
         panel.note:SetText(noteText or "")
-        -- as wide as its widest line, unwrapped, plus the inset on both sides; the centered
-        -- title keeps clear of the X in the top-right corner (the X's width on both sides)
-        local clearX = 2 * (panel.close:GetWidth() or 0)
-        local width = math.max(2 * SIDE_PAD + (panel.body:GetUnboundedStringWidth() or 0),
-            2 * SIDE_PAD + (panel.note:GetUnboundedStringWidth() or 0),
-            clearX + (panel.title:GetUnboundedStringWidth() or 0))
-        panel:SetWidth(width)
-        panel.title:SetWidth(width - 2 * SIDE_PAD)
-        panel.body:SetWidth(width - 2 * SIDE_PAD)
-        panel.divider:SetWidth(width - 2 * SIDE_PAD)
-        panel.note:SetWidth(width - 2 * SIDE_PAD)
+        panel.extra:SetText(opts.extra or "")
+        panel.extra:SetShown(opts.extra ~= nil)
+        if opts.button then
+            panel.button:SetText(opts.button)
+            panel.button:SetScript("OnClick", opts.onClick)
+            panel.button:SetEnabled(not opts.buttonDisabled)
+        end
+        panel.button:SetShown(opts.button ~= nil)
+        panel.buttonNote:SetText(opts.buttonNote or "")
+        panel.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
+        local width = LayoutSidePanel(self)
         panel:SetFrameLevel(frame:GetFrameLevel() + 20) -- above the window and its widgets
         panel.textlayer:SetFrameLevel(panel:GetFrameLevel() + 20) -- the text above the glow
         -- no room on the right: the window goes to the center of the screen (the window
@@ -437,9 +467,10 @@ local function Constructor()
         tile = true, tileSize = 32, edgeSize = 16,
         insets = { left = 4, right = 4, top = 4, bottom = 4 },
     })
-    -- top to bottom, all centered: a title (the window's title color), a divider, an arrow
-    -- pointing left at the help button beside a copy of its "i", then the body text on one
-    -- line. ShowSidePanel sets every width from the text.
+    -- top to bottom: a title (the window's title color), a divider, an arrow pointing left
+    -- at the help button beside a copy of its "i", the body text, the gold note line (all
+    -- centered), then the optional extra block (left-justified) and button. ShowSidePanel
+    -- sets every width from the text, never wider than the window.
     -- Everything sits on its own layer, raised above the glow when the panel shows.
     local layer = CreateFrame("Frame", nil, sidepanel)
     layer:SetAllPoints()
@@ -471,22 +502,50 @@ local function Constructor()
     local body = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
     body:SetPoint("TOP", icon, "BOTTOM", 0, -SIDE_ROW_GAP)
     body:SetJustifyH("CENTER")
-    body:SetWordWrap(false) -- one line: the panel widens to it (ShowSidePanel)
+    body:SetWordWrap(true) -- wraps only when the panel is held to the window's width
     sidepanel.body = body
 
-    -- the last line, in gold so it stands out (the one-time notice)
+    -- in gold so it stands out (the one-time notice)
     local note = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     note:SetPoint("TOP", body, "BOTTOM", 0, -SIDE_ROW_GAP)
     note:SetJustifyH("CENTER")
-    note:SetWordWrap(false)
+    note:SetWordWrap(true)
     sidepanel.note = note
 
-    -- its height fits the content, measured each time it shows (the welcome waits for the
-    -- loading screen to go, so the fonts measure true)
-    sidepanel:SetScript("OnShow", function(p)
-        p:SetHeight(2 * SIDE_PAD + p.title:GetStringHeight() + 1 + SIDE_ICON
-            + p.body:GetStringHeight() + p.note:GetStringHeight() + 4 * SIDE_ROW_GAP)
-    end)
+    -- the optional block: paragraphs wrap, its own line breaks stay
+    local extra = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    extra:SetPoint("TOP", note, "BOTTOM", 0, -SIDE_ROW_GAP)
+    extra:SetJustifyH("LEFT")
+    extra:SetWordWrap(true)
+    extra:Hide()
+    sidepanel.extra = extra
+
+    -- the optional button, the panel's full inner width
+    local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate")
+    button:SetPoint("TOP", extra, "BOTTOM", 0, -SIDE_ROW_GAP)
+    button:SetHeight(22)
+    button:Hide()
+    sidepanel.button = button
+
+    -- the optional small line under the button: what a click does
+    local buttonNote = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
+    buttonNote:SetPoint("TOP", button, "BOTTOM", 0, -SIDE_ROW_GAP / 2)
+    buttonNote:SetJustifyH("CENTER")
+    buttonNote:SetWordWrap(true)
+    buttonNote:Hide()
+    sidepanel.buttonNote = buttonNote
+
+    -- its height fits the content, measured when the text is set and again each time it
+    -- shows (the welcome waits for the loading screen to go, so the fonts measure true)
+    function sidepanel:Fit()
+        local h = 2 * SIDE_PAD + self.title:GetStringHeight() + 1 + SIDE_ICON
+            + self.body:GetStringHeight() + self.note:GetStringHeight() + 4 * SIDE_ROW_GAP
+        if self.extra:IsShown() then h = h + SIDE_ROW_GAP + self.extra:GetStringHeight() end
+        if self.button:IsShown() then h = h + SIDE_ROW_GAP + self.button:GetHeight() end
+        if self.buttonNote:IsShown() then h = h + SIDE_ROW_GAP / 2 + self.buttonNote:GetStringHeight() end
+        self:SetHeight(h)
+    end
+    sidepanel:SetScript("OnShow", sidepanel.Fit)
     sidepanel:Hide()
 
     local function CloseSidePanel()

@@ -15,7 +15,9 @@
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings),
 --          Toggle() (the minimap icon and broker click), Refresh(),
---          ShowNote(title, body, note) (open with a note beside it: Welcome's).
+--          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
+--          opts as SSFWindow:ShowSidePanel).
+-- Reads:   DeleteHelp:Text() for the Delete Shard tooltip.
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and a
 --          bucketed BAG_UPDATE (refresh the status line).
@@ -77,19 +79,13 @@ end
 -- Bottom right is Blizzard's own "Key Bindings" label (SETTINGS_KEYBINDINGS_LABEL, the key
 -- binding page's own title, translated by the game); the X and Escape close the window.
 -- Each bottom button gets its help line only while help is on, like every option.
-local LIFE_TAP = 1454 -- the sample macro's spell, by ID so its name is the client's language
-
 function Window:DressWindow()
     local Options = SSF:GetModule("Options")
     local on = Options:IsHelpOn()
 
-    -- Delete Shard's help line: what it does, then a sample macro
-    local deleteTip
-    if on then
-        local spell = C_Spell.GetSpellName(LIFE_TAP) or "Life Tap" -- this client has no GetSpellInfo
-        deleteTip = L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."]
-            .. "\n\n#showtooltip\n/ssf delete\n/cast " .. spell
-    end
+    -- Delete Shard's help: every way to delete, with the two macros (DeleteHelp)
+    local deleteTip = on and SSF:GetModule("DeleteHelp"):Text(
+        L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."]) or nil
     self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end, deleteTip)
 
     local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
@@ -286,9 +282,9 @@ function Window:Open()
 end
 
 -- Open the window with a note beside it (SSFWindow:ShowSidePanel). Welcome fills it.
-function Window:ShowNote(titleText, bodyText, noteText)
+function Window:ShowNote(titleText, bodyText, noteText, opts)
     self:Open()
-    self.window:ShowSidePanel(titleText, bodyText, noteText)
+    self.window:ShowSidePanel(titleText, bodyText, noteText, opts)
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off

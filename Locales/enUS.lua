@@ -93,6 +93,17 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = true
 L["Welcome to SSF"] = true
 L["Click for in-game tooltip help."] = true
-L["You'll only see this once."] = true
+L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = true
+L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = true
+L["Use your keybind, click Delete Shard, bottom left in the UI, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = true
+L["In a macro, put /ssf delete on the line before the ability:"] = true
+-- %s: Life Tap's name. A translation names both: %1$s Life Tap, %2$s Bane of Agony.
+L["The Bane macro lets you delete on the move when you don't want to use %s."] = true
+-- a translation may name Bane of Agony with %s
+L["Make sure you're not targeting an enemy with the Bane macro. Otherwise it won't delete because you'll be in combat before the delete fires."] = true
+L["Create recommended macros"] = true
+L["Creates the macros, reloads your UI and opens the macro box after the reload."] = true
+L["Create macros"] = true
+L["No free macro slots. Delete a macro and try again."] = true
 
 NS.RegisterLocale("enUS", "English", L, true)
