@@ -32,6 +32,8 @@ L["Pause SSF"] = "SSF pausieren"
 L["Pause all SSF actions"] = "Alle SSF-Aktionen pausieren"
 L["All SSF actions paused"] = "Alle SSF-Aktionen pausiert"
 L["SSF paused"] = "SSF pausiert"
+L["At cap"] = "Am Limit"
+L["Under cap"] = "Unter dem Limit"
 L["Type /ssf help for commands."] = "/ssf help zeigt die Befehle."
 L['Unknown command "%s".'] = 'Unbekannter Befehl "%s".'
 L["Play pause sound"] = "Pausenton abspielen"
@@ -62,7 +64,6 @@ L["Full"] = "Voll"
 
 -- Broker
 L["Soul Shards"] = "Seelensplitter"
-L["Cap"] = "Limit"
 L["Yes"] = "Ja"
 L["No"] = "Nein"
 
@@ -79,7 +80,7 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = "S
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = "Liegt die Splitterzahl darunter, wirst du durch einen roten Farbwechsel benachrichtigt (und Leuchten, falls aktiviert)."
 L["The bag button glows while you are below \"%s\"."] = "Der Taschenknopf leuchtet, solange du unter \"%s\" bist."
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = "Zeigt deine Splitterzahl auf einem Taschenknopf (standardmäßig die Seelentasche, sonst der linke Taschenplatz)."
-L["Red when below \"%s,\" green in range, and yellow over the cap."] = "|cffff4040Rot|r unter \"%s\", |cff00ff00grün|r im Bereich und |cffffd100gelb|r über dem Limit."
+L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Rot|r unter \"%s\", |cff00ff00grün|r im Bereich und |cffffd100gelb|r über dem Limit."
 L["Moves the counter to your soul bag, whatever slot it's in."] = "Verschiebt den Zähler auf deine Seelentasche, egal in welchem Platz sie steckt."
 L["The font used on the shard counter."] = "Die Schrift des Splitterzählers."
 L["Enables SSF minimap icon."] = "Zeigt das SSF-Minikartensymbol."

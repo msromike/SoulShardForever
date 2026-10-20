@@ -32,6 +32,8 @@ L["Pause SSF"] = "Pausar SSF"
 L["Pause all SSF actions"] = "Pausar todas as ações do SSF"
 L["All SSF actions paused"] = "Todas as ações do SSF pausadas"
 L["SSF paused"] = "SSF pausado"
+L["At cap"] = "No limite"
+L["Under cap"] = "Abaixo do limite"
 L["Type /ssf help for commands."] = "Digite /ssf help para ver os comandos."
 L['Unknown command "%s".'] = 'Comando desconhecido "%s".'
 L["Play pause sound"] = "Tocar som de pausa"
@@ -62,7 +64,6 @@ L["Full"] = "Cheio"
 
 -- Broker
 L["Soul Shards"] = "Estilhaços de Alma"
-L["Cap"] = "Limite"
 L["Yes"] = "Sim"
 L["No"] = "Não"
 
@@ -79,7 +80,7 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = "D
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = "Se você tiver menos estilhaços que isso, será avisado com uma mudança para vermelho (e brilho, se ativado)."
 L["The bag button glows while you are below \"%s\"."] = "O botão da bolsa brilha enquanto você estiver abaixo de \"%s\"."
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = "Mostra seu número de estilhaços em um botão de bolsa (a Bolsa de Almas por padrão; senão, o espaço de bolsa da esquerda)."
-L["Red when below \"%s,\" green in range, and yellow over the cap."] = "|cffff4040Vermelho|r abaixo de \"%s\", |cff00ff00verde|r na faixa e |cffffd100amarelo|r acima do limite."
+L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Vermelho|r abaixo de \"%s\", |cff00ff00verde|r na faixa e |cffffd100amarelo|r acima do limite."
 L["Moves the counter to your soul bag, whatever slot it's in."] = "Move o contador para a sua Bolsa de Almas, em qualquer espaço que ela esteja."
 L["The font used on the shard counter."] = "A fonte do contador de estilhaços."
 L["Enables SSF minimap icon."] = "Ativa o ícone do SSF no minimapa."

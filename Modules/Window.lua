@@ -13,17 +13,21 @@
 -- no text is cut short and it never scrolls. No default size: the first feed lays out at
 -- AceConfigDialog's own default and the fit sets both.
 --
--- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings),
+-- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
+--          nothing in a fight, see InFight),
 --          Toggle() (the minimap icon and broker click), Refresh(),
 --          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
 --          opts as SSFWindow:ShowSidePanel).
 -- Reads:   Macros:AnyMissing() for the
 --          "Create macros" button.
--- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of combat).
+-- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of combat), SSF_WINDOW_OPENED
+--          (after every open).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and a
---          bucketed BAG_UPDATE (refresh the status line).
+--          bucketed BAG_UPDATE (refresh the count row), PLAYER_REGEN_DISABLED (a fight
+--          starts: the window closes, and nothing opens it until the fight is over; it
+--          does not reopen by itself).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
 --          saved on).
 
@@ -39,6 +43,10 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 -- the window uses it (gold is for control labels, white for option text, green and red
 -- for state).
 local function ClassColor() return SSF:ClassColor() end
+
+-- In a fight: the combat lockdown, or already flagged in combat (PLAYER_REGEN_DISABLED fires
+-- as the fight starts, before the lockdown itself is on).
+local function InFight() return InCombatLockdown() or UnitAffectingCombat("player") end
 
 -- A faint dark strip behind every title (each group title, and the window title in its
 -- header), so the class color reads on any scenery behind the window. One darkness for all.
@@ -258,6 +266,7 @@ function Window:Toggle()
 end
 
 function Window:Open()
+    if InFight() then return end -- the window stays shut for the whole fight
     -- the saved position goes into AceConfigDialog's status table, which Feed hands to the
     -- window; a drag saves it back (OnMoved below)
     local saved, status = SSF.db.profile.window, AceConfigDialog:GetStatusTable(APP)
@@ -293,12 +302,20 @@ function Window:Open()
         self:ScheduleTimer("Feed", 0)
     end
     self:Feed()
+    self:SendMessage("SSF_WINDOW_OPENED") -- Welcome brings back a note still owed
 end
 
 -- Open the window with a note beside it (SSFWindow:ShowSidePanel). Welcome fills it.
 function Window:ShowNote(titleText, bodyText, noteText, opts)
+    if InFight() then return end -- no window in a fight, so no note either
     self:Open()
     self.window:ShowSidePanel(titleText, bodyText, noteText, opts)
+end
+
+-- A fight started: the window closes (the note beside it with it). It does not reopen by
+-- itself afterwards.
+function Window:PLAYER_REGEN_DISABLED()
+    if self.window and self.window.frame:IsShown() then self.window:Hide() end
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
@@ -311,4 +328,6 @@ function Window:OnEnable()
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:RegisterMessage("SSF_MACROS_CHANGED", "OnMacrosChanged")
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
+    -- a fight closes the window (and Open refuses until it's over)
+    self:RegisterEvent("PLAYER_REGEN_DISABLED")
 end

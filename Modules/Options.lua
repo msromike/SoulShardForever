@@ -107,6 +107,26 @@ end
 local VOLUME_ORDER = { "full", "loud", "medium", "quiet" }
 local VOLUMES = { full = 1, loud = 0.5, medium = 0.25, quiet = 0.12 }
 
+-- Why a Delete Shard click would not delete, or nil if it would: the button's greyed state
+-- and the reason under it. Paused is a mode, not one reason among others: while paused it
+-- is the only answer, whatever the count, so the line holds still. Unpaused, the cap: at
+-- or under it there is nothing to delete. No combat reason: the window closes for a fight
+-- and stays shut (Window). Trimmer:Delete makes its own checks; this is display only.
+local function Blocker()
+    if SSF.db.profile.paused then return "paused" end
+    local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
+    if count == cap then return "atcap" end
+    if count < cap then return "undercap" end
+end
+
+-- The reason under a greyed Delete Shard, per Blocker(). Read live from L, so a Language
+-- change shows at once.
+local BLOCKER_TEXT = {
+    atcap = function() return L["At cap"] end,
+    undercap = function() return L["Under cap"] end,
+    paused = function() return L["SSF paused"] end,
+}
+
 local function VolumeKey(volume)
     for key, value in pairs(VOLUMES) do
         if value == volume then return key end
@@ -161,6 +181,8 @@ local function BuildTable()
         -- the top row: the count, with Delete Shard right after it, so a click and the number
         -- it changes sit together (Widgets\SSFCentered.lua). A mouse click is the hardware
         -- event Trimmer:Delete needs. Its help is every way to delete (DeleteHelp).
+        -- Greyed whenever a click could not delete (Blocker, above), with the reason in gold
+        -- under it, so a click that does nothing never looks like a broken button.
         deletebutton = {
             type = "execute",
             order = 0,
@@ -169,7 +191,11 @@ local function BuildTable()
             dialogControl = "SSFCountButton",
             name = L["Delete Shard"],
             desc = SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."]),
-            arg = function() return SSF:GetModule("Status"):CountText() end,
+            arg = function()
+                local blocker = Blocker()
+                return SSF:GetModule("Status"):CountText(), blocker and BLOCKER_TEXT[blocker]()
+            end,
+            disabled = function() return Blocker() ~= nil end,
             func = function() SSF:GetModule("Trimmer"):Delete() end,
         },
 
@@ -464,7 +490,7 @@ local function BuildTable()
         bagcount = {
             counter = L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."],
             lowglow = L['The bag button glows while you are below "%s".']:format(lowWarn),
-            colorize = L['Red when below "%s," green in range, and yellow over the cap.']:format(lowWarn),
+            colorize = L['Red when below "%s", green in range, and yellow over the cap.']:format(lowWarn),
             soulbag = L["Moves the counter to your soul bag, whatever slot it's in."],
             font = L["The font used on the shard counter."],
         },

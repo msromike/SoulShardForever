@@ -28,6 +28,7 @@ There are other shard addons. This one is built to disappear.
 
 - Cap follows your soul bag size, if you want it.
 - In-game help: click the "i" in the window, then hover any option to see what it does.
+- Closes its window by itself when combat starts, so it's never in your way in a fight.
 - Makes the recommended macros for you with one click, and shows you where they were created.
 - For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list. Tab can complete commands.
 - Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.

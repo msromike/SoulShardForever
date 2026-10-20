@@ -32,6 +32,8 @@ L["Pause SSF"] = "Пауза SSF"
 L["Pause all SSF actions"] = "Приостановить все действия SSF"
 L["All SSF actions paused"] = "Все действия SSF приостановлены"
 L["SSF paused"] = "SSF на паузе"
+L["At cap"] = "На лимите"
+L["Under cap"] = "Ниже лимита"
 L["Type /ssf help for commands."] = "Введите /ssf help, чтобы увидеть команды."
 L['Unknown command "%s".'] = 'Неизвестная команда "%s".'
 L["Play pause sound"] = "Звук при паузе"
@@ -62,7 +64,6 @@ L["Full"] = "Заполнено"
 
 -- Broker
 L["Soul Shards"] = "Осколки души"
-L["Cap"] = "Лимит"
 L["Yes"] = "Да"
 L["No"] = "Нет"
 
@@ -79,7 +80,7 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = "�
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = "Если осколков меньше этого числа, счетчик краснеет (и подсвечивается, если включено)."
 L["The bag button glows while you are below \"%s\"."] = "Кнопка сумки подсвечивается, пока осколков меньше, чем \"%s\"."
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = "Показывает число осколков на кнопке сумки (по умолчанию на сумке душ, иначе на левой ячейке сумки)."
-L["Red when below \"%s,\" green in range, and yellow over the cap."] = "|cffff4040Красный|r ниже \"%s\", |cff00ff00зеленый|r в норме и |cffffd100желтый|r выше лимита."
+L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Красный|r ниже \"%s\", |cff00ff00зеленый|r в норме и |cffffd100желтый|r выше лимита."
 L["Moves the counter to your soul bag, whatever slot it's in."] = "Переносит счетчик на сумку душ, в какой бы ячейке она ни была."
 L["The font used on the shard counter."] = "Шрифт счетчика осколков."
 L["Enables SSF minimap icon."] = "Включает значок SSF у миникарты."

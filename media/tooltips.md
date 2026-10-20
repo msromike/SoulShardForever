@@ -22,6 +22,11 @@ Help ON: Click to hide tooltip help.
 
 ## Delete Shard * (top row, beside the count)
 
+Greyed whenever a click could not delete (Options' Blocker), with one reason under it in
+gold. While paused it always says SSF paused, whatever the count. Unpaused: At cap or
+Under cap. No combat reason: the window closes when a fight starts and can't be opened
+until it's over. The help below still shows on the greyed button while help is on.
+
 SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match.
 
 In a macro, put /ssf delete on the line before the ability:
@@ -93,7 +98,7 @@ greyed with it off (the glow needs the count).
 
 ### Colorize bag count
 
-Red when below "Low shard warn," green in range, and yellow over the cap.
+Red when below "Low shard warn", green in range, and yellow over the cap.
 
 Each color word is drawn in its own color, the bag's shades (red ff4040, green 00ff00,
 yellow ffd100); the color codes are in each translation.

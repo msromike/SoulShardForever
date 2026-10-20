@@ -31,6 +31,8 @@ L["Pause SSF"] = true
 L["Pause all SSF actions"] = true
 L["All SSF actions paused"] = true
 L["SSF paused"] = true
+L["At cap"] = true
+L["Under cap"] = true
 L["Type /ssf help for commands."] = true
 L['Unknown command "%s".'] = true
 L["Play pause sound"] = true
@@ -61,7 +63,6 @@ L["Full"] = true
 
 -- Broker
 L["Soul Shards"] = true
-L["Cap"] = true
 L["Yes"] = true
 L["No"] = true
 
@@ -80,7 +81,7 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = tr
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = true
 L["The bag button glows while you are below \"%s\"."] = true
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = true
-L["Red when below \"%s,\" green in range, and yellow over the cap."] = "|cffff4040Red|r when below \"%s,\" |cff00ff00green|r in range, and |cffffd100yellow|r over the cap."
+L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Red|r when below \"%s\", |cff00ff00green|r in range, and |cffffd100yellow|r over the cap."
 L["Moves the counter to your soul bag, whatever slot it's in."] = true
 L["The font used on the shard counter."] = true
 L["Enables SSF minimap icon."] = true

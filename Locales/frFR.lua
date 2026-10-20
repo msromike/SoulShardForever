@@ -32,6 +32,8 @@ L["Pause SSF"] = "Suspendre SSF"
 L["Pause all SSF actions"] = "Suspendre toutes les actions SSF"
 L["All SSF actions paused"] = "Toutes les actions SSF suspendues"
 L["SSF paused"] = "SSF en pause"
+L["At cap"] = "À la limite"
+L["Under cap"] = "Sous la limite"
 L["Type /ssf help for commands."] = "Tapez /ssf help pour les commandes."
 L['Unknown command "%s".'] = 'Commande inconnue « %s ».'
 L["Play pause sound"] = "Jouer le son de pause"
@@ -62,7 +64,6 @@ L["Full"] = "Plein"
 
 -- Broker
 L["Soul Shards"] = "Fragments d'âme"
-L["Cap"] = "Limite"
 L["Yes"] = "Oui"
 L["No"] = "Non"
 
@@ -79,7 +80,7 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = "R
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = "Si le nombre de fragments passe sous ce seuil, vous êtes averti par un passage au rouge (et une lueur si activée)."
 L["The bag button glows while you are below \"%s\"."] = "Le bouton de sac luit tant que vous êtes sous \"%s\"."
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = "Affiche votre nombre de fragments sur un bouton de sac (le sac d'âme par défaut, sinon l'emplacement de sac de gauche)."
-L["Red when below \"%s,\" green in range, and yellow over the cap."] = "|cffff4040Rouge|r sous \"%s\", |cff00ff00vert|r dans la plage et |cffffd100jaune|r au-dessus de la limite."
+L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Rouge|r sous \"%s\", |cff00ff00vert|r dans la plage et |cffffd100jaune|r au-dessus de la limite."
 L["Moves the counter to your soul bag, whatever slot it's in."] = "Place le compteur sur votre sac d'âme, quel que soit son emplacement."
 L["The font used on the shard counter."] = "La police du compteur de fragments."
 L["Enables SSF minimap icon."] = "Affiche l'icône de minicarte de SSF."

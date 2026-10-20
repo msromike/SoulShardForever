@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.8.2 (2026-10-20)
+
+- Delete Shard greys out whenever a click can't delete, with the reason under it in gold:
+  At cap, Under cap or SSF paused. Before, a click that couldn't delete did nothing, which
+  looked like a broken button. While paused it always says SSF paused.
+- The window closes by itself when a fight starts, and can't be opened until the fight is
+  over. It doesn't reopen by itself afterwards.
+- The welcome screen counts as seen only when you close it yourself, outside a fight. If a
+  fight closes it, it comes back the next time the window opens, or at your next login or
+  reload.
+
 ## 1.8.1 (2026-10-20)
 
 - The welcome screen shows once more after this update, to show what moved. It was redone,

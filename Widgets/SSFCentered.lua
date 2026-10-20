@@ -3,9 +3,10 @@
 -- Five AceGUI widgets that reposition their stock counterpart, for use from the options
 -- table through `dialogControl`. AceConfigDialog drives them exactly like the originals.
 --   SSFCountButton      : a Button with a line of large text before it, the pair centered
---                         in its row (the count and Delete Shard). For an `execute`
---                         option: its name is the button's label, its `arg` a function that
---                         returns the text.
+--                         in its row (the count and Delete Shard), and a small gold reason
+--                         under the button (why it is greyed). For an `execute` option: its
+--                         name is the button's label, its `arg` a function that returns the
+--                         text and the reason (nil for none), its `disabled` greys it.
 --   SSFCenteredLabel    : a Label with centered text. Unused since the count line became
 --                         SSFCountButton; kept in case a centered line is needed again.
 --   SSFCenteredCheckBox : a CheckBox sized to its text and centered in its row.
@@ -33,12 +34,14 @@ local AceGUI = LibStub("AceGUI-3.0")
 -- SSFCountButton
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFCountButton", 1
+    local Type, Version = "SSFCountButton", 2
     local GAP = 12     -- px between the text and the button
     local PAD = 30     -- the button is its label plus this (SSFWindow's bottom buttons too)
-    local BELOW = 12   -- air under the row, before the first group
+    local REASON_GAP = 2 -- px between the button and the reason under it
+    local BELOW = 6    -- air under the reason line, before the first group
 
-    -- the text, then the button right after it, the pair centered in the row
+    -- the text, then the button right after it, the pair centered in the row; the reason
+    -- under the button, its line's height kept even when empty, so nothing moves
     local function Layout(self)
         local width = self.frame.width or self.frame:GetWidth() or 0
         local button = self.inner
@@ -51,22 +54,30 @@ do
             -(height - (self.label:GetStringHeight() or 0)) / 2)
         button.frame:ClearAllPoints()
         button.frame:SetPoint("LEFT", self.label, "RIGHT", GAP, 0)
-        self:SetHeight(height + BELOW)
+        self.reason:ClearAllPoints()
+        self.reason:SetPoint("TOP", button.frame, "BOTTOM", 0, -REASON_GAP)
+        local _, size = self.reason:GetFont()
+        self:SetHeight(height + REASON_GAP + (size or 10) + BELOW)
     end
 
     local methods = {
         ["OnAcquire"] = function(self)
             self:SetWidth(200)
             self.label:SetText("")
+            self.reason:SetText("")
             self.inner:SetText("")
             self.inner:SetDisabled(false)
         end,
         ["OnWidthSet"] = function(self) Layout(self) end,
         -- the option's name: the button's label
         ["SetText"] = function(self, text) self.inner:SetText(text) Layout(self) end,
-        -- the option's `arg`: a function returning the text before the button
+        -- the option's `arg`: a function returning the text before the button and the
+        -- reason under it (nil for none)
         ["SetCustomData"] = function(self, getText)
-            self.label:SetText(type(getText) == "function" and getText() or "")
+            local text, reason
+            if type(getText) == "function" then text, reason = getText() end
+            self.label:SetText(text or "")
+            self.reason:SetText(reason or "")
             Layout(self)
         end,
         ["SetDisabled"] = function(self, v) self.inner:SetDisabled(v) end,
@@ -80,6 +91,7 @@ do
         local frame = CreateFrame("Frame", nil, UIParent)
         local widget = { frame = frame, type = Type }
         widget.label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+        widget.reason = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall") -- gold
         local inner = AceGUI:Create("Button")
         inner.frame:SetParent(frame)
         inner.frame:Show()

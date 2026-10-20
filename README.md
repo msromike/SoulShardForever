@@ -2,11 +2,11 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.8.2: Delete Shard greys out when a click can't delete, and says why: At cap, Under cap or SSF paused. The window closes itself when a fight starts.
+
 1.8.1: Delete Shard sits beside your shard count. A minimap tooltip that always shows your count, cap, low mark and pause. "SSF paused: Yes / No" everywhere, and an easier welcome screen.
 
 1.8.0: One click makes the two recommended macros and opens your macro window on them, glowing until you drag them to a bar. A new welcome screen teaches every way to delete.
-
-1.7.0: In-game tooltip help (the "i" by the X), a one-time welcome, and a window that fits every language.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
@@ -60,7 +60,7 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
   and SSF_BoA, reloads your UI, and opens the macro window with them glowing until you
   drag them onto a bar.
 
-- **The Delete Shard button** in the GUI window, right beside your shard count.
+- **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason under it: At cap, Under cap or SSF paused. The window closes itself when a fight starts and opens again only after it.
 
 Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless in SoulSort Mode.
 

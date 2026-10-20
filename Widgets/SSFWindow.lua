@@ -410,7 +410,8 @@ local methods = {
     -- { text } paragraphs, left-justified, and { text, macro = true } macros, each in its own
     -- box), button and onClick (a button as wide as its text), buttonNote (a small line just
     -- above the button: what a click does, read before the click), buttonDisabled (greys the
-    -- button out). Too near the screen's right edge for it, the window goes to the center of
+    -- button out), onClose (called once when the note closes, by its X or the window
+    -- closing). Too near the screen's right edge for it, the window goes to the center of
     -- the screen; that goes in the status table, so the next ApplyStatus keeps it this
     -- session (a drag still saves the window's spot). It closes with the window and stays
     -- closed.
@@ -451,6 +452,7 @@ local methods = {
         panel.button:SetShown(opts.button ~= nil)
         panel.buttonNote:SetText(opts.buttonNote or "")
         panel.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
+        panel.onClose = opts.onClose
         local width = LayoutSidePanel(self)
         panel:SetFrameLevel(frame:GetFrameLevel() + 20) -- above the window and its widgets
         panel.textlayer:SetFrameLevel(panel:GetFrameLevel() + 20) -- the text above the backdrop
@@ -644,8 +646,13 @@ local function Constructor()
     sidepanel:SetScript("OnShow", sidepanel.Fit)
     sidepanel:Hide()
 
+    -- closes the note and tells its owner once (ShowSidePanel's opts.onClose), whatever
+    -- closed it: its X, or the window closing (X, Escape, Close, or a fight)
     local function CloseSidePanel()
         sidepanel:Hide()
+        local onClose = sidepanel.onClose
+        sidepanel.onClose = nil
+        if onClose then onClose() end
     end
     -- its own X, the one players expect: closes the note, the window stays
     local sideclose = CreateFrame("Button", nil, layer, "UIPanelCloseButton")
