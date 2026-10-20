@@ -128,6 +128,7 @@ C_Timer = { After = function() end }
 function UnitClassBase() return "WARLOCK" end
 function UnitClass() return "Warlock", "WARLOCK" end
 function UnitName() return "Tester" end
+function UnitNameUnmodified() return "Tester" end
 function UnitRace() return "Undead", "Scourge" end
 function UnitFactionGroup() return "Horde" end
 function GetRealmName() return "Hrodbar" end

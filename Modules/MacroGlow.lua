@@ -11,10 +11,13 @@
 -- the spell the macro resolves to.
 --
 -- Listens: SSF_MACRO_WINDOW_SHOWN; ACTIONBAR_SLOT_CHANGED while one still glows.
+-- Hooks:   MacroSelector.RunSetup and MacroFrame's OnHide (AceHook), attached the first
+--          time the window shows: Blizzard_MacroUI loads on demand, so neither frame
+--          exists at OnEnable.
 -- Reads:   Macros:Names(). Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local MacroGlow = SSF:NewModule("MacroGlow", "AceEvent-3.0")
+local MacroGlow = SSF:NewModule("MacroGlow", "AceEvent-3.0", "AceHook-3.0")
 local LCG = LibStub("LibCustomGlow-1.0")
 
 local MAX_ACTION_SLOT = 180 -- every action slot; bar addons use the same ones
@@ -58,10 +61,9 @@ function MacroGlow:OnWindowShown()
         if not OnABar(name) then pending[name] = true end
     end
     -- hooked once, the first time the window exists (Blizzard_MacroUI loads on demand)
-    if not self.hooked then
-        hooksecurefunc(MacroFrame.MacroSelector, "RunSetup", function(_, button) UpdateButton(button) end)
-        MacroFrame:HookScript("OnHide", function() MacroGlow:Stop() end)
-        self.hooked = true
+    if not self:IsHooked(MacroFrame.MacroSelector, "RunSetup") then
+        self:SecureHook(MacroFrame.MacroSelector, "RunSetup", function(_, button) UpdateButton(button) end)
+        self:SecureHookScript(MacroFrame, "OnHide", "Stop")
     end
     UpdateAll()
     if next(pending) then self:RegisterEvent("ACTIONBAR_SLOT_CHANGED") end
