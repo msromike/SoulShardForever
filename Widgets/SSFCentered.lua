@@ -34,18 +34,17 @@ local AceGUI = LibStub("AceGUI-3.0")
 -- SSFCountButton
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFCountButton", 2
+    local Type, Version = "SSFCountButton", 3
     local GAP = 12     -- px between the text and the button
-    local PAD = 30     -- the button is its label plus this (SSFWindow's bottom buttons too)
     local REASON_GAP = 2 -- px between the button and the reason under it
     local BELOW = 6    -- air under the reason line, before the first group
 
     -- the text, then the button right after it, the pair centered in the row; the reason
-    -- under the button, its line's height kept even when empty, so nothing moves
+    -- under the button, its line's height kept even when empty, so nothing moves. The
+    -- button sizes itself to its label: the stock Button's autoWidth.
     local function Layout(self)
         local width = self.frame.width or self.frame:GetWidth() or 0
         local button = self.inner
-        button:SetWidth((button.text:GetStringWidth() or 0) + PAD)
         local textWidth = self.label:GetUnboundedStringWidth() or 0
         local total = textWidth + GAP + button.frame:GetWidth()
         local height = math.max(self.label:GetStringHeight() or 0, button.frame:GetHeight() or 24)
@@ -83,7 +82,7 @@ do
         ["SetDisabled"] = function(self, v) self.inner:SetDisabled(v) end,
         -- the width the pair needs on one line (SSFWindow:FitWidth)
         ["MinWidth"] = function(self)
-            return (self.label:GetUnboundedStringWidth() or 0) + GAP + (self.inner.text:GetStringWidth() or 0) + PAD
+            return (self.label:GetUnboundedStringWidth() or 0) + GAP + (self.inner.frame:GetWidth() or 0)
         end,
     }
 
@@ -93,6 +92,7 @@ do
         widget.label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
         widget.reason = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall") -- gold
         local inner = AceGUI:Create("Button")
+        inner:SetAutoWidth(true) -- held for the widget's life, never re-acquired, so this sticks
         inner.frame:SetParent(frame)
         inner.frame:Show()
         widget.inner = inner
