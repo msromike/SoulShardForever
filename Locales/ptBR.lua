@@ -92,6 +92,15 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = "Abre o menu de atalhos do WoW para atribuir %s e %s."
 L["Welcome to SSF"] = "Bem-vindo ao SSF"
 L["Click for in-game tooltip help."] = "Clique para ver ajuda nas dicas dentro do jogo."
-L["You'll only see this once."] = "Você só verá isto uma vez."
+L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = "Você não verá esta tela de boas-vindas de novo neste personagem, a menos que clique em Criar macros na interface."
+L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = "Use seu atalho, clique neste botão, use uma macro ou combine tudo. Exclui um Estilhaço de Alma se você estiver acima do limite."
+L["Use your keybind, click Delete Shard, bottom left in the UI, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = "Use seu atalho, clique em Excluir estilhaço, no canto inferior esquerdo da interface, use uma macro ou combine tudo. Exclui um Estilhaço de Alma se você estiver acima do limite."
+L["In a macro, put /ssf delete on the line before the ability:"] = "Em uma macro, coloque /ssf delete na linha antes da habilidade:"
+L["The Bane macro lets you delete on the move when you don't want to use %s."] = "A macro de %2$s permite excluir em movimento quando você não quer usar %1$s."
+L["Make sure you're not targeting an enemy with the Bane macro. Otherwise it won't delete because you'll be in combat before the delete fires."] = "Não tenha um inimigo como alvo ao usar a macro de %s. Senão ela não exclui, porque você entra em combate antes de a exclusão acontecer."
+L["Create recommended macros"] = "Criar macros recomendadas"
+L["Creates the macros, reloads your UI and opens the macro box after the reload."] = "Cria as macros, recarrega sua interface e abre a janela de macros após recarregar."
+L["Create macros"] = "Criar macros"
+L["No free macro slots. Delete a macro and try again."] = "Não há espaços de macro livres. Exclua uma macro e tente de novo."
 
 NS.RegisterLocale("ptBR", "Português", L)

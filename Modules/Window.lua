@@ -17,8 +17,11 @@
 --          Toggle() (the minimap icon and broker click), Refresh(),
 --          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
 --          opts as SSFWindow:ShowSidePanel).
--- Reads:   DeleteHelp:Text() for the Delete Shard tooltip.
+-- Reads:   DeleteHelp:Text() for the Delete Shard tooltip; Macros:AnyMissing() for the
+--          "Create macros" button.
+-- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of combat).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
+--          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and a
 --          bucketed BAG_UPDATE (refresh the status line).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
@@ -87,6 +90,13 @@ function Window:DressWindow()
     local deleteTip = on and SSF:GetModule("DeleteHelp"):Text(
         L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."]) or nil
     self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end, deleteTip)
+
+    -- "Create macros" while either macro is missing: it opens the welcome note (Welcome
+    -- listens), whose button makes them. Never calls Welcome, so nothing loops.
+    local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
+    self.window:SetMiddleButton(createText, function()
+        if not InCombatLockdown() then Window:SendMessage("SSF_SHOW_WELCOME") end
+    end)
 
     local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
     -- the two binding names in gold, as they look on the key bindings page
@@ -232,6 +242,13 @@ function Window:OnOptionsRebuilt()
     self:Refresh()
 end
 
+-- The player's macros changed: "Create macros" shows or hides, and the width re-fits.
+function Window:OnMacrosChanged()
+    if not self.window then return end
+    self:DressWindow()
+    self:Refresh()
+end
+
 -- The small standalone window: minimap click, /ssf, /ssf options, /ssf settings. Our own
 -- SSFWindow container (X button, no status bar, sized to content), created once and
 -- re-fed on every open.
@@ -295,5 +312,6 @@ function Window:OnEnable()
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
+    self:RegisterMessage("SSF_MACROS_CHANGED", "OnMacrosChanged")
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
 end

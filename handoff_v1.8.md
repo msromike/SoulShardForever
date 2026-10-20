@@ -15,7 +15,8 @@ Build in three rounds, each tested in game by Mike before the next. After each r
       Built 2026-10-19: Modules/Welcome.lua (new), Window.lua (welcome out, public
       `ShowNote(title, body, note)` in), .toc (+Welcome.lua after Window.lua), Core.lua
       (one comment). Tested works (Mike, 2026-10-19); committed `f821e46`.
-- [ ] **Round 2: Macros, DeleteHelp, the new welcome note.** Test: the tooltip text, the
+- [x] **Round 2: Macros, DeleteHelp, the new welcome note.** Tested works (Mike,
+      2026-10-19); committed `5c906d7`. Test: the tooltip text, the
       note's layout (also with the window at the screen's right edge), the note's create
       button makes the macros and opens the macro window.
       Built 2026-10-19: Macros.lua and DeleteHelp.lua (new), Welcome.lua (the new note,
@@ -47,8 +48,22 @@ Build in three rounds, each tested in game by Mike before the next. After each r
       - Never hard-code the spell's icon (Mike: breaks macros players extend with
         modifiers). Mike tests his way: he deletes macros in the macro window and reloads
         himself; give him only the lines to paste after that.
-- [ ] **Round 3: "Create macros" in the main window, the 1.7 re-pop, MacroGlow, six
-      languages.** Test: Step 2's full list below.
+- [x] **Round 3: "Create macros" in the main window, the 1.7 re-pop, MacroGlow, six
+      languages.** Tested works (Mike, 2026-10-19); committed (see git log, "WIP 1.8
+      round 3"). Still open: the help line for "Create macros" (Mike's words).
+      Built 2026-10-19 (checks pass, waiting on Mike's test): SSFWindow SetMiddleButton
+      (centered; FitWidth counts it) and pixel glow removed; Window shows "Create macros"
+      while Macros:AnyMissing(), click sends SSF_SHOW_WELCOME, re-dresses on
+      SSF_MACROS_CHANGED; Welcome WELCOME_VERSION 10800 and listens SSF_SHOW_WELCOME;
+      Macros sends SSF_MACRO_WINDOW_SHOWN, public Names(); MacroGlow.lua (new); five
+      translations, old "only once" key gone; .docs/TOOLTIPS.md updated. Open: a help
+      line for "Create macros" (every bottom button has one while help is on; Mike's words).
+      Mike's test so far: re-pop, no pixel glow, greyed button, glow on both (SSF_LT was
+      not on a bar: deleting a macro clears it from bars), glow follows tabs, stops on drop,
+      "Create macros" gone after; German and Russian tooltips fit. Found: the tooltip
+      dropped the blank line between the two macros in English and German (not Russian).
+      Fix: ButtonTip adds one tooltip line per text line, blank ones as " " spacers.
+      Still to see: the fix in English, and "Create macros" in the bottom row.
 - [ ] Gallery and prose (Step 3)
 - [ ] Release (Step 4)
 

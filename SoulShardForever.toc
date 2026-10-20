@@ -38,6 +38,7 @@ Modules\Settings.lua
 Modules\Options.lua
 Modules\Status.lua
 Modules\Macros.lua
+Modules\MacroGlow.lua
 Modules\DeleteHelp.lua
 Modules\Window.lua
 Modules\Welcome.lua

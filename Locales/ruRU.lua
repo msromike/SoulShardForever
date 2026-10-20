@@ -92,6 +92,15 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = "Открывает меню назначения клавиш WoW, чтобы назначить «%s» и «%s»."
 L["Welcome to SSF"] = "Добро пожаловать в SSF"
 L["Click for in-game tooltip help."] = "Нажмите, чтобы включить подсказки в игре."
-L["You'll only see this once."] = "Это сообщение показывается один раз."
+L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = "Вы больше не увидите это приветствие на этом персонаже, если не нажмёте «Создать макросы» в интерфейсе."
+L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = "Используйте клавишу, нажмите эту кнопку, используйте макрос или сочетайте их. Удаляет один осколок души, если лимит превышен."
+L["Use your keybind, click Delete Shard, bottom left in the UI, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = "Используйте клавишу, нажмите «Удалить осколок» внизу слева в интерфейсе, используйте макрос или сочетайте их. Удаляет один осколок души, если лимит превышен."
+L["In a macro, put /ssf delete on the line before the ability:"] = "В макросе поставьте /ssf delete строкой перед способностью:"
+L["The Bane macro lets you delete on the move when you don't want to use %s."] = "Макрос «%2$s» позволяет удалять на ходу, когда вы не хотите использовать «%1$s»."
+L["Make sure you're not targeting an enemy with the Bane macro. Otherwise it won't delete because you'll be in combat before the delete fires."] = "Не берите врага в цель, когда используете макрос «%s». Иначе удаления не будет: вы вступите в бой раньше, чем оно сработает."
+L["Create recommended macros"] = "Создать рекомендуемые макросы"
+L["Creates the macros, reloads your UI and opens the macro box after the reload."] = "Создаёт макросы, перезагружает интерфейс и после перезагрузки открывает окно макросов."
+L["Create macros"] = "Создать макросы"
+L["No free macro slots. Delete a macro and try again."] = "Нет свободных ячеек для макросов. Удалите макрос и попробуйте снова."
 
 NS.RegisterLocale("ruRU", "Русский", L)

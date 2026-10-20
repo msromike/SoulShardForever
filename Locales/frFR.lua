@@ -92,6 +92,15 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = "Ouvre le menu des raccourcis de WoW pour assigner %s et %s."
 L["Welcome to SSF"] = "Bienvenue dans SSF"
 L["Click for in-game tooltip help."] = "Cliquez pour l'aide en jeu dans les infobulles."
-L["You'll only see this once."] = "Ce message ne s'affiche qu'une fois."
+L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = "Vous ne reverrez pas cet écran d'accueil sur ce personnage, sauf si vous cliquez sur Créer les macros dans l'interface."
+L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = "Utilisez votre raccourci, cliquez sur ce bouton, utilisez une macro, ou combinez le tout. Supprime un fragment d'âme si vous dépassez la limite."
+L["Use your keybind, click Delete Shard, bottom left in the UI, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."] = "Utilisez votre raccourci, cliquez sur Supprimer fragment en bas à gauche de l'interface, utilisez une macro, ou combinez le tout. Supprime un fragment d'âme si vous dépassez la limite."
+L["In a macro, put /ssf delete on the line before the ability:"] = "Dans une macro, placez /ssf delete sur la ligne avant la technique :"
+L["The Bane macro lets you delete on the move when you don't want to use %s."] = "La macro %2$s permet de supprimer en mouvement quand vous ne voulez pas utiliser %1$s."
+L["Make sure you're not targeting an enemy with the Bane macro. Otherwise it won't delete because you'll be in combat before the delete fires."] = "Ne ciblez pas d'ennemi avec la macro %s. Sinon, elle ne supprime rien, car vous êtes en combat avant que la suppression ne se déclenche."
+L["Create recommended macros"] = "Créer les macros recommandées"
+L["Creates the macros, reloads your UI and opens the macro box after the reload."] = "Crée les macros, recharge votre interface et ouvre la fenêtre des macros après le rechargement."
+L["Create macros"] = "Créer les macros"
+L["No free macro slots. Delete a macro and try again."] = "Aucun emplacement de macro libre. Supprimez une macro et réessayez."
 
 NS.RegisterLocale("frFR", "Français", L)

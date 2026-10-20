@@ -11,10 +11,11 @@
 -- free slot for each, else all to the account's, else a red error and nothing is made.
 -- In combat Create does nothing.
 --
--- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Create().
+-- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create().
 --          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
 -- Sends:   SSF_MACROS_CHANGED, from a bucketed UPDATE_MACROS (it fires in bursts of about
---          five, even on a click in Blizzard's macro window).
+--          five, even on a click in Blizzard's macro window); SSF_MACRO_WINDOW_SHOWN once
+--          SSF has opened Blizzard's macro window on them.
 -- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -66,6 +67,14 @@ local function ShowInMacroWindow(index)
     ShowMacroFrame()
     MacroFrame:ChangeTab(perChar and 2 or 1)
     MacroFrame:SelectMacro(index - (perChar and maxAccount or 0), true)
+    Macros:SendMessage("SSF_MACRO_WINDOW_SHOWN") -- MacroGlow lights the ones not yet on a bar
+end
+
+-- the macros' names, the way the macro window and the action bars show them
+function Macros:Names()
+    local names = {}
+    for _, key in ipairs(ORDER) do names[#names + 1] = MACROS[key].name end
+    return names
 end
 
 function Macros:Create()

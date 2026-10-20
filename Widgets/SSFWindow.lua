@@ -7,7 +7,8 @@
 -- it (SetHelpButton: Blizzard's "i", gold while off, blue while on), an optional note on its
 -- right edge (ShowSidePanel), no status bar, Escape closes it,
 -- and a bottom row of Close (far right, SetCloseText), an optional action button (far left,
--- SetActionButton) and a small footer line between them (SetFooter). Both buttons size to
+-- SetActionButton), an optional middle button (SetMiddleButton) and a small footer line under
+-- them (SetFooter). The buttons size to
 -- their text. The window's width fits its content (FitWidth: every text on one line, see
 -- there). Its height too: FitToContent, called by the owner after each
 -- AceConfigDialog:Open, measures the ScrollFrame AceConfigDialog adds and sets the height,
@@ -25,7 +26,6 @@
 
 local Type, Version = "SSFWindow", 3
 local AceGUI = LibStub("AceGUI-3.0")
-local LCG = LibStub("LibCustomGlow-1.0") -- the side panel's glow while it shows
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
 local CHROME = 93                     -- the content's top (35) and bottom (58) insets
@@ -80,7 +80,11 @@ local function ButtonTip_OnEnter(button)
     if not button.tipText then return end
     GameTooltip:SetOwner(button, TIP_ANCHOR, TIP_X, TIP_Y)
     GameTooltip:SetText(button:GetText() or "", 1, 0.82, 0, 1, true)
-    GameTooltip:AddLine(button.tipText, 1, 1, 1, true) -- its own breaks; a long line wraps by itself
+    -- one tooltip line per line of text, a blank one as a spacer: handed over as one text,
+    -- the game sometimes drops a blank line (seen in English and German, not Russian)
+    for line in (button.tipText .. "\n"):gmatch("(.-)\n") do
+        GameTooltip:AddLine(line == "" and " " or line, 1, 1, 1, true) -- a long line wraps by itself
+    end
     GameTooltip:Show()
 end
 
@@ -264,12 +268,17 @@ local methods = {
         clear = 2 * clear
         -- (the header's middle is the text plus 10, as SetTitle sizes it)
         Need((self.titletext:GetUnboundedStringWidth() or 0) + 10 + 2 * TITLE_CAP + clear)
-        -- the bottom row: the two buttons, EDGE px in from each side, and the footer under them
-        local buttons = self.closebutton:GetWidth() or 0
-        if self.actionbutton:IsShown() then
-            buttons = buttons + BUTTON_GAP + (self.actionbutton:GetWidth() or 0)
+        -- the bottom row: the buttons, EDGE px in from each side, and the footer under them
+        local close = self.closebutton:GetWidth() or 0
+        local action = self.actionbutton:IsShown() and (self.actionbutton:GetWidth() or 0) or 0
+        if self.middlebutton:IsShown() then
+            -- centered, so each side needs room for the wider of the two outer buttons
+            Need(2 * EDGE + 2 * math.max(close, action) + 2 * BUTTON_GAP + (self.middlebutton:GetWidth() or 0))
+        elseif action > 0 then
+            Need(2 * EDGE + close + BUTTON_GAP + action)
+        else
+            Need(2 * EDGE + close)
         end
-        Need(2 * EDGE + buttons)
         Text(self.footer)
 
         local new = math.min(need + ROUNDING, UIParent:GetWidth() - SCREEN_MARGIN)
@@ -286,7 +295,7 @@ local methods = {
     end,
 
     -- the title text's color (private widget, never pooled across addons: nothing to reset);
-    -- kept for the side panel's glow too
+    -- kept for the side panel's title too
     ["SetTitleColor"] = function(self, r, g, b)
         self.titletext:SetTextColor(r, g, b)
         self.titleColor = { r, g, b }
@@ -308,6 +317,16 @@ local methods = {
         self.actionbutton:SetScript("OnClick", onClick)
         SetButtonTip(self.actionbutton, tipText)
         self.actionbutton:Show()
+    end,
+
+    -- the bottom-middle button, centered between the other two, sized to its text; nil text
+    -- hides it. tipText: as SetActionButton
+    ["SetMiddleButton"] = function(self, text, onClick, tipText)
+        if not text then self.middlebutton:Hide() return end
+        FitButton(self.middlebutton, text)
+        self.middlebutton:SetScript("OnClick", onClick)
+        SetButtonTip(self.middlebutton, tipText)
+        self.middlebutton:Show()
     end,
 
     -- the bottom-right button's text (Blizzard's CLOSE until set), sized to its text
@@ -363,7 +382,7 @@ local methods = {
         panel.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
         local width = LayoutSidePanel(self)
         panel:SetFrameLevel(frame:GetFrameLevel() + 20) -- above the window and its widgets
-        panel.textlayer:SetFrameLevel(panel:GetFrameLevel() + 20) -- the text above the glow
+        panel.textlayer:SetFrameLevel(panel:GetFrameLevel() + 20) -- the text above the backdrop
         -- no room on the right: the window goes to the center of the screen (the window
         -- itself, the note beside it as usual)
         if (frame:GetRight() or 0) + SIDE_GAP + width > UIParent:GetRight() then
@@ -372,13 +391,6 @@ local methods = {
             self:ApplyStatus()
         end
         panel:Show()
-        -- it is seen once, so it asks to be noticed: LibCustomGlow's pixel glow, its defaults
-        -- but 10% faster (0.275 laps a second, default 0.25) and the line 2 px wide (default
-        -- 1), until the window closes
-        -- the crawling lines in the window's title color (warlock purple), the backing line the
-        -- library's own near-black
-        local color = self.titleColor and { self.titleColor[1], self.titleColor[2], self.titleColor[3], 1 }
-        LCG.PixelGlow_Start(panel, color, nil, 0.275, nil, 2)
     end,
 
     -- where tooltips in this window sit, as SetOwner / SetAnchorType arguments: the owner
@@ -471,7 +483,7 @@ local function Constructor()
     -- at the help button beside a copy of its "i", the body text, the gold note line (all
     -- centered), then the optional extra block (left-justified) and button. ShowSidePanel
     -- sets every width from the text, never wider than the window.
-    -- Everything sits on its own layer, raised above the glow when the panel shows.
+    -- Everything sits on its own layer, raised above the panel when it shows.
     local layer = CreateFrame("Frame", nil, sidepanel)
     layer:SetAllPoints()
     sidepanel.textlayer = layer
@@ -550,7 +562,6 @@ local function Constructor()
 
     local function CloseSidePanel()
         sidepanel:Hide()
-        LCG.PixelGlow_Stop(sidepanel)
     end
     -- its own X, the one players expect: closes the note, the window stays
     local sideclose = CreateFrame("Button", nil, layer, "UIPanelCloseButton")
@@ -582,6 +593,11 @@ local function Constructor()
     actionbutton:SetPoint("BOTTOMLEFT", 17, 30)
     actionbutton:SetHeight(22)
     actionbutton:Hide()
+
+    local middlebutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+    middlebutton:SetPoint("BOTTOM", 0, 30)
+    middlebutton:SetHeight(22)
+    middlebutton:Hide()
 
     local titlebg = frame:CreateTexture(nil, "OVERLAY")
     titlebg:SetTexture(131080) -- Interface\\DialogFrame\\UI-DialogBox-Header
@@ -631,6 +647,7 @@ local function Constructor()
         titlebg      = titlebg,
         content      = content,
         actionbutton = actionbutton,
+        middlebutton = middlebutton,
         closebutton  = closebutton,
         xbutton      = xbutton,
         helpbutton   = helpbutton,
