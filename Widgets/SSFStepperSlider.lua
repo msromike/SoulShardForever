@@ -6,13 +6,17 @@
 -- AceConfigDialog drives it exactly like a Slider: SetLabel, SetSliderValues, SetIsPercent,
 -- SetValue, SetDisabled, and the OnValueChanged / OnMouseUp / OnEnter / OnLeave callbacks.
 -- Built by composition: the real Slider widget fills this one and every call is forwarded.
+-- The Slider keeps the state (value, min, max, step, disabled); nothing is copied here.
+-- A "-" or "+" press sets the Slider's own bar, so the stock widget rounds to the step,
+-- updates its text and fires OnValueChanged; then OnMouseUp fires as the stock value box
+-- does on Enter, so AceConfigDialog refreshes.
 -- The label is left-justified (the stock Slider centers it), so it lines up with the
 -- dropdown labels and checkboxes in the window.
 
 -- MinWidth(): the narrowest it stays usable, its label on one line or the "-", box, "+" row,
 -- whichever is wider (SSFWindow:FitWidth sizes the window to it).
 
-local Type, Version = "SSFStepperSlider", 3
+local Type, Version = "SSFStepperSlider", 4
 local AceGUI = LibStub("AceGUI-3.0")
 
 local BUTTON = 20      -- +/- button size
@@ -21,12 +25,12 @@ local GAP = 4          -- between a button and the value box
 local VALUE_BOX = 44   -- the value box: room for three digits
 
 local function Step(self, dir)
-    if self.disabled then return end
-    local value = math.min(self.max, math.max(self.min, self.value + dir * self.step))
-    if value == self.value then return end
-    self:SetValue(value)
-    self:Fire("OnValueChanged", value) -- AceConfigDialog calls set
-    self:Fire("OnMouseUp", value)      -- and refreshes the window
+    local inner = self.inner
+    if inner.disabled then return end
+    local value = math.min(inner.max, math.max(inner.min, inner:GetValue() + dir * inner.step))
+    if value == inner:GetValue() then return end
+    inner.slider:SetValue(value)    -- the stock Slider rounds, fires OnValueChanged (forwarded below)
+    self:Fire("OnMouseUp", value)   -- as the stock value box does on Enter: AceConfigDialog refreshes
 end
 
 local methods = {
@@ -41,23 +45,18 @@ local methods = {
     end,
 
     ["SetDisabled"] = function(self, disabled)
-        self.disabled = disabled
         self.inner:SetDisabled(disabled)
         if disabled then self.left:Disable() self.right:Disable()
         else self.left:Enable() self.right:Enable() end
     end,
 
-    ["SetValue"] = function(self, value)
-        self.value = value
-        self.inner:SetValue(value)
-    end,
+    ["SetValue"] = function(self, value) self.inner:SetValue(value) end,
 
-    ["GetValue"] = function(self) return self.value end,
+    ["GetValue"] = function(self) return self.inner:GetValue() end,
 
     ["SetLabel"] = function(self, text) self.inner:SetLabel(text) end,
 
     ["SetSliderValues"] = function(self, min_value, max_value, step)
-        self.min, self.max, self.step = min_value, max_value, step
         self.inner:SetSliderValues(min_value, max_value, step)
     end,
 
@@ -83,14 +82,8 @@ local function Constructor()
     inner.frame:Show()
     widget.inner = inner
 
-    inner:SetCallback("OnValueChanged", function(_, _, value)
-        widget.value = value
-        widget:Fire("OnValueChanged", value)
-    end)
-    inner:SetCallback("OnMouseUp", function(_, _, value)
-        widget.value = value
-        widget:Fire("OnMouseUp", value)
-    end)
+    inner:SetCallback("OnValueChanged", function(_, _, value) widget:Fire("OnValueChanged", value) end)
+    inner:SetCallback("OnMouseUp", function(_, _, value) widget:Fire("OnMouseUp", value) end)
     inner:SetCallback("OnEnter", function() widget:Fire("OnEnter") end)
     inner:SetCallback("OnLeave", function() widget:Fire("OnLeave") end)
 
