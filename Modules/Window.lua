@@ -34,7 +34,7 @@
 local ADDON = "SoulShardForever"
 local APP = "SSF" -- the AceConfig app Options registers
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Window = SSF:NewModule("Window", "AceEvent-3.0", "AceBucket-3.0", "AceTimer-3.0")
+local Window = SSF:NewModule("Window", "AceEvent-3.0", "AceBucket-3.0", "AceTimer-3.0", "AceHook-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
@@ -168,15 +168,28 @@ end
 
 -- AceConfigDialog rebuilds the window by itself after any setting change, through its own
 -- Open(APP, window), without going through Feed (tested: the titles came back stock gold
--- after a click). Every such rebuild ends with the window's layout, and the window fires
--- OnLayoutFinished then (SSFWindow), with the groups already built inside its ScrollFrame
--- (AceConfigDialog feeds the options before it lays the container out). Styling the
--- titles from that callback covers Feed's opens and AceConfigDialog's own alike, in the
--- same frame, so the stock titles never draw. No hook, so a newer AceConfigDialog loaded
--- later by another addon changes nothing.
-local function OnLayoutFinished()
-    local window = Window.window
-    if window and window.children[1] then StyleGroupTitles(window.children[1]) end
+-- after a click). A secure hook on Open styles the titles as soon as any Open of the
+-- window returns, Feed's included, in the same frame, so the stock titles never draw.
+-- Not the window's own OnLayoutFinished: AceConfigDialog adds its ScrollFrame to the window
+-- first, which lays the window out while the ScrollFrame is still empty, then fills the
+-- ScrollFrame and lays out only that (tested: no styling at all).
+-- The container can be nil: Ace calls Open(APP) with none after a change made in Blizzard's
+-- Interface Options panel, before our window may exist (nil == nil).
+local function AfterDialogOpen(_, app, container)
+    if app ~= APP or not container or container ~= Window.window then return end
+    StyleGroupTitles(container.children[1]) -- the ScrollFrame AceConfigDialog puts in
+end
+
+-- Hooked again when Open has been replaced: a newer AceConfigDialog loaded later by
+-- another addon redefines it, and the secure hook goes with the old function. AceHook's
+-- Unhook on a secure hook only drops the handler, it never puts an old function back, so
+-- the new hook lands on the new Open.
+local hookedOpen
+local function HookDialogOpen()
+    if AceConfigDialog.Open == hookedOpen then return end
+    if Window:IsHooked(AceConfigDialog, "Open") then Window:Unhook(AceConfigDialog, "Open") end
+    Window:SecureHook(AceConfigDialog, "Open", AfterDialogOpen)
+    hookedOpen = AceConfigDialog.Open
 end
 
 -- Every tooltip in the window sits above-right of the cursor, offset to the right
@@ -207,6 +220,7 @@ end
 -- on one line, SSFWindow:FitWidth; the layout depends on the width, so a changed width is
 -- fed again), then the height (SSFWindow:FitToContent).
 function Window:Feed()
+    HookDialogOpen()
     HookOptionTooltip()
     AceConfigDialog:Open(APP, self.window)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
@@ -286,7 +300,6 @@ function Window:Open()
             -- the screen size the spot belongs to (see Open)
             window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
         end)
-        self.window:SetCallback("OnLayoutFinished", OnLayoutFinished) -- group titles, see above
         -- bottom row: Create macros far left while shown, Key Bindings far right, the
         -- version and credit under them
         self:DressWindow()
