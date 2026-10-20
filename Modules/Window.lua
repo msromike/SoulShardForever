@@ -96,7 +96,7 @@ function Window:DressWindow()
     local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
     self.window:SetMiddleButton(createText, function()
         if not InCombatLockdown() then Window:SendMessage("SSF_SHOW_WELCOME") end
-    end)
+    end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
     local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
     -- the two binding names in gold, as they look on the key bindings page

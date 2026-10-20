@@ -50,7 +50,10 @@ Build in three rounds, each tested in game by Mike before the next. After each r
         himself; give him only the lines to paste after that.
 - [x] **Round 3: "Create macros" in the main window, the 1.7 re-pop, MacroGlow, six
       languages.** Tested works (Mike, 2026-10-19); committed (see git log, "WIP 1.8
-      round 3"). Still open: the help line for "Create macros" (Mike's words).
+      round 3"). Help line for "Create macros" (Mike, 2026-10-19): "Opens the welcome
+      screen to create the recommended macros." ("welcome screen" = the gold line's own
+      term; was "Welcome Menu"). Built in all six languages; tested works (Mike,
+      2026-10-19); committed.
       Built 2026-10-19 (checks pass, waiting on Mike's test): SSFWindow SetMiddleButton
       (centered; FitWidth counts it) and pixel glow removed; Window shows "Create macros"
       while Macros:AnyMissing(), click sends SSF_SHOW_WELCOME, re-dresses on

@@ -104,6 +104,7 @@ L["Make sure you're not targeting an enemy with the Bane macro. Otherwise it won
 L["Create recommended macros"] = true
 L["Creates the macros, reloads your UI and opens the macro box after the reload."] = true
 L["Create macros"] = true
+L["Opens the welcome screen to create the recommended macros."] = true
 L["No free macro slots. Delete a macro and try again."] = true
 
 NS.RegisterLocale("enUS", "English", L, true)
