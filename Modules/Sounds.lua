@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Sounds: SSF's sounds in LibSharedMedia's "sound" list, and playing one by its LSM name.
 -- The sounds are Blizzard's own game files, registered by file ID: nothing is bundled.

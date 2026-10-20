@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Settings: turns ONE definition of a stateful setting into the two AceConfig entries it
 -- needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from
@@ -11,10 +11,12 @@
 --
 -- Takes:   Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name,
 --          desc, get(), apply(value), optional extra() -> text appended to the chat echo,
---          and for range: min, max, step, disabled }.
+--          optional echo() -> the whole echo line in place of "name: value" (pause), and
+--          for range: min, max, step, disabled }.
 --          Settings:Value(v) -> v as the neutral (white) value string used for settings.
 --          Settings:Accent(v) -> v in the green branding accent (login line author).
 --          Settings:OnOff(b) -> b as green ON / red OFF.
+--          Settings:State(text, good) -> text in the state green (good) or red.
 -- Returns: gui, cmd -- two entries for Options to place in its args table.
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
 --          command applied it (Options redraws an open window only then).
@@ -30,9 +32,11 @@ local AceTab = LibStub("AceTab-3.0")
 local GREEN, RED, WHITE = "|cff00ff00%s|r", "|cffff0000%s|r", "|cffffffff%s|r"
 local function OnOff(b) return b and GREEN:format(L["ON"]) or RED:format(L["OFF"]) end
 
--- A boolean as green ON / red OFF, the one state wording in chat (the echo below, and
--- the "SSF actions" line of a bare /ssf).
+-- A boolean as green ON / red OFF, the state wording of a toggle's chat echo (below).
 function Settings:OnOff(b) return OnOff(b) end
+
+-- Any state text in the same green (good, go) or red (stop): Status's "SSF paused: Yes/No".
+function Settings:State(text, good) return (good and GREEN or RED):format(text) end
 
 -- A setting's value in chat or the window: a neutral white highlight. Green and red are
 -- reserved for state (ON/OFF here; the count scale in Counter:StateColor).
@@ -68,6 +72,7 @@ end
 
 function Settings:Define(key, def)
     local function echo()
+        if def.echo then SSF:Print(def.echo()) return end
         local shown = def.kind == "toggle" and OnOff(def.get()) or self:Value(def.get())
         local extra = def.extra and (" " .. def.extra()) or ""
         SSF:Printf("%s: %s%s", def.name, shown, extra)

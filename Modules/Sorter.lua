@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Sorter: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits
 -- in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into

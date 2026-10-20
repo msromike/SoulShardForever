@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Options: the one settings table and the /ssf command. AceConfigCmd turns it into the /ssf
 -- commands, AceConfigDialog
@@ -14,8 +14,8 @@
 -- Pause: the "pause" setting (/ssf pause, the checkbox in the cap group) stops every press
 -- from moving or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
 -- key binding's entry (Bindings.xml SSF_PAUSE); it goes through the chat command's own
--- path, so it applies, redraws an open window and prints the same echo. A bare /ssf opens
--- the window and prints Status:PauseText ("SSF actions - ON/OFF") on its own line above
+-- path, so it applies, redraws an open window and prints the same echo, Status:PauseText
+-- ("SSF paused: Yes/No"). A bare /ssf opens the window and prints that line above
 -- Status:StatusText.
 --
 -- Help mode (IsHelpOn, ToggleHelp; the window's help button): each option's help line, its
@@ -149,6 +149,8 @@ local function BuildTable()
         desc = L["Pause stops SSF from moving or deleting shards until you unpause."],
         get = function() return SSF.db.profile.paused end,
         apply = function(value) SSF.db.profile.paused = value end,
+        -- "SSF paused: Yes/No", the pause line a bare /ssf prints, not "name: ON/OFF"
+        echo = function() return SSF:GetModule("Status"):PauseText() end,
     })
     pauseGui.order = 1 -- GUI only: first in the Pause group
     pauseGui.width = "full"
@@ -163,7 +165,7 @@ local function BuildTable()
             cmdHidden = true,
             fontSize = "large",
             dialogControl = "SSFCenteredLabel", -- Widgets\SSFCentered.lua
-            name = function() return SSF:GetModule("Status"):StatusText() .. "\n" end,
+            name = function() return SSF:GetModule("Status"):CountText() .. "\n" end,
         },
 
         -- a blank line between each pair of groups, so the sections stand apart (plain
@@ -259,9 +261,20 @@ local function BuildTable()
                         SSF.db.profile.counter = value
                         changed("counter")
                     end),
+                -- the glow is part of the bag display: it sits on the counter's button and
+                -- runs only while the count shows (LowGlow). First under the count, right
+                -- below the warn slider in the group above
+                lowglow = Toggle(2, L["Glow bag button when low"],
+                    function() return SSF.db.profile.lowGlow end,
+                    function(_, value)
+                        SSF.db.profile.lowGlow = value
+                        changed("lowglow")
+                    end,
+                    function() return not SSF.db.profile.counter end,
+                    nil, 2),
                 -- the number follows an equipped soul bag (Counter:Anchor); greyed with the
                 -- count off, but never for a missing soul bag: it waits for one to go on
-                soulbag = Toggle(3, L["Show on soul bag when equipped"],
+                soulbag = Toggle(4, L["Show on soul bag when equipped"],
                     function() return SSF.db.profile.counterSoulBag end,
                     function(_, value)
                         SSF.db.profile.counterSoulBag = value
@@ -269,8 +282,8 @@ local function BuildTable()
                     end,
                     function() return not SSF.db.profile.counter end,
                     nil, 2),
-                -- colorize and soul bag both hang off the count checkbox: one step in, colorize first
-                colorize = Toggle(2, L["Colorize bag count"],
+                -- glow, colorize and soul bag all hang off the count checkbox, one step in
+                colorize = Toggle(3, L["Colorize bag count"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
                         SSF.db.profile.counterColorize = value
@@ -282,7 +295,7 @@ local function BuildTable()
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {
                     type = "select",
-                    order = 4,
+                    order = 5,
                     width = "full",
                     cmdHidden = true,
                     descStyle = "hidden",
@@ -299,18 +312,12 @@ local function BuildTable()
             },
         },
 
-        -- right under the cap group, so the two sliders sit together; slider first, its
-        -- checkbox below it, the same shape as the cap group
+        -- right under the cap group, so the two sliders sit together. The low mark sets where
+        -- red starts everywhere (bag, tooltip, window, chat), so it is never greyed
         glow = {
             type = "group", inline = true, order = 20, cmdHidden = true,
             name = L["Soul shard warning"],
             args = {
-                lowglow = Toggle(2, L["Glow bag button when low"],
-                    function() return SSF.db.profile.lowGlow end,
-                    function(_, value)
-                        SSF.db.profile.lowGlow = value
-                        changed("lowglow")
-                    end),
                 lowmark = {
                     type = "range",
                     order = 1,
@@ -326,7 +333,6 @@ local function BuildTable()
                         SSF.db.profile.lowMark = value
                         changed("lowmark")
                     end,
-                    disabled = function() return not SSF.db.profile.lowGlow end,
                 },
             },
         },
@@ -449,10 +455,10 @@ local function BuildTable()
         },
         glow = {
             lowmark = L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."],
-            lowglow = L['The bag button glows while you are below "%s".']:format(lowWarn),
         },
         bagcount = {
             counter = L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."],
+            lowglow = L['The bag button glows while you are below "%s".']:format(lowWarn),
             colorize = L['Red when below "%s," green in range, and yellow over the cap.']:format(lowWarn),
             soulbag = L["Moves the counter to your soul bag, whatever slot it's in."],
             font = L["The font used on the shard counter."],
@@ -475,7 +481,7 @@ local function BuildTable()
         for key, text in pairs(lines) do args[group].args[key].desc = text end
     end
 
-    local root = { type = "group", name = L["Soul Shard Forever"], args = args }
+    local root = { type = "group", name = L["Soul Shards Forever"], args = args }
     ApplyHelp(root, Options.help and "tooltip" or "hidden")
     return root
 end
@@ -532,7 +538,7 @@ function Options:OnEnable()
         end
         AceConfigCmd:HandleCommand("ssf", APP, input)
     end)
-    AceConfigDialog:AddToBlizOptions(APP, L["Soul Shard Forever"])
+    AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
 
     AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, SSF:GetModule("Settings").TabUsage)
 

@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Trimmer: Delete() is the press. Out of combat it removes one Soul Shard if the count is
 -- over the cap: the shard furthest along the sort order (Bags:LastShard, top slot first

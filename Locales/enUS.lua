@@ -1,19 +1,20 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- English strings, the default. Every user-facing string lives here; modules read L["..."].
 -- Registered at the bottom through Locales\Register.lua.
 
 local _, NS = ...
 local L = {}
 
-L["Soul Shard Forever"] = true
+L["Soul Shards Forever"] = true
 L["SSF"] = true
-L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."] = true
+L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."] = true
 L["Deleted a Soul Shard."] = true
 L["ON"] = true
 L["OFF"] = true
 L["Use: /ssf %s on|off"] = true
 L["Use: /ssf %s %d-%d"] = true
 L["Soul Shards: %s (cap %s)"] = true
+L["Soul Shards: %s"] = true
 L["(in bags: %s)"] = true
 L["%s (cap %d)"] = true
 L["Match soul bag size (no soul bag)"] = true
@@ -29,7 +30,7 @@ L["Show on soul bag when equipped"] = true
 L["Pause SSF"] = true
 L["Pause all SSF actions"] = true
 L["All SSF actions paused"] = true
-L["SSF actions"] = true
+L["SSF paused"] = true
 L["Type /ssf help for commands."] = true
 L['Unknown command "%s".'] = true
 L["Play pause sound"] = true
@@ -61,7 +62,8 @@ L["Full"] = true
 -- Broker
 L["Soul Shards"] = true
 L["Cap"] = true
-L["Over by"] = true
+L["Yes"] = true
+L["No"] = true
 
 -- Tooltips: the help button, each option's help line while help mode is on, the bottom
 -- buttons' lines and the first-load welcome. Plain sentences: the tooltip wraps them

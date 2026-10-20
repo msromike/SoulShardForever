@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Counter: one number, the total shard count, centered on one bag button. Shown only while
 -- the "Show shard count on bag bar" option is on. Where it sits (Anchor):
@@ -34,19 +34,18 @@ local MAX_SIZE, MIN_SIZE = 48, 6
 --   below the low mark (zero included)  red     you're running out, go farm
 --   low mark up to the cap              green   fine
 --   over the cap                        yellow  excess, the next press trims one
--- White when the colorize option is off. No grey: grey reads as "disabled".
+-- Only the bag number follows the colorize option (white when off); everywhere else the
+-- count is always colored. No grey: grey reads as "disabled".
 local RED, GREEN, YELLOW = { 1, 0.25, 0.25, "ff4040" }, { 0, 1, 0, "00ff00" }, { 1, 0.82, 0, "ffd100" }
 local WHITE = { 1, 1, 1, "ffffff" }
 
--- r, g, b, hex for a count against the cap and the low mark, honoring the colorize option.
+-- r, g, b, hex for a count against the cap and the low mark: the state color, always.
 function Counter:StateColor(count, cap)
-    local c = WHITE
-    if SSF.db.profile.counterColorize then
-        -- over the cap wins: with a low mark set above the cap, "too many" is the true state
-        if count > cap then c = YELLOW
-        elseif count < math.min(SSF.db.profile.lowMark, cap) then c = RED -- Cap:LowMark's rule
-        else c = GREEN end
-    end
+    local c
+    -- over the cap wins: with a low mark set above the cap, "too many" is the true state
+    if count > cap then c = YELLOW
+    elseif count < math.min(SSF.db.profile.lowMark, cap) then c = RED -- Cap:LowMark's rule
+    else c = GREEN end
     return c[1], c[2], c[3], c[4]
 end
 
@@ -145,7 +144,9 @@ function Counter:Refresh()
     self.text:SetFont(LSM:Fetch("font", p.counterFont), MAX_SIZE, "OUTLINE") -- font before text
     self.text:SetText(count)
     self:Fit(parent)
-    local r, g, b = self:StateColor(count, cap)
+    -- the one place the colorize option applies
+    local r, g, b = WHITE[1], WHITE[2], WHITE[3]
+    if p.counterColorize then r, g, b = self:StateColor(count, cap) end
     self.text:SetTextColor(r, g, b)
     self.text:Show()
 end

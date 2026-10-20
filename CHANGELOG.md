@@ -1,5 +1,27 @@
 # Changelog
 
+## Unreleased
+
+- The name reads Soul Shards Forever everywhere, matching CurseForge: the window, the
+  options panel, the minimap tooltip, the login line, the key bindings section and the
+  AddOns list. Your settings, key bindings and enabled state carry over.
+- Minimap tooltip: the same lines every time. Your shard count in its color (red below
+  Low shard warn, green in range, yellow over the cap), then your settings: Soul shard
+  cap, Low shard warn and SSF paused. The count is colored here even with Colorize bag
+  count off, so the tooltip shows what the bag colors mean. The Over by line is gone.
+- Pause reads one way everywhere: "SSF paused: Yes" in red while paused, "No" in green
+  while running. /ssf pause, the pause key binding, a bare /ssf and the login lines all
+  show it. Before, /ssf pause on answered "ON" in green.
+- The window's top line shows only your shard count: the cap is the Shards to keep box
+  right below it. The count's color shows what a cap or Low shard warn change does.
+- Colorize bag count now applies only to the number on your bag. Everywhere else (the
+  window, the minimap tooltip, chat) the count is always colored.
+- Glow bag button when low moved to Soul shard counter, first under Show shard count on
+  bag bar. It is part of the bag count now: with the count off, the bag no longer glows.
+  Low shard warn can always be changed, even with the glow off: it sets where the count
+  turns red everywhere.
+- All new text in all six languages.
+
 ## 1.8.0 (2026-10-19)
 
 - Delete Shard's help tooltip teaches every way to delete: your keybind, the button, or a

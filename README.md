@@ -1,4 +1,4 @@
-# Soul Shard Forever (SSF)
+# Soul Shards Forever (SSF)
 
 **\*\*\* Changelog \*\*\***
 

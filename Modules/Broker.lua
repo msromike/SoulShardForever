@@ -1,11 +1,13 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Broker: the LibDataBroker data object and the LibDBIcon minimap icon. Listens only:
 -- SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED and a bucketed BAG_UPDATE
 -- refresh the text. Click toggles the options window (opens it, or closes it if open).
 -- Fields: type, label "SSF", icon, text "N (cap M)" (+ " Full" at or over the cap, the
 -- count in the state color), value = N. No suffix, no per-bag breakdown.
--- Tooltip: count, cap, over-by when over, and "All SSF actions paused" while paused.
+-- Tooltip: the same rows every time. The title in the class color; the count, always in
+-- its state color (the tooltip teaches the bag's colors); a blank
+-- line; then the settings in white: the cap, the low mark, and SSF paused Yes/No.
 
 local ADDON = "SoulShardForever" -- the folder: the locale
 local NAME = "SSF"               -- the broker object and minimap icon: what bar addons list
@@ -15,19 +17,17 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local LDB = LibStub("LibDataBroker-1.1")
 local DBIcon = LibStub("LibDBIcon-1.0")
 
--- The minimap and broker tooltip: count, cap, over-by when over, paused while paused.
+-- The minimap and broker tooltip: the live count, a blank line, then the settings.
 local function ShowTooltip(tooltip)
     local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
     local r, g, b = SSF:GetModule("Counter"):StateColor(count, cap)
-    tooltip:AddLine(L["Soul Shard Forever"])
+    tooltip:AddLine(L["Soul Shards Forever"], SSF:ClassColor())
     tooltip:AddDoubleLine(L["Soul Shards"], count, 0.8, 0.8, 0.8, r, g, b)
-    tooltip:AddDoubleLine(L["Cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
-    if count > cap then
-        tooltip:AddDoubleLine(L["Over by"], count - cap, r, g, b, r, g, b)
-    end
-    if SSF.db.profile.paused then
-        tooltip:AddLine(L["All SSF actions paused"], 1, 0.82, 0)
-    end
+    tooltip:AddLine(" ")
+    tooltip:AddDoubleLine(L["Soul shard cap"], cap, 0.8, 0.8, 0.8, 1, 1, 1)
+    tooltip:AddDoubleLine(L["Low shard warn"], SSF.db.profile.lowMark, 0.8, 0.8, 0.8, 1, 1, 1)
+    -- the value carries its own color code (Status:PausedValue)
+    tooltip:AddDoubleLine(L["SSF paused"], SSF:GetModule("Status"):PausedValue(), 0.8, 0.8, 0.8)
 end
 
 -- The count takes the one state color (Counter:StateColor) wherever it is shown here.

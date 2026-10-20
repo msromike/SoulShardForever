@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- German strings. Blizzard terms from the deDE client: Seelensplitter (item 6265),
 -- Seelentasche (the soul bag container type). Registered at the bottom through
 -- Locales\Register.lua.
@@ -6,15 +6,16 @@
 local _, NS = ...
 local L = {}
 
-L["Soul Shard Forever"] = "Soul Shard Forever"
+L["Soul Shards Forever"] = "Soul Shards Forever"
 L["SSF"] = "SSF"
-L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shard Forever (SSF) v%s von %s. /ssf eingeben für die Optionen."
+L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shards Forever (SSF) v%s von %s. /ssf eingeben für die Optionen."
 L["Deleted a Soul Shard."] = "Ein Seelensplitter wurde gelöscht."
 L["ON"] = "AN"
 L["OFF"] = "AUS"
 L["Use: /ssf %s on|off"] = "Verwendung: /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Verwendung: /ssf %s %d-%d"
 L["Soul Shards: %s (cap %s)"] = "Seelensplitter: %s (Limit %s)"
+L["Soul Shards: %s"] = "Seelensplitter: %s"
 L["(in bags: %s)"] = "(in den Taschen: %s)"
 L["%s (cap %d)"] = "%s (Limit %d)"
 L["Match soul bag size (no soul bag)"] = "An Seelentasche anpassen (keine angelegt)"
@@ -30,7 +31,7 @@ L["Show on soul bag when equipped"] = "Auf Seelentasche, wenn angelegt"
 L["Pause SSF"] = "SSF pausieren"
 L["Pause all SSF actions"] = "Alle SSF-Aktionen pausieren"
 L["All SSF actions paused"] = "Alle SSF-Aktionen pausiert"
-L["SSF actions"] = "SSF-Aktionen"
+L["SSF paused"] = "SSF pausiert"
 L["Type /ssf help for commands."] = "/ssf help zeigt die Befehle."
 L['Unknown command "%s".'] = 'Unbekannter Befehl "%s".'
 L["Play pause sound"] = "Pausenton abspielen"
@@ -62,7 +63,8 @@ L["Full"] = "Voll"
 -- Broker
 L["Soul Shards"] = "Seelensplitter"
 L["Cap"] = "Limit"
-L["Over by"] = "Zu viel"
+L["Yes"] = "Ja"
+L["No"] = "Nein"
 
 -- Tooltips
 L["Help OFF: Click to show tooltip help when you hover over an option."] = "Hilfe AUS: Klicken, um Tooltip-Hilfe beim Überfahren einer Option zu zeigen."

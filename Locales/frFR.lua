@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- French strings. Blizzard terms from the frFR client: Fragment d'âme (item 6265),
 -- Sac d'âme (the soul bag container type). Registered at the bottom through
 -- Locales\Register.lua.
@@ -6,15 +6,16 @@
 local _, NS = ...
 local L = {}
 
-L["Soul Shard Forever"] = "Soul Shard Forever"
+L["Soul Shards Forever"] = "Soul Shards Forever"
 L["SSF"] = "SSF"
-L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shard Forever (SSF) v%s par %s. Tapez /ssf pour les options."
+L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shards Forever (SSF) v%s par %s. Tapez /ssf pour les options."
 L["Deleted a Soul Shard."] = "Un fragment d'âme a été supprimé."
 L["ON"] = "ACTIVÉ"
 L["OFF"] = "DÉSACTIVÉ"
 L["Use: /ssf %s on|off"] = "Usage : /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Usage : /ssf %s %d-%d"
 L["Soul Shards: %s (cap %s)"] = "Fragments d'âme : %s (limite %s)"
+L["Soul Shards: %s"] = "Fragments d'âme : %s"
 L["(in bags: %s)"] = "(dans les sacs : %s)"
 L["%s (cap %d)"] = "%s (limite %d)"
 L["Match soul bag size (no soul bag)"] = "Suivre la taille du sac d'âme (aucun sac)"
@@ -30,7 +31,7 @@ L["Show on soul bag when equipped"] = "Sur le sac d'âme s'il est équipé"
 L["Pause SSF"] = "Suspendre SSF"
 L["Pause all SSF actions"] = "Suspendre toutes les actions SSF"
 L["All SSF actions paused"] = "Toutes les actions SSF suspendues"
-L["SSF actions"] = "Actions SSF"
+L["SSF paused"] = "SSF en pause"
 L["Type /ssf help for commands."] = "Tapez /ssf help pour les commandes."
 L['Unknown command "%s".'] = 'Commande inconnue « %s ».'
 L["Play pause sound"] = "Jouer le son de pause"
@@ -62,7 +63,8 @@ L["Full"] = "Plein"
 -- Broker
 L["Soul Shards"] = "Fragments d'âme"
 L["Cap"] = "Limite"
-L["Over by"] = "Excédent"
+L["Yes"] = "Oui"
+L["No"] = "Non"
 
 -- Tooltips
 L["Help OFF: Click to show tooltip help when you hover over an option."] = "Aide DÉSACTIVÉE : Cliquez pour afficher l'aide au survol d'une option."

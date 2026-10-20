@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- SSFStepperSlider: an AceGUI widget. The stock AceGUI Slider with a "-" button and a "+"
 -- button framing the value box under the bar, for fine tuning after a rough slide.

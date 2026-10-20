@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- MacroGlow: when SSF opens Blizzard's macro window on its macros, each one not yet on an
 -- action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it

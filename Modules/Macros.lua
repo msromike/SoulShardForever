@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 -- Holds their text (the one source: the help text shows exactly what Create writes), says

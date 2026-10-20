@@ -1,5 +1,5 @@
 ## Interface: 16001
-## Title: Soul Shard Forever (SSF)
+## Title: Soul Shards Forever (SSF)
 ## Category: Class
 ## Notes: Soul Shard cap for warlocks. /ssf delete in a macro removes one shard over the cap and moves shards into the soul bag.
 ## Notes-deDE: Seelensplitter-Limit für Hexenmeister. /ssf delete in einem Makro löscht einen Splitter über dem Limit und verschiebt Splitter in die Seelentasche.

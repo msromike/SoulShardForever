@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- DeleteHelp: the text that teaches every way to delete a shard: a first paragraph (the
 -- caller's own), the two recommended macros and when to use the Bane one. The Delete Shard

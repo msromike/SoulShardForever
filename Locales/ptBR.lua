@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- Brazilian Portuguese strings. Blizzard terms from the ptBR client: Estilhaço de Alma
 -- (item 6265), Bolsa de Almas (the soul bag container type). Registered at the bottom
 -- through Locales\Register.lua.
@@ -6,15 +6,16 @@
 local _, NS = ...
 local L = {}
 
-L["Soul Shard Forever"] = "Soul Shard Forever"
+L["Soul Shards Forever"] = "Soul Shards Forever"
 L["SSF"] = "SSF"
-L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shard Forever (SSF) v%s por %s. Digite /ssf para ver as opções."
+L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shards Forever (SSF) v%s por %s. Digite /ssf para ver as opções."
 L["Deleted a Soul Shard."] = "Um Estilhaço de Alma foi excluído."
 L["ON"] = "LIGADO"
 L["OFF"] = "DESLIGADO"
 L["Use: /ssf %s on|off"] = "Uso: /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Uso: /ssf %s %d-%d"
 L["Soul Shards: %s (cap %s)"] = "Estilhaços de Alma: %s (limite %s)"
+L["Soul Shards: %s"] = "Estilhaços de Alma: %s"
 L["(in bags: %s)"] = "(nas bolsas: %s)"
 L["%s (cap %d)"] = "%s (limite %d)"
 L["Match soul bag size (no soul bag)"] = "Igual à Bolsa de Almas (sem bolsa)"
@@ -30,7 +31,7 @@ L["Show on soul bag when equipped"] = "Na Bolsa de Almas, se equipada"
 L["Pause SSF"] = "Pausar SSF"
 L["Pause all SSF actions"] = "Pausar todas as ações do SSF"
 L["All SSF actions paused"] = "Todas as ações do SSF pausadas"
-L["SSF actions"] = "Ações do SSF"
+L["SSF paused"] = "SSF pausado"
 L["Type /ssf help for commands."] = "Digite /ssf help para ver os comandos."
 L['Unknown command "%s".'] = 'Comando desconhecido "%s".'
 L["Play pause sound"] = "Tocar som de pausa"
@@ -62,7 +63,8 @@ L["Full"] = "Cheio"
 -- Broker
 L["Soul Shards"] = "Estilhaços de Alma"
 L["Cap"] = "Limite"
-L["Over by"] = "Excesso"
+L["Yes"] = "Sim"
+L["No"] = "Não"
 
 -- Tooltips
 L["Help OFF: Click to show tooltip help when you hover over an option."] = "Ajuda DESLIGADA: Clique para ver ajuda ao passar o cursor sobre uma opção."

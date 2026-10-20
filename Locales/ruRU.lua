@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- Russian strings. Blizzard terms from the ruRU client: Осколок души (item 6265), Сумка душ
 -- (the soul bag container type). Counts sit after a colon or in their own column, so no
 -- string needs plural forms. Registered at the bottom through Locales\Register.lua.
@@ -6,15 +6,16 @@
 local _, NS = ...
 local L = {}
 
-L["Soul Shard Forever"] = "Soul Shard Forever"
+L["Soul Shards Forever"] = "Soul Shards Forever"
 L["SSF"] = "SSF"
-L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shard Forever (SSF) v%s, автор %s. Введите /ssf, чтобы открыть настройки."
+L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shards Forever (SSF) v%s, автор %s. Введите /ssf, чтобы открыть настройки."
 L["Deleted a Soul Shard."] = "Удален осколок души."
 L["ON"] = "ВКЛ"
 L["OFF"] = "ВЫКЛ"
 L["Use: /ssf %s on|off"] = "Использование: /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Использование: /ssf %s %d-%d"
 L["Soul Shards: %s (cap %s)"] = "Осколки души: %s (лимит %s)"
+L["Soul Shards: %s"] = "Осколки души: %s"
 L["(in bags: %s)"] = "(в сумках: %s)"
 L["%s (cap %d)"] = "%s (лимит %d)"
 L["Match soul bag size (no soul bag)"] = "По сумке душ (сумки нет)"
@@ -30,7 +31,7 @@ L["Show on soul bag when equipped"] = "На сумке душ, если наде
 L["Pause SSF"] = "Пауза SSF"
 L["Pause all SSF actions"] = "Приостановить все действия SSF"
 L["All SSF actions paused"] = "Все действия SSF приостановлены"
-L["SSF actions"] = "Действия SSF"
+L["SSF paused"] = "SSF на паузе"
 L["Type /ssf help for commands."] = "Введите /ssf help, чтобы увидеть команды."
 L['Unknown command "%s".'] = 'Неизвестная команда "%s".'
 L["Play pause sound"] = "Звук при паузе"
@@ -62,7 +63,8 @@ L["Full"] = "Заполнено"
 -- Broker
 L["Soul Shards"] = "Осколки души"
 L["Cap"] = "Лимит"
-L["Over by"] = "Сверх лимита"
+L["Yes"] = "Да"
+L["No"] = "Нет"
 
 -- Tooltips
 L["Help OFF: Click to show tooltip help when you hover over an option."] = "Подсказки ВЫКЛЮЧЕНЫ: Нажмите, чтобы видеть подсказки при наведении на настройку."

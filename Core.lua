@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF): a Soul Shard cap for warlocks on WoW Forever.
+-- Soul Shards Forever (SSF): a Soul Shard cap for warlocks on WoW Forever.
 -- Started as a fork of SoulSort by Anilusion; rewritten from scratch on Ace3 for Forever
 -- only. No original code remains. MIT, see LICENSE.
 --
@@ -6,8 +6,9 @@
 -- never hand-roll a replacement or reach around it. One way to print (AceConsole), one
 -- settings table (AceConfig), one event path (AceEvent/AceBucket), one db (AceDB).
 --
--- Core: the addon object, the warlock gate, the saved settings and the Language switch
--- (ApplyLanguage). Nothing else. The work is in the modules under Modules\.
+-- Core: the addon object, the warlock gate, the saved settings, the Language switch
+-- (ApplyLanguage) and the class color (ClassColor). Nothing else. The work is in the
+-- modules under Modules\.
 
 local ADDON, NS = ... -- NS: the addon-private table; Locales\Register.lua fills NS.locales
 -- Registered as "SSF": AceConsole prefixes every chat line with the registered name.
@@ -20,6 +21,14 @@ BINDING_NAME_SSF_PAUSE = L["Pause all SSF actions"]
 
 SSF.SHARD_ITEM_ID = 6265
 SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
+
+-- r, g, b of the warlock class color: SSF's titles (the window, its groups, the minimap
+-- tooltip) and nothing else
+function SSF:ClassColor()
+    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARLOCK
+    if c then return c.r, c.g, c.b end
+    return 0.53, 0.53, 0.93
+end
 
 local defaults = {
     profile = {
@@ -88,5 +97,5 @@ end
 function SSF:OnEnable()
     local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
     local author = self:GetModule("Settings"):Accent("msromike")
-    self:Printf(L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."], version, author)
+    self:Printf(L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."], version, author)
 end

@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
 -- where a soul pouch equips on Forever). No state, no events, never moves or deletes

@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Window: SSF's own options window. Opens it, feeds it the options table, keeps it fresh
 -- while shown, dresses its buttons and footer, styles its titles, anchors its tooltips
@@ -38,11 +38,7 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 -- The window title and the group titles are in the warlock class color: nothing else in
 -- the window uses it (gold is for control labels, white for option text, green and red
 -- for state).
-local function ClassColor()
-    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARLOCK
-    if c then return c.r, c.g, c.b end
-    return 0.53, 0.53, 0.93
-end
+local function ClassColor() return SSF:ClassColor() end
 
 -- A faint dark strip behind every title (each group title, and the window title in its
 -- header), so the class color reads on any scenery behind the window. One darkness for all.
@@ -63,7 +59,7 @@ local BAND_BACKDROP = {
 -- set first; tested in game, and a key bound there afterwards stuck through a reload with
 -- nothing blocked. The section name is Bindings.xml's category. SSF's window closes first:
 -- it draws above the settings panel.
-local BINDING_SECTION = "Soul Shard Forever"
+local BINDING_SECTION = "Soul Shards Forever"
 
 function Window:OpenKeyBindings()
     if self.window then self.window:Hide() end
@@ -104,7 +100,7 @@ function Window:DressWindow()
         :format(Options.Gold(L["Delete Shard"]), Options.Gold(L["Pause all SSF actions"])) or nil
     self.window:SetRightButton(label, function() Window:OpenKeyBindings() end, bindTip)
 
-    self.window:SetTitleColor(ClassColor()) -- "Soul Shard Forever" at the top, as the group titles
+    self.window:SetTitleColor(ClassColor()) -- "Soul Shards Forever" at the top, as the group titles
     self.window:SetTitleBand(TITLE_BAND)    -- the same dark strip behind it
     -- the help button: toggles help mode (Options), blue while on, its tooltip says which
     self.window:SetHelpButton(function() Options:ToggleHelp() end, on,

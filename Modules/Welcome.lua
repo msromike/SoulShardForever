@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Welcome: the first-load welcome. The first time a character loads SSF, the window opens
 -- by itself with a note beside it: the help button, every way to delete, and the button

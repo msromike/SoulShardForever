@@ -1,9 +1,12 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Status: the two status lines and when they print at login. Nothing else.
---   StatusText(count, cap) -> "Soul Shards: N (cap M)", the one count/cap wording (the
---     window's status line, a bare /ssf, the announce line, the paused-press line).
---   PauseText() -> "SSF actions - ON/OFF", the first line of a bare /ssf.
+--   StatusText(count, cap) -> "Soul Shards: N (cap M)", the one count/cap wording in chat
+--     (a bare /ssf, the login lines, the announce line, the paused-press line).
+--   CountText() -> "Soul Shards: N", the window's top line (its cap is the slider below).
+--   PausedValue() -> red "Yes" while paused, green "No" otherwise (the minimap tooltip).
+--   PauseText() -> "SSF paused: Yes/No", the one pause wording in chat (a bare /ssf, the
+--     login lines, the /ssf pause echo and the pause key binding).
 -- Login and reload: prints both lines once, after the version line.
 --
 -- Listens: PLAYER_ENTERING_WORLD (once), BAG_UPDATE_DELAYED (fresh login only).
@@ -14,23 +17,37 @@ local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Status = SSF:NewModule("Status", "AceEvent-3.0", "AceTimer-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
--- The one count/cap wording, used by the window and the announce line. The count takes
--- the one state color (Counter:StateColor: red / green / yellow, or white when colorizing
--- is off) so the window shows the effect of a cap change without looking at the bag; the
--- cap is a setting, so it gets the neutral value color. Both arguments are optional: the
--- Trimmer passes the count it knows right after a delete, when the bags still show the
--- deleted shard until the server confirms.
-function Status:StatusText(count, cap)
-    count, cap = count or SSF:GetModule("Bags"):Count(), cap or SSF:GetModule("Cap"):Get()
+-- The count in the one state color (Counter:StateColor: red / green / yellow), always:
+-- only the bag number follows the colorize option.
+local function ColoredCount(count, cap)
     local _, _, _, hex = SSF:GetModule("Counter"):StateColor(count, cap)
-    return L["Soul Shards: %s (cap %s)"]:format("|cff" .. hex .. count .. "|r", SSF:GetModule("Settings"):Value(cap))
+    return "|cff" .. hex .. count .. "|r"
 end
 
--- The first line of a bare /ssf: "SSF actions - ON" (green) while presses work,
--- "- OFF" (red) while paused.
+-- The one count/cap wording in chat. The cap is a setting, so it gets the neutral value
+-- color. Both arguments are optional: the Trimmer passes the count it knows right after a
+-- delete, when the bags still show the deleted shard until the server confirms.
+function Status:StatusText(count, cap)
+    count, cap = count or SSF:GetModule("Bags"):Count(), cap or SSF:GetModule("Cap"):Get()
+    return L["Soul Shards: %s (cap %s)"]:format(ColoredCount(count, cap), SSF:GetModule("Settings"):Value(cap))
+end
+
+-- The window's top line: the count alone, so it shows the effect of a cap or low-mark
+-- change without looking at the bag; the cap itself is the slider right below.
+function Status:CountText()
+    local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
+    return L["Soul Shards: %s"]:format(ColoredCount(count, cap))
+end
+
+-- Paused or not, as a stop/go word: "Yes" in red while paused (nothing moves or deletes),
+-- "No" in green while presses work. SSF's own Yes/No, so they follow the Language setting.
+function Status:PausedValue()
+    local paused = SSF.db.profile.paused
+    return SSF:GetModule("Settings"):State(paused and L["Yes"] or L["No"], not paused)
+end
+
 function Status:PauseText()
-    local on = not SSF.db.profile.paused
-    return L["SSF actions"] .. " - " .. SSF:GetModule("Settings"):OnOff(on)
+    return L["SSF paused"] .. ": " .. self:PausedValue()
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off

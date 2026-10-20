@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Four AceGUI widgets that reposition their stock counterpart, for use from the options
 -- table through `dialogControl`. AceConfigDialog drives them exactly like the originals.

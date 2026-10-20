@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- Latin American Spanish strings. Blizzard terms from the Spanish client: Fragmento de alma
 -- (item 6265), Bolsa de almas (the soul bag container type). Registered at the bottom through
 -- Locales\Register.lua.
@@ -6,15 +6,16 @@
 local _, NS = ...
 local L = {}
 
-L["Soul Shard Forever"] = "Soul Shard Forever"
+L["Soul Shards Forever"] = "Soul Shards Forever"
 L["SSF"] = "SSF"
-L["Soul Shard Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shard Forever (SSF) v%s por %s. Escribe /ssf para las opciones."
+L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."] = "Soul Shards Forever (SSF) v%s por %s. Escribe /ssf para las opciones."
 L["Deleted a Soul Shard."] = "Se eliminó un fragmento de alma."
 L["ON"] = "ACTIVADO"
 L["OFF"] = "DESACTIVADO"
 L["Use: /ssf %s on|off"] = "Uso: /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Uso: /ssf %s %d-%d"
 L["Soul Shards: %s (cap %s)"] = "Fragmentos de alma: %s (límite %s)"
+L["Soul Shards: %s"] = "Fragmentos de alma: %s"
 L["(in bags: %s)"] = "(en las bolsas: %s)"
 L["%s (cap %d)"] = "%s (límite %d)"
 L["Match soul bag size (no soul bag)"] = "Según la bolsa de almas (sin bolsa)"
@@ -30,7 +31,7 @@ L["Show on soul bag when equipped"] = "En la bolsa de almas si está equipada"
 L["Pause SSF"] = "Pausar SSF"
 L["Pause all SSF actions"] = "Pausar todas las acciones de SSF"
 L["All SSF actions paused"] = "Todas las acciones de SSF en pausa"
-L["SSF actions"] = "Acciones de SSF"
+L["SSF paused"] = "SSF en pausa"
 L["Type /ssf help for commands."] = "Escribe /ssf help para ver los comandos."
 L['Unknown command "%s".'] = 'Comando desconocido "%s".'
 L["Play pause sound"] = "Reproducir sonido de pausa"
@@ -62,7 +63,8 @@ L["Full"] = "Lleno"
 -- Broker
 L["Soul Shards"] = "Fragmentos de alma"
 L["Cap"] = "Límite"
-L["Over by"] = "Exceso"
+L["Yes"] = "Sí"
+L["No"] = "No"
 
 -- Tooltips
 L["Help OFF: Click to show tooltip help when you hover over an option."] = "Ayuda DESACTIVADA: Haz clic para ver ayuda al pasar el cursor sobre una opción."

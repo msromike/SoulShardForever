@@ -1,4 +1,4 @@
--- Soul Shard Forever (SSF). MIT, see LICENSE.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Cap: answers one question, "what is the cap right now".
 --   AutoMax on AND a soul bag equipped -> the soul bags' slot total.
