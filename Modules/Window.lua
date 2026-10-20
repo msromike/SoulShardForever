@@ -168,21 +168,15 @@ end
 
 -- AceConfigDialog rebuilds the window by itself after any setting change, through its own
 -- Open(APP, window), without going through Feed (tested: the titles came back stock gold
--- after a click). A hook on Open styles the titles as soon as any Open of the window
--- returns, Feed's included, in the same frame, so the stock titles never draw. Re-hooked
--- when Open has been replaced: a newer AceConfigDialog loaded by another addon redefines it.
--- The container can be nil: Ace calls Open(APP) with none after a change made in Blizzard's
--- Interface Options panel, before our window may exist (nil == nil).
-local function AfterDialogOpen(_, app, container)
-    if app ~= APP or not container or container ~= Window.window then return end
-    StyleGroupTitles(container.children[1]) -- the ScrollFrame AceConfigDialog puts in
-end
-
-local hookedOpen
-local function HookDialogOpen()
-    if AceConfigDialog.Open == hookedOpen then return end
-    hooksecurefunc(AceConfigDialog, "Open", AfterDialogOpen)
-    hookedOpen = AceConfigDialog.Open
+-- after a click). Every such rebuild ends with the window's layout, and the window fires
+-- OnLayoutFinished then (SSFWindow), with the groups already built inside its ScrollFrame
+-- (AceConfigDialog feeds the options before it lays the container out). Styling the
+-- titles from that callback covers Feed's opens and AceConfigDialog's own alike, in the
+-- same frame, so the stock titles never draw. No hook, so a newer AceConfigDialog loaded
+-- later by another addon changes nothing.
+local function OnLayoutFinished()
+    local window = Window.window
+    if window and window.children[1] then StyleGroupTitles(window.children[1]) end
 end
 
 -- Every tooltip in the window sits above-right of the cursor, offset to the right
@@ -213,7 +207,6 @@ end
 -- on one line, SSFWindow:FitWidth; the layout depends on the width, so a changed width is
 -- fed again), then the height (SSFWindow:FitToContent).
 function Window:Feed()
-    HookDialogOpen()
     HookOptionTooltip()
     AceConfigDialog:Open(APP, self.window)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
@@ -293,6 +286,7 @@ function Window:Open()
             -- the screen size the spot belongs to (see Open)
             window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
         end)
+        self.window:SetCallback("OnLayoutFinished", OnLayoutFinished) -- group titles, see above
         -- bottom row: Create macros far left while shown, Key Bindings far right, the
         -- version and credit under them
         self:DressWindow()
