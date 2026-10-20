@@ -1,0 +1,28 @@
+# Runs the same check as tools/check.py does locally: luacheck, the headless tests, the
+# locale completeness check and the architecture map. A map that comes out different from
+# the committed one fails the run, because the committed map must always match the code.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Lua and luacheck
+        run: |
+          sudo apt-get update -q
+          sudo apt-get install -y -q lua5.4 lua-check
+
+      - name: Run the check script
+        env:
+          LUA: lua5.4
+          LUACHECK: luacheck
+        run: python3 tools/check.py
+
+      - name: The committed ARCHITECTURE.md must match the code
+        run: git diff --exit-code -- ARCHITECTURE.md
