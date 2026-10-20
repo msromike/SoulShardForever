@@ -2,16 +2,17 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.8.0: One click makes the two recommended macros and opens your macro window on them, glowing until you drag them to a bar. A new welcome screen teaches every way to delete.
+
 1.7.0: In-game tooltip help (the "i" by the X), a one-time welcome, and a window that fits every language.
 
 1.6.1: New defaults: a cap of 8, the shard count on your soul bag, and no pause sound.
-
-1.6.0: SSF Mode moves shards into your soul bag and nothing else. One selector for how shards move. `/ssf` opens the window.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
 
+- **NEW: One click makes the recommended macros: Create macros, at the bottom of the window.**
 - **NEW: In-game tooltip help: click the "i" in the window.**
 - **NEW: SSF Mode: shards move into your soul bag, and nothing else in your bags moves.**
 - **NEW: Pause all SSF actions so you can stockpile for raid night.**
@@ -48,6 +49,15 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
   /cast Bane of Agony
   ```
 
+  Life Tap never puts you in combat. The Bane one deletes on the move: with no target it
+  doesn't cast, but the delete still fires. Don't use it with an enemy targeted, or you're
+  in combat before the delete fires.
+
+  Or let SSF make both: click **Create macros** at the bottom of the window (it shows
+  while either is missing), then **Create recommended macros**. SSF makes them as SSF_LT
+  and SSF_BoA, reloads your UI, and opens the macro window with them glowing until you
+  drag them onto a bar.
+
 - **The Delete Shard button** in the GUI window.
 
 Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless in SoulSort Mode.
@@ -62,7 +72,7 @@ Every press deletes first if you're over the cap: the shard nearest the backpack
 - **Announce deletions in chat** is off by default. Turn it on to see a chat line for each deleted shard, or for addons that watch chat (like MSBT).
 - **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.
 
-The gold "i" next to the window's X turns tooltip help on: hover any option, Delete Shard or Keybindings to see what it does. It turns blue while on, and it's off again after a /reload. The first time a character loads SSF, the window opens with help already on and a short welcome note beside it, once.
+The gold "i" next to the window's X turns tooltip help on: hover any option, Delete Shard or Keybindings to see what it does. It turns blue while on, and it's off again after a /reload. The first time a character loads SSF, the window opens with help already on and a welcome screen beside it: every way to delete, and a button that makes the two macros. You see it once per character, and once more when a new version changes it. Create macros brings it back.
 
 The minimap icon opens and closes the window. Its tooltip shows the count and the cap, and indicates paused status. Settings are per character.
 

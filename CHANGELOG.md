@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.8.0 (2026-10-19)
+
+- Delete Shard's help tooltip teaches every way to delete: your keybind, the button, or a
+  macro. It shows two macros, /ssf delete before Life Tap and before Bane of Agony, and
+  when to use the Bane one (on the move, with no enemy targeted).
+- New welcome screen: the same text, and a Create recommended macros button. Players
+  updating from 1.7 see it once.
+- Create recommended macros makes the two macros (SSF_LT and SSF_BoA) in your
+  character's macros, or in your account's if the character's are full, then reloads your
+  UI and opens Blizzard's macro window on them. The reload is there because the game shows
+  a brand-new macro with the wrong icon until one. Each macro not yet on a bar glows until
+  you drag it onto one. With no free slots, a red message says so and nothing is made.
+- Create macros: a button at the bottom of the SSF window while either macro is missing.
+  It opens the welcome screen. Rename a macro and SSF counts it as missing.
+- In combat the macro buttons do nothing.
+- All new text in all six languages. Help tooltips keep their blank lines in every
+  language.
+
 ## 1.7.0 (2026-10-19)
 
 - In-game help: the gold "i" next to the window's X turns tooltip help on and off. While

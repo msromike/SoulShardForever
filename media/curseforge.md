@@ -28,6 +28,7 @@ There are other shard addons. This one is built to disappear.
 
 - Cap follows your soul bag size, if you want it.
 - In-game help: click the "i" in the window, then hover any option to see what it does.
+- Makes the recommended macros for you with one click, and shows you where they were created.
 - For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list, and Tab will complete the command.
 - Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
 
@@ -50,6 +51,7 @@ Every keybind press or macro click deletes one shard if you're over the cap, and
   /cast Life Tap
   ```
 
+- Or let SSF make it: click *Create macros* at the bottom of the window. It makes the Life Tap macro and a Bane of Agony macro, then opens your macro window so you can drag them onto your bars.
 - Or tap your keybind whenever.
 - Set the cap with the slider, or tick *Match soul bag size*: a 14-slot bag means a cap of 14.
 - SoulSort Mode, if you prefer it. It sorts your bags the same way SoulSort does.
