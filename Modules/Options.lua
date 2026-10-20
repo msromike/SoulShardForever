@@ -158,14 +158,19 @@ local function BuildTable()
     Options.pauseCmd = pauseCmd -- for TogglePause; replaced on every rebuild
 
     local args = {
-        status = {
-            type = "description",
+        -- the top row: the count, with Delete Shard right after it, so a click and the number
+        -- it changes sit together (Widgets\SSFCentered.lua). A mouse click is the hardware
+        -- event Trimmer:Delete needs. Its help is every way to delete (DeleteHelp).
+        deletebutton = {
+            type = "execute",
             order = 0,
             width = "full",
             cmdHidden = true,
-            fontSize = "large",
-            dialogControl = "SSFCenteredLabel", -- Widgets\SSFCentered.lua
-            name = function() return SSF:GetModule("Status"):CountText() .. "\n" end,
+            dialogControl = "SSFCountButton",
+            name = L["Delete Shard"],
+            desc = SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."]),
+            arg = function() return SSF:GetModule("Status"):CountText() end,
+            func = function() SSF:GetModule("Trimmer"):Delete() end,
         },
 
         -- a blank line between each pair of groups, so the sections stand apart (plain
@@ -465,9 +470,10 @@ local function BuildTable()
         },
         other = {
             -- the intro, then one bullet per choice with a blank line between, each led by
-            -- the choice's own name in gold
+            -- the choice's own name: SSF Mode in the state green (the safe pick, it moves
+            -- nothing else), the SoulSort ones in neutral gold
             shardmode = L["How a macro or keybind moves shards."] .. " " .. L["Shards move to soul bag."]
-                .. "\n\n" .. bullet .. Gold(L["SSF Mode"] .. ":") .. " "
+                .. "\n\n" .. bullet .. SSF:GetModule("Settings"):State(L["SSF Mode"] .. ":", true) .. " "
                 .. L["SSF does not sort (does NOT change item positions in bags)."]
                 .. "\n\n" .. bullet .. Gold(L["SoulSort Normal"] .. ":") .. " "
                 .. L["Shards sort top down (CHANGES item positions in your bags)."]

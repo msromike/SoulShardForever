@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.8.1 (2026-10-20)
 
+- The welcome screen shows once more after this update, to show what moved. It was redone,
+  and Delete Shard now sits at the top of the window.
 - The name reads Soul Shards Forever everywhere, matching CurseForge: the window, the
   options panel, the minimap tooltip, the login line, the key bindings section and the
   AddOns list. Your settings, key bindings and enabled state carry over.
@@ -20,6 +22,19 @@
   bag bar. It is part of the bag count now: with the count off, the bag no longer glows.
   Low shard warn can always be changed, even with the glow off: it sets where the count
   turns red everywhere.
+- Welcome screen, easier to read: narrower, with more room at the sides. The help pointer
+  is in gold, the opening says what SSF does first, and each macro sits in its own box.
+  What the button does is above the button, with "reloads your UI" in green, the button
+  is sized to its text, and the "won't see this again" line is last. Delete Shard's help
+  tooltip opens the same way. The Bane macro's warning now says why: it puts you in combat,
+  and SSF cannot delete a shard while in combat.
+- Delete Shard moved from the bottom left of the window to the top, right beside your
+  shard count: click it and watch the number drop. Create macros takes its place at the
+  bottom left.
+- Colorize bag count's help tooltip shows red, green and yellow in their own colors, the
+  same shades as on the bag.
+- How shards move's help tooltip shows SSF Mode in green, the safe pick that moves nothing
+  else in your bags. The SoulSort choices stay gold.
 - All new text in all six languages.
 
 ## 1.8.0 (2026-10-19)

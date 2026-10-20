@@ -1,8 +1,13 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Four AceGUI widgets that reposition their stock counterpart, for use from the options
+-- Five AceGUI widgets that reposition their stock counterpart, for use from the options
 -- table through `dialogControl`. AceConfigDialog drives them exactly like the originals.
---   SSFCenteredLabel    : a Label with centered text (the status line).
+--   SSFCountButton      : a Button with a line of large text before it, the pair centered
+--                         in its row (the count and Delete Shard). For an `execute`
+--                         option: its name is the button's label, its `arg` a function that
+--                         returns the text.
+--   SSFCenteredLabel    : a Label with centered text. Unused since the count line became
+--                         SSFCountButton; kept in case a centered line is needed again.
 --   SSFCenteredCheckBox : a CheckBox sized to its text and centered in its row.
 --   SSFUnlabeledDropdown: a Dropdown whose label never shows; its name is only the title
 --                         of its tooltip.
@@ -10,8 +15,8 @@
 --                         An option's `arg` sets the indent level (2 = 20px); no `arg` is
 --                         level 1. AceConfigDialog hands `arg` to SetCustomData. Not full
 --                         width (sharing a row), it is as wide as its label on one line.
--- SSFCenteredLabel and SSFIndentCheckBox report MinWidth(): the width their text needs on
--- one line, which SSFWindow:FitWidth sizes the window to.
+-- SSFCountButton, SSFCenteredLabel and SSFIndentCheckBox report MinWidth(): the width
+-- their text needs on one line, which SSFWindow:FitWidth sizes the window to.
 -- All are built by composition: the real widget sits inside ours and every call is
 -- forwarded, the same pattern as SSFStepperSlider.
 --
@@ -25,7 +30,72 @@
 local AceGUI = LibStub("AceGUI-3.0")
 
 -------------------------------------------------------------------------------
--- SSFCenteredLabel
+-- SSFCountButton
+-------------------------------------------------------------------------------
+do
+    local Type, Version = "SSFCountButton", 1
+    local GAP = 12     -- px between the text and the button
+    local PAD = 30     -- the button is its label plus this (SSFWindow's bottom buttons too)
+    local BELOW = 12   -- air under the row, before the first group
+
+    -- the text, then the button right after it, the pair centered in the row
+    local function Layout(self)
+        local width = self.frame.width or self.frame:GetWidth() or 0
+        local button = self.inner
+        button:SetWidth((button.text:GetStringWidth() or 0) + PAD)
+        local textWidth = self.label:GetUnboundedStringWidth() or 0
+        local total = textWidth + GAP + button.frame:GetWidth()
+        local height = math.max(self.label:GetStringHeight() or 0, button.frame:GetHeight() or 24)
+        self.label:ClearAllPoints()
+        self.label:SetPoint("TOPLEFT", self.frame, "TOPLEFT", math.max(0, (width - total) / 2),
+            -(height - (self.label:GetStringHeight() or 0)) / 2)
+        button.frame:ClearAllPoints()
+        button.frame:SetPoint("LEFT", self.label, "RIGHT", GAP, 0)
+        self:SetHeight(height + BELOW)
+    end
+
+    local methods = {
+        ["OnAcquire"] = function(self)
+            self:SetWidth(200)
+            self.label:SetText("")
+            self.inner:SetText("")
+            self.inner:SetDisabled(false)
+        end,
+        ["OnWidthSet"] = function(self) Layout(self) end,
+        -- the option's name: the button's label
+        ["SetText"] = function(self, text) self.inner:SetText(text) Layout(self) end,
+        -- the option's `arg`: a function returning the text before the button
+        ["SetCustomData"] = function(self, getText)
+            self.label:SetText(type(getText) == "function" and getText() or "")
+            Layout(self)
+        end,
+        ["SetDisabled"] = function(self, v) self.inner:SetDisabled(v) end,
+        -- the width the pair needs on one line (SSFWindow:FitWidth)
+        ["MinWidth"] = function(self)
+            return (self.label:GetUnboundedStringWidth() or 0) + GAP + (self.inner.text:GetStringWidth() or 0) + PAD
+        end,
+    }
+
+    local function Constructor()
+        local frame = CreateFrame("Frame", nil, UIParent)
+        local widget = { frame = frame, type = Type }
+        widget.label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
+        local inner = AceGUI:Create("Button")
+        inner.frame:SetParent(frame)
+        inner.frame:Show()
+        widget.inner = inner
+        inner:SetCallback("OnClick", function(_, _, ...) widget:Fire("OnClick", ...) end)
+        inner:SetCallback("OnEnter", function() widget:Fire("OnEnter") end)
+        inner:SetCallback("OnLeave", function() widget:Fire("OnLeave") end)
+        for method, func in pairs(methods) do widget[method] = func end
+        return AceGUI:RegisterAsWidget(widget)
+    end
+
+    AceGUI:RegisterWidgetType(Type, Constructor, Version)
+end
+
+-------------------------------------------------------------------------------
+-- SSFCenteredLabel (unused for now, kept for reuse)
 -------------------------------------------------------------------------------
 do
     local Type, Version = "SSFCenteredLabel", 1

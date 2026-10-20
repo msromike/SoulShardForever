@@ -39,9 +39,15 @@ local HELP_SIZE = 22                  -- the help button, square: the visible "i
 local HELP_CROP = { 14 / 64, 49 / 64 } -- the circle's edges in the 64 px art (measured); the rest is transparent
 local HELP_DROP = 6                   -- px below the X's middle, so the circle clears the frame's top border
 local HELP_GAP = 4                    -- px between the circle and the X
-local SIDE_PAD = 14                   -- the side panel's text inset from its border
+local SIDE_PAD = 14                   -- the side panel's inset from its border, top and bottom
+local SIDE_TEXT_PAD = 24              -- the side panel's text inset from its sides
+local SIDE_WIDTH = 0.86               -- the side panel's width, as a share of the window's
 local SIDE_GAP = 8                    -- px between the window's right edge and the side panel
 local SIDE_ROW_GAP = 8                -- px between the side panel's title, divider, arrow row and text
+local MACRO_INDENT = 16               -- a macro box's inset from the paragraphs' left edge
+local MACRO_PAD = 6                   -- a macro's text inset inside its box
+local MACRO_TEXT = { 0.71, 0.80, 0.92 } -- a macro's text: pale blue-grey, so it reads as code to copy
+local SIDE_BUTTON_EDGE = 12           -- the panel button's end caps: its width is its text plus this
 local SIDE_ICON = 20                  -- the side panel's copy of the "i"; the arrow is as tall
 local SIDE_ICON_GAP = 6               -- px between the arrow and the "i"
 local ARROW_ART = 131906              -- Interface\Glues\Login\UI-BackArrow: a gold arrow pointing left
@@ -130,29 +136,71 @@ local function Mover_OnMouseUp(mover)
     self:Fire("OnMoved", status.top, status.left) -- the owner saves it across sessions
 end
 
--- The side panel's widths from its text: as wide as its widest line, unwrapped, plus the
--- inset on both sides, but never wider than the window: past that the text wraps. The
--- centered title keeps clear of the X in the top-right corner (the X's width on both
--- sides). Run when the panel shows and whenever the window's width changes (the first open
--- re-fits the window a frame later). Returns the width.
+-- The side panel's width: SIDE_WIDTH of the window's, so its paragraphs keep a comfortable
+-- line length, but never so narrow that the centered title runs into the X in the top-right
+-- corner (the X's width on both sides). Its text wraps inside SIDE_TEXT_PAD. Run when the
+-- panel shows and whenever the window's width changes (the first open re-fits the window a
+-- frame later). Returns the width.
 local function LayoutSidePanel(self)
     local panel = self.sidepanel
     local clearX = 2 * (panel.close:GetWidth() or 0)
-    local width = math.max(2 * SIDE_PAD + (panel.body:GetUnboundedStringWidth() or 0),
-        2 * SIDE_PAD + (panel.note:GetUnboundedStringWidth() or 0),
-        2 * SIDE_PAD + (panel.extra:IsShown() and panel.extra:GetUnboundedStringWidth() or 0),
-        clearX + (panel.title:GetUnboundedStringWidth() or 0))
-    width = math.min(width, self.frame:GetWidth() or width)
+    local width = math.floor(math.max((self.frame:GetWidth() or 0) * SIDE_WIDTH,
+        clearX + (panel.title:GetUnboundedStringWidth() or 0)))
     panel:SetWidth(width)
     panel.title:SetWidth(width - 2 * SIDE_PAD)
-    panel.body:SetWidth(width - 2 * SIDE_PAD)
     panel.divider:SetWidth(width - 2 * SIDE_PAD)
-    panel.note:SetWidth(width - 2 * SIDE_PAD)
-    panel.extra:SetWidth(width - 2 * SIDE_PAD)
-    panel.button:SetWidth(width - 2 * SIDE_PAD)
-    panel.buttonNote:SetWidth(width - 2 * SIDE_PAD)
+    for _, text in ipairs({ panel.body, panel.note, panel.buttonNote }) do
+        text:SetWidth(width - 2 * SIDE_TEXT_PAD)
+    end
     panel:Fit()
     return width
+end
+
+-- The side panel's blocks: a paragraph is a left-justified FontString; a macro is its text
+-- in a dark box, indented. Made on first use and kept for the next ShowSidePanel.
+local MACRO_BACKDROP = {
+    bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
+    edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
+    edgeSize = 1,
+}
+
+local function Paragraph(panel, i)
+    local text = panel.paragraphs[i]
+    if not text then
+        text = panel.textlayer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        text:SetJustifyH("LEFT")
+        text:SetWordWrap(true)
+        panel.paragraphs[i] = text
+    end
+    return text
+end
+
+local function MacroBox(panel, i)
+    local box = panel.macros[i]
+    if not box then
+        box = CreateFrame("Frame", nil, panel.textlayer, "BackdropTemplate")
+        box:SetBackdrop(MACRO_BACKDROP)
+        box:SetBackdropColor(0, 0, 0, 0.6)
+        box:SetBackdropBorderColor(0.3, 0.33, 0.36, 1)
+        box.text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+        box.text:SetJustifyH("LEFT")
+        box.text:SetTextColor(unpack(MACRO_TEXT))
+        box.text:SetPoint("TOPLEFT", MACRO_PAD, -MACRO_PAD)
+        box.isMacro = true
+        panel.macros[i] = box
+    end
+    return box
+end
+
+-- a macro box sized to its text: its widest line, unwrapped, and every line, plus the inset
+local function SizeMacroBox(box)
+    local text, widest = box.text:GetText() or "", 0
+    for line in text:gmatch("[^\n]+") do
+        box.text:SetText(line)
+        widest = math.max(widest, box.text:GetUnboundedStringWidth() or 0)
+    end
+    box.text:SetText(text)
+    box:SetSize(widest + 2 * MACRO_PAD, (box.text:GetStringHeight() or 0) + 2 * MACRO_PAD)
 end
 
 local methods = {
@@ -357,12 +405,15 @@ local methods = {
     end,
 
     -- A note beside the window's top-right corner, SIDE_GAP px out (the first-load welcome).
-    -- opts, all optional: extra (a left-justified block under the gold note line), button
-    -- and onClick (a full-width button under that), buttonNote (a small line under the
-    -- button), buttonDisabled (greys the button out). Too near the screen's right edge for
-    -- it, the window goes to the center of the screen; that goes in the status table, so the
-    -- next ApplyStatus keeps it this session (a drag still saves the window's spot). It
-    -- closes with the window and stays closed.
+    -- Top to bottom: the title, the arrow row, bodyText (gold), opts.blocks, opts.buttonNote,
+    -- the button, then noteText (gold) last. opts, all optional: blocks (a list of
+    -- { text } paragraphs, left-justified, and { text, macro = true } macros, each in its own
+    -- box), button and onClick (a button as wide as its text), buttonNote (a small line just
+    -- above the button: what a click does, read before the click), buttonDisabled (greys the
+    -- button out). Too near the screen's right edge for it, the window goes to the center of
+    -- the screen; that goes in the status table, so the next ApplyStatus keeps it this
+    -- session (a drag still saves the window's spot). It closes with the window and stays
+    -- closed.
     ["ShowSidePanel"] = function(self, titleText, bodyText, noteText, opts)
         opts = opts or {}
         local panel, frame = self.sidepanel, self.frame
@@ -370,12 +421,32 @@ local methods = {
         if self.titleColor then panel.title:SetTextColor(unpack(self.titleColor)) end
         panel.body:SetText(bodyText)
         panel.note:SetText(noteText or "")
-        panel.extra:SetText(opts.extra or "")
-        panel.extra:SetShown(opts.extra ~= nil)
+        -- the blocks in order; spares left from a longer list stay hidden
+        wipe(panel.items)
+        local p, m = 0, 0
+        for _, block in ipairs(opts.blocks or {}) do
+            local item
+            if block.macro then
+                m = m + 1
+                item = MacroBox(panel, m)
+                item.text:SetText(block.text)
+            else
+                p = p + 1
+                item = Paragraph(panel, p)
+                item:SetText(block.text)
+            end
+            item:Show()
+            panel.items[#panel.items + 1] = item
+        end
+        for i = p + 1, #panel.paragraphs do panel.paragraphs[i]:Hide() end
+        for i = m + 1, #panel.macros do panel.macros[i]:Hide() end
         if opts.button then
-            panel.button:SetText(opts.button)
-            panel.button:SetScript("OnClick", opts.onClick)
-            panel.button:SetEnabled(not opts.buttonDisabled)
+            -- as wide as its text plus a space each side: it reads as a button, not a bar
+            local button = panel.button
+            button:SetText(" " .. opts.button .. " ")
+            button:SetWidth((button:GetFontString():GetStringWidth() or 0) + SIDE_BUTTON_EDGE)
+            button:SetScript("OnClick", opts.onClick)
+            button:SetEnabled(not opts.buttonDisabled)
         end
         panel.button:SetShown(opts.button ~= nil)
         panel.buttonNote:SetText(opts.buttonNote or "")
@@ -480,13 +551,14 @@ local function Constructor()
         insets = { left = 4, right = 4, top = 4, bottom = 4 },
     })
     -- top to bottom: a title (the window's title color), a divider, an arrow pointing left
-    -- at the help button beside a copy of its "i", the body text, the gold note line (all
-    -- centered), then the optional extra block (left-justified) and button. ShowSidePanel
-    -- sets every width from the text, never wider than the window.
+    -- at the help button beside a copy of its "i", the body line in gold (all anchored,
+    -- centered), then placed by Fit: the blocks (paragraphs left-justified, macros in
+    -- boxes), the button's note, the button and the gold note line (centered).
     -- Everything sits on its own layer, raised above the panel when it shows.
     local layer = CreateFrame("Frame", nil, sidepanel)
     layer:SetAllPoints()
     sidepanel.textlayer = layer
+    sidepanel.items, sidepanel.paragraphs, sidepanel.macros = {}, {}, {}
 
     local title = layer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
     title:SetPoint("TOP", 0, -SIDE_PAD)
@@ -511,51 +583,63 @@ local function Constructor()
     arrow:SetSize(SIDE_ICON * 62 / 40, SIDE_ICON) -- the art's own shape
     arrow:SetPoint("RIGHT", icon, "LEFT", -SIDE_ICON_GAP, 0)
 
-    local body = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
+    -- in gold: the pointer at the help button, and a divider between it and the text below
+    local body = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     body:SetPoint("TOP", icon, "BOTTOM", 0, -SIDE_ROW_GAP)
     body:SetJustifyH("CENTER")
-    body:SetWordWrap(true) -- wraps only when the panel is held to the window's width
+    body:SetWordWrap(true)
     sidepanel.body = body
 
-    -- in gold so it stands out (the one-time notice)
+    -- in gold so it stands out (the one-time notice), last on the panel
     local note = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    note:SetPoint("TOP", body, "BOTTOM", 0, -SIDE_ROW_GAP)
     note:SetJustifyH("CENTER")
     note:SetWordWrap(true)
     sidepanel.note = note
 
-    -- the optional block: paragraphs wrap, its own line breaks stay
-    local extra = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-    extra:SetPoint("TOP", note, "BOTTOM", 0, -SIDE_ROW_GAP)
-    extra:SetJustifyH("LEFT")
-    extra:SetWordWrap(true)
-    extra:Hide()
-    sidepanel.extra = extra
-
-    -- the optional button, the panel's full inner width
+    -- the optional button, as wide as its text (ShowSidePanel)
     local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate")
-    button:SetPoint("TOP", extra, "BOTTOM", 0, -SIDE_ROW_GAP)
     button:SetHeight(22)
     button:Hide()
     sidepanel.button = button
 
-    -- the optional small line under the button: what a click does
+    -- the optional small line just above the button: what a click does
     local buttonNote = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    buttonNote:SetPoint("TOP", button, "BOTTOM", 0, -SIDE_ROW_GAP / 2)
     buttonNote:SetJustifyH("CENTER")
     buttonNote:SetWordWrap(true)
     buttonNote:Hide()
     sidepanel.buttonNote = buttonNote
 
-    -- its height fits the content, measured when the text is set and again each time it
-    -- shows (the welcome waits for the loading screen to go, so the fonts measure true)
+    -- Lays out everything under the body line, top to bottom, SIDE_ROW_GAP apart, and fits
+    -- the height to it. Run when the text is set and again each time it shows (the welcome
+    -- waits for the loading screen to go, so the fonts measure true).
     function sidepanel:Fit()
-        local h = 2 * SIDE_PAD + self.title:GetStringHeight() + 1 + SIDE_ICON
-            + self.body:GetStringHeight() + self.note:GetStringHeight() + 4 * SIDE_ROW_GAP
-        if self.extra:IsShown() then h = h + SIDE_ROW_GAP + self.extra:GetStringHeight() end
-        if self.button:IsShown() then h = h + SIDE_ROW_GAP + self.button:GetHeight() end
-        if self.buttonNote:IsShown() then h = h + SIDE_ROW_GAP / 2 + self.buttonNote:GetStringHeight() end
-        self:SetHeight(h)
+        local inner = (self:GetWidth() or 0) - 2 * SIDE_TEXT_PAD
+        -- the anchored rows: title, divider, arrow row, body
+        local y = SIDE_PAD + self.title:GetStringHeight() + SIDE_ROW_GAP + 1 + SIDE_ROW_GAP
+            + SIDE_ICON + SIDE_ROW_GAP + self.body:GetStringHeight()
+        local function Place(region, height, x)
+            y = y + SIDE_ROW_GAP
+            region:ClearAllPoints()
+            if x then
+                region:SetPoint("TOPLEFT", self.textlayer, "TOPLEFT", x, -y)
+            else
+                region:SetPoint("TOP", self.textlayer, "TOP", 0, -y) -- centered
+            end
+            y = y + height
+        end
+        for _, item in ipairs(self.items) do
+            if item.isMacro then
+                SizeMacroBox(item)
+                Place(item, item:GetHeight(), SIDE_TEXT_PAD + MACRO_INDENT)
+            else
+                item:SetWidth(inner)
+                Place(item, item:GetStringHeight(), SIDE_TEXT_PAD)
+            end
+        end
+        if self.buttonNote:IsShown() then Place(self.buttonNote, self.buttonNote:GetStringHeight()) end
+        if self.button:IsShown() then Place(self.button, self.button:GetHeight()) end
+        if (self.note:GetText() or "") ~= "" then Place(self.note, self.note:GetStringHeight()) end
+        self:SetHeight(y + SIDE_PAD)
     end
     sidepanel:SetScript("OnShow", sidepanel.Fit)
     sidepanel:Hide()

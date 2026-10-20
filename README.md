@@ -2,17 +2,19 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.8.1: Delete Shard sits beside your shard count. A minimap tooltip that always shows your count, cap, low mark and pause. "SSF paused: Yes / No" everywhere, and an easier welcome screen.
+
 1.8.0: One click makes the two recommended macros and opens your macro window on them, glowing until you drag them to a bar. A new welcome screen teaches every way to delete.
 
 1.7.0: In-game tooltip help (the "i" by the X), a one-time welcome, and a window that fits every language.
-
-1.6.1: New defaults: a cap of 8, the shard count on your soul bag, and no pause sound.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
 
-- **NEW: One click makes the recommended macros: Create macros, at the bottom of the window.**
+- **NEW: Delete Shard sits right beside your shard count at the top of the window.**
+- **NEW: The minimap tooltip shows your count, cap, low mark and pause, every time.**
+- **NEW: One click makes the recommended macros: Create macros, at the bottom left of the window.**
 - **NEW: In-game tooltip help: click the "i" in the window.**
 - **NEW: SSF Mode: shards move into your soul bag, and nothing else in your bags moves.**
 - **NEW: Pause all SSF actions so you can stockpile for raid night.**
@@ -53,12 +55,12 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
   doesn't cast, but the delete still fires. Don't use it with an enemy targeted, or you're
   in combat before the delete fires.
 
-  Or let SSF make both: click **Create macros** at the bottom of the window (it shows
+  Or let SSF make both: click **Create macros** at the bottom left of the window (it shows
   while either is missing), then **Create recommended macros**. SSF makes them as SSF_LT
   and SSF_BoA, reloads your UI, and opens the macro window with them glowing until you
   drag them onto a bar.
 
-- **The Delete Shard button** in the GUI window.
+- **The Delete Shard button** in the GUI window, right beside your shard count.
 
 Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless in SoulSort Mode.
 
@@ -66,15 +68,15 @@ Every press deletes first if you're over the cap: the shard nearest the backpack
 - **Shards to keep** is the cap, 1 to 100. Use the slider or use the − and + to fine tune.
 - **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one).
 - **Low shard warn** is your low mark, 1 to 100. Below it the shard count turns red and the bag button can glow. If your cap is lower than this, the cap is used as the low mark until the cap goes back up. Same slider and − and + as the cap.
-- **Glow bag button when low** lights the bag button while you're under the low mark, so you remember to farm shards before you run out.
-- **Show shard count on bag bar** is on by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off. **Show on soul bag when equipped** is on by default too: the number sits on your soul bag instead, in whatever slot it's in. Untick it to keep the number on your far-left bag.
+- **Show shard count on bag bar** is on by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off on the bag (the window, tooltip and chat keep them).
+- **Glow bag button when low**, under the count, lights the bag button while you're under the low mark, so you remember to farm shards before you run out. It glows only while the count shows. **Show on soul bag when equipped** is on by default too: the number sits on your soul bag instead, in whatever slot it's in. Untick it to keep the number on your far-left bag.
 - **How shards move** is SSF Mode by default: shards move into your soul bag, and nothing else in your bags moves. **SoulSort Normal** and **SoulSort Reverse** sort the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block, from the top down or the bottom up. A soul bag still fills first. With help on, its tooltip describes each choice.
 - **Announce deletions in chat** is off by default. Turn it on to see a chat line for each deleted shard, or for addons that watch chat (like MSBT).
 - **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.
 
 The gold "i" next to the window's X turns tooltip help on: hover any option, Delete Shard or Keybindings to see what it does. It turns blue while on, and it's off again after a /reload. The first time a character loads SSF, the window opens with help already on and a welcome screen beside it: every way to delete, and a button that makes the two macros. You see it once per character, and once more when a new version changes it. Create macros brings it back.
 
-The minimap icon opens and closes the window. Its tooltip shows the count and the cap, and indicates paused status. Settings are per character.
+The minimap icon opens and closes the window. Its tooltip always shows the count in its color, your cap, your low shard warn and whether SSF is paused. Settings are per character.
 
 ## Commands
 

@@ -19,7 +19,7 @@ There are other shard addons. This one is built to disappear.
 
 ### <span style="color:#8788EE">Core features</span>
 
-- Deletes shards with a key or a macro.
+- Deletes shards with a key, a macro, or the UI button next to your count.
 - Displays shard count on the bag bar, and offers some placement and appearance options.
 - Warns you when you're running low (red count, and the bag button can glow).
 - Offers a "pause" feature. Use it for raid night or whenever you need to farm shards for healthstones and summons duty.
@@ -29,7 +29,7 @@ There are other shard addons. This one is built to disappear.
 - Cap follows your soul bag size, if you want it.
 - In-game help: click the "i" in the window, then hover any option to see what it does.
 - Makes the recommended macros for you with one click, and shows you where they were created.
-- For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list, and Tab will complete the command.
+- For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list. Tab can complete commands.
 - Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
 
 ## <span style="color:#8788EE">Set it up</span>

@@ -9,7 +9,7 @@
 -- Listens: SSF_SHOW_WELCOME (Window's "Create macros").
 --
 -- Reads:  profile.welcomed. Calls Options:IsHelpOn(), Options:ToggleHelp(),
---         Window:ShowNote(), DeleteHelp:Text(), Macros:Create() (the note's button).
+--         Window:ShowNote(), DeleteHelp:Blocks(), Macros:Create() (the note's button).
 --         Touches nothing else.
 -- Saves:  profile.welcomed = WELCOME_VERSION once the welcome has shown at load.
 
@@ -18,17 +18,19 @@ local Welcome = SSF:NewModule("Welcome", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardForever")
 
 -- The welcome's version, two digits per part (Blizzard's ## Interface scheme): 1.8 = 10800.
--- Raised only when the note changes, so players see a changed note once; 1.8.1 leaves it.
-local WELCOME_VERSION = 10800
+-- Raised only when the note changes, so players see a changed note once. 1.8.1 raises it:
+-- the note was redone and Delete Shard moved, so updaters see the window once more.
+local WELCOME_VERSION = 10801
 
--- The note: the pointer at the help button, the gold line, every way to delete with the two
--- macros (DeleteHelp), and the button that makes them (Macros). Always the same box.
+-- The note: the pointer at the help button, every way to delete with the two macros
+-- (DeleteHelp), what the button does, the button that makes them (Macros), and the gold
+-- line last. Always the same box.
 function Welcome:Show()
     local Macros = SSF:GetModule("Macros")
     SSF:GetModule("Window"):ShowNote(L["Welcome to SSF"], L["Click for in-game tooltip help."],
         L["You won't see this welcome screen again on this character unless you click Create macros in the UI."],
         {
-            extra = SSF:GetModule("DeleteHelp"):Text(L["Use your keybind, click Delete Shard, bottom left in the UI, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."]),
+            blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match."]),
             button = L["Create recommended macros"],
             onClick = function() Macros:Create() end,
             buttonNote = L["Creates the macros, reloads your UI and opens the macro box after the reload."],

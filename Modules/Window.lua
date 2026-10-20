@@ -6,7 +6,7 @@
 -- Options'; this module reaches it only through AceConfigDialog / AceConfigRegistry by the
 -- app name "SSF".
 --
--- Layout: status line, then inline groups (Pause, Cap, Low shard glow, Bag count) and
+-- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard warning, Bag count) and
 -- Other, then a small version/credit line. Every toggle is full width, and a label that does
 -- not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself to the
 -- content after every feed, width then height (Feed -> SSFWindow:FitWidth, FitToContent), so
@@ -17,7 +17,7 @@
 --          Toggle() (the minimap icon and broker click), Refresh(),
 --          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
 --          opts as SSFWindow:ShowSidePanel).
--- Reads:   DeleteHelp:Text() for the Delete Shard tooltip; Macros:AnyMissing() for the
+-- Reads:   Macros:AnyMissing() for the
 --          "Create macros" button.
 -- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of combat).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
@@ -82,15 +82,15 @@ function Window:DressWindow()
     local Options = SSF:GetModule("Options")
     local on = Options:IsHelpOn()
 
-    -- Delete Shard's help: every way to delete, with the two macros (DeleteHelp)
-    local deleteTip = on and SSF:GetModule("DeleteHelp"):Text(
-        L["Use your keybind, click this button, use a macro, or mix and match. Deletes one Soul Shard if you are over the cap."]) or nil
-    self.window:SetActionButton(L["Delete Shard"], function() SSF:GetModule("Trimmer"):Delete() end, deleteTip)
+    -- Delete Shard sits beside the count at the top (Options' deletebutton); the middle
+    -- slot stays empty
+    self.window:SetMiddleButton(nil)
 
-    -- "Create macros" while either macro is missing: it opens the welcome note (Welcome
-    -- listens), whose button makes them. Never calls Welcome, so nothing loops.
+    -- "Create macros" far left, while either macro is missing, across from Key Bindings: it
+    -- opens the welcome note (Welcome listens), whose button makes them. Never calls
+    -- Welcome, so nothing loops.
     local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
-    self.window:SetMiddleButton(createText, function()
+    self.window:SetActionButton(createText, function()
         if not InCombatLockdown() then Window:SendMessage("SSF_SHOW_WELCOME") end
     end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
@@ -284,7 +284,8 @@ function Window:Open()
             -- the screen size the spot belongs to (see Open)
             window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
         end)
-        -- bottom row: Delete Shard far left, version and credit in the middle, Close far right
+        -- bottom row: Create macros far left while shown, Key Bindings far right, the
+        -- version and credit under them
         self:DressWindow()
         -- The first open of a session measures before every text size is settled (the
         -- window has not been drawn yet), which leaves a gap above the buttons. Feed again
