@@ -1,7 +1,7 @@
 # Soul Shards Forever (SSF): draws the 400x400 CurseForge logo.
 #
-# The logo today is media/ssf_new.png (2026-10-20): python make_icon.py ssf_new.png --table 0.34
-# The defaults draw the 2026-09-27 logo (ssf.png, facets meeting in a point) exactly.
+# The logo today is media/ssf.png (2026-10-20): python make_icon.py ssf.png --table 0.34
+# The defaults draw the 2026-09-27 logo (facets meeting in a point) exactly.
 #
 # A faceted soul shard in the Soul Shard icon's purples, corner to corner on near-black,
 # in a flat gold frame, with "SSF" across the bottom. Recovered from the session that made
