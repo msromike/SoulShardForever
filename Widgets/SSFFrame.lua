@@ -48,7 +48,8 @@
 --          frame.text; FitToContent reads children[1].content (the ScrollFrame's scroll
 --          child). An AceGUI bump that renames those shows as a window that no longer fits
 --          its content or styles its title.
--- Reads:   the Tooltip module at runtime for every tooltip it shows.
+-- Reads:   the Tooltip module at runtime for every tooltip it shows; Colors.BLACK for the
+--          shade layer.
 -- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
 --          Escape; the stock Frame is unnamed and Escape has no other way in.
 -- Touches nothing else.

@@ -14,7 +14,8 @@
 --          An AceDB bump that renames them makes the migration a no-op: a character on the
 --          new key starts a fresh profile, nothing worse.
 -- Reads:   NS.locales from Locales\Register.lua; KeyBindings:ApplyLabels(),
---          Sounds:DefaultName/LevelVolume/LevelKey for the defaults and a migration.
+--          Sounds:DefaultName/LevelVolume/LevelKey for the defaults and a migration;
+--          profile.language (ApplyLanguage: the saved pick, or the client's locale).
 -- Saves:   every profile key's default; the migrations: profile.window.open (dropped in
 --          1.8), profile.pauseSoundVolume (a dropped level goes back to full, 1.8.1), and
 --          the one-time copy of a 1.8.1 profile key into the AceDB 39 key (1.8.2).

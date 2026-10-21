@@ -3,8 +3,10 @@
 
 Job:    run luacheck, run the headless tests (tests/run.lua, when present), check that
         every locale carries every key enUS has, lint every file header against the
-        template in CLAUDE.md, apply the rules luacheck cannot see (no raw hooks, every
-        widget type used, the shard id only in Core), regenerate ARCHITECTURE.md from the
+        template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
+        Hooks, the modules called, the profile keys touched and Saves) against the code,
+        apply the rules luacheck cannot see (no raw hooks, every widget type used, the
+        shard id only in Core), regenerate ARCHITECTURE.md from the
         code and the file headers, and report (never fail on) how far the committed Libs/
         are behind their upstreams. Exit 1 on any failure, 0 when all pass.
 Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars override the
@@ -186,6 +188,128 @@ def check_headers():
     return ok
 
 
+# ---------------------------------------------------------------- header truth
+
+MSG_RE = re.compile(r"\bSSF_[A-Z_]+\b")
+GAME_EVENT_RE = re.compile(r"\b(?!SSF_)[A-Z]+(?:_[A-Z]+)+\b")
+GETMODULE_RE = re.compile(r'GetModule\(\s*"(\w+)"\s*\)')
+PROFILE_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\s*(?:--.*)?$", re.M)
+PROFILE_SUB_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\.(\w+)\s*(?:--.*)?$", re.M)
+HOOK_RE = re.compile(r':(?:Secure|Raw)?Hook(?:Script)?\(\s*[^,()]+,\s*"(\w+)"')
+PROFILE_KEY_IN_HEADER_RE = re.compile(r"\bprofile\.(\w+)")
+
+
+def header_fields(rel):
+    """Field name -> its text: the field's own line plus the continuation lines up to the
+    next field or the end of the header."""
+    field_re = re.compile(r"^(" + "|".join(re.escape(f) for f in FIELDS) + r"):\s*")
+    fields, cur = {}, None
+    for body in header_lines(rel):
+        m = field_re.match(body)
+        if m:
+            cur = m.group(1)
+            fields[cur] = body[m.end():]
+        elif cur and body:
+            fields[cur] += " " + body
+    return fields
+
+
+def profile_refs(text):
+    """(reads, writes): the profile keys the code touches, through SSF.db.profile or a
+    local alias of it. A write is `<profile>.<key>... =` (not ==)."""
+    aliases = set(PROFILE_ALIAS_RE.findall(text)) | {"SSF.db.profile", "self.db.profile"}
+    # `Migrate(self.db.profile)` with `local function Migrate(p)`: the parameter is an alias
+    for fn in re.findall(r"\b(\w+)\(\s*(?:SSF|self)\.db\.profile\s*\)", text):
+        m = re.search(r"function\s+" + re.escape(fn) + r"\(\s*(\w+)\s*\)", text)
+        if m:
+            aliases.add(m.group(1))
+    base = "(?:" + "|".join(re.escape(a) for a in sorted(aliases, key=len, reverse=True)) + r")"
+    reads = set(re.findall(r"\b" + base + r"\.(\w+)", text))
+    writes = set(re.findall(r"\b" + base + r"\.(\w+)(?:\.\w+|\[[^\]]*\])*\s*=(?!=)", text))
+    # `local window = SSF.db.profile.window` then `window.top, window.left = ...`: a line that
+    # assigns through such a sub-table alias writes that key
+    for var, key in PROFILE_SUB_ALIAS_RE.findall(text):
+        for line in text.splitlines():
+            if re.match(r"\s*" + re.escape(var) + r"\.", line) and re.search(r"=(?!=)", line):
+                writes.add(key)
+    return reads, writes
+
+
+def check_header_truth():
+    """Every claim a header makes that code can verify: Listens names exactly the messages
+    and events the file registers; Sends names exactly the messages it sends; every hooked
+    method is named under Hooks; every module it calls and every profile key it touches is
+    named somewhere in the header; every profile key it writes is named under Saves, and
+    Saves names nothing it does not write."""
+    print("== header truth")
+    ok = True
+    code_files = [f for f in lua_files() if not f.startswith("tests/")]
+    for rel in code_files:
+        raw = read(rel)
+        text = code_lines(raw)
+        header = " ".join(header_lines(rel))
+        fields = header_fields(rel)
+        stem = module_name(rel)
+        problems = []
+
+        def word_in(name, where):
+            return re.search(r"\b" + re.escape(name) + r"\b", where) is not None
+
+        # Listens: messages and game events
+        listens = fields.get("Listens", "")
+        hdr_msgs = set(MSG_RE.findall(listens))
+        code_msgs = set(LISTEN_RE.findall(text))
+        hdr_events = set(GAME_EVENT_RE.findall(listens))
+        code_events = set(EVENT_RE.findall(text))
+        for group, _ in BUCKET_RE.findall(text):
+            code_events |= set(re.findall(r'"(\w+)"', group))
+        for m in sorted(hdr_msgs - code_msgs):
+            problems.append(f"Listens names {m}, the code never registers it")
+        for m in sorted(code_msgs - hdr_msgs):
+            problems.append(f"the code registers {m}, Listens does not name it")
+        for e in sorted(hdr_events - code_events):
+            problems.append(f"Listens names {e}, the code never registers it")
+        for e in sorted(code_events - hdr_events):
+            problems.append(f"the code registers {e}, Listens does not name it")
+
+        # Sends
+        hdr_sends = set(MSG_RE.findall(fields.get("Sends", "")))
+        code_sends = {m for m, _ in SEND_RE.findall(text)}
+        for m in sorted(hdr_sends - code_sends):
+            problems.append(f"Sends names {m}, the code never sends it")
+        for m in sorted(code_sends - hdr_sends):
+            problems.append(f"the code sends {m}, Sends does not name it")
+
+        # Hooks: every hooked method named under Hooks
+        hooks = fields.get("Hooks", "")
+        for name in sorted(set(HOOK_RE.findall(text))):
+            if not word_in(name, hooks):
+                problems.append(f"the code hooks {name}, Hooks does not name it")
+
+        # modules it calls: named somewhere in the header
+        for name in sorted(set(GETMODULE_RE.findall(text))):
+            if name != stem and not word_in(name, header):
+                problems.append(f"the code calls GetModule(\"{name}\"), the header never names {name}")
+
+        # profile keys: touched -> named in the header; written -> named under Saves; Saves -> written
+        reads, writes = profile_refs(text)
+        for key in sorted(reads | writes):
+            if not word_in(key, header):
+                problems.append(f"the code touches profile.{key}, the header never names it")
+        saves = fields.get("Saves", "")
+        for key in sorted(writes):
+            if not word_in(key, saves):
+                problems.append(f"the code writes profile.{key}, Saves does not name it")
+        for key in sorted(set(PROFILE_KEY_IN_HEADER_RE.findall(saves)) - writes):
+            problems.append(f"Saves names profile.{key}, the code never writes it")
+
+        for p in problems:
+            print(f"   {rel}: {p}")
+            ok = False
+    print("   ok" if ok else "   FAILED")
+    return ok
+
+
 # ---------------------------------------------------------------- rules luacheck cannot see
 
 def check_rules():
@@ -343,8 +467,8 @@ def check_map():
 
 
 def main():
-    results = [check_luacheck(), check_tests(), check_locales(), check_headers(), check_rules(),
-               check_map(), check_libs()]
+    results = [check_luacheck(), check_tests(), check_locales(), check_headers(),
+               check_header_truth(), check_rules(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1

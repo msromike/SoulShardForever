@@ -42,8 +42,14 @@
 --          Bags:Count/HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
---          list); every profile key it shows.
--- Saves:   every profile key it shows, through its setters.
+--          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
+--          pauseLog, autoMax, lowMark, counter, lowGlow, counterColorize, counterSoulBag,
+--          counterFont, minimap, announce, soulsortLegacy, soulsortReverse, language.
+-- Saves:   the same keys, each through its own setter: profile.paused, pauseSound,
+--          pauseSoundVolume, pauseLog, autoMax (SetManual's apply turns it off), lowMark,
+--          counter, lowGlow, counterColorize, counterSoulBag, counterFont, minimap (.hide),
+--          announce, soulsortLegacy, soulsortReverse, language. The cap itself goes
+--          through Cap:SetManual.
 -- Touches nothing else.
 
 local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list
