@@ -37,5 +37,5 @@ read_globals = {
     "GetMacroIndexByName", "GetNumMacros", "CreateMacro", "GetActionText",
     "PlaySound", "PlaySoundFile",
     -- global strings
-    "CLOSE", "KEY_BINDINGS", "SETTINGS_KEYBINDINGS_LABEL",
+    "CLOSE",
 }

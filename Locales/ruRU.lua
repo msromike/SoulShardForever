@@ -23,6 +23,7 @@ L["Match soul bag size (no soul bag)"] = "По сумке душ (сумки н�
 L["Started as a fork of SoulSort by Anilusion."] = "Начинался как форк SoulSort от Anilusion."
 L["Soul shard cap"] = "Лимит осколков души"
 L["Delete Shard"] = "Удалить осколок"
+L["Keybindings"] = "Назначение клавиш"
 L["Shards to keep"] = "Сколько осколков хранить"
 L["Match soul bag size"] = "По сумке душ"
 L["Show shard count on bag bar"] = "Счетчик на панели сумок"

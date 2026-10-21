@@ -91,9 +91,8 @@ function Window:OpenKeyBindings()
 end
 
 -- The window's own strings, outside the options table: the two bottom buttons and the footer.
--- Bottom right is Blizzard's own "Key Bindings" label (SETTINGS_KEYBINDINGS_LABEL, the key
--- binding page's own title, translated by the game); the X and Escape close the window.
--- Each bottom button gets its help line only while help is on, like every option.
+-- Bottom right is the Keybindings button; the X and Escape close the window. Each bottom
+-- button gets its help line only while help is on, like every option.
 function Window:DressWindow()
     local Options = SSF:GetModule("Options")
     local on = Options:IsHelpOn()
@@ -110,12 +109,13 @@ function Window:DressWindow()
         if not Window:InFight() then Window:SendMessage("SSF_SHOW_WELCOME") end
     end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
-    local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
+    -- SSF's own label, so it follows the Language setting like everything else in the
+    -- window (Blizzard's words begin on Blizzard's screen, once the button is clicked);
     -- the two binding names in gold, as they look on the key bindings page (KeyBindings
     -- keeps the labels in the current language)
     local bindTip = on and L["Opens WoW's key bindings menu to bind %s and %s."]
         :format(Gold(BINDING_NAME_SSF_DELETE), Gold(BINDING_NAME_SSF_PAUSE)) or nil
-    self.window:SetRightButton(label, function() Window:OpenKeyBindings() end, bindTip)
+    self.window:SetRightButton(L["Keybindings"], function() Window:OpenKeyBindings() end, bindTip)
 
     self.window:SetTitleColor(ClassColor()) -- "Soul Shards Forever" at the top, as the group titles
     self.window:SetTitleBand(TITLE_BAND)    -- the same dark strip behind it

@@ -23,6 +23,7 @@ L["Match soul bag size (no soul bag)"] = "Suivre la taille du sac d'âme (aucun 
 L["Started as a fork of SoulSort by Anilusion."] = "Né d'un fork de SoulSort par Anilusion."
 L["Soul shard cap"] = "Limite de fragments d'âme"
 L["Delete Shard"] = "Supprimer fragment"
+L["Keybindings"] = "Raccourcis clavier"
 L["Shards to keep"] = "Fragments à garder"
 L["Match soul bag size"] = "Suivre la taille du sac d'âme"
 L["Show shard count on bag bar"] = "Compteur sur la barre des sacs"

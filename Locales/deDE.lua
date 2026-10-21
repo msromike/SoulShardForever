@@ -23,6 +23,7 @@ L["Match soul bag size (no soul bag)"] = "An Seelentasche anpassen (keine angele
 L["Started as a fork of SoulSort by Anilusion."] = "Begann als Fork von SoulSort von Anilusion."
 L["Soul shard cap"] = "Seelensplitter-Limit"
 L["Delete Shard"] = "Splitter löschen"
+L["Keybindings"] = "Tastenbelegung"
 L["Shards to keep"] = "Splitter behalten"
 L["Match soul bag size"] = "An Seelentasche anpassen"
 L["Show shard count on bag bar"] = "Splitterzahl auf der Taschenleiste"

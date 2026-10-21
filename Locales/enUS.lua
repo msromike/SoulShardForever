@@ -22,6 +22,7 @@ L["Match soul bag size (no soul bag)"] = true
 L["Started as a fork of SoulSort by Anilusion."] = true
 L["Soul shard cap"] = true
 L["Delete Shard"] = true
+L["Keybindings"] = true
 L["Shards to keep"] = true
 L["Match soul bag size"] = true
 L["Show shard count on bag bar"] = true
