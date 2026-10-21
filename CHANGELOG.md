@@ -1,7 +1,29 @@
 # Changelog
 
-## 1.8.2 (2026-10-20)
+## 1.9.0 (2026-10-21)
 
+- Low shard warn stops at your cap. The part of its track past the cap is dimmed, with a
+  gold line where the cap sits, and the thumb can't go past it. When the cap drops under
+  your warn mark, the mark follows it down where you can see it, and stays there when the
+  cap goes back up. Match soul bag size now writes the bag size into Shards to keep, so
+  unticking it leaves the cap at the bag size instead of jumping back to an old number.
+- The low glow on the bag button is a red running border on the button's own edge, the
+  same red as the count. The game's gold spell glow it replaces spilled onto the bags
+  beside it.
+- The count on the bag button is smaller, with the bag showing around it. Before, it
+  filled the button edge to edge and the digits ran together.
+- Broker bars (Titan Panel, EllesmereUI's data bars and the like) show the count alone,
+  in its color. Before it read "32 (cap 42)", with "Full" at the cap. The cap and the
+  rest are in the tooltip.
+- Delete Shard's tooltip says why it's grey: "Nothing to delete, SSF is paused." or
+  "Nothing to delete, you are at or under the cap."
+- The Keybindings button follows SSF's Language setting, like everything else in the
+  window.
+- The window is a touch darker, so its text reads better over bright ground.
+- Your settings carry over the game's change to how it names characters. Without this,
+  the update could show the welcome screen again and start you from the defaults.
+- Under the hood: rebuilt on Ace3 throughout, with updated libraries shipped inside the
+  addon. Nothing you see changed because of it.
 - Delete Shard greys out whenever a click can't delete, with the reason under it in gold:
   At cap, Under cap or SSF paused. Before, a click that couldn't delete did nothing, which
   looked like a broken button. While paused it always says SSF paused.

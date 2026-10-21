@@ -31,6 +31,7 @@ There are other shard addons. This one is built to disappear.
 - Closes its window by itself when combat starts, so it's never in your way in a fight.
 - Makes the recommended macros for you with one click, and shows you where they were created.
 - For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list. Tab can complete commands.
+- Shows your count on a data broker bar (Titan Panel, EllesmereUI's data bars and the like), with your cap and settings in a tooltip.
 - Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
 
 ## <span style="color:#8788EE">Set it up</span>

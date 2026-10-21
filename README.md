@@ -2,7 +2,7 @@
 
 **\*\*\* Changelog \*\*\***
 
-1.8.2: Delete Shard greys out when a click can't delete, and says why: At cap, Under cap or SSF paused. The window closes itself when a fight starts.
+1.9.0: Low shard warn stops at your cap: the slider dims the track past the cap, with a gold line where the cap sits. A red border on the bag button when you're low, a smaller count, and the count alone on data broker bars. Delete Shard greys out when a click can't delete, and says why. The window closes itself when a fight starts.
 
 1.8.1: Delete Shard sits beside your shard count. A minimap tooltip that always shows your count, cap, low mark and pause. "SSF paused: Yes / No" everywhere, and an easier welcome screen.
 
@@ -12,6 +12,8 @@
 
 ---
 
+- **NEW: Low shard warn stops at your cap: the slider shows the cap in gold and dims the track past it.**
+- **NEW: Shard count on data broker bars (Titan Panel, EllesmereUI's data bars and the like).**
 - **NEW: Delete Shard sits right beside your shard count at the top of the window.**
 - **NEW: The minimap tooltip shows your count, cap, low mark and pause, every time.**
 - **NEW: One click makes the recommended macros: Create macros, at the bottom left of the window.**
@@ -66,17 +68,17 @@ Every press deletes first if you're over the cap: the shard nearest the backpack
 
 - **Pause all SSF actions** stops every press from moving or deleting, for when you want to stockpile shards (raid night: soulstones, healthstones, summons). Your cap stays as it is. **Play pause sound** plays a soft bag thunk on every paused press, at the volume you pick. **Log pause to chat** prints a line to chat as well. In combat a press does nothing, paused or not.
 - **Shards to keep** is the cap, 1 to 100. Use the slider or use the − and + to fine tune.
-- **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one).
-- **Low shard warn** is your low mark, 1 to 100. Below it the shard count turns red and the bag button can glow. If your cap is lower than this, the cap is used as the low mark until the cap goes back up. Same slider and − and + as the cap.
+- **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one), and writes that number into Shards to keep, so unticking it leaves the cap at the bag size.
+- **Low shard warn** is your low mark, 1 to 100. Below it the shard count turns red and the bag button gets a red border. It can't go above the cap: the slider stops there, the track past the cap is dimmed with a gold line where the cap sits, and if the cap drops under your mark, the mark follows it down and stays. Same slider and − and + as the cap.
 - **Show shard count on bag bar** is on by default. It puts the number on your far-left bag. Green in range, yellow over the cap, red when you're low. Pick the font, or turn the colors off on the bag (the window, tooltip and chat keep them).
-- **Glow bag button when low**, under the count, lights the bag button while you're under the low mark, so you remember to farm shards before you run out. It glows only while the count shows. **Show on soul bag when equipped** is on by default too: the number sits on your soul bag instead, in whatever slot it's in. Untick it to keep the number on your far-left bag.
+- **Glow bag button when low**, under the count, puts a red running border on the bag button while you're under the low mark, so you remember to farm shards before you run out. It shows only while the count shows. **Show on soul bag when equipped** is on by default too: the number sits on your soul bag instead, in whatever slot it's in. Untick it to keep the number on your far-left bag.
 - **How shards move** is SSF Mode by default: shards move into your soul bag, and nothing else in your bags moves. **SoulSort Normal** and **SoulSort Reverse** sort the way Anilusion's SoulSort does, moving your other items aside so the shards sit in one solid block, from the top down or the bottom up. A soul bag still fills first. With help on, its tooltip describes each choice.
 - **Announce deletions in chat** is off by default. Turn it on to see a chat line for each deleted shard, or for addons that watch chat (like MSBT).
 - **Language** is Auto by default, which follows your game client. Pick English, Deutsch, Français, Español, Português or Русский to override it.
 
 The gold "i" next to the window's X turns tooltip help on: hover any option, Delete Shard or Keybindings to see what it does. It turns blue while on, and it's off again after a /reload. The first time a character loads SSF, the window opens with help already on and a welcome screen beside it: every way to delete, and a button that makes the two macros. You see it once per character, and once more when a new version changes it. Create macros brings it back.
 
-The minimap icon opens and closes the window. Its tooltip always shows the count in its color, your cap, your low shard warn and whether SSF is paused. Settings are per character.
+The minimap icon opens and closes the window. Its tooltip always shows the count in its color, your cap, your low shard warn and whether SSF is paused. On a data broker bar (Titan Panel, EllesmereUI's data bars and the like) SSF shows the count alone in its color, with the same tooltip and click. Settings are per character.
 
 ## Commands
 
