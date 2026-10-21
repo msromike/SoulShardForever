@@ -1,12 +1,17 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- run: the headless test runner. Loads the WoW stub, the Ace3 libraries SSF's logic
--- modules need, then Core and those modules (never the widgets or the window), then
--- every tests/test_*.lua. Exit code 0 when every check passes, 1 otherwise.
--- Run from the addon root:  lua tests/run.lua        (tools/check.py does this)
+-- modules need, then a saved file as a 1.8.1 user has it (one profile under the old AceDB
+-- key, so Core's profile-key migration runs), then Core and the logic modules (never the
+-- widgets or the window), then every tests/test_*.lua. Exit code 0 when every check
+-- passes, 1 otherwise. Run from the addon root:  lua tests/run.lua  (tools/check.py does).
 --
--- A test file calls test(name, fn); inside fn, eq(got, want, label) and ok(cond, label)
--- record one check each. Fresh bags per test: call WoW.SetBags{...} at the top of fn.
+-- Public:  test(name, fn) -- one test; fresh bags, no combat and an empty pick record
+--            before fn runs. Inside fn: eq(got, want, label) and ok(cond, label) record
+--            one check each.
+--          SSF, the addon object, as a global for the test files.
+--          WoW.initialProfile -- the profile's values right after OnInitialize, before any
+--            test touches them (test_core reads them to prove the migration).
 -- Touches nothing else.
 
 local ROOT = arg and arg[0] and arg[0]:match("^(.*)[/\\]tests[/\\]run%.lua$") or "."
@@ -87,19 +92,17 @@ function test(name, fn)
     if not okay then record(false, "error", tostring(err)) end
 end
 
--- Every tests/test_*.lua, sorted
+-- Every tests/test_*.lua, sorted; the listing command by OS (a Windows redirect run on
+-- Linux would write a file named nul)
 local names = {}
-local p = io.popen('dir /b "' .. ROOT:gsub("/", "\\") .. '\\tests\\test_*.lua" 2>nul')
+local onWindows = package.config:sub(1, 1) == "\\"
+local listing = onWindows
+    and ('dir /b "' .. ROOT:gsub("/", "\\") .. '\\tests\\test_*.lua" 2>nul')
+    or ("ls " .. ROOT .. "/tests/test_*.lua 2>/dev/null")
+local p = io.popen(listing)
 if p then
-    for line in p:lines() do names[#names + 1] = line end
+    for line in p:lines() do names[#names + 1] = line:match("[^/\\]+$") end
     p:close()
-end
-if #names == 0 then
-    local p2 = io.popen("ls " .. ROOT .. "/tests/test_*.lua 2>/dev/null")
-    if p2 then
-        for line in p2:lines() do names[#names + 1] = line:match("[^/\\]+$") end
-        p2:close()
-    end
 end
 table.sort(names)
 for _, name in ipairs(names) do loadLua("tests/" .. name) end

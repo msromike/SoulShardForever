@@ -11,10 +11,13 @@
 -- soul bags keep bottom first. The caller passes topFirst; Bags reads no settings. The
 -- Sorter fills along the order; the Trimmer deletes from its far end (LastShard).
 --
--- Public:  NumSlots(bag), IsShardAt(bag, slot), IsFreeAt, IsLocked, IsSwappableAt,
---          IsSoulBag(bag), IsRegularBag(bag), SoulBags() (ids, ascending), SortOrder(),
---          ForEachSlot(fn, topFirst), ForEachShard(fn), Count(), SoulBagSlots(),
---          LastShard(topFirst) -> bag, slot.
+-- Public:  NumSlots(bag) -> n; IsShardAt(bag, slot), IsFreeAt(bag, slot),
+--          IsLocked(bag, slot), IsSwappableAt(bag, slot), IsSoulBag(bag),
+--          IsRegularBag(bag), HasSoulBag() -> bool; SoulBags() -> ids ascending;
+--          SortOrder() -> ids in sort order; ForEachSlot(fn(bag, slot, position), topFirst);
+--          ForEachShard(fn(bag, slot)); Count() -> n; SoulBagSlots() -> n;
+--          LastShard(topFirst) -> bag, slot or nil. Every one is also the headless
+--          tests' handle on the bags.
 -- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s.
 -- Sends:   SSF_BAGS_CHANGED, once per bucket.
 -- Owns no state. Touches nothing else.
@@ -90,6 +93,10 @@ function Bags:SoulBags()
         if self:IsSoulBag(bag) then list[#list + 1] = bag end
     end
     return list
+end
+
+function Bags:HasSoulBag()
+    return #self:SoulBags() > 0
 end
 
 -- The bag IDs in sort order, as a list. Soul bags first, then the regular bags from bag 4

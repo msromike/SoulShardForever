@@ -5,48 +5,59 @@
 -- Options'; this module reaches it only through AceConfigDialog / AceConfigRegistry by the
 -- app name "SSF". Tooltips are the Tooltip module's: the window hands it its frame.
 --
--- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard warning, Bag count) and
--- Other, then a small version/credit line. Every toggle is full width, and a label that does
--- not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself to the
--- content after every feed, width then height (Feed -> SSFFrame:FitWidth, FitToContent), so
--- no text is cut short and it never scrolls. No default size: the first feed lays out at
--- AceConfigDialog's own default and the fit sets both.
+-- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard
+-- warning, Bag count) and Other, then a small version/credit line. Toggles are full width
+-- except Play pause sound, which shares its row with the volume dropdown; a label that
+-- does not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself
+-- to the content after every feed, width then height (Feed -> SSFFrame:FitWidth,
+-- FitToContent), so no text is cut short and it never scrolls. No default size: the first
+-- feed lays out at AceConfigDialog's own default and the fit sets both.
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
---          nothing in a fight, see InFight),
---          Toggle() (the minimap icon and broker click), Refresh(),
---          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
---          opts as SSFFrame:ShowSidePanel), InFight() (the one combat test the window
---          and the welcome share), OpenKeyBindings() (the bottom-right button).
--- Reads:   Macros:AnyMissing() for the "Create macros" button, Options:IsHelpOn/
---          ToggleHelp, KeyBindings:Open, Colors:Class/Gold, Tooltip:Attach, SSF.VERSION.
--- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of a fight), SSF_WINDOW_OPENED
---          (after every open).
+--          nothing in a fight, see InFight), Toggle() (the minimap icon and broker click),
+--          Refresh(), Feed() (also by name through a timer), DressWindow(),
+--          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's; opts
+--          as SSFSideNote:Show), InFight() (the one combat test the window and the
+--          welcome share), OpenKeyBindings() (the bottom-right button).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and
 --          SSF_BAGS_CHANGED (refresh the count row), PLAYER_REGEN_DISABLED (a fight
 --          starts: the window closes, and nothing opens it until the fight is over; it
 --          does not reopen by itself).
--- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild.
--- Lib internals: the InlineGroup widgets AceConfigDialog builds (their titletext and frame,
---          for the title style and strip) and the window's first child, the ScrollFrame
---          AceConfigDialog adds (children[1]). An AceGUI bump that renames those shows up
---          as stock gold titles with no strip.
+-- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild;
+--          attached at the first Feed, and again if a newer AceConfigDialog loaded later
+--          replaced Open.
+-- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of a fight), SSF_WINDOW_OPENED
+--          (after every open).
+-- Lib internals: the InlineGroup widgets AceConfigDialog builds (their type, titletext
+--          and frame, for the title style and strip), the window's first child, the
+--          ScrollFrame AceConfigDialog adds (children[1]) and its children list, and the
+--          window widget's frame (for IsShown and Tooltip:Attach). BAND_BACKDROP is a copy
+--          of the InlineGroup's own PaneBackdrop, which AceGUI keeps local. An AceGUI bump
+--          that changes those shows up as stock gold titles with no strip, or a strip of
+--          a different shape.
+-- Reads:   Macros:AnyMissing() for the "Create macros" button, Options.APP and
+--          Options:IsHelpOn/ToggleHelp, KeyBindings:Open, Colors:Class/Gold, Tooltip:Attach,
+--          SSF.VERSION, the BINDING_NAME_* labels KeyBindings sets.
 -- Saves:   the window position, profile.window (top, left and the screen size it was
 --          saved on).
 -- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog
 --          hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the
 --          three raw frames in SSF (DeleteButton's named button and Counter's FontString
 --          are the others).
+-- Touches nothing else.
 
 local ADDON = ...
-local APP = "SSF" -- the AceConfig app Options registers
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Window = SSF:NewModule("Window", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
+local APP = SSF:GetModule("Options").APP -- the AceConfig app Options registers
+
+-- the window exists and is on screen
+local function IsShown(self) return self.window ~= nil and self.window.frame:IsShown() end
 
 -- The window title and the group titles are in the warlock class color: nothing else in
 -- the window uses it (gold is for control labels, white for option text, green and red
@@ -100,9 +111,10 @@ function Window:DressWindow()
     end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
     local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
-    -- the two binding names in gold, as they look on the key bindings page
+    -- the two binding names in gold, as they look on the key bindings page (KeyBindings
+    -- keeps the labels in the current language)
     local bindTip = on and L["Opens WoW's key bindings menu to bind %s and %s."]
-        :format(Gold(L["Delete Shard"]), Gold(L["Pause all SSF actions"])) or nil
+        :format(Gold(BINDING_NAME_SSF_DELETE), Gold(BINDING_NAME_SSF_PAUSE)) or nil
     self.window:SetRightButton(label, function() Window:OpenKeyBindings() end, bindTip)
 
     self.window:SetTitleColor(ClassColor()) -- "Soul Shards Forever" at the top, as the group titles
@@ -150,8 +162,9 @@ local function StyleTitle(group)
     -- one level under the group's own frame, so the title (a region of that frame) draws on
     -- top of the strip
     band:SetFrameLevel(math.max(0, group.frame:GetFrameLevel() - 1))
-    band:SetBackdropColor(0, 0, 0, TITLE_BAND)
-    band:SetBackdropBorderColor(0, 0, 0, TITLE_BAND)
+    local black = SSF:GetModule("Colors").BLACK
+    band:SetBackdropColor(black[1], black[2], black[3], TITLE_BAND)
+    band:SetBackdropBorderColor(black[1], black[2], black[3], TITLE_BAND)
     band:Show()
     group:SetCallback("OnRelease", RestoreTitle)
 end
@@ -208,9 +221,7 @@ end
 -- container, which AceConfigDialog does not track, so it is re-fed here while shown.
 function Window:Refresh()
     AceConfigRegistry:NotifyChange(APP)
-    if self.window and self.window.frame:IsShown() then
-        self:Feed()
-    end
+    if IsShown(self) then self:Feed() end
 end
 
 -- A chat command changed a setting: redraw so an open window shows it. Only for "chat":
@@ -219,17 +230,11 @@ function Window:OnOptionsChanged(_, _, source)
     if source == "chat" then self:Refresh() end
 end
 
--- Options built and re-registered the table (a Language change): the window's own strings
--- are reset too, then everything is redrawn.
-function Window:OnOptionsRebuilt()
+-- The window's own strings or buttons may have changed: Options built and re-registered
+-- the table (a Language change), or the player's macros changed ("Create macros" shows or
+-- hides). Re-dress an existing window, then redraw.
+function Window:Redress()
     if self.window then self:DressWindow() end
-    self:Refresh()
-end
-
--- The player's macros changed: "Create macros" shows or hides, and the width re-fits.
-function Window:OnMacrosChanged()
-    if not self.window then return end
-    self:DressWindow()
     self:Refresh()
 end
 
@@ -239,7 +244,7 @@ end
 -- re-fed on every open.
 -- The minimap icon and broker click: close the window if it is showing, else open it.
 function Window:Toggle()
-    if self.window and self.window.frame:IsShown() then
+    if IsShown(self) then
         self.window:Hide()
     else
         self:Open()
@@ -296,16 +301,16 @@ end
 -- A fight started: the window closes (the note beside it with it). It does not reopen by
 -- itself afterwards.
 function Window:PLAYER_REGEN_DISABLED()
-    if self.window and self.window.frame:IsShown() then self.window:Hide() end
+    if IsShown(self) then self.window:Hide() end
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
 -- before OnEnable, so other classes never get the window.
 function Window:OnEnable()
-    self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
+    self:RegisterMessage("SSF_OPTIONS_REBUILT", "Redress")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
-    self:RegisterMessage("SSF_MACROS_CHANGED", "OnMacrosChanged")
+    self:RegisterMessage("SSF_MACROS_CHANGED", "Redress")
     self:RegisterMessage("SSF_BAGS_CHANGED", "Refresh")
     -- a fight closes the window (and Open refuses until it's over)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")

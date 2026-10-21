@@ -3,12 +3,16 @@
 -- wow_stub: the smallest WoW environment that lets Ace3 and SSF's logic modules load in
 -- plain Lua, outside the game. Frames are inert tables that accept any method. The
 -- container API reads from WoW.bags, a table the tests fill. Nothing here is a faithful
--- copy of the game; it is exactly what the loaded files call, and no more.
+-- copy of the game: it is what the loaded files call, plus the common WoW globals a new
+-- module is likely to touch, so adding one to the runner rarely needs a stub edit.
 --
 -- Public:  WoW.bags[bagId] = { slots = n, family = bits, items = { [slot] = itemId },
 --                              locked = { [slot] = true } }
+--          WoW.SoulBag(slots, items, locked), WoW.PlainBag(...) -- one bag table each
 --          WoW.SetBags(table)          replace every bag at once (nil = all empty)
+--          WoW.picks                   every PickupContainerItem call as { bag, slot }
 --          WoW.FireEvent(name, ...)    deliver a game event to every frame registered for it
+--          WoW.frames                  every frame CreateFrame made
 --          WoW.combat = false          what InCombatLockdown / UnitAffectingCombat answer
 --          WoW.chat                    every line printed through DEFAULT_CHAT_FRAME
 -- Touches nothing else.
@@ -145,8 +149,7 @@ function GetCurrentRegionName() return "US" end
 function IsLoggedIn() return true end
 GAME_LOCALE = nil
 C_GameRules = { IsGameRuleActive = function() return false end }
-Enum = Enum or {}
-Enum.GameRule = { HardcoreRuleset = 1, RPRuleset = 2, PvPRuleset = 3 }
+Enum = { GameRule = { HardcoreRuleset = 1, RPRuleset = 2, PvPRuleset = 3 } }
 securecallfunction = function(f, ...) return f(...) end
 strlenutf8 = function(s) local _, n = s:gsub("[^\128-\193]", "") return n end
 debugprofilestop = function() return os.clock() * 1000 end
@@ -158,14 +161,16 @@ C_AddOns = { GetAddOnMetadata = function(_, field) return field == "Version" and
 
 -- Bags
 NUM_BAG_SLOTS = 4
-Enum = Enum or {}
 Enum.BagIndex = { Backpack = 0, ReagentBag = 5 }
 Constants = { InventoryConstants = { NumBagSlots = 4 } }
-local SOUL_FAMILY = 1 -- the soul bag family bit; GetItemFamily(6265) answers the same
+local SHARD = 6265      -- the shard item (Core's SSF.SHARD_ITEM_ID; the stub loads before Core)
+local SOUL_FAMILY = 1   -- the soul bag family bit; GetItemFamily(SHARD) answers the same
 
 local function bagOf(id) return WoW.bags[id] end
 
 function WoW.SetBags(t) WoW.bags = t or {} end
+function WoW.SoulBag(slots, items, locked) return { slots = slots, family = SOUL_FAMILY, items = items or {}, locked = locked } end
+function WoW.PlainBag(slots, items, locked) return { slots = slots, family = 0, items = items or {}, locked = locked } end
 
 C_Container = {
     GetContainerNumSlots = function(id) local b = bagOf(id) return b and b.slots or 0 end,
@@ -182,7 +187,7 @@ ItemLocation = { CreateFromBagAndSlot = function(_, bag, slot) return { bag = ba
 C_Item = {
     DoesItemExist = function(loc) local b = bagOf(loc.bag) return b and b.items and b.items[loc.slot] ~= nil or false end,
     IsLocked = function(loc) local b = bagOf(loc.bag) return b and b.locked and b.locked[loc.slot] == true or false end,
-    GetItemFamily = function(itemId) return itemId == 6265 and SOUL_FAMILY or 0 end,
+    GetItemFamily = function(itemId) return itemId == SHARD and SOUL_FAMILY or 0 end,
 }
 -- Cursor: PickupContainerItem is recorded in WoW.picks as { bag, slot } pairs, so a test can
 -- read the moves a Sorter pass fired; nothing is actually moved in the fake bags.

@@ -4,9 +4,10 @@
 Job:    Libs/ is committed and ships as is (no packager externals). This script is the one
         way a library changes: it reads tools/externals.txt (the list the .pkgmeta externals
         block used to hold, same syntax), fetches each library from upstream into a scratch
-        folder, and reports every file that differs from Libs/. With --apply it copies the
-        upstream files over Libs/, which is a deliberate library bump: in-game pass, then a
-        commit of its own with a changelog line.
+        folder, and reports every file that differs from Libs/, is missing locally, or
+        exists only locally. With --apply it makes Libs/ equal upstream exactly (copies the
+        first two kinds, deletes the third), which is a deliberate library bump: in-game
+        pass, then a commit of its own with a changelog line.
 Takes:  --apply (copy upstream over Libs/); --quiet (one line per library).
         Upstreams: a repos.wowace.com trunk folder (fetched file by file over HTTPS), or a
         GitHub repository (fetched as the zip of its default branch, or of `tag:`).
@@ -150,22 +151,26 @@ def main(argv):
                 print(f"   copied in")
             continue
         differs, missing, extra = compare(local, up)
-        if not differs and not missing:
-            print(f"{name}: same as upstream" + (f" ({len(extra)} local-only file(s))" if extra and not quiet else ""))
+        if not differs and not missing and not extra:
+            print(f"{name}: same as upstream")
             continue
         drifted += 1
-        print(f"{name}: DRIFT, {len(differs)} differ, {len(missing)} missing locally")
+        print(f"{name}: DRIFT, {len(differs)} differ, {len(missing)} missing locally, {len(extra)} local only")
         if not quiet:
             for rel in differs:
                 print(f"   differs: {rel}")
             for rel in missing:
                 print(f"   missing: {rel}")
+            for rel in extra:
+                print(f"   local only: {rel}")
         if apply_:
             for rel in differs + missing:
                 src, dst = os.path.join(up, rel), os.path.join(local, rel)
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
-            print(f"   applied {len(differs) + len(missing)} file(s)")
+            for rel in extra: # a file upstream dropped goes too: Libs/ equals upstream exactly
+                os.remove(os.path.join(local, rel))
+            print(f"   applied {len(differs) + len(missing)} file(s), removed {len(extra)}")
     shutil.rmtree(SCRATCH, ignore_errors=True) # nothing to keep: a bump copies into Libs/
     if apply_ and failed:
         return 1

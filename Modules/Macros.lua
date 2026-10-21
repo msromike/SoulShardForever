@@ -55,11 +55,17 @@ function Macros:Exists(key)
     return GetMacroIndexByName(MACROS[key].name) > 0
 end
 
-function Macros:AnyMissing()
+-- the keys of the macros that do not exist, in ORDER
+local function Missing()
+    local missing = {}
     for _, key in ipairs(ORDER) do
-        if not self:Exists(key) then return true end
+        if not Macros:Exists(key) then missing[#missing + 1] = key end
     end
-    return false
+    return missing
+end
+
+function Macros:AnyMissing()
+    return #Missing() > 0
 end
 
 -- Blizzard's macro window on the character tab (2) or the account tab (1), that macro
@@ -74,6 +80,12 @@ local function ShowInMacroWindow(index)
     Macros:SendMessage("SSF_MACRO_WINDOW_SHOWN") -- MacroGlow lights the ones not yet on a bar
 end
 
+-- the macro window on the first of SSF's macros, if it exists
+local function ShowFirst()
+    local index = GetMacroIndexByName(MACROS[ORDER[1]].name)
+    if index > 0 then ShowInMacroWindow(index) end
+end
+
 -- the macros' names, the way the macro window and the action bars show them
 function Macros:Names()
     local names = {}
@@ -83,14 +95,10 @@ end
 
 function Macros:Create()
     if InCombatLockdown() then return end
-    local missing = {}
-    for _, key in ipairs(ORDER) do
-        if not self:Exists(key) then missing[#missing + 1] = key end
-    end
+    local missing = Missing()
 
     if #missing == 0 then -- nothing to make (the note's button is greyed out then): show them
-        local index = GetMacroIndexByName(MACROS[ORDER[1]].name)
-        if index > 0 then ShowInMacroWindow(index) end
+        ShowFirst()
         return
     end
 
@@ -120,8 +128,7 @@ end
 function Macros:LOADING_SCREEN_DISABLED()
     self:UnregisterEvent("LOADING_SCREEN_DISABLED")
     SSF.db.profile.macroWindowAfterReload = false
-    local index = GetMacroIndexByName(MACROS[ORDER[1]].name)
-    if index > 0 then ShowInMacroWindow(index) end
+    ShowFirst()
 end
 
 function Macros:OnMacrosChanged()

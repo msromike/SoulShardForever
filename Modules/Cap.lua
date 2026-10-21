@@ -9,18 +9,21 @@
 --     bag size can drop the cap under it). The saved value is not touched, so when the
 --     cap rises again the saved low mark is back by itself.
 --   State(count): "over" above the cap (over the cap wins), "low" below the low mark in
---     use, "ok" between. The one threshold test; Counter's color, the glow, the chat and
---     tooltip count and the Delete Shard gate all ask here.
+--     use, "ok" between. IsFull(count): at or over the cap (the broker's "Full", the
+--     Delete Shard button's "At cap"). The threshold tests live here and nowhere else;
+--     Counter's color, the glow, the chat and tooltip count and the Delete Shard gate all
+--     ask.
 -- Recomputes the cap at login and on bag changes and sends SSF_CAP_CHANGED when the number
 -- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
 -- delete.
 --
--- Public:  Cap.MIN, Cap.MAX; Get(), IsAuto(), LowMark(), State(count), SetManual(n)
+-- Public:  Cap.MIN, Cap.MAX; Get() -> cap, IsAuto() -> bool, LowMark() -> mark in use,
+--          State(count) -> "low" | "ok" | "over", IsFull(count) -> bool, SetManual(n)
 --          (Options' slider and /ssf setmax; turning AutoMax off is the caller's job),
 --          Recompute().
 -- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED.
 -- Sends:   SSF_CAP_CHANGED (cap).
--- Reads:   Bags:SoulBagSlots(); profile.autoMax, maxShards, lowMark.
+-- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark.
 -- Saves:   profile.maxShards (SetManual only).
 -- Touches nothing else.
 
@@ -40,7 +43,7 @@ end
 
 -- true when AutoMax is on and there is a soul bag to bind to
 function Cap:IsAuto()
-    return SSF.db.profile.autoMax and SSF:GetModule("Bags"):SoulBagSlots() > 0
+    return SSF.db.profile.autoMax and SSF:GetModule("Bags"):HasSoulBag()
 end
 
 function Cap:Get()
@@ -58,6 +61,10 @@ function Cap:State(count)
     if count > self:Get() then return "over" end
     if count < self:LowMark() then return "low" end
     return "ok"
+end
+
+function Cap:IsFull(count)
+    return count >= self:Get()
 end
 
 function Cap:SetManual(n)

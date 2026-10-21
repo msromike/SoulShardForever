@@ -1,6 +1,8 @@
 # Runs the same check as tools/check.py does locally: luacheck, the headless tests, the
-# locale completeness check and the architecture map. A map that comes out different from
-# the committed one fails the run, because the committed map must always match the code.
+# locale completeness check, the header lint, the architecture map, and the library drift
+# report (information only; it reaches the upstreams over the network). A map that comes
+# out different from the committed one fails the run, because the committed map must
+# always match the code.
 name: check
 
 on:

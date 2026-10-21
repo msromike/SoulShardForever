@@ -25,6 +25,7 @@ Locales\esMX.lua
 Locales\ptBR.lua
 Locales\ruRU.lua
 Widgets\SSFStepperSlider.lua
+Widgets\SSFSideNote.lua
 Widgets\SSFFrame.lua
 Widgets\SSFCentered.lua
 Core.lua

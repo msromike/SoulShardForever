@@ -2,75 +2,81 @@
 --
 -- SSFFrame: SSF's options window, an extension of AceGUI's stock Frame container. The stock
 -- Frame is created through AceGUI:Create and kept for the addon's life (never released, so
--- it is never handed to another addon); SSF's parts are added on top of it, and the result
--- is registered as this type. Nothing the stock Frame does is written again here: the art,
--- the title, the drag, the status table, the content frame and the container plumbing are
--- all its own.
+-- it is never handed to another addon; it may itself have been another addon's released
+-- Frame, which the stock OnAcquire resets); SSF's parts are added on top of it, and the
+-- result is registered as this type. Nothing the stock Frame does is written again here:
+-- the art, the title, the drag, the status table, the content frame and the container
+-- plumbing are all its own. Resize is off, through the stock Frame's own switch: the
+-- window is sized to its content after every feed.
 --
 -- What SSF adds: an X close button top-right with an optional help button left of it
--- (SetHelpButton: Blizzard's "i", gold while off, blue while on), an optional note on the
--- right edge (ShowSidePanel), Escape closes it, a bottom row of Close (far right,
--- SetCloseText), an optional action button (far left, SetActionButton), an optional middle
--- button (SetMiddleButton) and a small footer line under them (SetFooter); the buttons size
--- to their text. A dark strip behind the title text (SetTitleBand) across the header art's
--- inner opening, and the title's color (SetTitleColor). The window's width fits its content
--- (FitWidth: every text on one line, see there) and so does its height (FitToContent,
--- called by the owner after each AceConfigDialog:Open: measures the ScrollFrame
--- AceConfigDialog adds and sets the height, so no scrollbar shows, up to the screen's
--- height minus SCREEN_MARGIN; past that the ScrollFrame shows its own scrollbar). After a
--- drag it fires "OnMoved"(top, left); the owner keeps that across sessions and puts it in
--- the status table before the next open. It can be dragged partly off any edge, but never
--- lost: the top edge (the title, the drag handle) stays on screen, and at least GRAB pixels
--- stay on screen sideways and from the bottom (UpdateClamp). Resize is off, through the
--- stock Frame's own switch: the window is sized to its content after every feed.
+-- (SetHelpButton: Blizzard's "i", gold while off, blue while on), an optional note beside
+-- the window (ShowSidePanel, the SSFSideNote widget), Escape closes it, a bottom row of
+-- Close (far right, SetRightButton turns it into an action), an optional action button
+-- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
+-- footer line under them (SetFooter); the buttons size to their text. A dark strip behind
+-- the title text (SetTitleBand) across the header art's inner opening, and the title's
+-- color (SetTitleColor). The window's width fits its content (FitWidth: every text on one
+-- line, see there) and so does its height (FitToContent, called by the owner after each
+-- AceConfigDialog:Open: measures the ScrollFrame AceConfigDialog adds and sets the height,
+-- so no scrollbar shows, up to the screen's height minus SCREEN_MARGIN; past that the
+-- ScrollFrame shows its own scrollbar). After a drag it fires "OnMoved"(top, left); the
+-- owner keeps that across sessions and puts it in the status table before the next open.
+-- It can be dragged partly off any edge, but never lost: the top edge (the title, the drag
+-- handle) stays on screen, and at least GRAB pixels stay on screen sideways and from the
+-- bottom (UpdateClamp).
 --
--- Exceptions (the three places this file reaches past the stock Frame's public surface,
--- each guarded so a changed Frame leaves the stock piece visible rather than erroring):
---   the stock status strip is hidden through statustext's parent;
---   the stock Close button is found among the frame's children by its CLOSE text and hidden,
---     SSF's own bottom row takes its place;
---   the title handle (titletext's parent) gets an OnMouseUp hook to fire OnMoved after the
---     stock handler has saved the position.
--- The backdrop is SSF's own, set on the stock frame with the plain game call (the stock
--- Frame tints its background black; SSF's window shows the dialog art untinted).
---
--- Lib internals: besides the three above, FitWidth reads the fed widgets' titletext, label,
---          text, frame.label and frame.text, and FitToContent reads children[1].content
---          (the ScrollFrame's scroll child). An AceGUI bump that renames those shows as a
---          window that no longer fits its content.
+-- Public:  the stock Frame's SetTitle, SetStatusTable, Show, Hide; FitWidth() -> changed,
+--          FitToContent(), SetTitleColor(r, g, b), SetTitleBand(alpha),
+--          SetActionButton(text, onClick, tipText), SetMiddleButton(...),
+--          SetRightButton(text, onClick, tipText), SetHelpButton(onClick, isOn, tipText),
+--          ShowSidePanel(title, body, note, opts) (opts as SSFSideNote:Show),
+--          SetFooter(text). Callback: "OnMoved"(top, left).
+-- Hooks:   AceHook, embedded on the widget: the stock title handle's OnMouseUp (to fire
+--          OnMoved after the stock handler saved the position) and the frame's OnHide (to
+--          close the note with the window). Both attach in the constructor.
+-- Lib internals: three reaches past the stock Frame's public surface, each guarded so a
+--          changed Frame leaves the stock piece in place rather than erroring: the status
+--          strip hidden through statustext's parent; the stock Close button found among
+--          the frame's children by its CLOSE text, hidden, and its OnClick reused for
+--          SSF's X and Close; the title handle, titletext's parent, for the hook. Also
+--          read: titletext and titlebg (the band's anchors, the title's color and width),
+--          localstatus (the status fallback), content (re-anchored for SSF's taller bottom
+--          row); FitWidth reads the fed widgets' titletext, label, text, frame.label and
+--          frame.text; FitToContent reads children[1].content (the ScrollFrame's scroll
+--          child). An AceGUI bump that renames those shows as a window that no longer fits
+--          its content or styles its title.
 -- Reads:   the Tooltip module at runtime for every tooltip it shows.
+-- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
+--          Escape; the stock Frame is unnamed and Escape has no other way in.
 -- Touches nothing else.
 
-local Type, Version = "SSFFrame", 1
+local Type, Version = "SSFFrame", 2
 local AceGUI = LibStub("AceGUI-3.0")
+local AceHook = LibStub("AceHook-3.0")
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
-local CHROME = 93                     -- the content's top (35) and bottom (58) insets
+local EDGE = 17                       -- the content's, buttons' and footer's inset from the sides
+local TOP_INSET = 35                  -- the content's inset from the top (the title art)
+local BOTTOM_INSET = 58               -- the content's inset from the bottom: the button row and the footer
+local CHROME = TOP_INSET + BOTTOM_INSET
+local STOCK_BOTTOM_INSET = 57         -- what the stock Frame's OnHeightSet keeps for its status strip
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 420, 380 -- before the first fit
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
+local BUTTON_HEIGHT = 22              -- the bottom row's buttons
+local ROW_OFFSET = 30                 -- the bottom row's distance from the frame's bottom edge
+local FOOTER_OFFSET = 12              -- the footer line's
 local SCREEN_MARGIN = 40              -- the window is never taller or wider than the screen minus this
 local BUTTON_GAP = 8                  -- px kept between the two bottom buttons
-local EDGE = 17                       -- the content's, buttons' and footer's inset from the sides
+local X_INSET = 5                     -- the X sits this far in from the corner
 local HELP_ART = 616343               -- Interface\Common\help-i: Blizzard's own help button, a gold "i"
 local HELP_SIZE = 22                  -- the help button, square: the visible "i" circle, in px
 local HELP_CROP = { 14 / 64, 49 / 64 } -- the circle's edges in the 64 px art (measured); the rest is transparent
 local HELP_DROP = 6                   -- px below the X's middle, so the circle clears the frame's top border
 local HELP_GAP = 4                    -- px between the circle and the X
-local SIDE_PAD = 14                   -- the side panel's inset from its border, top and bottom
-local SIDE_TEXT_PAD = 24              -- the side panel's text inset from its sides
-local SIDE_WIDTH = 0.86               -- the side panel's width, as a share of the window's
-local SIDE_GAP = 8                    -- px between the window's right edge and the side panel
-local SIDE_ROW_GAP = 8                -- px between the side panel's title, divider, arrow row and text
-local MACRO_INDENT = 16               -- a macro box's inset from the paragraphs' left edge
-local MACRO_PAD = 6                   -- a macro's text inset inside its box
-local MACRO_TEXT = { 0.71, 0.80, 0.92 } -- a macro's text: pale blue-grey, so it reads as code to copy
-local SIDE_BUTTON_EDGE = 12           -- the panel button's end caps: its width is its text plus this
-local SIDE_ICON = 20                  -- the side panel's copy of the "i"; the arrow is as tall
-local SIDE_ICON_GAP = 6               -- px between the arrow and the "i"
-local ARROW_ART = 131906              -- Interface\Glues\Login\UI-BackArrow: a gold arrow pointing left
-local ARROW_CROP = { 2 / 64, 1, 10 / 64, 50 / 64 } -- the arrow in its 64 px art (measured): 62 x 40
 local HELP_ON = { 0.35, 0.65, 1 }     -- the "i" while help is on: blue (the art greyed, then tinted); off it is its own gold
+local SIDE_GAP = 8                    -- px between the window's right edge and the side note
 local TITLE_CAP = 30                  -- each end cap of the header art (the stock Frame's titlebg_l, titlebg_r)
 local BAND_REACH = 16                 -- px the title strip runs into each end cap, to the art's inner opening
 local BAND_PAD = 3                    -- px of strip above and below the title text
@@ -80,16 +86,11 @@ local BAND_PAD = 3                    -- px of strip above and below the title t
 local ROUNDING = 1
 local GRAB = 60                       -- px of the window that always stay on screen
 
--- SSF's own backdrop: the dialog art untinted (the stock Frame's is the same art, tinted black)
-local FrameBackdrop = {
-    bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-    edgeFile = "Interface\\DialogFrame\\UI-DialogBox-Border",
-    tile = true, tileSize = 32, edgeSize = 32,
-    insets = { left = 8, right = 8, top = 8, bottom = 8 },
-}
-
 -- every tooltip this window shows goes through the Tooltip module (the one anchor)
 local function Tooltip() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Tooltip") end
+
+-- the status table AceConfigDialog handed over, or the widget's own
+local function Status(self) return self.status or self.localstatus end
 
 -- The frame may hang off the left, right and bottom edges, but keeps GRAB px on screen;
 -- the top edge stays on screen, so the title bar can always be grabbed. Clamp rect insets
@@ -108,6 +109,17 @@ local function FitButton(button, text)
     button:SetWidth(math.max(BUTTON_MIN, (button:GetFontString():GetStringWidth() or 0) + BUTTON_PAD))
 end
 
+-- only the circle of the help art: the button's box is the visible "i", nothing transparent around it
+local function CropHelp(texture)
+    local lo, hi = HELP_CROP[1], HELP_CROP[2]
+    texture:SetTexCoord(lo, hi, lo, hi)
+end
+
+-- an open tooltip on the button takes its new text at once
+local function RefreshTip(button)
+    if Tooltip():IsShownFor(button) then button:GetScript("OnEnter")(button) end
+end
+
 -- A bottom button's help line: the same look and place as an option's tooltip (the button's
 -- name in gold, the line in white, above-right of the cursor). No line, no tooltip: the
 -- owner hands one over only while help is on.
@@ -122,127 +134,49 @@ end
 
 local function SetButtonTip(button, tipText)
     button.tipText = tipText
-    if not button.tipHooked then
-        button:HookScript("OnEnter", ButtonTip_OnEnter)
-        button:HookScript("OnLeave", ButtonTip_OnLeave)
-        button.tipHooked = true
-    end
-    if GameTooltip:IsOwned(button) then
-        if tipText then ButtonTip_OnEnter(button) else Tooltip():Hide(button) end
-    end
+    if tipText then RefreshTip(button) else Tooltip():Hide(button) end
 end
 
+-- the stock Close's click (sound, then hide), or the same by hand if the stock button was
+-- not found
 local function Close_OnClick(button)
-    PlaySound(799) -- SOUNDKIT.GS_TITLE_OPTION_EXIT, as the stock Frame's Close
+    PlaySound(799) -- SOUNDKIT.GS_TITLE_OPTION_EXIT
     button.obj:Hide()
 end
 
--- The side panel's width: SIDE_WIDTH of the window's, so its paragraphs keep a comfortable
--- line length, but never so narrow that the centered title runs into the X in the top-right
--- corner (the X's width on both sides). Its text wraps inside SIDE_TEXT_PAD. Run when the
--- panel shows and whenever the window's width changes (the first open re-fits the window a
--- frame later). Returns the width.
-local function LayoutSidePanel(self)
-    local panel = self.sidepanel
-    local clearX = 2 * (panel.close:GetWidth() or 0)
-    local width = math.floor(math.max((self.frame:GetWidth() or 0) * SIDE_WIDTH,
-        clearX + (panel.title:GetUnboundedStringWidth() or 0)))
-    panel:SetWidth(width)
-    panel.title:SetWidth(width - 2 * SIDE_PAD)
-    panel.divider:SetWidth(width - 2 * SIDE_PAD)
-    for _, text in ipairs({ panel.body, panel.note, panel.buttonNote }) do
-        text:SetWidth(width - 2 * SIDE_TEXT_PAD)
-    end
-    panel:Fit()
-    return width
-end
-
--- The side panel's blocks: a paragraph is a left-justified FontString; a macro is its text
--- in a dark box, indented. Made on first use and kept for the next ShowSidePanel.
-local MACRO_BACKDROP = {
-    bgFile = "Interface\\ChatFrame\\ChatFrameBackground",
-    edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
-    edgeSize = 1,
-}
-
-local function Paragraph(panel, i)
-    local text = panel.paragraphs[i]
-    if not text then
-        text = panel.textlayer:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        text:SetJustifyH("LEFT")
-        text:SetWordWrap(true)
-        panel.paragraphs[i] = text
-    end
-    return text
-end
-
-local function MacroBox(panel, i)
-    local box = panel.macros[i]
-    if not box then
-        box = CreateFrame("Frame", nil, panel.textlayer, "BackdropTemplate")
-        box:SetBackdrop(MACRO_BACKDROP)
-        box:SetBackdropColor(0, 0, 0, 0.6)
-        box:SetBackdropBorderColor(0.3, 0.33, 0.36, 1)
-        box.text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
-        box.text:SetJustifyH("LEFT")
-        box.text:SetTextColor(unpack(MACRO_TEXT))
-        box.text:SetPoint("TOPLEFT", MACRO_PAD, -MACRO_PAD)
-        box.isMacro = true
-        panel.macros[i] = box
-    end
-    return box
-end
-
--- a macro box sized to its text: its widest line, unwrapped, and every line, plus the inset
-local function SizeMacroBox(box)
-    local text, widest = box.text:GetText() or "", 0
-    for line in text:gmatch("[^\n]+") do
-        box.text:SetText(line)
-        widest = math.max(widest, box.text:GetUnboundedStringWidth() or 0)
-    end
-    box.text:SetText(text)
-    box:SetSize(widest + 2 * MACRO_PAD, (box.text:GetStringHeight() or 0) + 2 * MACRO_PAD)
-end
-
 -- SSF's methods. The ones that share a name with a stock Frame method call the stock one
--- first and add to it (base.* is captured in the constructor).
+-- first and add to it (self.stock.* is captured in the constructor).
 local methods = {
     ["OnAcquire"] = function(self)
-        self.base.OnAcquire(self)
+        self.stock.OnAcquire(self)
         self:EnableResize(false) -- the stock OnAcquire turns it on; the window is sized to its content
     end,
 
     ["OnWidthSet"] = function(self, width)
-        self.base.OnWidthSet(self, width)
+        self.stock.OnWidthSet(self, width)
         UpdateClamp(self)
-        if self.sidepanel:IsShown() then LayoutSidePanel(self) end
+        if self.sidenote:IsShown() then self.sidenote:Layout(width) end
     end,
 
-    -- the stock Frame's content inset is 57 (its status strip); SSF's bottom row is taller
+    -- the stock Frame keeps STOCK_BOTTOM_INSET under its content for its status strip; SSF's
+    -- bottom row is taller, so the stock method gets the height less the difference
     ["OnHeightSet"] = function(self, height)
-        self.base.OnHeightSet(self, height)
-        local content = self.content
-        local contentheight = height - CHROME
-        if contentheight < 0 then contentheight = 0 end
-        content:SetHeight(contentheight)
-        content.height = contentheight
+        self.stock.OnHeightSet(self, height - (BOTTOM_INSET - STOCK_BOTTOM_INSET))
         UpdateClamp(self)
     end,
 
+    -- the window's own height after its layout: CHROME around the content
     ["LayoutFinished"] = function(self, _, height)
         if height then self:SetHeight(height + CHROME) end
-        -- every rebuild ends here, including the ones AceConfigDialog does by itself after
-        -- a setting changes
-        self:Fire("OnLayoutFinished")
     end,
 
     -- the stock defaults (700 x 500) are a status table's fallback; SSF's window starts
     -- smaller, and the first fit sets both
     ["ApplyStatus"] = function(self)
-        local status = self.status or self.localstatus
+        local status = Status(self)
         status.width = status.width or DEFAULT_WIDTH
         status.height = status.height or DEFAULT_HEIGHT
-        self.base.ApplyStatus(self)
+        self.stock.ApplyStatus(self)
     end,
 
     -- Size the window to what AceConfigDialog fed in. It wraps the root group in a ScrollFrame
@@ -258,8 +192,7 @@ local methods = {
         -- never taller than the screen: past that the ScrollFrame scrolls
         height = math.min(height, UIParent:GetHeight() - SCREEN_MARGIN)
         self:SetHeight(height)
-        local status = self.status or self.localstatus
-        status.height = height
+        Status(self).height = height
     end,
 
     -- Size the window's width to what AceConfigDialog fed in: the width at which every text
@@ -309,14 +242,12 @@ local methods = {
         end
         for _, child in ipairs(self.children) do Visit(child) end
 
-        -- the title in its header art, which must stay clear of the X and the help button on
-        -- its right (both sides kept equal: the title is centered)
-        local x = self.xbutton
-        local clear = (x:GetWidth() or 0) + 5 -- the X sits 5 px in from the corner
+        -- the title in its header art (the stock SetTitle sized the middle piece to the
+        -- text), which must stay clear of the X and the help button on its right (both
+        -- sides kept equal: the title is centered)
+        local clear = (self.xbutton:GetWidth() or 0) + X_INSET
         if self.helpbutton:IsShown() then clear = clear + HELP_GAP + self.helpbutton:GetWidth() end
-        clear = 2 * clear
-        -- (the header's middle is the text plus 10, as the stock SetTitle sizes it)
-        Need((self.titletext:GetUnboundedStringWidth() or 0) + 10 + 2 * TITLE_CAP + clear)
+        Need((self.titlebg:GetWidth() or 0) + 2 * TITLE_CAP + 2 * clear)
         -- the bottom row: the buttons, EDGE px in from each side, and the footer under them
         local close = self.closebutton:GetWidth() or 0
         local action = self.actionbutton:IsShown() and (self.actionbutton:GetWidth() or 0) or 0
@@ -333,13 +264,12 @@ local methods = {
         local new = math.min(need + ROUNDING, UIParent:GetWidth() - SCREEN_MARGIN)
         if math.abs(new - width) < ROUNDING then return false end
         self:SetWidth(new)
-        local status = self.status or self.localstatus
-        status.width = new
+        Status(self).width = new
         return true
     end,
 
     -- the title text's color (private widget, never pooled across addons: nothing to reset);
-    -- kept for the side panel's title too
+    -- kept for the side note's title too
     ["SetTitleColor"] = function(self, r, g, b)
         self.titletext:SetTextColor(r, g, b)
         self.titleColor = { r, g, b }
@@ -347,7 +277,8 @@ local methods = {
 
     -- a black strip behind the title text inside the header art; alpha 0 = none
     ["SetTitleBand"] = function(self, alpha)
-        self.titleband:SetColorTexture(0, 0, 0, alpha or 0)
+        local black = LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors").BLACK
+        self.titleband:SetColorTexture(black[1], black[2], black[3], alpha or 0)
     end,
 
     -- the bottom-left button, sized to its text; nil text hides it. tipText: its help line
@@ -370,11 +301,6 @@ local methods = {
         self.middlebutton:Show()
     end,
 
-    -- the bottom-right button's text (Blizzard's CLOSE until set), sized to its text
-    ["SetCloseText"] = function(self, text)
-        FitButton(self.closebutton, text or CLOSE)
-    end,
-
     -- turns the bottom-right button into an action button, sized to its text; the X and
     -- Escape still close the window. tipText: as SetActionButton
     ["SetRightButton"] = function(self, text, onClick, tipText)
@@ -394,69 +320,20 @@ local methods = {
         art:SetDesaturated(isOn)
         if isOn then art:SetVertexColor(unpack(HELP_ON)) else art:SetVertexColor(1, 1, 1) end
         button:Show()
-        if GameTooltip:IsOwned(button) then button:GetScript("OnEnter")(button) end
+        RefreshTip(button)
     end,
 
-    -- A note beside the window's top-right corner, SIDE_GAP px out (the first-load welcome).
-    -- Top to bottom: the title, the arrow row, bodyText (gold), opts.blocks, opts.buttonNote,
-    -- the button, then noteText (gold) last. opts, all optional: blocks (a list of
-    -- { text } paragraphs, left-justified, and { text, macro = true } macros, each in its own
-    -- box), button and onClick (a button as wide as its text), buttonNote (a small line just
-    -- above the button: what a click does, read before the click), buttonDisabled (greys the
-    -- button out), onClose (called once when the note closes, by its X or the window
-    -- closing). Too near the screen's right edge for it, the window goes to the center of
-    -- the screen; that goes in the status table, so the next ApplyStatus keeps it this
-    -- session (a drag still saves the window's spot). It closes with the window and stays
-    -- closed.
+    -- The note beside the window (SSFSideNote:Show). Too near the screen's right edge for
+    -- it, the window goes to the center of the screen; that goes in the status table, so
+    -- the next ApplyStatus keeps it this session (a drag still saves the window's spot).
     ["ShowSidePanel"] = function(self, titleText, bodyText, noteText, opts)
-        opts = opts or {}
-        local panel, frame = self.sidepanel, self.frame
-        panel.title:SetText(titleText)
-        if self.titleColor then panel.title:SetTextColor(unpack(self.titleColor)) end
-        panel.body:SetText(bodyText)
-        panel.note:SetText(noteText or "")
-        -- the blocks in order; spares left from a longer list stay hidden
-        wipe(panel.items)
-        local p, m = 0, 0
-        for _, block in ipairs(opts.blocks or {}) do
-            local item
-            if block.macro then
-                m = m + 1
-                item = MacroBox(panel, m)
-                item.text:SetText(block.text)
-            else
-                p = p + 1
-                item = Paragraph(panel, p)
-                item:SetText(block.text)
-            end
-            item:Show()
-            panel.items[#panel.items + 1] = item
-        end
-        for i = p + 1, #panel.paragraphs do panel.paragraphs[i]:Hide() end
-        for i = m + 1, #panel.macros do panel.macros[i]:Hide() end
-        if opts.button then
-            -- as wide as its text plus a space each side: it reads as a button, not a bar
-            local button = panel.button
-            button:SetText(" " .. opts.button .. " ")
-            button:SetWidth((button:GetFontString():GetStringWidth() or 0) + SIDE_BUTTON_EDGE)
-            button:SetScript("OnClick", opts.onClick)
-            button:SetEnabled(not opts.buttonDisabled)
-        end
-        panel.button:SetShown(opts.button ~= nil)
-        panel.buttonNote:SetText(opts.buttonNote or "")
-        panel.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
-        panel.onClose = opts.onClose
-        local width = LayoutSidePanel(self)
-        panel:SetFrameLevel(frame:GetFrameLevel() + 20) -- above the window and its widgets
-        panel.textlayer:SetFrameLevel(panel:GetFrameLevel() + 20) -- the text above the backdrop
-        -- no room on the right: the window goes to the center of the screen (the window
-        -- itself, the note beside it as usual)
+        local width = self.sidenote:Show(titleText, bodyText, noteText, opts, self.titleColor)
+        local frame = self.frame
         if (frame:GetRight() or 0) + SIDE_GAP + width > UIParent:GetRight() then
-            local status = self.status or self.localstatus
+            local status = Status(self)
             status.top, status.left = nil, nil -- ApplyStatus: no spot is the center
             self:ApplyStatus()
         end
-        panel:Show()
     end,
 
     -- the small line between the two bottom buttons
@@ -465,18 +342,19 @@ local methods = {
     end,
 }
 
--- The stock pieces SSF replaces (see the header's Exceptions). Each returns quietly when the
--- stock Frame no longer looks the way this was written for; the stock piece then stays.
+-- The stock pieces SSF replaces (see the header's Lib internals). Each returns quietly when
+-- the stock Frame no longer looks the way this was written for; the stock piece then stays.
 local function HideStatusBar(self)
     local bar = self.statustext and self.statustext:GetParent()
     if bar and bar ~= self.frame then bar:Hide() end
 end
 
-local function HideStockClose(self)
+-- hides the stock Close and keeps its click handler for SSF's own close buttons
+local function TakeStockClose(self)
     for _, child in ipairs({ self.frame:GetChildren() }) do
         if child:GetObjectType() == "Button" and child.GetText and child:GetText() == CLOSE then
             child:Hide()
-            return
+            return child:GetScript("OnClick")
         end
     end
 end
@@ -485,10 +363,11 @@ local function HookTitleHandle(self)
     local handle = self.titletext and self.titletext:GetParent()
     if not handle or handle == self.frame then return end
     -- after the stock handler saved the position into the status table
-    handle:HookScript("OnMouseUp", function()
-        local status = self.status or self.localstatus
+    self:SecureHookScript(handle, "OnMouseUp", function()
+        local status = Status(self)
         self:Fire("OnMoved", status.top, status.left) -- the owner saves it across sessions
     end)
+    return handle
 end
 
 local function Constructor()
@@ -496,33 +375,31 @@ local function Constructor()
     local self = AceGUI:Create("Frame")
     local frame = self.frame
     self.type = Type
-    self.base = {
+    self.stock = {
         OnAcquire = self.OnAcquire, OnWidthSet = self.OnWidthSet, OnHeightSet = self.OnHeightSet,
         ApplyStatus = self.ApplyStatus,
     }
     for method, func in pairs(methods) do self[method] = func end
+    AceHook:Embed(self)
 
-    frame:Hide()
-    self:EnableResize(false)
-    frame:SetBackdrop(FrameBackdrop)
-    frame:SetBackdropColor(1, 1, 1, 1) -- the art untinted (the stock Frame tints it black)
+    frame:SetBackdropColor(1, 1, 1, 1) -- the dialog art untinted (the stock Frame tints it black)
     frame:SetClampedToScreen(true) -- with UpdateClamp's insets: hangs off an edge, never lost
     _G[FRAME_NAME] = frame
     tinsert(UISpecialFrames, FRAME_NAME) -- Escape closes it
 
     HideStatusBar(self)
-    HideStockClose(self)
-    HookTitleHandle(self)
+    local closeClick = TakeStockClose(self) or Close_OnClick
+    local handle = HookTitleHandle(self) or frame
 
     -- SSF's content insets: clear of its bottom row and footer
     local content = self.content
     content:ClearAllPoints()
-    content:SetPoint("TOPLEFT", EDGE, -35)
-    content:SetPoint("BOTTOMRIGHT", -EDGE, 58)
+    content:SetPoint("TOPLEFT", EDGE, -TOP_INSET)
+    content:SetPoint("BOTTOMRIGHT", -EDGE, BOTTOM_INSET)
 
     local xbutton = CreateFrame("Button", nil, frame, "UIPanelCloseButton")
-    xbutton:SetPoint("TOPRIGHT", -5, -5)
-    xbutton:SetScript("OnClick", Close_OnClick)
+    xbutton:SetPoint("TOPRIGHT", -X_INSET, -X_INSET)
+    xbutton:SetScript("OnClick", closeClick)
     xbutton.obj = self
 
     -- the help button, left of the X; gold while help is off, blue while on (SetHelpButton)
@@ -531,167 +408,50 @@ local function Constructor()
     helpbutton:SetPoint("RIGHT", xbutton, "LEFT", -HELP_GAP, -HELP_DROP)
     helpbutton:SetNormalTexture(HELP_ART)
     helpbutton:SetHighlightTexture(HELP_ART, "ADD")
-    -- only the circle: the button's box is the visible "i", nothing transparent around it
-    local lo, hi = HELP_CROP[1], HELP_CROP[2]
-    helpbutton:GetNormalTexture():SetTexCoord(lo, hi, lo, hi)
-    helpbutton:GetHighlightTexture():SetTexCoord(lo, hi, lo, hi)
+    CropHelp(helpbutton:GetNormalTexture())
+    CropHelp(helpbutton:GetHighlightTexture())
     helpbutton:SetScript("OnEnter", function(button) Tooltip():Show(button, button.tipText) end)
     helpbutton:SetScript("OnLeave", function(button) Tooltip():Hide(button) end)
     helpbutton:Hide()
 
-    -- the side panel (ShowSidePanel): the window's own background and a tooltip-weight border,
-    -- SIDE_GAP px right of the window, tops level; hidden whenever the window closes
-    local sidepanel = CreateFrame("Frame", nil, frame, "BackdropTemplate")
-    sidepanel:SetPoint("TOPLEFT", frame, "TOPRIGHT", SIDE_GAP, 0)
-    sidepanel:SetBackdrop({
-        bgFile = "Interface\\DialogFrame\\UI-DialogBox-Background",
-        edgeFile = "Interface\\Tooltips\\UI-Tooltip-Border",
-        tile = true, tileSize = 32, edgeSize = 16,
-        insets = { left = 4, right = 4, top = 4, bottom = 4 },
-    })
-    -- top to bottom: a title (the window's title color), a divider, an arrow pointing left
-    -- at the help button beside a copy of its "i", the body line in gold (all anchored,
-    -- centered), then placed by Fit: the blocks (paragraphs left-justified, macros in
-    -- boxes), the button's note, the button and the gold note line (centered).
-    -- Everything sits on its own layer, raised above the panel when it shows.
-    local layer = CreateFrame("Frame", nil, sidepanel)
-    layer:SetAllPoints()
-    sidepanel.textlayer = layer
-    sidepanel.items, sidepanel.paragraphs, sidepanel.macros = {}, {}, {}
-
-    local title = layer:CreateFontString(nil, "OVERLAY", "GameFontNormalLarge")
-    title:SetPoint("TOP", 0, -SIDE_PAD)
-    title:SetJustifyH("CENTER")
-    sidepanel.title = title
-
-    local divider = layer:CreateTexture(nil, "OVERLAY")
-    divider:SetColorTexture(1, 1, 1, 0.25)
-    divider:SetHeight(1)
-    divider:SetPoint("TOP", title, "BOTTOM", 0, -SIDE_ROW_GAP)
-    sidepanel.divider = divider
-
-    -- the "i" centered on the panel, the arrow left of it pointing at the real one
-    local icon = layer:CreateTexture(nil, "OVERLAY")
-    icon:SetTexture(HELP_ART)
-    icon:SetTexCoord(HELP_CROP[1], HELP_CROP[2], HELP_CROP[1], HELP_CROP[2])
-    icon:SetSize(SIDE_ICON, SIDE_ICON)
-    icon:SetPoint("TOP", divider, "BOTTOM", 0, -SIDE_ROW_GAP)
-    local arrow = layer:CreateTexture(nil, "OVERLAY")
-    arrow:SetTexture(ARROW_ART)
-    arrow:SetTexCoord(unpack(ARROW_CROP))
-    arrow:SetSize(SIDE_ICON * 62 / 40, SIDE_ICON) -- the art's own shape
-    arrow:SetPoint("RIGHT", icon, "LEFT", -SIDE_ICON_GAP, 0)
-
-    -- in gold: the pointer at the help button, and a divider between it and the text below
-    local body = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    body:SetPoint("TOP", icon, "BOTTOM", 0, -SIDE_ROW_GAP)
-    body:SetJustifyH("CENTER")
-    body:SetWordWrap(true)
-    sidepanel.body = body
-
-    -- in gold so it stands out (the one-time notice), last on the panel
-    local note = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
-    note:SetJustifyH("CENTER")
-    note:SetWordWrap(true)
-    sidepanel.note = note
-
-    -- the optional button, as wide as its text (ShowSidePanel)
-    local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate")
-    button:SetHeight(22)
-    button:Hide()
-    sidepanel.button = button
-
-    -- the optional small line just above the button: what a click does
-    local buttonNote = layer:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    buttonNote:SetJustifyH("CENTER")
-    buttonNote:SetWordWrap(true)
-    buttonNote:Hide()
-    sidepanel.buttonNote = buttonNote
-
-    -- Lays out everything under the body line, top to bottom, SIDE_ROW_GAP apart, and fits
-    -- the height to it. Run when the text is set and again each time it shows (the welcome
-    -- waits for the loading screen to go, so the fonts measure true).
-    function sidepanel.Fit(panel)
-        local inner = (panel:GetWidth() or 0) - 2 * SIDE_TEXT_PAD
-        -- the anchored rows: title, divider, arrow row, body
-        local y = SIDE_PAD + panel.title:GetStringHeight() + SIDE_ROW_GAP + 1 + SIDE_ROW_GAP
-            + SIDE_ICON + SIDE_ROW_GAP + panel.body:GetStringHeight()
-        local function Place(region, height, x)
-            y = y + SIDE_ROW_GAP
-            region:ClearAllPoints()
-            if x then
-                region:SetPoint("TOPLEFT", panel.textlayer, "TOPLEFT", x, -y)
-            else
-                region:SetPoint("TOP", panel.textlayer, "TOP", 0, -y) -- centered
-            end
-            y = y + height
-        end
-        for _, item in ipairs(panel.items) do
-            if item.isMacro then
-                SizeMacroBox(item)
-                Place(item, item:GetHeight(), SIDE_TEXT_PAD + MACRO_INDENT)
-            else
-                item:SetWidth(inner)
-                Place(item, item:GetStringHeight(), SIDE_TEXT_PAD)
-            end
-        end
-        if panel.buttonNote:IsShown() then Place(panel.buttonNote, panel.buttonNote:GetStringHeight()) end
-        if panel.button:IsShown() then Place(panel.button, panel.button:GetHeight()) end
-        if (panel.note:GetText() or "") ~= "" then Place(panel.note, panel.note:GetStringHeight()) end
-        panel:SetHeight(y + SIDE_PAD)
-    end
-    sidepanel:SetScript("OnShow", sidepanel.Fit)
-    sidepanel:Hide()
-
-    -- closes the note and tells its owner once (ShowSidePanel's opts.onClose), whatever
-    -- closed it: its X, or the window closing (X, Escape, Close, or a fight)
-    local function CloseSidePanel()
-        sidepanel:Hide()
-        local onClose = sidepanel.onClose
-        sidepanel.onClose = nil
-        if onClose then onClose() end
-    end
-    -- its own X, the one players expect: closes the note, the window stays
-    local sideclose = CreateFrame("Button", nil, layer, "UIPanelCloseButton")
-    sideclose:SetPoint("TOPRIGHT", 0, 0)
-    sideclose:SetScript("OnClick", CloseSidePanel)
-    sidepanel.close = sideclose
-    -- closed with the window too: only when the window itself hides. OnHide also fires when
-    -- the whole UI hides around a loading screen, and the window comes back from that.
-    frame:HookScript("OnHide", function(f)
-        if f:IsShown() or not sidepanel:IsShown() then return end
-        CloseSidePanel()
+    -- the note beside the window, closed with the window: only when the window itself
+    -- hides. OnHide also fires when the whole UI hides around a loading screen, and the
+    -- window comes back from that.
+    local sidenote = AceGUI:Create("SSFSideNote")
+    sidenote:AttachTo(frame, SIDE_GAP)
+    self:SecureHookScript(frame, "OnHide", function(f)
+        if f:IsShown() or not sidenote:IsShown() then return end
+        sidenote:Close()
     end)
 
     -- bottom: a button row (action far left, Close far right), then the footer line centered
     -- along the bottom edge under it
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    footer:SetPoint("BOTTOMLEFT", EDGE, 12)
-    footer:SetPoint("BOTTOMRIGHT", -EDGE, 12)
+    footer:SetPoint("BOTTOMLEFT", EDGE, FOOTER_OFFSET)
+    footer:SetPoint("BOTTOMRIGHT", -EDGE, FOOTER_OFFSET)
     footer:SetJustifyH("CENTER")
     footer:SetWordWrap(false)
 
-    local closebutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    closebutton:SetScript("OnClick", Close_OnClick)
-    closebutton:SetPoint("BOTTOMRIGHT", -EDGE, 30)
-    closebutton:SetHeight(22)
-    closebutton.obj = self
+    local function RowButton(point, x)
+        local button = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
+        button:SetPoint(point, x, ROW_OFFSET)
+        button:SetHeight(BUTTON_HEIGHT)
+        button:SetScript("OnEnter", ButtonTip_OnEnter)
+        button:SetScript("OnLeave", ButtonTip_OnLeave)
+        button.obj = self
+        return button
+    end
+    local closebutton = RowButton("BOTTOMRIGHT", -EDGE)
+    closebutton:SetScript("OnClick", closeClick)
     FitButton(closebutton, CLOSE)
-
-    local actionbutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    actionbutton:SetPoint("BOTTOMLEFT", EDGE, 30)
-    actionbutton:SetHeight(22)
+    local actionbutton = RowButton("BOTTOMLEFT", EDGE)
     actionbutton:Hide()
-
-    local middlebutton = CreateFrame("Button", nil, frame, "UIPanelButtonTemplate")
-    middlebutton:SetPoint("BOTTOM", 0, 30)
-    middlebutton:SetHeight(22)
+    local middlebutton = RowButton("BOTTOM", 0)
     middlebutton:Hide()
 
     -- SetTitleBand's strip: on the title handle, so above the header art; BACKGROUND, so
     -- under the title text. Across the art's inner opening: BAND_REACH px into each end cap
     -- (the caps hang off the middle piece, titlebg), BAND_PAD px above and below the text.
-    local handle = self.titletext:GetParent()
     local titleband = handle:CreateTexture(nil, "BACKGROUND")
     titleband:SetPoint("TOP", self.titletext, "TOP", 0, BAND_PAD)
     titleband:SetPoint("BOTTOM", self.titletext, "BOTTOM", 0, -BAND_PAD)
@@ -705,7 +465,7 @@ local function Constructor()
     self.closebutton = closebutton
     self.xbutton = xbutton
     self.helpbutton = helpbutton
-    self.sidepanel = sidepanel
+    self.sidenote = sidenote
     self.footer = footer
     return self
 end

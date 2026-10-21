@@ -8,18 +8,19 @@
 -- inside the frame handed to Attach (SSF's window). The minimap tooltip is LibDataBroker's
 -- and the display addon's; its rows are Broker's.
 --
--- Public:  Tooltip:Anchor() -> the SetOwner / SetAnchorType arguments
---          Tooltip:Show(owner, title, text, titleGold) -- title in the label gold (true)
---            or white; text in white, one tooltip line per line of text, a blank line as
---            a spacer (handed over as one text the game sometimes drops a blank line)
---          Tooltip:Hide(owner) -- only if the tooltip is still the owner's
---          Tooltip:Attach(frame) -- option tooltips shown inside this frame get the anchor
--- Hooks:   AceConfigDialog.tooltip's OnShow (AceHook), hooked again if a newer
---          AceConfigDialog loaded later replaced the tooltip frame.
+-- Public:  Show(owner, title, text, titleGold) -- title in the label gold (true) or white;
+--            text in white, one tooltip line per line of text, a blank line as a spacer
+--            (handed over as one text the game sometimes drops a blank line)
+--          Hide(owner) -- only if the tooltip is still the owner's
+--          IsShownFor(owner) -> bool (the owner refreshes an open tooltip's text)
+--          Attach(frame) -- option tooltips shown inside this frame get the anchor
+-- Hooks:   AceConfigDialog.tooltip's OnShow (AceHook), attached by Attach, hooked again
+--          if a newer AceConfigDialog loaded later replaced the tooltip frame.
 -- Lib internals: AceConfigDialog.tooltip, the GameTooltip-like frame it shows help lines
 --          in. An AceConfigDialog bump that renames it leaves option tooltips at the stock
 --          anchor.
--- Reads:   Colors.YELLOW. Owns no state beyond the attached frame. Touches nothing else.
+-- Reads:   Colors.YELLOW, Colors.WHITE. Owns no state beyond the attached frame.
+-- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Tooltip = SSF:NewModule("Tooltip", "AceHook-3.0")
@@ -27,22 +28,24 @@ local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 
 local ANCHOR, ANCHOR_X, ANCHOR_Y = "ANCHOR_CURSOR_RIGHT", 60, 0
 
-function Tooltip:Anchor() return ANCHOR, ANCHOR_X, ANCHOR_Y end
-
 function Tooltip:Show(owner, title, text, titleGold)
     local Colors = SSF:GetModule("Colors")
-    local r, g, b = 1, 1, 1
-    if titleGold then r, g, b = Colors.YELLOW[1], Colors.YELLOW[2], Colors.YELLOW[3] end
+    local c = titleGold and Colors.YELLOW or Colors.WHITE
+    local w = Colors.WHITE
     GameTooltip:SetOwner(owner, ANCHOR, ANCHOR_X, ANCHOR_Y)
-    GameTooltip:SetText(title or "", r, g, b, 1, true)
+    GameTooltip:SetText(title or "", c[1], c[2], c[3], 1, true)
     for line in ((text or "") .. "\n"):gmatch("(.-)\n") do
-        GameTooltip:AddLine(line == "" and " " or line, 1, 1, 1, true) -- a long line wraps by itself
+        GameTooltip:AddLine(line == "" and " " or line, w[1], w[2], w[3], true) -- a long line wraps by itself
     end
     GameTooltip:Show()
 end
 
 function Tooltip:Hide(owner)
     if GameTooltip:IsOwned(owner) then GameTooltip:Hide() end
+end
+
+function Tooltip:IsShownFor(owner)
+    return GameTooltip:IsOwned(owner)
 end
 
 local function Inside(frame, within)

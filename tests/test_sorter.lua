@@ -2,13 +2,15 @@
 --
 -- test_sorter: TopFirst and the moves one pass plans from a snapshot, read back from the
 -- stub's record of PickupContainerItem calls (pairs: source, then target).
+-- Exceptions: reads and resets Sorter.reruns, the module's private leftover counter, to
+--          prove a rerun is pending or forgotten; nothing public exposes it, and a test
+--          is the one place allowed to look.
+-- Touches nothing else.
 
+local SHARD = SSF.SHARD_ITEM_ID
 local Sorter = SSF:GetModule("Sorter")
 local profile = SSF.db.profile
-local SHARD = 6265
-
-local function soul(slots, items, locked) return { slots = slots, family = 1, items = items or {}, locked = locked } end
-local function plain(slots, items, locked) return { slots = slots, family = 0, items = items or {}, locked = locked } end
+local soul, plain = WoW.SoulBag, WoW.PlainBag
 local function moves()
     local out = {}
     for i = 1, #WoW.picks, 2 do

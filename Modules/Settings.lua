@@ -2,7 +2,8 @@
 --
 -- Settings: turns ONE definition of a stateful setting into the two AceConfig entries it
 -- needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from
--- the GUI) that share the same get/apply.
+-- the GUI) that share the same get/apply. The GUI control carries SSF's look: full width,
+-- the indented check box for a toggle, the stepper slider for a range.
 --
 -- Chat rule it enforces for every stateful command: typed naked it reports the current
 -- value; typed with a value it applies and echoes the new one; booleans show green ON /
@@ -12,14 +13,16 @@
 --
 -- Public:  Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name,
 --          desc, get(), apply(value), optional extra() -> text appended to the chat echo,
---          optional echo() -> the whole echo line in place of "name: value" (pause), and
---          for range: min, max, step, disabled }.
---          Returns gui, cmd -- two entries for Options to place in its args table.
+--          optional echo() -> the whole echo line in place of "name: value" (pause),
+--          optional disabled, and for range: min, max, step }.
+--          Returns gui, cmd -- two entries for Options to place in its args table; a
+--          GUI-only setting places gui and drops cmd.
+--          A toggle's Define also registers AceTab completion of "on"/"off" after
+--          "/ssf <key> ".
 --          Settings.TabUsage -- the AceTab usage callback every completion set shares
 --          (Options uses it for the command words too).
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
---          command applied it (Options redraws an open window only then).
--- Registers: AceTab completion of "on"/"off" after "/ssf <key> " for every toggle.
+--          command applied it (Window redraws an open window only then).
 -- Reads:   Colors:OnOff/Value for the echo. Prints through AceConsole only.
 -- Owns no state, no events, no frames. Touches nothing else.
 
@@ -71,6 +74,7 @@ function Settings:Define(key, def)
     local gui = {
         type = def.kind,
         order = def.order,
+        width = "full",
         cmdHidden = true,
         descStyle = "hidden", -- Options.lua's ApplyHelp shows desc as a tooltip in help mode
         name = def.name,
@@ -81,9 +85,9 @@ function Settings:Define(key, def)
     }
     if def.kind == "range" then
         gui.min, gui.max, gui.step = def.min, def.max, def.step
-        gui.width = "full"
         gui.dialogControl = "SSFStepperSlider" -- Widgets\SSFStepperSlider.lua: arrows on both edges
     else
+        gui.dialogControl = "SSFIndentCheckBox" -- Widgets\SSFCentered.lua: inset in its group
         -- "/ssf announce o<Tab>" completes the value word too
         AceTab:RegisterTabCompletion("SSF " .. key, "/ssf " .. key .. " ", { "on", "off" }, Settings.TabUsage)
     end

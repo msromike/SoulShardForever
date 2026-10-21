@@ -11,8 +11,9 @@
 --
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED
 --          (the text; "minimap" also shows or hides the icon).
--- Reads:   Bags:Count(), Cap:Get(), Status:CapText/CountValue/CapValue/LowMarkValue/
---          PausedValue, Colors:Class and Colors.DIM, Window:Toggle(); profile.minimap.
+-- Reads:   Bags:Count(), Cap:Get/IsFull, Status:CapText/CountValue/CapValue/LowMarkValue/
+--          PausedValue, Colors:Class and Colors.DIM, Window:Toggle(), SSF.ICON;
+--          profile.minimap.
 -- Touches nothing else.
 
 local ADDON = ...
@@ -36,8 +37,9 @@ local function ShowTooltip(tooltip)
 end
 
 function Broker:Refresh()
-    local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
-    local full = count >= cap and (" " .. L["Full"]) or ""
+    local Cap = SSF:GetModule("Cap")
+    local count, cap = SSF:GetModule("Bags"):Count(), Cap:Get()
+    local full = Cap:IsFull(count) and (" " .. L["Full"]) or ""
     self.object.text = SSF:GetModule("Status"):CapText(count, cap) .. full
     self.object.value = count
 end

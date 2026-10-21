@@ -2,13 +2,12 @@
 --
 -- test_bags: Bags' sort order, counts, soul bag slots and LastShard, on fake bags.
 -- Bag ids: 0 backpack, 1-4 the bag slots, 5 the reagent slot (a soul pouch on Forever).
--- A soul bag is family 1 (the shard's family); a regular bag is family 0.
+-- A soul bag is the shard's family; a regular bag is family 0 (the stub's builders).
+-- Touches nothing else.
 
-local SHARD = 6265
+local SHARD = SSF.SHARD_ITEM_ID
 local Bags = SSF:GetModule("Bags")
-
-local function soul(slots, items, locked) return { slots = slots, family = 1, items = items or {}, locked = locked } end
-local function plain(slots, items, locked) return { slots = slots, family = 0, items = items or {}, locked = locked } end
+local soul, plain = WoW.SoulBag, WoW.PlainBag
 
 test("count across bags", function()
     WoW.SetBags({ [0] = plain(16, { [1] = SHARD, [3] = SHARD, [4] = 1234 }), [1] = soul(24, { [2] = SHARD }) })
@@ -20,8 +19,7 @@ end)
 
 test("sort order: soul bags first, then regular bags 4 down to the backpack", function()
     WoW.SetBags({ [0] = plain(16), [1] = plain(8), [2] = soul(20), [4] = plain(6), [5] = soul(24) })
-    local order = Bags:SortOrder()
-    eq(table.concat(order, ","), "2,5,4,1,0", "order")
+    eq(table.concat(Bags:SortOrder(), ","), "2,5,4,1,0", "order")
 end)
 
 test("a special bag that is not a soul bag is left out", function()
@@ -29,11 +27,13 @@ test("a special bag that is not a soul bag is left out", function()
     eq(table.concat(Bags:SortOrder(), ","), "0", "herb bag skipped")
 end)
 
-test("SoulBags lists equipped soul bags ascending", function()
+test("SoulBags lists equipped soul bags ascending; HasSoulBag follows", function()
     WoW.SetBags({ [0] = plain(16), [1] = soul(20), [3] = plain(8), [5] = soul(24) })
     eq(table.concat(Bags:SoulBags(), ","), "1,5", "ids ascending")
+    eq(Bags:HasSoulBag(), true, "has one")
     WoW.SetBags({ [0] = plain(16) })
     eq(#Bags:SoulBags(), 0, "none")
+    eq(Bags:HasSoulBag(), false, "has none")
 end)
 
 test("soul bag slots total", function()

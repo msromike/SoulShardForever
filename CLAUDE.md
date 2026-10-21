@@ -14,7 +14,8 @@ never reach around it.
 Named list: every Ace3 package (AceAddon, AceEvent, AceTimer, AceBucket, AceHook, AceDB,
 AceDBOptions, AceConsole, AceLocale, AceGUI, AceConfig with AceConfigCmd, AceConfigDialog
 and AceConfigRegistry, AceTab, AceComm, AceSerializer) plus LibStub, CallbackHandler,
-LibDataBroker, LibDBIcon, LibSharedMedia, LibCustomGlow.
+LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
+(AceGUI-3.0-SharedMediaWidgets), LibCustomGlow.
 
 - A lib on the list that is not yet embedded is still on the list: embed it (Libs\,
   embeds.xml) and use it. Size of the job does not matter; a three-line hook uses AceHook.
@@ -31,9 +32,10 @@ LibDataBroker, LibDBIcon, LibSharedMedia, LibCustomGlow.
 - The stock Frame container is the window base: dialog-box art, resize disabled through
   its public EnableResize. Nothing styled like a different UI kit.
 - Reading a library's internals (an AceGUI widget's label, frame or children, an
-  AceConfigDialog field) is allowed only where no public API exists, only in Widgets\ and
-  the Window and Tooltip modules, and every such field is named in that file's header
-  under "Lib internals" with what breaks when it moves. Libraries change only through a
+  AceConfigDialog field, AceDB's key for the character) is allowed only where no public
+  API exists, only in Widgets\, the Window and Tooltip modules and Core's profile-key
+  migration, and every such field is named in that file's header under "Lib internals"
+  with what breaks when it moves. Libraries change only through a
   deliberate bump (below), so those lines can only break on a day someone tests them.
 
 ## Rule 2: one job per file

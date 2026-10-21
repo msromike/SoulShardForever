@@ -17,14 +17,17 @@
 -- the volume goes into profile.pauseSoundVolume. (A fifth level, 0.06, was too faint to
 -- be useful and was dropped in 1.8.1.)
 --
+-- Channel: an LSM file plays on SFX; an own sound kit plays with C_Sound's default
+-- sub-type, as tested in game.
+--
 -- Public:  Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
 --            LSM no longer knows (a sound pack removed) falls back to the default.
 --          PlayPause() -- the pause sound at the saved level (profile.pauseSoundName,
 --            pauseSoundVolume): every paused press and the options previews.
---          LevelKeys() -> the keys in dropdown order; LevelVolume(key) -> volume;
---          LevelKey(volume) -> key ("full" for an unknown volume); IsLevel(volume).
--- Channel: an LSM file plays on SFX; an own sound kit plays with C_Sound's default
---          sub-type, as tested in game.
+--          DefaultName() -> the default sound's LSM name (Core's profile default).
+--          LevelKeys() -> the keys in dropdown order; LevelVolume(key) -> volume ("full"
+--            for an unknown key); LevelKey(volume) -> key ("full" for an unknown volume);
+--            IsLevel(volume) -> bool.
 -- Reads:   profile.pauseSoundName, pauseSoundVolume. Owns no state, no events, no frames.
 -- Touches nothing else.
 
@@ -45,6 +48,15 @@ local LEVELS = {
     { key = "quiet", volume = 0.12 },
 }
 
+-- the level with this volume, or nil
+local function LevelOf(volume)
+    for _, level in ipairs(LEVELS) do
+        if level.volume == volume then return level end
+    end
+end
+
+function Sounds:DefaultName() return DEFAULT end
+
 function Sounds:LevelKeys()
     local keys = {}
     for i, level in ipairs(LEVELS) do keys[i] = level.key end
@@ -55,21 +67,16 @@ function Sounds:LevelVolume(key)
     for _, level in ipairs(LEVELS) do
         if level.key == key then return level.volume end
     end
-    return 1
+    return LEVELS[1].volume
 end
 
 function Sounds:LevelKey(volume)
-    for _, level in ipairs(LEVELS) do
-        if level.volume == volume then return level.key end
-    end
-    return "full"
+    local level = LevelOf(volume)
+    return level and level.key or LEVELS[1].key
 end
 
 function Sounds:IsLevel(volume)
-    for _, level in ipairs(LEVELS) do
-        if level.volume == volume then return true end
-    end
-    return false
+    return LevelOf(volume) ~= nil
 end
 
 -- Setup in OnEnable, as every module: the warlock gate leaves it unregistered elsewhere.

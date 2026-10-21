@@ -1,26 +1,29 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- SSFStepperSlider: an AceGUI widget. The stock AceGUI Slider with a "-" button and a "+"
--- button framing the value box under the bar, for fine tuning after a rough slide.
--- Used from the options table as `dialogControl = "SSFStepperSlider"` on a range entry, so
--- AceConfigDialog drives it exactly like a Slider: SetLabel, SetSliderValues, SetIsPercent,
--- SetValue, SetDisabled, and the OnValueChanged / OnMouseUp / OnEnter / OnLeave callbacks.
+-- SSFStepperSlider: the stock AceGUI Slider with a "-" button and a "+" button framing the
+-- value box under the bar, for fine tuning after a rough slide. Used from the options
+-- table as `dialogControl = "SSFStepperSlider"` on a range entry, so AceConfigDialog
+-- drives it exactly like a Slider: SetLabel, SetSliderValues, SetIsPercent, SetValue,
+-- SetDisabled, and the OnValueChanged / OnMouseUp / OnEnter / OnLeave callbacks.
 -- Built by composition: the real Slider widget fills this one and every call is forwarded.
 -- The Slider keeps the state (value, min, max, step, disabled); nothing is copied here.
--- A "-" or "+" press sets the Slider's own bar, so the stock widget rounds to the step,
--- updates its text and fires OnValueChanged; then OnMouseUp fires as the stock value box
--- does on Enter, so AceConfigDialog refreshes.
+-- A "-" or "+" press runs the stock wheel handler one notch, which clamps, rounds to the
+-- step, updates the text and fires OnValueChanged; then OnMouseUp fires as the stock value
+-- box does on Enter, so AceConfigDialog refreshes.
 -- The label is left-justified (the stock Slider centers it), so it lines up with the
 -- dropdown labels and checkboxes in the window.
-
--- MinWidth(): the narrowest it stays usable, its label on one line or the "-", box, "+" row,
--- whichever is wider (SSFFrame:FitWidth sizes the window to it).
 --
--- Lib internals: the stock Slider's label, editbox, slider, frame and its value, min, max,
---          step and disabled fields. An AceGUI bump that renames those breaks the steppers.
--- Reads:   nothing of SSF's. Touches nothing else.
+-- Public:  the Slider's: SetLabel, SetSliderValues, SetIsPercent, SetValue, GetValue,
+--          SetDisabled; MinWidth() -> the narrowest it stays usable, its label on one line
+--          or the "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window
+--          to it).
+-- Lib internals: the stock Slider's label, editbox, slider, frame and alignoffset fields,
+--          its min, max, step and disabled fields, and its OnMouseWheel script. An AceGUI
+--          bump that renames those breaks the steppers.
+-- Reads:   nothing of SSF's.
+-- Touches nothing else.
 
-local Type, Version = "SSFStepperSlider", 4
+local Type, Version = "SSFStepperSlider", 5
 local AceGUI = LibStub("AceGUI-3.0")
 
 local BUTTON = 20      -- +/- button size
@@ -28,24 +31,21 @@ local VALUE_GAP = 5    -- px between the bar and the value row
 local GAP = 4          -- between a button and the value box
 local VALUE_BOX = 44   -- the value box: room for three digits
 
+-- one notch of the stock wheel handler (+1 or -1), then the release the value box fires
 local function Step(self, dir)
     local inner = self.inner
     if inner.disabled then return end
-    local value = math.min(inner.max, math.max(inner.min, inner:GetValue() + dir * inner.step))
-    if value == inner:GetValue() then return end
-    inner.slider:SetValue(value)    -- the stock Slider rounds, fires OnValueChanged (forwarded below)
-    self:Fire("OnMouseUp", value)   -- as the stock value box does on Enter: AceConfigDialog refreshes
+    local before = inner:GetValue()
+    inner.slider:GetScript("OnMouseWheel")(inner.slider, dir)
+    if inner:GetValue() ~= before then self:Fire("OnMouseUp", inner:GetValue()) end
 end
 
 local methods = {
     ["OnAcquire"] = function(self)
+        self.inner:OnAcquire() -- the stock reset: size, enabled, 0-100 by 1, value 0, wheel off
         self:SetWidth(200)
         self:SetHeight(44 + VALUE_GAP)
         self.inner.label:SetJustifyH("LEFT")
-        self:SetDisabled(false)
-        self:SetIsPercent(nil)
-        self:SetSliderValues(0, 100, 1)
-        self:SetValue(0)
     end,
 
     ["SetDisabled"] = function(self, disabled)
@@ -76,7 +76,7 @@ local function Constructor()
     local frame = CreateFrame("Frame", nil, UIParent)
     frame:EnableMouse(true)
 
-    local widget = { frame = frame, type = Type, alignoffset = 25 }
+    local widget = { frame = frame, type = Type }
 
     -- the real slider fills the widget
     local inner = AceGUI:Create("Slider")
@@ -85,6 +85,7 @@ local function Constructor()
     inner.frame:SetAllPoints(frame)
     inner.frame:Show()
     widget.inner = inner
+    widget.alignoffset = inner.alignoffset -- the Flow layout aligns this row as it does a Slider
 
     inner:SetCallback("OnValueChanged", function(_, _, value) widget:Fire("OnValueChanged", value) end)
     inner:SetCallback("OnMouseUp", function(_, _, value) widget:Fire("OnMouseUp", value) end)

@@ -1,28 +1,33 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Status: the one wording for every number SSF shows, and the lines that print at login.
--- Chat, the window's top line and the minimap tooltip all build from these, so a change
--- here changes them all.
---   CountValue(count) -> "N" in its state color (Cap:State, Colors), always: only the bag
---     number follows the colorize option.
---   CapText(count, cap) -> "N (cap M)", the broker text; the cap in the value white.
---   StatusText(count, cap) -> "Soul Shards: N (cap M)", chat (a bare /ssf, the login
---     lines, the announce line, the paused-press line). Both arguments are optional: the
---     Trimmer passes the count it knows right after a delete, when the bags still show the
---     deleted shard until the server confirms.
---   CountText() -> "Soul Shards: N", the window's top line (its cap is the slider below).
---   CapValue() -> the cap, in the value white.
---   LowMarkValue() -> the saved low mark, in the value white.
---   PausedValue() -> red "Yes" while paused, green "No" otherwise.
---   PauseText() -> "SSF paused: Yes/No", the one pause wording in chat (a bare /ssf, the
---     login lines, the /ssf pause echo and the pause key binding).
---   PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
--- Login and reload: the version line at enable, then both status lines once.
+-- Status: the one wording for every number SSF shows and every status line it prints.
+-- Chat, the window's top line, the minimap text and tooltip all build from these, so a
+-- change here changes them all. Login and reload: the version line at enable, then the
+-- two status lines once.
 --
+-- Public:  CountValue(count) -> "N" in its state color (Cap:State, Colors), always: only
+--            the bag number follows the colorize option. count defaults to the bags.
+--          CapText(count, cap) -> "N (cap M)", the broker text; the cap in the value white.
+--          StatusText(count, cap) -> "Soul Shards: N (cap M)", chat (a bare /ssf, the login
+--            lines, the announce line, the paused-press line). Both arguments optional:
+--            the Trimmer passes the count it knows right after a delete, when the bags
+--            still show the deleted shard until the server confirms.
+--          CountText() -> "Soul Shards: N", the window's top line (its cap is the slider).
+--          InBagsText(count) -> "(in bags: N)", the cap command's echo tail.
+--          CapValue() -> the cap, in the value white.
+--          LowMarkValue() -> the saved low mark, in the value white.
+--          PausedValue() -> red "Yes" while paused, green "No" otherwise.
+--          PauseText() -> "SSF paused: Yes/No", the one pause wording in chat (a bare
+--            /ssf, the login lines, the /ssf pause echo and the pause key binding).
+--          PausedPressText() -> "All SSF actions paused. Soul Shards: N (cap M)", a
+--            paused press with the chat log on.
+--          DeletedText(count, cap) -> "Deleted a Soul Shard. Soul Shards: N (cap M)", the
+--            announce line.
+--          PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
 -- Listens: PLAYER_ENTERING_WORLD (once), BAG_UPDATE_DELAYED (fresh login only: the bags
 --          are not readable yet when the world is entered; tested, it counted 0).
--- Reads:   Bags:Count(), Cap:Get/State, Colors; profile.lowMark, paused;
---          SSF.VERSION.
+-- Reads:   Bags:Count(), Cap:Get/State, Colors; profile.lowMark, paused; SSF.VERSION,
+--          SSF.AUTHOR.
 -- Touches nothing else.
 
 local ADDON = ...
@@ -32,15 +37,15 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 local function Colors() return SSF:GetModule("Colors") end
 local function Cap() return SSF:GetModule("Cap") end
+local function Count() return SSF:GetModule("Bags"):Count() end
 
 function Status:CountValue(count)
-    count = count or SSF:GetModule("Bags"):Count()
-    local _, _, _, hex = Colors():ForState(Cap():State(count))
-    return "|cff" .. hex .. count .. "|r"
+    count = count or Count()
+    return Colors():PaintState(Cap():State(count), count)
 end
 
 function Status:CapText(count, cap)
-    count, cap = count or SSF:GetModule("Bags"):Count(), cap or Cap():Get()
+    count, cap = count or Count(), cap or Cap():Get()
     return L["%s (cap %s)"]:format(self:CountValue(count), Colors():Value(cap))
 end
 
@@ -50,6 +55,10 @@ end
 
 function Status:CountText()
     return L["Soul Shards: %s"]:format(self:CountValue())
+end
+
+function Status:InBagsText(count)
+    return L["(in bags: %s)"]:format(Colors():Value(count or Count()))
 end
 
 function Status:CapValue()
@@ -71,6 +80,14 @@ function Status:PauseText()
     return L["SSF paused"] .. ": " .. self:PausedValue()
 end
 
+function Status:PausedPressText()
+    return L["All SSF actions paused"] .. ". " .. self:StatusText()
+end
+
+function Status:DeletedText(count, cap)
+    return L["Deleted a Soul Shard."] .. " " .. self:StatusText(count, cap)
+end
+
 function Status:PrintStatus()
     SSF:Print(self:PauseText())
     SSF:Print(self:StatusText())
@@ -80,7 +97,7 @@ end
 -- before OnEnable, so other classes never get the lines.
 function Status:OnEnable()
     SSF:Printf(L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."],
-        SSF.VERSION, Colors():Accent("msromike"))
+        SSF.VERSION, Colors():Accent(SSF.AUTHOR))
     self:RegisterEvent("PLAYER_ENTERING_WORLD")
 end
 

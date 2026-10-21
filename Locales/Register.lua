@@ -1,17 +1,17 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Register: the one place a locale file hands in its strings. Loads before every locale.
+-- Feeds AceLocale as a stock addon would, so with Language = Auto nothing differs from
+-- plain AceLocale: the client's locale over the default. Keeps every locale's table too,
+-- so the Language setting (Core:ApplyLanguage) can switch the live table at runtime;
+-- AceLocale alone would drop every locale but the client's at load.
 --
--- Takes:   NS.RegisterLocale(code, nativeName, strings, isDefault) from each Locales\*.lua,
---          where strings is a plain table of L["English key"] = "translation" (the default
---          locale uses `true`, meaning the key is the string).
--- Keeps:   NS.locales[code] = { name = nativeName, strings = strings } for every locale,
---          and NS.localeOrder, the codes in load order. The Language setting
---          (Core:ApplyLanguage) switches the live table from these at runtime; AceLocale
---          alone would drop every locale but the client's at load.
--- Feeds:   AceLocale as a stock addon would, so with Language = Auto nothing differs from
---          plain AceLocale: the client's locale over the default.
--- Owns no state beyond those two tables, no events, no frames.
+-- Public:  NS.RegisterLocale(code, nativeName, strings, isDefault), called by each
+--            Locales\*.lua, where strings is a plain table of L["English key"] =
+--            "translation" (the default locale uses `true`, meaning the key is the string).
+--          NS.locales[code] = { name = nativeName, strings = strings } for every locale.
+--          NS.localeOrder, the codes in load order (Options' Language list).
+-- Owns no state beyond those two tables, no events, no frames. Touches nothing else.
 
 local ADDON, NS = ...
 

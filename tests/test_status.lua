@@ -2,10 +2,11 @@
 --
 -- test_status: the one wording for the numbers, with its color codes, as chat, the window
 -- and the minimap tooltip all build from it. Color codes are checked by their hex.
+-- Touches nothing else.
 
+local SHARD = SSF.SHARD_ITEM_ID
 local Status = SSF:GetModule("Status")
 local profile = SSF.db.profile
-local SHARD = 6265
 
 local function plain(text) return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) end
 
@@ -29,12 +30,13 @@ test("the count carries its state color, the cap the value white", function()
     ok(Status:CapText(5, 8):find("|cffffffff8|r", 1, true), "the cap is white")
 end)
 
-test("CountValue with no count reads the bags", function()
-    WoW.SetBags({ [0] = { slots = 16, family = 0, items = { [1] = SHARD, [3] = SHARD } } })
+test("CountValue, CountText and InBagsText with no count read the bags", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [3] = SHARD }) })
     profile.maxShards = 8
     profile.lowMark = 4
     eq(plain(Status:CountValue()), "2", "two shards in the fake bags")
     eq(plain(Status:CountText()), "Soul Shards: 2", "window top line")
+    eq(plain(Status:InBagsText()), "(in bags: 2)", "the cap command's echo tail")
 end)
 
 test("LowMarkValue is the saved mark", function()
@@ -54,4 +56,12 @@ test("PausedValue and PauseText", function()
     profile.paused = false
     eq(plain(Status:PauseText()), "SSF paused: No", "running")
     ok(Status:PausedValue():find("|cff00ff00", 1, true), "No in green")
+end)
+
+test("the two press lines wrap StatusText", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [3] = SHARD }) })
+    profile.maxShards = 8
+    profile.lowMark = 4
+    eq(plain(Status:PausedPressText()), "All SSF actions paused. Soul Shards: 2 (cap 8)", "paused press")
+    eq(plain(Status:DeletedText(1, 8)), "Deleted a Soul Shard. Soul Shards: 1 (cap 8)", "announce, with the press's count")
 end)

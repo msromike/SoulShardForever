@@ -21,7 +21,7 @@ read_globals = {
     -- libraries
     "LibStub",
     -- WoW Lua extensions
-    "wipe", "tinsert", "strtrim", "bit", "hooksecurefunc",
+    "wipe", "tinsert", "strtrim", "bit",
     -- frames and UI globals
     "CreateFrame", "UIParent", "GameTooltip", "UISpecialFrames", "UIErrorsFrame",
     "GameFontNormal", "GameFontNormalLarge",

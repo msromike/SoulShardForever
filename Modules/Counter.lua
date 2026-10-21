@@ -17,7 +17,7 @@
 -- button face with a margin; the button is the bound. Colored on the one state scale
 -- (Cap:State, Colors:ForState) when "Colorize" is on; white when off.
 --
--- Public:  Anchor() -> button, onSoulBag; SoulBagButton(); Refresh().
+-- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED.
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
 -- Reads:   Bags:Count(), Bags:SoulBags(), Cap:State(), Colors; profile.counter,
@@ -43,7 +43,7 @@ end
 
 -- The first equipped soul bag's button, if it is shown: the reagent slot first, then bag 4
 -- down to bag 1 (Bags:SoulBags walked backwards). Nil when there is none.
-function Counter:SoulBagButton()
+local function SoulBagButton()
     local soulBags = SSF:GetModule("Bags"):SoulBags()
     for i = #soulBags, 1, -1 do
         local button = BagButton(soulBags[i])
@@ -54,10 +54,10 @@ end
 -- The button the counter (and LowGlow) sits on, and true when it is a soul bag's button.
 -- A soul bag only while the counter and "Show on soul bag" are both on; otherwise the
 -- far-left bag button, or the backpack when the bag bar is collapsed.
-function Counter:Anchor()
+local function Anchor()
     local p = SSF.db.profile
     if p.counter and p.counterSoulBag then
-        local soulBag = self:SoulBagButton()
+        local soulBag = SoulBagButton()
         if soulBag then return soulBag, true end
     end
     local farLeft = CharacterBag3Slot
@@ -72,7 +72,7 @@ end
 
 -- Hides the game's own number on `button` (a soul bag button the counter sits on), and
 -- gives back the one hidden before if it was on another button. Nil gives it back only.
-function Counter:HideGameCount(button)
+local function HideGameCount(self, button)
     local text = GameCount(button)
     if self.hiddenCount and self.hiddenCount ~= text then
         self.hiddenCount:SetAlpha(1)
@@ -86,7 +86,7 @@ end
 
 -- Sets the number in the profile font at MAX_SIZE (the FontString needs a font before any
 -- text), then steps the size down until it fits inside the button face with the margin.
-function Counter:Fit(parent, count)
+local function Fit(self, parent, count)
     local font = LSM:Fetch("font", SSF.db.profile.counterFont)
     local size = MAX_SIZE
     local maxW, maxH = parent:GetWidth() - MARGIN * 2, parent:GetHeight() - MARGIN * 2
@@ -102,14 +102,14 @@ function Counter:Refresh()
     local p = SSF.db.profile
     local count = SSF:GetModule("Bags"):Count()
     if not p.counter then
-        self:HideGameCount(nil) -- count off: the game's number is always back
+        HideGameCount(self, nil) -- count off: the game's number is always back
         if self.text then self.text:Hide() end
         self:SendMessage("SSF_COUNTER_UPDATED", nil, count)
         return
     end
-    local parent, onSoulBag = self:Anchor()
+    local parent, onSoulBag = Anchor()
     -- only a soul bag button loses the game's number; bag 4 and the backpack keep theirs
-    self:HideGameCount(onSoulBag and parent or nil)
+    HideGameCount(self, onSoulBag and parent or nil)
     if not parent then
         self:SendMessage("SSF_COUNTER_UPDATED", nil, count)
         return
@@ -123,7 +123,7 @@ function Counter:Refresh()
     self.text:ClearAllPoints()
     self.text:SetPoint("CENTER", parent, "CENTER", 0, 0)
 
-    self:Fit(parent, count)
+    Fit(self, parent, count)
     -- the one place the colorize option applies
     local Colors = SSF:GetModule("Colors")
     local r, g, b = Colors.WHITE[1], Colors.WHITE[2], Colors.WHITE[3]

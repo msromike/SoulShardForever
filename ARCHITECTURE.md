@@ -7,11 +7,13 @@ here is missing from the headers or the code, not from this file.
 
 ## Files, in load order
 
-Widgets (custom AceGUI widgets, used from the options table through dialogControl):
+Widgets (custom AceGUI widgets, used from the options table through dialogControl, or
+created by Window and by each other):
 
-- Widgets\SSFStepperSlider.lua: an AceGUI widget.
+- Widgets\SSFStepperSlider.lua: the stock AceGUI Slider with a "-" button and a "+" button framing the value box under the bar, for fine tuning after a rough slide.
+- Widgets\SSFSideNote.lua: the note beside the options window's top-right corner (the first-load welcome).
 - Widgets\SSFFrame.lua: SSF's options window, an extension of AceGUI's stock Frame container.
-- Widgets\SSFCentered.lua: Five AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.
+- Widgets\SSFCentered.lua: three AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.
 
 Core and modules:
 
@@ -22,11 +24,11 @@ Core and modules:
 - Modules\Cap.lua: the thresholds.
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
 - Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
-- Modules\Trimmer.lua: Delete() is the press.
+- Modules\Trimmer.lua: the delete press.
 - Modules\DeleteButton.lua: the global button "SSFDelete".
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
 - Modules\Options.lua: the one settings table and the /ssf command.
-- Modules\Status.lua: the one wording for every number SSF shows, and the lines that print at login.
+- Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
 - Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
 - Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the two recommended macros, then what the Bane macro is for and its warning.
@@ -48,7 +50,7 @@ Locales:
 |---|---|---|---|
 | SSF_BAGS_CHANGED | Bags | Broker, Cap, Counter, Sorter, Window |  |
 | SSF_CAP_CHANGED | Cap | Broker, Counter | now |
-| SSF_COUNTER_UPDATED | Counter | LowGlow | nil, count |
+| SSF_COUNTER_UPDATED | Counter | LowGlow | parent, count |
 | SSF_MACROS_CHANGED | Macros | Window |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
@@ -70,17 +72,8 @@ Locales:
 | Window | PLAYER_REGEN_DISABLED |
 | Welcome | LOADING_SCREEN_DISABLED |
 
-## Shared state
+## Shared state and exceptions
 
-- The AceDB profile (SSF.db.profile) is the one shared state. Any module may read it.
-  Only the module that owns a rule derives it: the low mark in use is Cap:LowMark(),
-  not min(profile.lowMark, cap) written again.
-- NS, the addon-private namespace every file receives, carries the locale tables and
-  the shared constants Core sets (SSF.SHARD_ITEM_ID, SSF.ICON on the addon object).
-
-## Raw-frame exceptions (the only three)
-
-- DeleteButton: a named CreateFrame, because /click resolves a global name.
-- Counter: a FontString on a Blizzard bag button, because nothing in Ace draws there.
-- Window: the title strip behind each option group, because AceConfigDialog hardcodes
-  the InlineGroup widget.
+See CLAUDE.md: the AceDB profile is the one shared state (any module may read it, only
+its owner derives a rule from it), NS is the addon-private namespace, and the three raw
+frames and the library-internals rule are listed there with their reasons.

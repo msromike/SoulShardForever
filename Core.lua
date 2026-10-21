@@ -1,21 +1,27 @@
--- Soul Shards Forever (SSF): a Soul Shard cap for warlocks on WoW Forever.
--- Started as a fork of SoulSort by Anilusion; rewritten from scratch on Ace3 for Forever
--- only. No original code remains. MIT, see LICENSE.
---
--- The standard every file follows is CLAUDE.md at the addon root; the map of files and
--- messages is ARCHITECTURE.md.
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Core: the addon object, the warlock gate, the saved settings (the AceDB profile, its
 -- defaults and the migrations of old values), the Language switch (ApplyLanguage) and the
 -- shared constants on the addon object. Nothing else. The work is in the modules under
--- Modules\.
+-- Modules\. SSF started as a fork of SoulSort by Anilusion and was rewritten from scratch
+-- on Ace3 for Forever only; no original code remains. The standard every file follows is
+-- CLAUDE.md at the addon root; the map of files and messages is ARCHITECTURE.md.
 --
--- Public:  SSF.SHARD_ITEM_ID, SSF.ICON, SSF.VERSION (the toc version), SSF.db (AceDB),
---          SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
+-- Public:  SSF.SHARD_ITEM_ID, SSF.ICON, SSF.VERSION and SSF.AUTHOR (from the toc), SSF.db
+--          (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
+-- Lib internals: db.keys.char (AceDB's key for this character) and the raw
+--          SoulShardForeverDB.profileKeys table, both only in the profile-key migration.
+--          An AceDB bump that renames them makes the migration a no-op: a character on the
+--          new key starts a fresh profile, nothing worse.
 -- Reads:   NS.locales from Locales\Register.lua; KeyBindings:ApplyLabels(),
---          Sounds:IsLevel() for a migration; the raw SoulShardForeverDB profile keys
---          before AceDB opens it (the profile-key migration).
--- Saves:   the whole profile's defaults; migrations below.
+--          Sounds:DefaultName/LevelVolume/LevelKey for the defaults and a migration.
+-- Saves:   every profile key's default; the migrations: profile.window.open (dropped in
+--          1.8), profile.pauseSoundVolume (a dropped level goes back to full, 1.8.1), and
+--          the one-time copy of a 1.8.1 profile key into the AceDB 39 key (1.8.2).
+-- Exceptions: ApplyLanguage rewrites the AceLocale table in place, repeating AceLocale's
+--          two rules (enGB is enUS; a `true` value means the key is the string). AceLocale
+--          has no runtime switch: NewLocale refuses any locale but the client's, so the
+--          Language setting can only be done by writing into the table every module holds.
 -- Touches nothing else.
 
 local ADDON, NS = ... -- NS: the addon-private table; Locales\Register.lua fills NS.locales
@@ -26,40 +32,46 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 SSF.SHARD_ITEM_ID = 6265
 SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
 SSF.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
+SSF.AUTHOR = C_AddOns.GetAddOnMetadata(ADDON, "Author") or "?"
 
-local defaults = {
-    profile = {
-        maxShards = 8,              -- the cap while autoMax is off (1-100)
-        autoMax = false,            -- cap follows the soul bags' slot total
-        counter = true,             -- number on the far-left bag button
-        counterSoulBag = true,      -- under counter: the number sits on a soul bag while one is equipped
-        counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
-        counterColorize = true,       -- grey at zero, green in range, yellow over the cap; off = white
-        lowGlow = true,               -- glow the bag button while shards are below the low mark
-        lowMark = 4,                  -- the low mark (1-100, the cap's range)
-        soulsortLegacy = false,     -- sort like SoulSort: shards swap with other items
-        soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
-        announce = false,           -- one chat line per deletion
-        paused = false,             -- a press neither moves nor deletes
-        pauseSound = false,         -- while paused, a press that would have deleted plays a sound
-        pauseLog = false,           -- ... and prints a chat line
-        pauseSoundName = "SSF: Bag thunk", -- LibSharedMedia sound name (Sounds module)
-        pauseSoundVolume = 1,       -- 0-1; applies to SSF's own sounds only (Sounds module)
-        minimap = { hide = false }, -- LibDBIcon state
-        welcomed = false,           -- the welcome version this character last saw at load (Welcome)
-        macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
-        window = {},                -- options window position: top, left (set after a drag)
-        -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
-        -- 1-100 is what the slider allows; any other value is clamped by Cap.
-    },
-}
+-- Built at OnInitialize, when every module is loaded: the two sound values are Sounds'.
+-- Each key's comment says what the key means; the rule it feeds is in the module named.
+local function Defaults()
+    local Sounds = SSF:GetModule("Sounds")
+    return {
+        profile = {
+            maxShards = 8,              -- the cap while autoMax is off (Cap clamps to MIN-MAX)
+            autoMax = false,            -- cap follows the soul bags' slot total (Cap)
+            counter = true,             -- the number on a bag button (Counter)
+            counterSoulBag = true,      -- under counter: the number sits on a soul bag while one is equipped
+            counterFont = "Arial Narrow", -- LibSharedMedia font name (NumberFontNormal's face); size auto-fits
+            counterColorize = true,     -- the number in the state color (Colors); off = white
+            lowGlow = true,             -- glow the bag button while the count is low (LowGlow)
+            lowMark = 4,                -- the low mark; Cap holds the mark in use to the cap
+            soulsortLegacy = false,     -- sort like SoulSort: shards swap with other items (Sorter)
+            soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
+            announce = false,           -- one chat line per deletion (Trimmer)
+            paused = false,             -- a press neither moves nor deletes
+            pauseSound = false,         -- while paused, a press that would have deleted plays a sound
+            pauseLog = false,           -- ... and prints a chat line
+            pauseSoundName = Sounds:DefaultName(),     -- LibSharedMedia sound name (Sounds)
+            pauseSoundVolume = Sounds:LevelVolume("full"), -- 0-1; SSF's own sounds only (Sounds)
+            minimap = { hide = false }, -- LibDBIcon state
+            welcomed = false,           -- the welcome version this character last saw at load (Welcome)
+            macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
+            window = {},                -- options window position: top, left (set after a drag)
+            -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
+        },
+    }
+end
 
 -- Old saved values that no longer mean anything, fixed once at load. Each line names the
 -- release that dropped the value.
 local function Migrate(p)
     p.window.open = nil -- 1.8: a reopen-after-reload try that was dropped
-    -- 1.8.1: a saved volume that is no longer a level (the dropped Faint) goes back to Full
-    if not SSF:GetModule("Sounds"):IsLevel(p.pauseSoundVolume) then p.pauseSoundVolume = 1 end
+    -- 1.8.1: a saved volume that is no longer a level (the dropped Faint) goes back to full
+    local Sounds = SSF:GetModule("Sounds")
+    p.pauseSoundVolume = Sounds:LevelVolume(Sounds:LevelKey(p.pauseSoundVolume))
 end
 
 -- 1.8.2: the AceDB in this release names a character "Name Surname" on Forever, where the
@@ -77,7 +89,7 @@ end
 
 local function MigrateProfileKey(db, known)
     local char = db.keys.char
-    if known[char] or db.keys.profile ~= char then return end -- had one, or picked one by hand
+    if known[char] or db:GetCurrentProfile() ~= char then return end -- had one, or picked one by hand
     local name = char:match("^(%S+)")
     for _, suffix in ipairs({ "PvE", "PvP", "RP", "Hardcore", GetRealmName() }) do
         local old = name .. " - " .. suffix
@@ -121,7 +133,7 @@ function SSF:OnInitialize()
     end
 
     local known = KnownProfileKeys()
-    self.db = LibStub("AceDB-3.0"):New("SoulShardForeverDB", defaults) -- per-character profiles
+    self.db = LibStub("AceDB-3.0"):New("SoulShardForeverDB", Defaults()) -- per-character profiles
     MigrateProfileKey(self.db, known)
     Migrate(self.db.profile)
     self:ApplyLanguage() -- before any module's OnEnable reads L

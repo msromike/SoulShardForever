@@ -1,13 +1,12 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_cap: the cap right now, the low mark in use, SetManual and SSF_CAP_CHANGED.
+-- test_cap: the cap right now, the low mark in use, State, IsFull, SetManual and
+-- SSF_CAP_CHANGED.
+-- Touches nothing else.
 
-local SHARD = 6265
 local Cap = SSF:GetModule("Cap")
 local profile = SSF.db.profile
-
-local function soul(slots) return { slots = slots, family = 1, items = {} } end
-local function plain(slots) return { slots = slots, family = 0, items = {} } end
+local soul, plain = WoW.SoulBag, WoW.PlainBag
 
 test("manual cap is the slider value, clamped to 1-100 and whole", function()
     profile.autoMax = false
@@ -88,6 +87,14 @@ test("State with a mark above the cap: over wins while unpaused", function()
     eq(Cap:State(5), "low", "5 < 8 (the mark in use is the cap)")
     eq(Cap:State(8), "ok", "at the cap")
     profile.lowMark = 4
+end)
+
+test("IsFull: at or over the cap", function()
+    profile.autoMax = false
+    profile.maxShards = 8
+    eq(Cap:IsFull(7), false, "under")
+    eq(Cap:IsFull(8), true, "at")
+    eq(Cap:IsFull(9), true, "over")
 end)
 
 test("State ignores pause", function()

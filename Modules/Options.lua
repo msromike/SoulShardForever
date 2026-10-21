@@ -6,8 +6,6 @@
 -- Options entry, AceTab
 -- completes the command words. Keys are the slash words; GUI-only entries carry cmdHidden.
 -- Modules that show state (Counter, Broker, Window) listen for SSF_OPTIONS_CHANGED.
--- Reads Cap (range, state), Trimmer:WhyNot (the Delete Shard button's greyed reason),
--- Sounds (the volume levels, the preview), Status (the text), Colors (the paint).
 --
 -- The window's layout and life cycle are in Modules\Window.lua.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
@@ -38,17 +36,17 @@
 -- run before every cast), then hands the rest to AceConfigCmd.
 --
 -- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
---          Options.table (the built table, read by CommandWords for tab completion).
+--          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
--- Reads:   Settings:Define/TabUsage, Cap, Bags:Count/SoulBagSlots, Trimmer:WhyNot,
---          Sounds (levels, PlayPause), Status:CountText/PrintStatus, Colors, DeleteHelp:Text,
---          Window:Open, Trimmer:Delete; NS.locales and NS.localeOrder (the Language list);
---          every profile key it shows.
+-- Reads:   Settings:Define/TabUsage, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
+--          Bags:Count/HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
+--          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
+--          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
+--          list); every profile key it shows.
 -- Saves:   every profile key it shows, through its setters.
 -- Touches nothing else.
 
 local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list
-local APP = "SSF"                -- the AceConfig app: every line AceConfigCmd prints is prefixed with it
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceTimer-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
@@ -58,11 +56,19 @@ local AceConfigCmd = LibStub("AceConfigCmd-3.0")
 local AceTab = LibStub("AceTab-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
+Options.APP = "SSF" -- the AceConfig app: every line AceConfigCmd prints is prefixed with it
+local APP = Options.APP
+
 local function Cap() return SSF:GetModule("Cap") end
 local function Bags() return SSF:GetModule("Bags") end
+local function Sounds() return SSF:GetModule("Sounds") end
+local function Status() return SSF:GetModule("Status") end
+local function Colors() return SSF:GetModule("Colors") end
+local function Gold(text) return Colors():Gold(text) end
 
-local function Value(v) return SSF:GetModule("Colors"):Value(v) end
-local function Gold(text) return SSF:GetModule("Colors"):Gold(text) end
+-- the two greyed-out rules the window shares between its controls
+local function NotPaused() return not SSF.db.profile.paused end
+local function CounterOff() return not SSF.db.profile.counter end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
@@ -113,6 +119,12 @@ local function Width(entry, width)
     return entry
 end
 
+-- a blank line between two groups, so the sections stand apart (a plain description entry:
+-- no widget is restyled for the spacing)
+local function Gap(order)
+    return { type = "description", order = order, name = " ", width = "full", cmdHidden = true }
+end
+
 -- The reason under a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
 -- Language change shows at once.
 local BLOCKER_TEXT = {
@@ -130,7 +142,7 @@ local function BuildTable()
         desc = L["Your shard cap. Shards over this number are deleted one per press."],
         min = Cap().MIN, max = Cap().MAX, step = 1,
         get = function() return Cap():Get() end,
-        extra = function() return L["(in bags: %s)"]:format(Value(Bags():Count())) end,
+        extra = function() return Status():InBagsText() end,
         apply = function(value)
             SSF.db.profile.autoMax = false
             Cap():SetManual(value)
@@ -147,8 +159,6 @@ local function BuildTable()
         apply = function(value) SSF.db.profile.announce = value end,
     })
     announceGui.order = 2 -- GUI only: Other is minimap, announce, How shards move, language; the chat order stays
-    announceGui.width = "full"
-    announceGui.dialogControl = "SSFIndentCheckBox"
 
     local pauseGui, pauseCmd = Settings:Define("pause", {
         order = 1, kind = "toggle",
@@ -157,12 +167,30 @@ local function BuildTable()
         get = function() return SSF.db.profile.paused end,
         apply = function(value) SSF.db.profile.paused = value end,
         -- "SSF paused: Yes/No", the pause line a bare /ssf prints, not "name: ON/OFF"
-        echo = function() return SSF:GetModule("Status"):PauseText() end,
+        echo = function() return Status():PauseText() end,
     })
     pauseGui.order = 1 -- GUI only: first in the Pause group
-    pauseGui.width = "full"
-    pauseGui.dialogControl = "SSFIndentCheckBox"
     Options.pauseCmd = pauseCmd -- for TogglePause; replaced on every rebuild
+
+    -- GUI only (no chat command): the cap's own range, since a warlock holding 96 shards
+    -- may want a warning at 40; a mark above the cap is held down to it in use (Cap:LowMark)
+    local lowmarkGui = Settings:Define("lowmark", {
+        order = 1, kind = "range",
+        name = L["Low shard warn"],
+        min = Cap().MIN, max = Cap().MAX, step = 1,
+        get = function() return SSF.db.profile.lowMark end,
+        apply = function(value) SSF.db.profile.lowMark = value end,
+    })
+
+    -- the pause sound's levels, by Sounds' keys, each with its name
+    local LEVEL_LABELS = {
+        full = L["Full volume"], loud = L["Loud"], medium = L["Medium"], quiet = L["Quiet"],
+    }
+    local function LevelValues()
+        local values = {}
+        for _, key in ipairs(Sounds():LevelKeys()) do values[key] = LEVEL_LABELS[key] end
+        return values
+    end
 
     local args = {
         -- the top row: the count, with Delete Shard right after it, so a click and the number
@@ -180,19 +208,14 @@ local function BuildTable()
             desc = SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."]),
             arg = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
-                return SSF:GetModule("Status"):CountText(), why and BLOCKER_TEXT[why]()
+                return Status():CountText(), why and BLOCKER_TEXT[why]()
             end,
             disabled = function() return SSF:GetModule("Trimmer"):WhyNot() ~= nil end,
             func = function() SSF:GetModule("Trimmer"):Delete() end,
         },
 
-        -- a blank line between each pair of groups, so the sections stand apart (plain
-        -- description entries: no widget is restyled for the spacing)
-        gap0 = { type = "description", order = 3, name = " ", width = "full", cmdHidden = true },
-        gap1 = { type = "description", order = 7, name = " ", width = "full", cmdHidden = true },
-        gap2 = { type = "description", order = 15, name = " ", width = "full", cmdHidden = true },
-        gap3 = { type = "description", order = 25, name = " ", width = "full", cmdHidden = true },
-        gap4 = { type = "description", order = 35, name = " ", width = "full", cmdHidden = true },
+        -- a blank line between each pair of groups
+        gap0 = Gap(3), gap1 = Gap(7), gap2 = Gap(15), gap3 = Gap(25), gap4 = Gap(35),
 
         -- keyed pausegroup: "pause" is the chat command's key in this same table
         pausegroup = {
@@ -207,34 +230,27 @@ local function BuildTable()
                     function(_, value)
                         SSF.db.profile.pauseSound = value
                         -- ticking it on plays the sound at the selected level, as a preview
-                        if value then SSF:GetModule("Sounds"):PlayPause() end
+                        if value then Sounds():PlayPause() end
                         changed("pausesound")
                     end,
                     -- not full width, so the checkbox is as wide as its label (SSFIndentCheckBox)
                     -- and the window widens to fit this row (SSFFrame:FitWidth)
-                    function() return not SSF.db.profile.paused end, nil, 2), "normal"),
+                    NotPaused, nil, 2), "normal"),
                 -- on the same row as Play pause sound; picking a level plays the sound at it
                 -- the name titles its tooltip only: the widget never shows a label
                 pausevolume = {
                     type = "select", order = 3, width = "half",
                     cmdHidden = true, descStyle = "hidden", name = L["Volume"],
                     dialogControl = "SSFUnlabeledDropdown", -- Widgets\SSFCentered.lua
-                    values = {
-                        full = L["Full volume"], loud = L["Loud"], medium = L["Medium"],
-                        quiet = L["Quiet"],
-                    },
-                    sorting = SSF:GetModule("Sounds"):LevelKeys(),
-                    get = function() return SSF:GetModule("Sounds"):LevelKey(SSF.db.profile.pauseSoundVolume) end,
+                    values = LevelValues,
+                    sorting = Sounds():LevelKeys(),
+                    get = function() return Sounds():LevelKey(SSF.db.profile.pauseSoundVolume) end,
                     set = function(_, key)
-                        local Sounds = SSF:GetModule("Sounds")
-                        SSF.db.profile.pauseSoundVolume = Sounds:LevelVolume(key)
-                        Sounds:PlayPause()
+                        SSF.db.profile.pauseSoundVolume = Sounds():LevelVolume(key)
+                        Sounds():PlayPause()
                         changed("pausevolume")
                     end,
-                    disabled = function()
-                        local p = SSF.db.profile
-                        return not (p.paused and p.pauseSound)
-                    end,
+                    disabled = function() return NotPaused() or not SSF.db.profile.pauseSound end,
                 },
                 pauselog = Toggle(4, L["Log pause to chat"],
                     function() return SSF.db.profile.pauseLog end,
@@ -242,7 +258,7 @@ local function BuildTable()
                         SSF.db.profile.pauseLog = value
                         changed("pauselog")
                     end,
-                    function() return not SSF.db.profile.paused end, nil, 2),
+                    NotPaused, nil, 2),
             },
         },
 
@@ -253,7 +269,7 @@ local function BuildTable()
                 setmaxGui = setmaxGui,
                 automax = Toggle(2, -- left-aligned like every other checkbox
                     function()
-                        if Bags():SoulBagSlots() > 0 then return L["Match soul bag size"] end
+                        if Bags():HasSoulBag() then return L["Match soul bag size"] end
                         return L["Match soul bag size (no soul bag)"]
                     end,
                     function() return SSF.db.profile.autoMax end,
@@ -262,7 +278,7 @@ local function BuildTable()
                         Cap():Recompute()
                         changed("automax")
                     end,
-                    function() return Bags():SoulBagSlots() == 0 end),
+                    function() return not Bags():HasSoulBag() end),
             },
         },
 
@@ -285,9 +301,8 @@ local function BuildTable()
                         SSF.db.profile.lowGlow = value
                         changed("lowglow")
                     end,
-                    function() return not SSF.db.profile.counter end,
-                    nil, 2),
-                -- the number follows an equipped soul bag (Counter:Anchor); greyed with the
+                    CounterOff, nil, 2),
+                -- the number follows an equipped soul bag (Counter); greyed with the
                 -- count off, but never for a missing soul bag: it waits for one to go on
                 soulbag = Toggle(4, L["Show on soul bag when equipped"],
                     function() return SSF.db.profile.counterSoulBag end,
@@ -295,8 +310,7 @@ local function BuildTable()
                         SSF.db.profile.counterSoulBag = value
                         changed("countersoulbag")
                     end,
-                    function() return not SSF.db.profile.counter end,
-                    nil, 2),
+                    CounterOff, nil, 2),
                 -- glow, colorize and soul bag all hang off the count checkbox, one step in
                 colorize = Toggle(3, L["Colorize bag count"],
                     function() return SSF.db.profile.counterColorize end,
@@ -304,8 +318,7 @@ local function BuildTable()
                         SSF.db.profile.counterColorize = value
                         changed("countercolorize")
                     end,
-                    function() return not SSF.db.profile.counter end,
-                    nil, 2),
+                    CounterOff, nil, 2),
                 -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {
@@ -322,7 +335,7 @@ local function BuildTable()
                         SSF.db.profile.counterFont = value
                         changed("counterfont")
                     end,
-                    disabled = function() return not SSF.db.profile.counter end,
+                    disabled = CounterOff,
                 },
             },
         },
@@ -332,24 +345,7 @@ local function BuildTable()
         glow = {
             type = "group", inline = true, order = 20, cmdHidden = true,
             name = L["Soul shard warning"],
-            args = {
-                lowmark = {
-                    type = "range",
-                    order = 1,
-                    cmdHidden = true,
-                    descStyle = "hidden",
-                    name = L["Low shard warn"],
-                    -- the cap's own range: a warlock holding 96 shards may want a warning at 40
-                    min = Cap().MIN, max = Cap().MAX, step = 1,
-                    width = "full",
-                    dialogControl = "SSFStepperSlider",
-                    get = function() return SSF.db.profile.lowMark end,
-                    set = function(_, value)
-                        SSF.db.profile.lowMark = value
-                        changed("lowmark")
-                    end,
-                },
-            },
+            args = { lowmark = lowmarkGui },
         },
 
         other = {
@@ -483,7 +479,7 @@ local function BuildTable()
             -- the choice's own name: SSF Mode in the state green (the safe pick, it moves
             -- nothing else), the SoulSort ones in neutral gold
             shardmode = L["How a macro or keybind moves shards."] .. " " .. L["Shards move to soul bag."]
-                .. "\n\n" .. bullet .. SSF:GetModule("Colors"):State(L["SSF Mode"] .. ":", true) .. " "
+                .. "\n\n" .. bullet .. Colors():State(L["SSF Mode"] .. ":", true) .. " "
                 .. L["SSF does not sort (does NOT change item positions in bags)."]
                 .. "\n\n" .. bullet .. Gold(L["SoulSort Normal"] .. ":") .. " "
                 .. L["Shards sort top down (CHANGES item positions in your bags)."]
@@ -502,58 +498,61 @@ local function BuildTable()
     return root
 end
 
--- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
--- Core's warlock gate has switched the module off, so /ssf would register on other classes.
--- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete". Only the words
--- AceConfigCmd exposes (root entries without cmdHidden), plus "help".
+-- A chat word: a root entry of the table that AceConfigCmd exposes (not cmdHidden), or
+-- "help". The one test for tab completion and for the handler's unknown-word check.
+local function IsChatWord(word)
+    if word == "help" then return true end
+    local entry = Options.table.args[word]
+    return entry ~= nil and not entry.cmdHidden
+end
+
+-- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete".
 local function CommandWords(words)
-    for key, entry in pairs(Options.table.args) do
-        if not entry.cmdHidden then words[#words + 1] = key end
+    for key in pairs(Options.table.args) do
+        if IsChatWord(key) then words[#words + 1] = key end
     end
     words[#words + 1] = "help"
 end
 
+-- /ssf: naked opens the window (open only, never a toggle) and prints the pause line, the
+-- status line and a pointer to help. "/ssf help" or "/ssf ?" prints AceConfigCmd's command
+-- list. An unknown first word prints one error line, then the list. Anything else goes
+-- straight to AceConfigCmd, which parses and dispatches to the table.
+local function HandleCommand(input)
+    input = strtrim(input or "")
+    local first = (input:match("^(%S+)") or ""):lower()
+    -- WoW's chat never shows the slash command typed, so SSF echoes it in grey after a
+    -- "> " prompt, above its answer, the way a terminal does. Not for "delete": macros run
+    -- it before every cast, and an echo there would flood chat.
+    if first ~= "delete" then
+        SSF:Print(Colors():Echo("> /ssf" .. (input ~= "" and (" " .. input) or "")))
+    end
+    if input == "" then
+        SSF:GetModule("Window"):Open()
+        Status():PrintStatus()
+        SSF:Print(L["Type /ssf help for commands."])
+        return
+    end
+    if first == "help" or first == "?" then
+        AceConfigCmd:HandleCommand("ssf", APP, "")
+        return
+    end
+    if not IsChatWord(first) then
+        SSF:Print(L['Unknown command "%s".']:format(first))
+        AceConfigCmd:HandleCommand("ssf", APP, "")
+        return
+    end
+    AceConfigCmd:HandleCommand("ssf", APP, input)
+end
+
+-- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
+-- Core's warlock gate has switched the module off, so /ssf would register on other classes.
 function Options:OnEnable()
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
-    -- /ssf: naked opens the window (open only, never a toggle) and prints the pause line,
-    -- the status line and a pointer to help.
-    -- "/ssf help" or "/ssf ?" prints AceConfigCmd's command list. An unknown first word
-    -- prints one error line, then the list. Anything else goes straight to AceConfigCmd,
-    -- which parses and dispatches to the table.
-    SSF:RegisterChatCommand("ssf", function(input)
-        input = strtrim(input or "")
-        -- WoW's chat never shows the slash command typed, so SSF echoes it in grey after a
-        -- "> " prompt, above its answer, the way a terminal does. Not for "delete": macros run it before
-        -- every cast, and an echo there would flood chat.
-        local first = (input:match("^(%S+)") or ""):lower()
-        if first ~= "delete" then
-            SSF:Print("|cff808080> /ssf" .. (input ~= "" and (" " .. input) or "") .. "|r")
-        end
-        if input == "" then
-            SSF:GetModule("Window"):Open()
-            SSF:GetModule("Status"):PrintStatus()
-            SSF:Print(L["Type /ssf help for commands."])
-            return
-        end
-        local word = input:match("^(%S+)"):lower()
-        if word == "help" or word == "?" then
-            AceConfigCmd:HandleCommand("ssf", APP, "")
-            return
-        end
-        local entry = Options.table.args[word]
-        if not entry or entry.cmdHidden then
-            SSF:Print(L['Unknown command "%s".']:format(word))
-            AceConfigCmd:HandleCommand("ssf", APP, "")
-            return
-        end
-        AceConfigCmd:HandleCommand("ssf", APP, input)
-    end)
+    SSF:RegisterChatCommand("ssf", HandleCommand)
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
-
     AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, SSF:GetModule("Settings").TabUsage)
-
-
 end
 
 -- After a Language change: the table captured its strings when built, so build it again

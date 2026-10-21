@@ -3,6 +3,7 @@
 -- test_core: the profile-key migration. The runner seeds a saved file with one profile under
 -- the old AceDB 36 key ("Tester - PvE") and the stub makes AceDB 39 key the character
 -- "Tester Hrodbar"; Core must copy the old profile into the new key at OnInitialize.
+-- Touches nothing else.
 
 local initial = WoW.initialProfile
 

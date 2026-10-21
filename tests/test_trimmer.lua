@@ -1,7 +1,9 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share.
+-- Touches nothing else.
 
+local SHARD = SSF.SHARD_ITEM_ID
 local Trimmer = SSF:GetModule("Trimmer")
 local profile = SSF.db.profile
 
@@ -26,8 +28,7 @@ test("WhyNot unpaused: nil over the cap, atcap at it, undercap below", function(
 end)
 
 test("WhyNot with no count reads the bags", function()
-    local SHARD = 6265
-    WoW.SetBags({ [0] = { slots = 16, family = 0, items = { [1] = SHARD, [2] = SHARD } } })
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD }) })
     profile.paused = false
     profile.maxShards = 1
     eq(Trimmer:WhyNot(), nil, "2 shards, cap 1: over")
