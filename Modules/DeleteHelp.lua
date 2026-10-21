@@ -9,7 +9,8 @@
 --            { text } paragraphs and { text, macro = true } macros.
 --          Text(first) -> the same blocks as one string, for the tooltip.
 --          first is an already translated string.
--- Reads:   Macros:Body(key), Macros:SpellName(key). Touches nothing else.
+-- Reads:   Macros:Body(key), Macros:SpellName(key).
+-- Owns no state, no events, no frames. Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local DeleteHelp = SSF:NewModule("DeleteHelp")

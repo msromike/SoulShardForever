@@ -30,6 +30,11 @@ LibDataBroker, LibDBIcon, LibSharedMedia, LibCustomGlow.
   widget).
 - The stock Frame container is the window base: dialog-box art, resize disabled through
   its public EnableResize. Nothing styled like a different UI kit.
+- Reading a library's internals (an AceGUI widget's label, frame or children, an
+  AceConfigDialog field) is allowed only where no public API exists, only in Widgets\ and
+  the Window and Tooltip modules, and every such field is named in that file's header
+  under "Lib internals" with what breaks when it moves. Libraries change only through a
+  deliberate bump (below), so those lines can only break on a day someone tests them.
 
 ## Rule 2: one job per file
 
@@ -38,10 +43,12 @@ LibDataBroker, LibDBIcon, LibSharedMedia, LibCustomGlow.
   helper inline. One job is the test.
 - Every file starts with the header contract, in this order, empty fields omitted:
 
-      Job:        what this file does, in one or two sentences
+      <Name>: what this file does, as the first paragraph (ARCHITECTURE.md reads it)
       Public:     methods other files may call, with their arguments and returns
       Listens:    events and SSF_* messages it handles
+      Hooks:      what it hooks, through AceHook, and when the hook attaches
       Sends:      SSF_* messages it sends and their payload
+      Lib internals: library fields it reads past the public API, and what breaks
       Reads:      which other modules' public methods, and which profile keys
       Saves:      which profile keys it writes
       Exceptions: anything that breaks Rule 1 or 2 on purpose, and why
@@ -54,8 +61,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia, LibCustomGlow.
   shared state and any module may read it; re-deriving another module's rule from it is
   a violation (ask that module).
 - Before writing any helper, grep the addon for the thing it does. Most helpers already
-  exist: bag queries are in Bags, thresholds in Cap, color helpers in Settings, chat
-  wording in Status. ARCHITECTURE.md lists the rest.
+  exist: bag queries are in Bags, thresholds in Cap, colors in Colors, chat and tooltip
+  wording in Status, tooltips in Tooltip, the volume levels in Sounds. ARCHITECTURE.md lists
+  the rest.
 - A new job gets a new file, named for the job, with its header written before its code,
   and a line in ARCHITECTURE.md in the same commit.
 

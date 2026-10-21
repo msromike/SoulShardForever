@@ -15,6 +15,10 @@
 
 -- MinWidth(): the narrowest it stays usable, its label on one line or the "-", box, "+" row,
 -- whichever is wider (SSFFrame:FitWidth sizes the window to it).
+--
+-- Lib internals: the stock Slider's label, editbox, slider, frame and its value, min, max,
+--          step and disabled fields. An AceGUI bump that renames those breaks the steppers.
+-- Reads:   nothing of SSF's. Touches nothing else.
 
 local Type, Version = "SSFStepperSlider", 4
 local AceGUI = LibStub("AceGUI-3.0")

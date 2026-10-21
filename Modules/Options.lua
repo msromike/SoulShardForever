@@ -31,6 +31,21 @@
 -- so a change goes Core:ApplyLanguage -> Options:Rebuild, which builds and re-registers the
 -- table and sends SSF_OPTIONS_REBUILT (Window re-dresses and re-feeds an open window).
 -- Everything else reads L live.
+--
+-- The /ssf handler wraps AceConfigCmd instead of registering a slash command with it:
+-- AceConfigCmd's dispatch ignores cmdHidden, has no "help" word, and would not open the
+-- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
+-- run before every cast), then hands the rest to AceConfigCmd.
+--
+-- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
+--          Options.table (the built table, read by CommandWords for tab completion).
+-- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
+-- Reads:   Settings:Define/TabUsage, Cap, Bags:Count/SoulBagSlots, Trimmer:WhyNot,
+--          Sounds (levels, PlayPause), Status:CountText/PrintStatus, Colors, DeleteHelp:Text,
+--          Window:Open, Trimmer:Delete; NS.locales and NS.localeOrder (the Language list);
+--          every profile key it shows.
+-- Saves:   every profile key it shows, through its setters.
+-- Touches nothing else.
 
 local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list
 local APP = "SSF"                -- the AceConfig app: every line AceConfigCmd prints is prefixed with it

@@ -10,11 +10,13 @@
 -- by the name in the changed action slot (GetActionText); the slot's id is no help, it is
 -- the spell the macro resolves to.
 --
+-- Public:  Stop() (also the OnHide hook's handler).
 -- Listens: SSF_MACRO_WINDOW_SHOWN; ACTIONBAR_SLOT_CHANGED while one still glows.
 -- Hooks:   MacroSelector.RunSetup and MacroFrame's OnHide (AceHook), attached the first
 --          time the window shows: Blizzard_MacroUI loads on demand, so neither frame
 --          exists at OnEnable.
--- Reads:   Macros:Names(). Touches nothing else.
+-- Reads:   Macros:Names(); Blizzard's MacroFrame.MacroSelector buttons (their Name text).
+-- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local MacroGlow = SSF:NewModule("MacroGlow", "AceEvent-3.0", "AceHook-3.0")

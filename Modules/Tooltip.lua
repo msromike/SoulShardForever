@@ -16,6 +16,9 @@
 --          Tooltip:Attach(frame) -- option tooltips shown inside this frame get the anchor
 -- Hooks:   AceConfigDialog.tooltip's OnShow (AceHook), hooked again if a newer
 --          AceConfigDialog loaded later replaced the tooltip frame.
+-- Lib internals: AceConfigDialog.tooltip, the GameTooltip-like frame it shows help lines
+--          in. An AceConfigDialog bump that renames it leaves option tooltips at the stock
+--          anchor.
 -- Reads:   Colors.YELLOW. Owns no state beyond the attached frame. Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

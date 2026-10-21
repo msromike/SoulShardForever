@@ -18,8 +18,15 @@
 --                         width (sharing a row), it is as wide as its label on one line.
 -- SSFCountButton, SSFCenteredLabel and SSFIndentCheckBox report MinWidth(): the width
 -- their text needs on one line, which SSFFrame:FitWidth sizes the window to.
--- All are built by composition: the real widget sits inside ours and every call is
--- forwarded, the same pattern as SSFStepperSlider.
+-- Four are built by composition: the real widget sits inside ours and every call is
+-- forwarded, the same pattern as SSFStepperSlider. SSFUnlabeledDropdown is not: it is a
+-- stock Dropdown instance re-typed with one method replaced (see its block).
+--
+-- Lib internals: the stock Button, Label and CheckBox's text, label and frame (and
+--          frame.height), and AceGUI.WidgetRegistry (the Dropdown constructor, for the
+--          re-typed one). An AceGUI bump that renames those breaks the top row and the
+--          check boxes' layout.
+-- Reads:   nothing of SSF's. Touches nothing else.
 --
 -- Both check boxes grow instead of truncating: a label that does not fit the row wraps,
 -- and the row's height follows the wrapped text (the Flow layout reads a full-width child's

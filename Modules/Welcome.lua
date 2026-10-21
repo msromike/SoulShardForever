@@ -11,14 +11,14 @@
 -- window and the note with it leaves it owed, and it comes back with the next open of the
 -- window, from anywhere, and at the next load or reload.
 --
--- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open).
---
--- Reads:  profile.welcomed. Calls Options:IsHelpOn(), Options:ToggleHelp(),
---         Window:ShowNote(), Window:InFight(), DeleteHelp:Blocks(), Macros:AnyMissing()
---         and Macros:Create() (the note's button). Also listens to LOADING_SCREEN_DISABLED
---         once at load while a note is owed. Touches nothing else.
--- Saves:  profile.welcomed: false while the note is owed (set when it shows), and
---         WELCOME_VERSION once the player closes it outside a fight.
+-- Public:  Show() (the note, through Window:ShowNote).
+-- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open),
+--          LOADING_SCREEN_DISABLED once at load while a note is owed.
+-- Reads:   profile.welcomed; Options:IsHelpOn/ToggleHelp, Window:ShowNote/InFight,
+--          DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's button).
+-- Saves:   profile.welcomed: false while the note is owed (set when it shows), and
+--          WELCOME_VERSION once the player closes it outside a fight.
+-- Touches nothing else.
 
 local ADDON = ...
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

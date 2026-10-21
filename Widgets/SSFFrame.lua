@@ -34,6 +34,10 @@
 -- The backdrop is SSF's own, set on the stock frame with the plain game call (the stock
 -- Frame tints its background black; SSF's window shows the dialog art untinted).
 --
+-- Lib internals: besides the three above, FitWidth reads the fed widgets' titletext, label,
+--          text, frame.label and frame.text, and FitToContent reads children[1].content
+--          (the ScrollFrame's scroll child). An AceGUI bump that renames those shows as a
+--          window that no longer fits its content.
 -- Reads:   the Tooltip module at runtime for every tooltip it shows.
 -- Touches nothing else.
 

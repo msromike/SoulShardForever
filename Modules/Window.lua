@@ -29,6 +29,10 @@
 --          starts: the window closes, and nothing opens it until the fight is over; it
 --          does not reopen by itself).
 -- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild.
+-- Lib internals: the InlineGroup widgets AceConfigDialog builds (their titletext and frame,
+--          for the title style and strip) and the window's first child, the ScrollFrame
+--          AceConfigDialog adds (children[1]). An AceGUI bump that renames those shows up
+--          as stock gold titles with no strip.
 -- Saves:   the window position, profile.window (top, left and the screen size it was
 --          saved on).
 -- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog

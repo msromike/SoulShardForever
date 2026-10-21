@@ -13,10 +13,13 @@
 --
 -- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create().
 --          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
--- Sends:   SSF_MACROS_CHANGED, from a bucketed UPDATE_MACROS (it fires in bursts of about
---          five, even on a click in Blizzard's macro window); SSF_MACRO_WINDOW_SHOWN once
---          SSF has opened Blizzard's macro window on them.
+-- Listens: UPDATE_MACROS, bucketed (it fires in bursts of about five, even on a click in
+--          Blizzard's macro window); LOADING_SCREEN_DISABLED once, after Create's reload.
+-- Sends:   SSF_MACROS_CHANGED; SSF_MACRO_WINDOW_SHOWN once SSF has opened Blizzard's macro
+--          window on them.
+-- Reads:   profile.macroWindowAfterReload; Blizzard's macro API and MacroFrame.
 -- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
+-- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Macros = SSF:NewModule("Macros", "AceEvent-3.0", "AceBucket-3.0")
