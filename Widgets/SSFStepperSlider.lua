@@ -14,7 +14,7 @@
 -- dropdown labels and checkboxes in the window.
 
 -- MinWidth(): the narrowest it stays usable, its label on one line or the "-", box, "+" row,
--- whichever is wider (SSFWindow:FitWidth sizes the window to it).
+-- whichever is wider (SSFFrame:FitWidth sizes the window to it).
 
 local Type, Version = "SSFStepperSlider", 4
 local AceGUI = LibStub("AceGUI-3.0")

@@ -17,7 +17,7 @@
 --                         level 1. AceConfigDialog hands `arg` to SetCustomData. Not full
 --                         width (sharing a row), it is as wide as its label on one line.
 -- SSFCountButton, SSFCenteredLabel and SSFIndentCheckBox report MinWidth(): the width
--- their text needs on one line, which SSFWindow:FitWidth sizes the window to.
+-- their text needs on one line, which SSFFrame:FitWidth sizes the window to.
 -- All are built by composition: the real widget sits inside ours and every call is
 -- forwarded, the same pattern as SSFStepperSlider.
 --
@@ -80,7 +80,7 @@ do
             Layout(self)
         end,
         ["SetDisabled"] = function(self, v) self.inner:SetDisabled(v) end,
-        -- the width the pair needs on one line (SSFWindow:FitWidth)
+        -- the width the pair needs on one line (SSFFrame:FitWidth)
         ["MinWidth"] = function(self)
             return (self.label:GetUnboundedStringWidth() or 0) + GAP + (self.inner.frame:GetWidth() or 0)
         end,
@@ -134,7 +134,7 @@ do
         ["SetColor"] = function(self, ...) self.inner:SetColor(...) end,
         ["SetImage"] = function(self, ...) self.inner:SetImage(...) SyncHeight(self) end,
         ["SetImageSize"] = function(self, ...) self.inner:SetImageSize(...) SyncHeight(self) end,
-        -- the width the text needs on one line (SSFWindow:FitWidth)
+        -- the width the text needs on one line (SSFFrame:FitWidth)
         ["MinWidth"] = function(self) return self.inner.label:GetUnboundedStringWidth() or 0 end,
     }
 
@@ -298,7 +298,7 @@ do
             self.inner:SetLabel(text)
             if self.frame.width then Fit(self, self.frame.width) end
         end,
-        -- the width this checkbox needs to show its label on one line (SSFWindow:FitWidth)
+        -- the width this checkbox needs to show its label on one line (SSFFrame:FitWidth)
         ["MinWidth"] = function(self) return Natural(self) end,
         ["SetValue"] = function(self, value) self.inner:SetValue(value) end,
         ["GetValue"] = function(self) return self.inner:GetValue() end,

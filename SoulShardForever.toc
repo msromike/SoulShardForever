@@ -25,7 +25,7 @@ Locales\esMX.lua
 Locales\ptBR.lua
 Locales\ruRU.lua
 Widgets\SSFStepperSlider.lua
-Widgets\SSFWindow.lua
+Widgets\SSFFrame.lua
 Widgets\SSFCentered.lua
 Core.lua
 Modules\Colors.lua

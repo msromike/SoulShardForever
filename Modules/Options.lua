@@ -196,7 +196,7 @@ local function BuildTable()
                         changed("pausesound")
                     end,
                     -- not full width, so the checkbox is as wide as its label (SSFIndentCheckBox)
-                    -- and the window widens to fit this row (SSFWindow:FitWidth)
+                    -- and the window widens to fit this row (SSFFrame:FitWidth)
                     function() return not SSF.db.profile.paused end, nil, 2), "normal"),
                 -- on the same row as Play pause sound; picking a level plays the sound at it
                 -- the name titles its tooltip only: the widget never shows a label

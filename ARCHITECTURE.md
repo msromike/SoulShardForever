@@ -10,7 +10,7 @@ here is missing from the headers or the code, not from this file.
 Widgets (custom AceGUI widgets, used from the options table through dialogControl):
 
 - Widgets\SSFStepperSlider.lua: an AceGUI widget.
-- Widgets\SSFWindow.lua: an AceGUI container, SSF's own options window.
+- Widgets\SSFFrame.lua: SSF's options window, an extension of AceGUI's stock Frame container.
 - Widgets\SSFCentered.lua: Five AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.
 
 Core and modules:

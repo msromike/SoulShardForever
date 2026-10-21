@@ -8,7 +8,7 @@
 -- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard warning, Bag count) and
 -- Other, then a small version/credit line. Every toggle is full width, and a label that does
 -- not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself to the
--- content after every feed, width then height (Feed -> SSFWindow:FitWidth, FitToContent), so
+-- content after every feed, width then height (Feed -> SSFFrame:FitWidth, FitToContent), so
 -- no text is cut short and it never scrolls. No default size: the first feed lays out at
 -- AceConfigDialog's own default and the fit sets both.
 --
@@ -16,7 +16,7 @@
 --          nothing in a fight, see InFight),
 --          Toggle() (the minimap icon and broker click), Refresh(),
 --          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
---          opts as SSFWindow:ShowSidePanel), InFight() (the one combat test the window
+--          opts as SSFFrame:ShowSidePanel), InFight() (the one combat test the window
 --          and the welcome share), OpenKeyBindings() (the bottom-right button).
 -- Reads:   Macros:AnyMissing() for the "Create macros" button, Options:IsHelpOn/
 --          ToggleHelp, KeyBindings:Open, Colors:Class/Gold, Tooltip:Attach, SSF.VERSION.
@@ -185,8 +185,8 @@ local function HookDialogOpen()
 end
 
 -- Feed the table into the window, then size the window to it: the width first (every text
--- on one line, SSFWindow:FitWidth; the layout depends on the width, so a changed width is
--- fed again), then the height (SSFWindow:FitToContent). The Tooltip module re-anchors
+-- on one line, SSFFrame:FitWidth; the layout depends on the width, so a changed width is
+-- fed again), then the height (SSFFrame:FitToContent). The Tooltip module re-anchors
 -- AceConfigDialog's option tooltips while they are shown inside this window's frame.
 function Window:Feed()
     HookDialogOpen()
@@ -230,7 +230,8 @@ function Window:OnMacrosChanged()
 end
 
 -- The small standalone window: minimap click, /ssf, /ssf options, /ssf settings. Our own
--- SSFWindow container (X button, no status bar, sized to content), created once and
+-- SSFFrame container (AceGUI's Frame with SSF's X, bottom row and side note, sized to
+-- content), created once and
 -- re-fed on every open.
 -- The minimap icon and broker click: close the window if it is showing, else open it.
 function Window:Toggle()
@@ -262,7 +263,7 @@ function Window:Open()
         status.top, status.left = nil, nil -- never dragged: centered
     end
     if not self.window then
-        self.window = LibStub("AceGUI-3.0"):Create("SSFWindow")
+        self.window = LibStub("AceGUI-3.0"):Create("SSFFrame")
         self.window:SetCallback("OnMoved", function(_, _, top, left)
             local window = SSF.db.profile.window
             window.top, window.left = top, left
@@ -281,7 +282,7 @@ function Window:Open()
     self:SendMessage("SSF_WINDOW_OPENED") -- Welcome brings back a note still owed
 end
 
--- Open the window with a note beside it (SSFWindow:ShowSidePanel). Welcome fills it.
+-- Open the window with a note beside it (SSFFrame:ShowSidePanel). Welcome fills it.
 function Window:ShowNote(titleText, bodyText, noteText, opts)
     if self:InFight() then return end -- no window in a fight, so no note either
     self:Open()

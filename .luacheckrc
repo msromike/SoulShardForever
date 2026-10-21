@@ -39,7 +39,3 @@ read_globals = {
     -- global strings
     "CLOSE", "KEY_BINDINGS", "SETTINGS_KEYBINDINGS_LABEL",
 }
-
-files["Widgets/SSFWindow.lua"] = {
-    ignore = { "411" }, -- 'title' redefined at 700; the file is rebuilt in chunk 4.01
-}
