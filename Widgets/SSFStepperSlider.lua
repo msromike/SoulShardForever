@@ -110,6 +110,9 @@ local methods = {
 
     ["SetDisabled"] = function(self, disabled)
         self.inner:SetDisabled(disabled)
+        -- the stock Slider's frame keeps the mouse when disabled and covers the wrapper; off
+        -- while greyed, so the wrapper's OnEnter gets the hover and the tooltip still shows
+        self.inner.frame:EnableMouse(not disabled)
         if disabled then self.left:Disable() self.right:Disable()
         else self.left:Enable() self.right:Enable() UpdateButtons(self) end
     end,
