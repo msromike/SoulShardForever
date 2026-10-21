@@ -20,7 +20,8 @@
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Macros = SSF:NewModule("Macros", "AceEvent-3.0", "AceBucket-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardForever")
+local ADDON = ...
+local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 -- names are never translated: the name is how SSF finds them
 local MACROS = {

@@ -7,43 +7,29 @@
 -- Chat rule it enforces for every stateful command: typed naked it reports the current
 -- value; typed with a value it applies and echoes the new one; booleans show green ON /
 -- red OFF. AceConfigCmd cannot do that by itself (a naked toggle flips, a naked range
--- errors), which is the only reason this module exists.
+-- errors), which is the only reason this module exists (Parse below is that rule, not a
+-- copy of AceConfigCmd's parsing).
 --
--- Takes:   Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name,
+-- Public:  Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name,
 --          desc, get(), apply(value), optional extra() -> text appended to the chat echo,
 --          optional echo() -> the whole echo line in place of "name: value" (pause), and
 --          for range: min, max, step, disabled }.
---          Settings:Value(v) -> v as the neutral (white) value string used for settings.
---          Settings:Accent(v) -> v in the green branding accent (login line author).
---          Settings:OnOff(b) -> b as green ON / red OFF.
---          Settings:State(text, good) -> text in the state green (good) or red.
--- Returns: gui, cmd -- two entries for Options to place in its args table.
+--          Returns gui, cmd -- two entries for Options to place in its args table.
+--          Settings.TabUsage -- the AceTab usage callback every completion set shares
+--          (Options uses it for the command words too).
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
 --          command applied it (Options redraws an open window only then).
 -- Registers: AceTab completion of "on"/"off" after "/ssf <key> " for every toggle.
--- Prints:  through AceConsole only. Owns no state, no events, no frames.
+-- Reads:   Colors:OnOff/Value for the echo. Prints through AceConsole only.
+-- Owns no state, no events, no frames. Touches nothing else.
 
-local ADDON = "SoulShardForever"
+local ADDON = ...
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Settings = SSF:NewModule("Settings", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceTab = LibStub("AceTab-3.0")
 
-local GREEN, RED, WHITE = "|cff00ff00%s|r", "|cffff0000%s|r", "|cffffffff%s|r"
-local function OnOff(b) return b and GREEN:format(L["ON"]) or RED:format(L["OFF"]) end
-
--- A boolean as green ON / red OFF, the state wording of a toggle's chat echo (below).
-function Settings:OnOff(b) return OnOff(b) end
-
--- Any state text in the same green (good, go) or red (stop): Status's "SSF paused: Yes/No".
-function Settings:State(text, good) return (good and GREEN or RED):format(text) end
-
--- A setting's value in chat or the window: a neutral white highlight. Green and red are
--- reserved for state (ON/OFF here; the count scale in Counter:StateColor).
-function Settings:Value(v) return WHITE:format(tostring(v)) end
-
--- Branding accent (the author on the login line): green by Mike's call, not a state.
-function Settings:Accent(v) return GREEN:format(tostring(v)) end
+local function Colors() return SSF:GetModule("Colors") end
 
 -- AceTab usage callback shared by every completion set: on an ambiguous Tab, list the
 -- candidates on one line. (Passing `true` instead trips a nil concat inside AceTab when
@@ -73,7 +59,7 @@ end
 function Settings:Define(key, def)
     local function echo()
         if def.echo then SSF:Print(def.echo()) return end
-        local shown = def.kind == "toggle" and OnOff(def.get()) or self:Value(def.get())
+        local shown = def.kind == "toggle" and Colors():OnOff(def.get()) or Colors():Value(def.get())
         local extra = def.extra and (" " .. def.extra()) or ""
         SSF:Printf("%s: %s%s", def.name, shown, extra)
     end

@@ -8,11 +8,13 @@ max_line_length = false
 self = false -- a method written with ':' may leave self unused
 codes = true
 
-exclude_files = { "Libs/**", "_ref/**", ".docs/**", "tests/**" }
+exclude_files = { "Libs/**", "_ref/**", ".docs/**", "tests/**", "tools/**" }
 
 globals = {
-    -- Bindings.xml labels, set by Core (chunk 3.01 moves them to KeyBindings)
+    -- Bindings.xml labels, set by Modules/KeyBindings.lua
     "BINDING_NAME_SSF_DELETE", "BINDING_NAME_SSF_PAUSE",
+    -- the SavedVariables table (toc), read raw by Core before AceDB opens it
+    "SoulShardForeverDB",
 }
 
 read_globals = {
@@ -30,6 +32,7 @@ read_globals = {
     "ItemLocation", "NUM_BAG_SLOTS", "RAID_CLASS_COLORS",
     -- functions
     "InCombatLockdown", "UnitAffectingCombat", "UnitClassBase", "GetLocale", "ReloadUI",
+    "GetRealmName",
     "ClearCursor", "GetCursorInfo", "DeleteCursorItem",
     "GetMacroIndexByName", "GetNumMacros", "CreateMacro", "GetActionText",
     "PlaySound", "PlaySoundFile",

@@ -1,13 +1,31 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Cap: answers one question, "what is the cap right now".
---   AutoMax on AND a soul bag equipped -> the soul bags' slot total.
---   Otherwise                          -> the slider value, clamped to 1-100.
--- Recomputes at login and on bag changes and sends SSF_CAP_CHANGED when the number moves.
--- Trimmer calls Get() fresh on every press, so a missed event can never stale a delete.
+-- Cap: the thresholds. What the cap is right now, the low mark in use, and which state a
+-- count is in against them.
+--   The cap: AutoMax on AND a soul bag equipped -> the soul bags' slot total;
+--            otherwise the slider value, clamped to MIN-MAX and whole.
+--   The low mark in use: the saved Low shard warn, but never above the cap. A low mark
+--     over the cap would make a count both "over the cap" and "low" at once (Match soul
+--     bag size can drop the cap under it). The saved value is not touched, so when the
+--     cap rises again the saved low mark is back by itself.
+--   State(count): "over" above the cap (over the cap wins), "low" below the low mark in
+--     use, "ok" between. The one threshold test; Counter's color, the glow, the chat and
+--     tooltip count and the Delete Shard gate all ask here.
+-- Recomputes the cap at login and on bag changes and sends SSF_CAP_CHANGED when the number
+-- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
+-- delete.
+--
+-- Public:  Cap.MIN, Cap.MAX; Get(), IsAuto(), LowMark(), State(count), SetManual(n)
+--          (Options' slider and /ssf setmax; turning AutoMax off is the caller's job),
+--          Recompute().
+-- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED.
+-- Sends:   SSF_CAP_CHANGED (cap).
+-- Reads:   Bags:SoulBagSlots(); profile.autoMax, maxShards, lowMark.
+-- Saves:   profile.maxShards (SetManual only).
+-- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Cap = SSF:NewModule("Cap", "AceEvent-3.0", "AceBucket-3.0")
+local Cap = SSF:NewModule("Cap", "AceEvent-3.0")
 
 Cap.MIN, Cap.MAX = 1, 100
 
@@ -32,17 +50,16 @@ function Cap:Get()
     return clamp(SSF.db.profile.maxShards)
 end
 
--- The low mark in use: the saved Low shard warn, but never above the cap. A low mark over
--- the cap would make a count both "over the cap" and "low" at once (Match soul bag size
--- can drop the cap under it). The saved value is not touched, so when the cap rises again
--- the saved low mark is back by itself, the way the slider cap comes back after AutoMax.
--- The count color (Counter:StateColor) and the glow (LowGlow) both read this.
 function Cap:LowMark()
     return math.min(SSF.db.profile.lowMark, self:Get())
 end
 
--- Sets the slider value. Called by Options (slider, /ssf setmax). Turning AutoMax off is
--- the caller's job; this only stores the number.
+function Cap:State(count)
+    if count > self:Get() then return "over" end
+    if count < self:LowMark() then return "low" end
+    return "ok"
+end
+
 function Cap:SetManual(n)
     SSF.db.profile.maxShards = clamp(n)
     self:Recompute()
@@ -58,6 +75,6 @@ end
 
 function Cap:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "Recompute")
-    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Recompute")
+    self:RegisterMessage("SSF_BAGS_CHANGED", "Recompute")
     self:Recompute()
 end

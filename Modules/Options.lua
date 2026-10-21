@@ -6,6 +6,8 @@
 -- Options entry, AceTab
 -- completes the command words. Keys are the slash words; GUI-only entries carry cmdHidden.
 -- Modules that show state (Counter, Broker, Window) listen for SSF_OPTIONS_CHANGED.
+-- Reads Cap (range, state), Trimmer:WhyNot (the Delete Shard button's greyed reason),
+-- Sounds (the volume levels, the preview), Status (the text), Colors (the paint).
 --
 -- The window's layout and life cycle are in Modules\Window.lua.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
@@ -44,7 +46,8 @@ local LSM = LibStub("LibSharedMedia-3.0")
 local function Cap() return SSF:GetModule("Cap") end
 local function Bags() return SSF:GetModule("Bags") end
 
-local function Value(v) return SSF:GetModule("Settings"):Value(v) end
+local function Value(v) return SSF:GetModule("Colors"):Value(v) end
+local function Gold(text) return SSF:GetModule("Colors"):Gold(text) end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
@@ -74,11 +77,6 @@ local function ApplyHelp(group, style)
     end
 end
 
--- a name in a help line, in the game's gold (NORMAL_FONT_COLOR, the labels' color), so it
--- stands out the way it looks where the player will find it
-function Options.Gold(text) return "|cffffd100" .. text .. "|r" end
-local Gold = Options.Gold
-
 local function changed(key)
     Options:SendMessage("SSF_OPTIONS_CHANGED", key)
 end
@@ -100,39 +98,13 @@ local function Width(entry, width)
     return entry
 end
 
--- Pause sound volume levels: each one half the one before, about 6 dB apart, so the steps
--- sound even to the ear (tested by ear against evenly spaced levels). Keys are what the
--- dropdown stores; the volume goes into profile.pauseSoundVolume.
--- (A fifth level, 0.06, was too faint to be useful and was dropped.)
-local VOLUME_ORDER = { "full", "loud", "medium", "quiet" }
-local VOLUMES = { full = 1, loud = 0.5, medium = 0.25, quiet = 0.12 }
-
--- Why a Delete Shard click would not delete, or nil if it would: the button's greyed state
--- and the reason under it. Paused is a mode, not one reason among others: while paused it
--- is the only answer, whatever the count, so the line holds still. Unpaused, the cap: at
--- or under it there is nothing to delete. No combat reason: the window closes for a fight
--- and stays shut (Window). Trimmer:Delete makes its own checks; this is display only.
-local function Blocker()
-    if SSF.db.profile.paused then return "paused" end
-    local count, cap = SSF:GetModule("Bags"):Count(), SSF:GetModule("Cap"):Get()
-    if count == cap then return "atcap" end
-    if count < cap then return "undercap" end
-end
-
--- The reason under a greyed Delete Shard, per Blocker(). Read live from L, so a Language
--- change shows at once.
+-- The reason under a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
+-- Language change shows at once.
 local BLOCKER_TEXT = {
     atcap = function() return L["At cap"] end,
     undercap = function() return L["Under cap"] end,
     paused = function() return L["SSF paused"] end,
 }
-
-local function VolumeKey(volume)
-    for key, value in pairs(VOLUMES) do
-        if value == volume then return key end
-    end
-    return "full"
-end
 
 local function BuildTable()
     local Settings = SSF:GetModule("Settings")
@@ -181,7 +153,7 @@ local function BuildTable()
         -- the top row: the count, with Delete Shard right after it, so a click and the number
         -- it changes sit together (Widgets\SSFCentered.lua). A mouse click is the hardware
         -- event Trimmer:Delete needs. Its help is every way to delete (DeleteHelp).
-        -- Greyed whenever a click could not delete (Blocker, above), with the reason in gold
+        -- Greyed whenever a click could not delete (Trimmer:WhyNot), with the reason in gold
         -- under it, so a click that does nothing never looks like a broken button.
         deletebutton = {
             type = "execute",
@@ -192,10 +164,10 @@ local function BuildTable()
             name = L["Delete Shard"],
             desc = SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."]),
             arg = function()
-                local blocker = Blocker()
-                return SSF:GetModule("Status"):CountText(), blocker and BLOCKER_TEXT[blocker]()
+                local why = SSF:GetModule("Trimmer"):WhyNot()
+                return SSF:GetModule("Status"):CountText(), why and BLOCKER_TEXT[why]()
             end,
-            disabled = function() return Blocker() ~= nil end,
+            disabled = function() return SSF:GetModule("Trimmer"):WhyNot() ~= nil end,
             func = function() SSF:GetModule("Trimmer"):Delete() end,
         },
 
@@ -218,12 +190,9 @@ local function BuildTable()
                 pausesound = Width(Toggle(2, L["Play pause sound"],
                     function() return SSF.db.profile.pauseSound end,
                     function(_, value)
-                        local p = SSF.db.profile
-                        p.pauseSound = value
+                        SSF.db.profile.pauseSound = value
                         -- ticking it on plays the sound at the selected level, as a preview
-                        if value then
-                            SSF:GetModule("Sounds"):Play(p.pauseSoundName, p.pauseSoundVolume)
-                        end
+                        if value then SSF:GetModule("Sounds"):PlayPause() end
                         changed("pausesound")
                     end,
                     -- not full width, so the checkbox is as wide as its label (SSFIndentCheckBox)
@@ -239,12 +208,12 @@ local function BuildTable()
                         full = L["Full volume"], loud = L["Loud"], medium = L["Medium"],
                         quiet = L["Quiet"],
                     },
-                    sorting = VOLUME_ORDER,
-                    get = function() return VolumeKey(SSF.db.profile.pauseSoundVolume) end,
+                    sorting = SSF:GetModule("Sounds"):LevelKeys(),
+                    get = function() return SSF:GetModule("Sounds"):LevelKey(SSF.db.profile.pauseSoundVolume) end,
                     set = function(_, key)
-                        local p = SSF.db.profile
-                        p.pauseSoundVolume = VOLUMES[key] or 1
-                        SSF:GetModule("Sounds"):Play(p.pauseSoundName, p.pauseSoundVolume)
+                        local Sounds = SSF:GetModule("Sounds")
+                        SSF.db.profile.pauseSoundVolume = Sounds:LevelVolume(key)
+                        Sounds:PlayPause()
                         changed("pausevolume")
                     end,
                     disabled = function()
@@ -356,7 +325,7 @@ local function BuildTable()
                     descStyle = "hidden",
                     name = L["Low shard warn"],
                     -- the cap's own range: a warlock holding 96 shards may want a warning at 40
-                    min = 1, max = 100, step = 1,
+                    min = Cap().MIN, max = Cap().MAX, step = 1,
                     width = "full",
                     dialogControl = "SSFStepperSlider",
                     get = function() return SSF.db.profile.lowMark end,
@@ -499,7 +468,7 @@ local function BuildTable()
             -- the choice's own name: SSF Mode in the state green (the safe pick, it moves
             -- nothing else), the SoulSort ones in neutral gold
             shardmode = L["How a macro or keybind moves shards."] .. " " .. L["Shards move to soul bag."]
-                .. "\n\n" .. bullet .. SSF:GetModule("Settings"):State(L["SSF Mode"] .. ":", true) .. " "
+                .. "\n\n" .. bullet .. SSF:GetModule("Colors"):State(L["SSF Mode"] .. ":", true) .. " "
                 .. L["SSF does not sort (does NOT change item positions in bags)."]
                 .. "\n\n" .. bullet .. Gold(L["SoulSort Normal"] .. ":") .. " "
                 .. L["Shards sort top down (CHANGES item positions in your bags)."]
@@ -530,9 +499,6 @@ local function CommandWords(words)
 end
 
 function Options:OnEnable()
-    -- a saved volume that is no longer a level (the dropped Faint) goes back to Full
-    local p = SSF.db.profile
-    if VolumeKey(p.pauseSoundVolume) == "full" then p.pauseSoundVolume = VOLUMES.full end
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
     -- /ssf: naked opens the window (open only, never a toggle) and prints the pause line,
@@ -551,9 +517,7 @@ function Options:OnEnable()
         end
         if input == "" then
             SSF:GetModule("Window"):Open()
-            local Status = SSF:GetModule("Status")
-            SSF:Print(Status:PauseText())
-            SSF:Print(Status:StatusText())
+            SSF:GetModule("Status"):PrintStatus()
             SSF:Print(L["Type /ssf help for commands."])
             return
         end

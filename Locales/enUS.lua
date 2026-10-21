@@ -13,10 +13,9 @@ L["ON"] = true
 L["OFF"] = true
 L["Use: /ssf %s on|off"] = true
 L["Use: /ssf %s %d-%d"] = true
-L["Soul Shards: %s (cap %s)"] = true
 L["Soul Shards: %s"] = true
 L["(in bags: %s)"] = true
-L["%s (cap %d)"] = true
+L["%s (cap %s)"] = true
 L["Match soul bag size (no soul bag)"] = true
 
 -- Options

@@ -28,6 +28,8 @@ Widgets\SSFStepperSlider.lua
 Widgets\SSFWindow.lua
 Widgets\SSFCentered.lua
 Core.lua
+Modules\Colors.lua
+Modules\KeyBindings.lua
 Modules\Bags.lua
 Modules\Cap.lua
 Modules\Sorter.lua
@@ -40,6 +42,7 @@ Modules\Status.lua
 Modules\Macros.lua
 Modules\MacroGlow.lua
 Modules\DeleteHelp.lua
+Modules\Tooltip.lua
 Modules\Window.lua
 Modules\Welcome.lua
 Modules\Broker.lua

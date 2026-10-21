@@ -15,24 +15,27 @@ Widgets (custom AceGUI widgets, used from the options table through dialogContro
 
 Core and modules:
 
-- Core.lua: the addon object, the warlock gate, the saved settings, the Language switch (ApplyLanguage) and the class color (ClassColor).
-- Modules\Bags.lua: read-only queries over the player's bags, backpack through the reagent slot (bag 5, where a soul pouch equips on Forever).
-- Modules\Cap.lua: answers one question, "what is the cap right now".
+- Core.lua: the addon object, the warlock gate, the saved settings (the AceDB profile, its defaults and the migrations of old values), the Language switch (ApplyLanguage) and the shared constants on the addon object.
+- Modules\Colors.lua: every color SSF uses, and the helpers that paint text with them.
+- Modules\KeyBindings.lua: SSF's two rows in Blizzard's Key Bindings screen (Bindings.xml: SSF_DELETE and SSF_PAUSE), unbound until the player picks keys.
+- Modules\Bags.lua: read-only queries over the player's bags, backpack through the reagent slot (bag 5, where a soul pouch equips on Forever), and the one signal that the bags changed.
+- Modules\Cap.lua: the thresholds.
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
-- Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, and playing one by its LSM name.
+- Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
 - Modules\Trimmer.lua: Delete() is the press.
 - Modules\DeleteButton.lua: the global button "SSFDelete".
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
 - Modules\Options.lua: the one settings table and the /ssf command.
-- Modules\Status.lua: the two status lines and when they print at login.
+- Modules\Status.lua: the one wording for every number SSF shows, and the lines that print at login.
 - Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
 - Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the two recommended macros, then what the Bane macro is for and its warning.
+- Modules\Tooltip.lua: where every SSF tooltip sits and how it is shown.
 - Modules\Window.lua: SSF's own options window.
 - Modules\Welcome.lua: the first-load welcome.
 - Modules\Broker.lua: the LibDataBroker data object and the LibDBIcon minimap icon.
 - Modules\Counter.lua: one number, the total shard count, centered on one bag button.
-- Modules\LowGlow.lua: while the shard count is below the low mark, the bag button the counter sits on glows (LibCustomGlow's button glow, the proc-alert look).
+- Modules\LowGlow.lua: while the count is in the "low" state (Cap:State: below the low mark in use), the bag button the counter sits on glows (LibCustomGlow's button glow, the proc-alert look).
 
 Locales:
 
@@ -43,12 +46,14 @@ Locales:
 
 | Message | Sender | Listeners | Payload |
 |---|---|---|---|
+| SSF_BAGS_CHANGED | Bags | Broker, Cap, Counter, Sorter, Window |  |
 | SSF_CAP_CHANGED | Cap | Broker, Counter | now |
+| SSF_COUNTER_UPDATED | Counter | LowGlow | nil, count |
 | SSF_MACROS_CHANGED | Macros | Window |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
-| SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, LowGlow, Window | key, source |
+| SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
 | SSF_OPTIONS_REBUILT | Options | Window |  |
-| SSF_SHARD_DELETED | Trimmer | Broker, Counter, LowGlow, Window | count - 1, cap |
+| SSF_SHARD_DELETED | Trimmer | Broker, Counter, Window | count - 1, cap |
 | SSF_SHOW_WELCOME | Window | Welcome |  |
 | SSF_SORTED | Sorter | none | moved |
 | SSF_WINDOW_OPENED | Window | Welcome |  |
@@ -57,16 +62,13 @@ Locales:
 
 | Module | Events |
 |---|---|
-| Cap | PLAYER_ENTERING_WORLD; bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
-| Sorter | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
+| Bags | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
+| Cap | PLAYER_ENTERING_WORLD |
 | Status | PLAYER_ENTERING_WORLD; BAG_UPDATE_DELAYED |
 | Macros | LOADING_SCREEN_DISABLED; bucket UPDATE_MACROS (0.5s) |
 | MacroGlow | ACTIONBAR_SLOT_CHANGED |
-| Window | PLAYER_REGEN_DISABLED; bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
+| Window | PLAYER_REGEN_DISABLED |
 | Welcome | LOADING_SCREEN_DISABLED |
-| Broker | bucket BAG_UPDATE (0.5s) |
-| Counter | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
-| LowGlow | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
 
 ## Shared state
 

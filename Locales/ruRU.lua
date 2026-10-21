@@ -14,10 +14,9 @@ L["ON"] = "ВКЛ"
 L["OFF"] = "ВЫКЛ"
 L["Use: /ssf %s on|off"] = "Использование: /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Использование: /ssf %s %d-%d"
-L["Soul Shards: %s (cap %s)"] = "Осколки души: %s (лимит %s)"
 L["Soul Shards: %s"] = "Осколки души: %s"
 L["(in bags: %s)"] = "(в сумках: %s)"
-L["%s (cap %d)"] = "%s (лимит %d)"
+L["%s (cap %s)"] = "%s (лимит %s)"
 L["Match soul bag size (no soul bag)"] = "По сумке душ (сумки нет)"
 
 -- Options

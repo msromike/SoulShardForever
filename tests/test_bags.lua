@@ -29,6 +29,13 @@ test("a special bag that is not a soul bag is left out", function()
     eq(table.concat(Bags:SortOrder(), ","), "0", "herb bag skipped")
 end)
 
+test("SoulBags lists equipped soul bags ascending", function()
+    WoW.SetBags({ [0] = plain(16), [1] = soul(20), [3] = plain(8), [5] = soul(24) })
+    eq(table.concat(Bags:SoulBags(), ","), "1,5", "ids ascending")
+    WoW.SetBags({ [0] = plain(16) })
+    eq(#Bags:SoulBags(), 0, "none")
+end)
+
 test("soul bag slots total", function()
     WoW.SetBags({ [0] = plain(16), [2] = soul(20), [5] = soul(24) })
     eq(Bags:SoulBagSlots(), 44, "20 + 24")

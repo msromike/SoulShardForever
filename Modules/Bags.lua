@@ -1,17 +1,26 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
--- where a soul pouch equips on Forever). No state, no events, never moves or deletes
--- anything. Every other module reads the bags through these methods.
+-- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
+-- moves or deletes anything. Every other module reads the bags through these methods and
+-- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE.
 --
 -- Sort order (the one order everything uses): every soul bag, then every regular bag from
 -- bag 4 down to the backpack; inside a bag, the bottom slot (highest number) first. With
 -- topFirst (SoulSort legacy, Normal), the top slot comes first inside each regular bag;
 -- soul bags keep bottom first. The caller passes topFirst; Bags reads no settings. The
 -- Sorter fills along the order; the Trimmer deletes from its far end (LastShard).
+--
+-- Public:  NumSlots(bag), IsShardAt(bag, slot), IsFreeAt, IsLocked, IsSwappableAt,
+--          IsSoulBag(bag), IsRegularBag(bag), SoulBags() (ids, ascending), SortOrder(),
+--          ForEachSlot(fn, topFirst), ForEachShard(fn), Count(), SoulBagSlots(),
+--          LastShard(topFirst) -> bag, slot.
+-- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s.
+-- Sends:   SSF_BAGS_CHANGED, once per bucket.
+-- Owns no state. Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Bags = SSF:NewModule("Bags")
+local Bags = SSF:NewModule("Bags", "AceEvent-3.0", "AceBucket-3.0")
 
 local SHARD = SSF.SHARD_ITEM_ID
 local FIRST_BAG, LAST_BAG = 0, Enum.BagIndex.ReagentBag -- 0 through 5
@@ -73,14 +82,21 @@ function Bags:IsRegularBag(bag)
     return self:NumSlots(bag) > 0 and Family(bag) == 0
 end
 
+-- Every equipped soul bag's id, ascending (bag 1 to the reagent slot; the backpack is
+-- never one). Counter walks it backwards for the button the number sits on.
+function Bags:SoulBags()
+    local list = {}
+    for bag = FIRST_BAG, LAST_BAG do
+        if self:IsSoulBag(bag) then list[#list + 1] = bag end
+    end
+    return list
+end
+
 -- The bag IDs in sort order, as a list. Soul bags first, then the regular bags from bag 4
 -- down to the backpack. A special bag that is not a soul bag (herb, enchanting) holds no
 -- shards and is left out. See the header.
 function Bags:SortOrder()
-    local order = {}
-    for bag = FIRST_BAG, LAST_BAG do
-        if self:IsSoulBag(bag) then order[#order + 1] = bag end
-    end
+    local order = self:SoulBags()
     for bag = NUM_BAG_SLOTS, FIRST_BAG, -1 do -- the reagent slot holds a soul pouch or reagents, never a regular target
         if self:IsRegularBag(bag) then order[#order + 1] = bag end
     end
@@ -124,9 +140,7 @@ end
 -- Total slots across every equipped soul bag; 0 when there is none.
 function Bags:SoulBagSlots()
     local n = 0
-    for bag = FIRST_BAG, LAST_BAG do
-        if self:IsSoulBag(bag) then n = n + self:NumSlots(bag) end
-    end
+    for _, bag in ipairs(self:SoulBags()) do n = n + self:NumSlots(bag) end
     return n
 end
 
@@ -141,4 +155,14 @@ function Bags:LastShard(topFirst)
         end
     end, topFirst)
     return vbag, vslot
+end
+
+-- The one bag signal. BAG_UPDATE fires in bursts (one per bag, then again as the server
+-- confirms), so one bucket here replaces a bucket in every listener.
+function Bags:OnBagsChanged()
+    self:SendMessage("SSF_BAGS_CHANGED")
+end
+
+function Bags:OnEnable()
+    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "OnBagsChanged")
 end

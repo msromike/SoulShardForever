@@ -2,33 +2,30 @@
 -- Started as a fork of SoulSort by Anilusion; rewritten from scratch on Ace3 for Forever
 -- only. No original code remains. MIT, see LICENSE.
 --
--- HOUSE RULE: Ace everywhere. If an Ace3 library (or LibDBIcon/LDB) does a job, use it;
--- never hand-roll a replacement or reach around it. One way to print (AceConsole), one
--- settings table (AceConfig), one event path (AceEvent/AceBucket), one db (AceDB).
+-- The standard every file follows is CLAUDE.md at the addon root; the map of files and
+-- messages is ARCHITECTURE.md.
 --
--- Core: the addon object, the warlock gate, the saved settings, the Language switch
--- (ApplyLanguage) and the class color (ClassColor). Nothing else. The work is in the
--- modules under Modules\.
+-- Core: the addon object, the warlock gate, the saved settings (the AceDB profile, its
+-- defaults and the migrations of old values), the Language switch (ApplyLanguage) and the
+-- shared constants on the addon object. Nothing else. The work is in the modules under
+-- Modules\.
+--
+-- Public:  SSF.SHARD_ITEM_ID, SSF.ICON, SSF.VERSION (the toc version), SSF.db (AceDB),
+--          SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
+-- Reads:   NS.locales from Locales\Register.lua; KeyBindings:ApplyLabels(),
+--          Sounds:IsLevel() for a migration; the raw SoulShardForeverDB profile keys
+--          before AceDB opens it (the profile-key migration).
+-- Saves:   the whole profile's defaults; migrations below.
+-- Touches nothing else.
 
 local ADDON, NS = ... -- NS: the addon-private table; Locales\Register.lua fills NS.locales
 -- Registered as "SSF": AceConsole prefixes every chat line with the registered name.
 local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
--- Labels for the Bindings.xml rows in Blizzard's Key Bindings screen (globals by Blizzard's rule)
-BINDING_NAME_SSF_DELETE = L["Delete Shard"]
-BINDING_NAME_SSF_PAUSE = L["Pause all SSF actions"]
-
 SSF.SHARD_ITEM_ID = 6265
 SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
-
--- r, g, b of the warlock class color: SSF's titles (the window, its groups, the minimap
--- tooltip) and nothing else
-function SSF:ClassColor()
-    local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARLOCK
-    if c then return c.r, c.g, c.b end
-    return 0.53, 0.53, 0.93
-end
+SSF.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
 
 local defaults = {
     profile = {
@@ -57,6 +54,40 @@ local defaults = {
     },
 }
 
+-- Old saved values that no longer mean anything, fixed once at load. Each line names the
+-- release that dropped the value.
+local function Migrate(p)
+    p.window.open = nil -- 1.8: a reopen-after-reload try that was dropped
+    -- 1.8.1: a saved volume that is no longer a level (the dropped Faint) goes back to Full
+    if not SSF:GetModule("Sounds"):IsLevel(p.pauseSoundVolume) then p.pauseSoundVolume = 1 end
+end
+
+-- 1.8.2: the AceDB in this release names a character "Name Surname" on Forever, where the
+-- one before named it "Name - PvE" (or PvP, RP, Hardcore, or the realm name). A character
+-- whose profile is new under the new name takes its old profile over, settings and welcome
+-- mark alike, so a library update resets nobody. The keys are read before AceDB:New,
+-- which writes the new one. Can be dropped a few releases on.
+local function KnownProfileKeys()
+    local sv, known = SoulShardForeverDB, {}
+    if sv and sv.profileKeys then
+        for key in pairs(sv.profileKeys) do known[key] = true end
+    end
+    return known
+end
+
+local function MigrateProfileKey(db, known)
+    local char = db.keys.char
+    if known[char] or db.keys.profile ~= char then return end -- had one, or picked one by hand
+    local name = char:match("^(%S+)")
+    for _, suffix in ipairs({ "PvE", "PvP", "RP", "Hardcore", GetRealmName() }) do
+        local old = name .. " - " .. suffix
+        if known[old] then
+            db:CopyProfile(old)
+            return
+        end
+    end
+end
+
 -- The Language setting. Rewrites the one AceLocale table every module holds, in place:
 -- English first (the default, key = string), then the chosen locale over it, which is
 -- exactly what AceLocale built at load for the client's locale. Auto = the client's locale,
@@ -73,8 +104,7 @@ function SSF:ApplyLanguage()
     if chosen ~= NS.locales.enUS then
         for key, value in pairs(chosen.strings) do L[key] = value end
     end
-    BINDING_NAME_SSF_DELETE = L["Delete Shard"]
-    BINDING_NAME_SSF_PAUSE = L["Pause all SSF actions"]
+    self:GetModule("KeyBindings"):ApplyLabels()
 end
 
 function SSF:OnInitialize()
@@ -90,12 +120,9 @@ function SSF:OnInitialize()
         return
     end
 
+    local known = KnownProfileKeys()
     self.db = LibStub("AceDB-3.0"):New("SoulShardForeverDB", defaults) -- per-character profiles
+    MigrateProfileKey(self.db, known)
+    Migrate(self.db.profile)
     self:ApplyLanguage() -- before any module's OnEnable reads L
-end
-
-function SSF:OnEnable()
-    local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-    local author = self:GetModule("Settings"):Accent("msromike")
-    self:Printf(L["Soul Shards Forever (SSF) v%s by %s. Type /ssf for options."], version, author)
 end

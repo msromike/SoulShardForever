@@ -1,10 +1,9 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Window: SSF's own options window. Opens it, feeds it the options table, keeps it fresh
--- while shown, dresses its buttons and footer, styles its titles, anchors its tooltips
--- above-right of the cursor. The table itself is
+-- while shown, dresses its buttons and footer, styles its titles. The table itself is
 -- Options'; this module reaches it only through AceConfigDialog / AceConfigRegistry by the
--- app name "SSF".
+-- app name "SSF". Tooltips are the Tooltip module's: the window hands it its frame.
 --
 -- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard warning, Bag count) and
 -- Other, then a small version/credit line. Every toggle is full width, and a label that does
@@ -17,24 +16,30 @@
 --          nothing in a fight, see InFight),
 --          Toggle() (the minimap icon and broker click), Refresh(),
 --          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's;
---          opts as SSFWindow:ShowSidePanel).
--- Reads:   Macros:AnyMissing() for the
---          "Create macros" button.
--- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of combat), SSF_WINDOW_OPENED
+--          opts as SSFWindow:ShowSidePanel), InFight() (the one combat test the window
+--          and the welcome share), OpenKeyBindings() (the bottom-right button).
+-- Reads:   Macros:AnyMissing() for the "Create macros" button, Options:IsHelpOn/
+--          ToggleHelp, KeyBindings:Open, Colors:Class/Gold, Tooltip:Attach, SSF.VERSION.
+-- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of a fight), SSF_WINDOW_OPENED
 --          (after every open).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
---          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and a
---          bucketed BAG_UPDATE (refresh the count row), PLAYER_REGEN_DISABLED (a fight
+--          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and
+--          SSF_BAGS_CHANGED (refresh the count row), PLAYER_REGEN_DISABLED (a fight
 --          starts: the window closes, and nothing opens it until the fight is over; it
 --          does not reopen by itself).
+-- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild.
 -- Saves:   the window position, profile.window (top, left and the screen size it was
 --          saved on).
+-- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog
+--          hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the
+--          three raw frames in SSF (DeleteButton's named button and Counter's FontString
+--          are the others).
 
-local ADDON = "SoulShardForever"
+local ADDON = ...
 local APP = "SSF" -- the AceConfig app Options registers
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Window = SSF:NewModule("Window", "AceEvent-3.0", "AceBucket-3.0", "AceTimer-3.0", "AceHook-3.0")
+local Window = SSF:NewModule("Window", "AceEvent-3.0", "AceTimer-3.0", "AceHook-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
 local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
@@ -42,11 +47,12 @@ local AceConfigRegistry = LibStub("AceConfigRegistry-3.0")
 -- The window title and the group titles are in the warlock class color: nothing else in
 -- the window uses it (gold is for control labels, white for option text, green and red
 -- for state).
-local function ClassColor() return SSF:ClassColor() end
+local function ClassColor() return SSF:GetModule("Colors"):Class() end
+local function Gold(text) return SSF:GetModule("Colors"):Gold(text) end
 
 -- In a fight: the combat lockdown, or already flagged in combat (PLAYER_REGEN_DISABLED fires
--- as the fight starts, before the lockdown itself is on).
-local function InFight() return InCombatLockdown() or UnitAffectingCombat("player") end
+-- as the fight starts, before the lockdown itself is on). Welcome asks this too.
+function Window:InFight() return InCombatLockdown() or UnitAffectingCombat("player") end
 
 -- A faint dark strip behind every title (each group title, and the window title in its
 -- header), so the class color reads on any scenery behind the window. One darkness for all.
@@ -62,24 +68,11 @@ local BAND_BACKDROP = {
     insets = { left = 3, right = 3, top = 5, bottom = 3 },
 }
 
--- Blizzard's Key Bindings page, scrolled to SSF's section and opened expanded. There is no
--- function to expand a section, so the section's own flag (initializer.data.expanded) is
--- set first; tested in game, and a key bound there afterwards stuck through a reload with
--- nothing blocked. The section name is Bindings.xml's category. SSF's window closes first:
+-- Blizzard's Key Bindings page on SSF's section (KeyBindings). SSF's window closes first:
 -- it draws above the settings panel.
-local BINDING_SECTION = "Soul Shards Forever"
-
 function Window:OpenKeyBindings()
     if self.window then self.window:Hide() end
-    local id = Settings.KEYBINDINGS_CATEGORY_ID
-    local category = id and Settings.GetCategory(id)
-    local layout = category and SettingsPanel:GetLayout(category)
-    for _, initializer in ipairs(layout and layout:GetInitializers() or {}) do
-        if initializer.data and initializer.data.name == BINDING_SECTION then
-            initializer.data.expanded = true
-        end
-    end
-    Settings.OpenToCategory(id, BINDING_SECTION)
+    SSF:GetModule("KeyBindings"):Open()
 end
 
 -- The window's own strings, outside the options table: the two bottom buttons and the footer.
@@ -99,13 +92,13 @@ function Window:DressWindow()
     -- Welcome, so nothing loops.
     local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
     self.window:SetActionButton(createText, function()
-        if not InCombatLockdown() then Window:SendMessage("SSF_SHOW_WELCOME") end
+        if not Window:InFight() then Window:SendMessage("SSF_SHOW_WELCOME") end
     end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
     local label = SETTINGS_KEYBINDINGS_LABEL or KEY_BINDINGS or "Key Bindings"
     -- the two binding names in gold, as they look on the key bindings page
     local bindTip = on and L["Opens WoW's key bindings menu to bind %s and %s."]
-        :format(Options.Gold(L["Delete Shard"]), Options.Gold(L["Pause all SSF actions"])) or nil
+        :format(Gold(L["Delete Shard"]), Gold(L["Pause all SSF actions"])) or nil
     self.window:SetRightButton(label, function() Window:OpenKeyBindings() end, bindTip)
 
     self.window:SetTitleColor(ClassColor()) -- "Soul Shards Forever" at the top, as the group titles
@@ -114,8 +107,7 @@ function Window:DressWindow()
     self.window:SetHelpButton(function() Options:ToggleHelp() end, on,
         on and L["Help ON: Click to hide tooltip help."]
         or L["Help OFF: Click to show tooltip help when you hover over an option."])
-    local version = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
-    self.window:SetFooter("v" .. version .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
+    self.window:SetFooter("v" .. SSF.VERSION .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
 end
 
 -- Group titles one font size up in SSF's own window, so the sections stand apart. The boxes
@@ -192,36 +184,13 @@ local function HookDialogOpen()
     hookedOpen = AceConfigDialog.Open
 end
 
--- Every tooltip in the window sits above-right of the cursor, offset to the right
--- (SSFWindow:TooltipAnchor, the one place that says where), the help button's included.
--- AceConfigDialog shows an option's help line in its own
--- tooltip, which it anchors ANCHOR_TOPRIGHT and every addon shares, so it is re-anchored as
--- it shows, and only while its owner is inside this window.
-local function InWindow(frame)
-    local window = Window.window and Window.window.frame
-    while frame do
-        if frame == window then return true end
-        frame = frame:GetParent()
-    end
-    return false
-end
-
-local hookedTooltip
-local function HookOptionTooltip()
-    local tooltip = AceConfigDialog.tooltip
-    if not tooltip or tooltip == hookedTooltip then return end
-    tooltip:HookScript("OnShow", function(self)
-        if InWindow(self:GetOwner()) then self:SetAnchorType(Window.window:TooltipAnchor()) end
-    end)
-    hookedTooltip = tooltip
-end
-
 -- Feed the table into the window, then size the window to it: the width first (every text
 -- on one line, SSFWindow:FitWidth; the layout depends on the width, so a changed width is
--- fed again), then the height (SSFWindow:FitToContent).
+-- fed again), then the height (SSFWindow:FitToContent). The Tooltip module re-anchors
+-- AceConfigDialog's option tooltips while they are shown inside this window's frame.
 function Window:Feed()
     HookDialogOpen()
-    HookOptionTooltip()
+    SSF:GetModule("Tooltip"):Attach(self.window.frame)
     AceConfigDialog:Open(APP, self.window)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
     self.window:FitToContent()
@@ -273,7 +242,7 @@ function Window:Toggle()
 end
 
 function Window:Open()
-    if InFight() then return end -- the window stays shut for the whole fight
+    if self:InFight() then return end -- the window stays shut for the whole fight
     -- the saved position goes into AceConfigDialog's status table, which Feed hands to the
     -- window; a drag saves it back (OnMoved below)
     local saved, status = SSF.db.profile.window, AceConfigDialog:GetStatusTable(APP)
@@ -314,7 +283,7 @@ end
 
 -- Open the window with a note beside it (SSFWindow:ShowSidePanel). Welcome fills it.
 function Window:ShowNote(titleText, bodyText, noteText, opts)
-    if InFight() then return end -- no window in a fight, so no note either
+    if self:InFight() then return end -- no window in a fight, so no note either
     self:Open()
     self.window:ShowSidePanel(titleText, bodyText, noteText, opts)
 end
@@ -328,13 +297,11 @@ end
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
 -- before OnEnable, so other classes never get the window.
 function Window:OnEnable()
-    SSF.db.profile.window.open = nil -- left over from a dropped reopen-after-reload try
-
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:RegisterMessage("SSF_MACROS_CHANGED", "OnMacrosChanged")
-    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "Refresh")
+    self:RegisterMessage("SSF_BAGS_CHANGED", "Refresh")
     -- a fight closes the window (and Open refuses until it's over)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
 end

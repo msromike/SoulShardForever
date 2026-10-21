@@ -56,6 +56,52 @@ test("low mark in use never exceeds the cap", function()
     profile.maxShards = 8
 end)
 
+test("the low mark in use is held to the cap, paused or not", function()
+    profile.autoMax = false
+    profile.maxShards = 8
+    profile.lowMark = 73
+    profile.paused = true
+    eq(Cap:LowMark(), 8, "paused: still the cap")
+    profile.paused = false
+    eq(Cap:LowMark(), 8, "unpaused: the cap")
+    profile.lowMark = 4
+end)
+
+test("State: low below the mark, ok to the cap, over above it", function()
+    profile.autoMax = false
+    profile.maxShards = 8
+    profile.lowMark = 4
+    profile.paused = false
+    eq(Cap:State(0), "low", "zero is low")
+    eq(Cap:State(3), "low", "3 < 4")
+    eq(Cap:State(4), "ok", "at the mark is ok")
+    eq(Cap:State(8), "ok", "at the cap is ok")
+    eq(Cap:State(9), "over", "9 > 8")
+end)
+
+test("State with a mark above the cap: over wins while unpaused", function()
+    profile.autoMax = false
+    profile.maxShards = 8
+    profile.lowMark = 73
+    profile.paused = false
+    eq(Cap:State(33), "over", "33 shards, cap 8: over, not low")
+    eq(Cap:State(5), "low", "5 < 8 (the mark in use is the cap)")
+    eq(Cap:State(8), "ok", "at the cap")
+    profile.lowMark = 4
+end)
+
+test("State ignores pause", function()
+    profile.autoMax = false
+    profile.maxShards = 8
+    profile.lowMark = 73
+    profile.paused = true
+    eq(Cap:State(33), "over", "33 > 8, paused or not")
+    eq(Cap:State(5), "low", "5 < 8 (the mark in use is the cap)")
+    eq(Cap:State(8), "ok", "at the cap")
+    profile.paused = false
+    profile.lowMark = 4
+end)
+
 test("SetManual stores the clamped value and sends SSF_CAP_CHANGED once per change", function()
     profile.autoMax = false
     local got = {}

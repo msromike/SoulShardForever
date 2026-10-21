@@ -14,10 +14,9 @@ L["ON"] = "ACTIVADO"
 L["OFF"] = "DESACTIVADO"
 L["Use: /ssf %s on|off"] = "Uso: /ssf %s on|off"
 L["Use: /ssf %s %d-%d"] = "Uso: /ssf %s %d-%d"
-L["Soul Shards: %s (cap %s)"] = "Fragmentos de alma: %s (límite %s)"
 L["Soul Shards: %s"] = "Fragmentos de alma: %s"
 L["(in bags: %s)"] = "(en las bolsas: %s)"
-L["%s (cap %d)"] = "%s (límite %d)"
+L["%s (cap %s)"] = "%s (límite %s)"
 L["Match soul bag size (no soul bag)"] = "Según la bolsa de almas (sin bolsa)"
 
 -- Options

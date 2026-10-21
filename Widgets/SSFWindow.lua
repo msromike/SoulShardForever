@@ -53,8 +53,8 @@ local SIDE_ICON_GAP = 6               -- px between the arrow and the "i"
 local ARROW_ART = 131906              -- Interface\Glues\Login\UI-BackArrow: a gold arrow pointing left
 local ARROW_CROP = { 2 / 64, 1, 10 / 64, 50 / 64 } -- the arrow in its 64 px art (measured): 62 x 40
 local HELP_ON = { 0.35, 0.65, 1 }     -- the "i" while help is on: blue (the art greyed, then tinted); off it is its own gold
--- where every tooltip in the window sits: above-right of the cursor, TIP_X px to its right
-local TIP_ANCHOR, TIP_X, TIP_Y = "ANCHOR_CURSOR_RIGHT", 60, 0
+-- every tooltip this window shows goes through the Tooltip module (the one anchor)
+local function Tooltip() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Tooltip") end
 local TITLE_CAP = 30                  -- each end cap of the header art (titlebg_l, titlebg_r)
 -- px added to a measured width: AceGUI's Flow layout compares widths exactly, and frame
 -- sizes come back with float error (measured in game: 255.0001 for 255), so a row measured
@@ -84,18 +84,11 @@ end
 -- owner hands one over only while help is on.
 local function ButtonTip_OnEnter(button)
     if not button.tipText then return end
-    GameTooltip:SetOwner(button, TIP_ANCHOR, TIP_X, TIP_Y)
-    GameTooltip:SetText(button:GetText() or "", 1, 0.82, 0, 1, true)
-    -- one tooltip line per line of text, a blank one as a spacer: handed over as one text,
-    -- the game sometimes drops a blank line (seen in English and German, not Russian)
-    for line in (button.tipText .. "\n"):gmatch("(.-)\n") do
-        GameTooltip:AddLine(line == "" and " " or line, 1, 1, 1, true) -- a long line wraps by itself
-    end
-    GameTooltip:Show()
+    Tooltip():Show(button, button:GetText(), button.tipText, true)
 end
 
 local function ButtonTip_OnLeave(button)
-    if GameTooltip:IsOwned(button) then GameTooltip:Hide() end
+    Tooltip():Hide(button)
 end
 
 local function SetButtonTip(button, tipText)
@@ -106,7 +99,7 @@ local function SetButtonTip(button, tipText)
         button.tipHooked = true
     end
     if GameTooltip:IsOwned(button) then
-        if tipText then ButtonTip_OnEnter(button) else GameTooltip:Hide() end
+        if tipText then ButtonTip_OnEnter(button) else Tooltip():Hide(button) end
     end
 end
 
@@ -466,10 +459,6 @@ local methods = {
         panel:Show()
     end,
 
-    -- where tooltips in this window sit, as SetOwner / SetAnchorType arguments: the owner
-    -- re-anchors tooltips it does not draw itself (AceConfigDialog's) with these
-    ["TooltipAnchor"] = function() return TIP_ANCHOR, TIP_X, TIP_Y end,
-
     -- the small line between the two bottom buttons
     ["SetFooter"] = function(self, text)
         self.footer:SetText(text or "")
@@ -532,14 +521,8 @@ local function Constructor()
     local lo, hi = HELP_CROP[1], HELP_CROP[2]
     helpbutton:GetNormalTexture():SetTexCoord(lo, hi, lo, hi)
     helpbutton:GetHighlightTexture():SetTexCoord(lo, hi, lo, hi)
-    helpbutton:SetScript("OnEnter", function(button)
-        GameTooltip:SetOwner(button, TIP_ANCHOR, TIP_X, TIP_Y)
-        GameTooltip:SetText(button.tipText or "", 1, 1, 1, 1, true)
-        GameTooltip:Show()
-    end)
-    helpbutton:SetScript("OnLeave", function(button)
-        if GameTooltip:IsOwned(button) then GameTooltip:Hide() end
-    end)
+    helpbutton:SetScript("OnEnter", function(button) Tooltip():Show(button, button.tipText) end)
+    helpbutton:SetScript("OnLeave", function(button) Tooltip():Hide(button) end)
     helpbutton:Hide()
 
     -- the side panel (ShowSidePanel): the window's own background and a tooltip-weight border,

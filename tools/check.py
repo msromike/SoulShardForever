@@ -2,8 +2,9 @@
 """tools/check.py: the pre-commit check for Soul Shards Forever.
 
 Job:    run luacheck, run the headless tests (tests/run.lua, when present), check that
-        every locale carries every key enUS has, and regenerate ARCHITECTURE.md from the
-        code and the file headers. Exit 1 on any failure, 0 when all pass.
+        every locale carries every key enUS has, regenerate ARCHITECTURE.md from the
+        code and the file headers, and report (never fail on) how far the committed
+        Libs/ are behind their upstreams. Exit 1 on any failure, 0 when all pass.
 Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars override the
         tool locations (the GitHub workflow sets them; locally they are found on PATH or
         at the fallback paths below).
@@ -47,6 +48,19 @@ def check_luacheck():
         print(f"== luacheck\n   FAILED: luacheck not found ({exe})")
         return False
     return run([exe, ".", "--no-color", "-q"], "luacheck")
+
+
+def check_libs():
+    """Information only: how far the committed Libs/ are behind their upstreams. Never fails
+    the check; a bump is a deliberate step (tools/sync_libs.py --apply, in-game pass, own
+    commit). Offline, it says so and passes."""
+    print("== libs vs upstream (information)")
+    proc = subprocess.run([sys.executable, "-I", os.path.join(ROOT, "tools", "sync_libs.py"), "--quiet"],
+                          cwd=ROOT, text=True, capture_output=True)
+    lines = [l for l in (proc.stdout + proc.stderr).splitlines() if "DRIFT" in l or "not fetched" in l or "NOT EMBEDDED" in l or l.startswith("libs:")]
+    for l in lines:
+        print("   " + l)
+    return True
 
 
 def check_tests():
@@ -253,7 +267,7 @@ def check_map():
 
 
 def main():
-    results = [check_luacheck(), check_tests(), check_locales(), check_map()]
+    results = [check_luacheck(), check_tests(), check_locales(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1

@@ -123,12 +123,18 @@ SlashCmdList, hash_SlashCmdList = {}, {}
 UISpecialFrames = {}
 GameFontNormal, GameFontNormalLarge = {}, {}
 C_Timer = { After = function() end }
+C_UIFileAsset = { IsKnownFile = function() return true end } -- LibSharedMedia checks its media files
+C_Sound = { PlaySound = function() end }
+PlaySoundFile = function() end
 
 -- Player, class, locale
 function UnitClassBase() return "WARLOCK" end
 function UnitClass() return "Warlock", "WARLOCK" end
 function UnitName() return "Tester" end
-function UnitNameUnmodified() return "Tester" end
+-- Forever names a character "Name Surname" (regional unique names); AceDB 39 keys the
+-- profile "Tester Hrodbar" from this, where AceDB 36 keyed it "Tester - PvE"
+function UnitNameUnmodified() return "Tester", "Hrodbar" end
+function RegionalUniqueNamesEnabled() return true end
 function UnitRace() return "Undead", "Scourge" end
 function UnitFactionGroup() return "Horde" end
 function GetRealmName() return "Hrodbar" end
@@ -178,6 +184,10 @@ C_Item = {
     IsLocked = function(loc) local b = bagOf(loc.bag) return b and b.locked and b.locked[loc.slot] == true or false end,
     GetItemFamily = function(itemId) return itemId == 6265 and SOUL_FAMILY or 0 end,
 }
+-- Cursor: PickupContainerItem is recorded in WoW.picks as { bag, slot } pairs, so a test can
+-- read the moves a Sorter pass fired; nothing is actually moved in the fake bags.
+WoW.picks = {}
+C_Container.PickupContainerItem = function(bag, slot) WoW.picks[#WoW.picks + 1] = { bag, slot } end
 ClearCursor = function() end
 GetCursorInfo = function() return nil end
 DeleteCursorItem = function() end

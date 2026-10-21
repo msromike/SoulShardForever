@@ -31,20 +31,41 @@ for _, rel in ipairs({
     "Libs/AceDB-3.0/AceDB-3.0.lua",
     "Libs/AceConsole-3.0/AceConsole-3.0.lua",
     "Libs/AceLocale-3.0/AceLocale-3.0.lua",
+    "Libs/LibSharedMedia-3.0/LibSharedMedia-3.0.lua",
 }) do loadLua(rel) end
 
--- The addon: locales, Core, then the logic modules under test
+-- The addon: locales, Core, then the logic modules under test (toc order; no widgets, no
+-- window, no Options: those need AceGUI and a drawn UI)
 for _, rel in ipairs({
     "Locales/Register.lua",
     "Locales/enUS.lua",
     "Core.lua",
+    "Modules/Colors.lua",
+    "Modules/KeyBindings.lua",
     "Modules/Bags.lua",
     "Modules/Cap.lua",
+    "Modules/Sorter.lua",
+    "Modules/Sounds.lua",
+    "Modules/Trimmer.lua",
+    "Modules/Status.lua",
 }) do loadLua(rel, ADDON, NS) end
+
+-- A saved file as a 1.8.1 user has it: one profile under the old AceDB 36 key. Core's
+-- profile-key migration must carry it over to the new key at OnInitialize.
+SoulShardForeverDB = {
+    profileKeys = { ["Tester - PvE"] = "Tester - PvE" },
+    profiles = { ["Tester - PvE"] = { maxShards = 12, lowMark = 10, welcomed = 10801, pauseLog = true } },
+}
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 LibStub("AceAddon-3.0"):InitializeAddon(SSF) -- OnInitialize: the warlock gate, the db, the language
 _G.SSF = SSF
+-- what the profile looked like right after OnInitialize, before any test touches it
+WoW.initialProfile = {
+    char = SSF.db.keys.char, profileKey = SSF.db.keys.profile,
+    maxShards = SSF.db.profile.maxShards, lowMark = SSF.db.profile.lowMark,
+    welcomed = SSF.db.profile.welcomed, pauseLog = SSF.db.profile.pauseLog,
+}
 
 -- The tiny assertion kit
 local passed, failed, current = 0, 0, nil
@@ -61,6 +82,7 @@ function test(name, fn)
     current = name
     WoW.SetBags(nil)
     WoW.combat = false
+    WoW.picks = {}
     local okay, err = pcall(fn)
     if not okay then record(false, "error", tostring(err)) end
 end

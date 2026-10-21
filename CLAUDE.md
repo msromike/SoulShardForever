@@ -59,6 +59,14 @@ LibDataBroker, LibDBIcon, LibSharedMedia, LibCustomGlow.
 - A new job gets a new file, named for the job, with its header written before its code,
   and a line in ARCHITECTURE.md in the same commit.
 
+## Libraries
+
+Libs\ is committed and ships exactly as committed: .pkgmeta has no externals, so what was
+tested is what the package holds. tools\externals.txt names each library's upstream; the
+check script reports drift from it as information. A library changes only on purpose:
+`python tools/sync_libs.py --apply`, an in-game pass, a commit of its own with a changelog
+line. Never edit a file under Libs\ by hand.
+
 ## Every commit
 
 - Run the check script (luacheck, headless tests, locale completeness, regenerate

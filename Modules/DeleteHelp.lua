@@ -13,7 +13,8 @@
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local DeleteHelp = SSF:NewModule("DeleteHelp")
-local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardForever")
+local ADDON = ...
+local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 function DeleteHelp:Blocks(first)
     local Macros = SSF:GetModule("Macros")

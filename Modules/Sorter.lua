@@ -10,19 +10,29 @@
 -- SoulSort legacy (soulsortLegacy on): SoulSort's sort instead. A shard goes to any earlier
 -- slot in the order, in its own bag too, and the slot may hold another item: that item
 -- swaps into the shard's old slot (SoulSort did the same pickup-pickup). The order is top
--- slot first (Normal) or bottom slot first (Reverse, soulsortReverse); Bags walks it.
+-- slot first (Normal) or bottom slot first (Reverse, soulsortReverse); Bags walks it, and
+-- TopFirst() is the one place that rule is written (Trimmer asks it too).
 --
 -- A pass plans every move from one snapshot and fires them all; it never reads the bags
 -- back between moves (a move in flight shows its shard locked at the source and maybe not
 -- yet at the target). Leftovers (locked slots, shards still in flight) are picked up by
--- re-running the pass on the next bucketed BAG_UPDATE, until a pass finds nothing to do.
--- Sends SSF_SORTED with the number of moves when a pass moved something. Reads Bags and the
--- two legacy settings.
+-- re-running the pass on the next SSF_BAGS_CHANGED, until a pass finds nothing to do.
+--
+-- Public:  Pass() -> moves fired; TopFirst() -> true under SoulSort legacy Normal.
+-- Listens: SSF_BAGS_CHANGED (re-run a pass with leftovers).
+-- Sends:   SSF_SORTED (moves) when a pass moved something.
+-- Reads:   Bags; profile.soulsortLegacy, soulsortReverse.
+-- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Sorter = SSF:NewModule("Sorter", "AceEvent-3.0", "AceBucket-3.0")
+local Sorter = SSF:NewModule("Sorter", "AceEvent-3.0")
 
 local MAX_RERUNS = 5 -- bag updates a press may follow up on; a server that keeps refusing a move does not loop forever
+
+function Sorter:TopFirst()
+    local p = SSF.db.profile
+    return p.soulsortLegacy and not p.soulsortReverse
+end
 
 -- Runs one pass. Returns the number of moves fired.
 function Sorter:Pass()
@@ -30,9 +40,9 @@ function Sorter:Pass()
         self.reruns = nil
         return 0
     end
-    local Bags, profile = SSF:GetModule("Bags"), SSF.db.profile
-    local legacy = profile.soulsortLegacy
-    local topFirst = legacy and not profile.soulsortReverse
+    local Bags = SSF:GetModule("Bags")
+    local legacy = SSF.db.profile.soulsortLegacy
+    local topFirst = self:TopFirst()
 
     -- snapshot, in sort order: target slots and movable shards, each with its rank: the
     -- bag position (a shard moves only to an earlier bag), or under legacy the slot's
@@ -76,10 +86,10 @@ function Sorter:Pass()
     return moved
 end
 
-function Sorter:OnBagUpdate()
+function Sorter:OnBagsChanged()
     if self.reruns then self:Pass() end
 end
 
 function Sorter:OnEnable()
-    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "OnBagUpdate")
+    self:RegisterMessage("SSF_BAGS_CHANGED", "OnBagsChanged")
 end

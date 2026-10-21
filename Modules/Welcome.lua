@@ -14,22 +14,24 @@
 -- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open).
 --
 -- Reads:  profile.welcomed. Calls Options:IsHelpOn(), Options:ToggleHelp(),
---         Window:ShowNote(), DeleteHelp:Blocks(), Macros:Create() (the note's button).
---         Touches nothing else.
+--         Window:ShowNote(), Window:InFight(), DeleteHelp:Blocks(), Macros:AnyMissing()
+--         and Macros:Create() (the note's button). Also listens to LOADING_SCREEN_DISABLED
+--         once at load while a note is owed. Touches nothing else.
 -- Saves:  profile.welcomed: false while the note is owed (set when it shows), and
 --         WELCOME_VERSION once the player closes it outside a fight.
 
+local ADDON = ...
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Welcome = SSF:NewModule("Welcome", "AceEvent-3.0")
-local L = LibStub("AceLocale-3.0"):GetLocale("SoulShardForever")
+local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 -- The welcome's version, two digits per part (Blizzard's ## Interface scheme): 1.8 = 10800.
 -- Raised only when the note changes, so players see a changed note once. 1.8.1 raises it:
 -- the note was redone and Delete Shard moved, so updaters see the window once more.
 local WELCOME_VERSION = 10801
 
--- in a fight: the lockdown, or already flagged in combat as the fight starts (as Window)
-local function InFight() return InCombatLockdown() or UnitAffectingCombat("player") end
+-- in a fight: Window's one test (the window and the note close together)
+local function InFight() return SSF:GetModule("Window"):InFight() end
 
 -- the note is owed: this version's welcome not yet closed by the player (1.7 saved true;
 -- true, false or nothing all count as older than any version number)
