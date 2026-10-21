@@ -13,9 +13,12 @@
 -- (alpha, because the game calls Show() on it by itself); it is set back to 1 the moment the
 -- counter leaves that button or the option is turned off. Bag 4 and the backpack are never
 -- touched.
--- Font is the profile's LibSharedMedia font name. Size is the largest that fits inside the
--- button face with a margin; the button is the bound. Colored on the one state scale
--- (Cap:State, Colors:ForState) when "Colorize" is on; white when off.
+-- Font is the profile's LibSharedMedia font name (Arial Narrow by default: its digits have
+-- air between them). Size is the largest that fits inside the button face with 15% of
+-- the face kept clear on each side, the outline counted; the button is the bound. The old
+-- two-pixel margin let the number fill the face edge to edge and hide the bag (Mike,
+-- 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
+-- "Colorize" is on; white when off.
 --
 -- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED.
@@ -31,7 +34,9 @@ local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Counter = SSF:NewModule("Counter", "AceEvent-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
-local MARGIN = 2 -- px kept between the number and the button edge
+local MARGIN = 0.15 -- of the face kept clear on each side of the number (so it takes 70%);
+                    -- tuned by eye for Arial Narrow, the default; another font is the player's pick
+local OUTLINE = 1  -- px the OUTLINE flag draws round each glyph; GetStringWidth leaves it out
 local MAX_SIZE, MIN_SIZE = 48, 6
 
 -- The bag bar button for an equipped bag: bags 1-4 are CharacterBag0Slot-CharacterBag3Slot,
@@ -85,14 +90,16 @@ local function HideGameCount(self, button)
 end
 
 -- Sets the number in the profile font at MAX_SIZE (the FontString needs a font before any
--- text), then steps the size down until it fits inside the button face with the margin.
+-- text), then steps the size down until it, outline included, fits inside the button face
+-- with the margin.
 local function Fit(self, parent, count)
     local font = LSM:Fetch("font", SSF.db.profile.counterFont)
     local size = MAX_SIZE
-    local maxW, maxH = parent:GetWidth() - MARGIN * 2, parent:GetHeight() - MARGIN * 2
+    local maxW, maxH = parent:GetWidth() * (1 - MARGIN * 2), parent:GetHeight() * (1 - MARGIN * 2)
     self.text:SetFont(font, size, "OUTLINE")
     self.text:SetText(count)
-    while size > MIN_SIZE and (self.text:GetStringWidth() > maxW or self.text:GetStringHeight() > maxH) do
+    while size > MIN_SIZE and (self.text:GetStringWidth() + OUTLINE * 2 > maxW
+            or self.text:GetStringHeight() + OUTLINE * 2 > maxH) do
         size = size - 1
         self.text:SetFont(font, size, "OUTLINE")
     end

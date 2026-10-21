@@ -37,7 +37,7 @@ Core and modules:
 - Modules\Welcome.lua: the first-load welcome.
 - Modules\Broker.lua: the LibDataBroker data object and the LibDBIcon minimap icon.
 - Modules\Counter.lua: one number, the total shard count, centered on one bag button.
-- Modules\LowGlow.lua: while the count is in the "low" state (Cap:State: below the low mark in use), the bag button the counter sits on glows (LibCustomGlow's button glow, the proc-alert look).
+- Modules\LowGlow.lua: while the count is in the "low" state (Cap:State: below the low mark in use), the bag button the counter sits on gets a running border (LibCustomGlow's pixel glow) on its own edge, in the same red the number shows, three pixels thick, moving slowly.
 
 Locales:
 
