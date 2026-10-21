@@ -68,7 +68,7 @@ local EDGE = 17                       -- the content's, buttons' and footer's in
 local TOP_INSET = 35                  -- the content's inset from the top (the title art)
 local BOTTOM_INSET = 58               -- the content's inset from the bottom: the button row and the footer
 local CHROME = TOP_INSET + BOTTOM_INSET
-local STOCK_BOTTOM_INSET = 57         -- what the stock Frame's OnHeightSet keeps for its status strip
+local STOCK_BOTTOM_INSET = 57         -- what the stock Frame's OnHeightSet takes off the height it records for its content
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 420, 380 -- before the first fit
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
@@ -173,8 +173,10 @@ local methods = {
         if self.sidenote:IsShown() then self.sidenote:Layout(width) end
     end,
 
-    -- the stock Frame keeps STOCK_BOTTOM_INSET under its content for its status strip; SSF's
-    -- bottom row is taller, so the stock method gets the height less the difference
+    -- the stock OnHeightSet records content.height as the height less STOCK_BOTTOM_INSET;
+    -- SSF hands it the height less the extra its taller bottom row adds, which leaves the
+    -- recorded number 35 px over the anchored content (CHROME inside). Nothing reads it:
+    -- FitToContent measures the ScrollFrame's child
     ["OnHeightSet"] = function(self, height)
         self.stock.OnHeightSet(self, height - (BOTTOM_INSET - STOCK_BOTTOM_INSET))
         UpdateClamp(self)

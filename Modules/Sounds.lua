@@ -21,7 +21,8 @@
 -- sub-type, as tested in game.
 --
 -- Public:  Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
---            LSM no longer knows (a sound pack removed) falls back to the default.
+--            LSM no longer knows (a sound pack removed) falls back to the default; a nil
+--            name plays nothing (LSM:IsValid is true for nil).
 --          PlayPause() -- the pause sound at the saved level (profile.pauseSoundName,
 --            pauseSoundVolume): every paused press and the options previews.
 --          DefaultName() -> the default sound's LSM name (Core's profile default).

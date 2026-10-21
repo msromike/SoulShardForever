@@ -35,8 +35,7 @@ local AceTab = LibStub("AceTab-3.0")
 local function Colors() return SSF:GetModule("Colors") end
 
 -- AceTab usage callback shared by every completion set: on an ambiguous Tab, list the
--- candidates on one line. (Passing `true` instead trips a nil concat inside AceTab when
--- two or more words match, so every registration uses this.)
+-- candidates on one line. Every registration passes it.
 function Settings.TabUsage(_, matches)
     local words = {}
     for word in pairs(matches) do words[#words + 1] = word end
