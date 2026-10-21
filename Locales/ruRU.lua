@@ -62,7 +62,6 @@ L["Open options"] = "Открыть настройки"
 L["Open the options window."] = "Открывает окно настроек."
 L["Same as options."] = "То же, что options."
 L["Close"] = "Закрыть"
-L["Full"] = "Заполнено"
 
 -- Broker
 L["Soul Shards"] = "Осколки души"

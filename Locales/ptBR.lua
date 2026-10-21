@@ -62,7 +62,6 @@ L["Open options"] = "Abrir opções"
 L["Open the options window."] = "Abre a janela de opções."
 L["Same as options."] = "Igual a options."
 L["Close"] = "Fechar"
-L["Full"] = "Cheio"
 
 -- Broker
 L["Soul Shards"] = "Estilhaços de Alma"

@@ -2,8 +2,9 @@
 --
 -- Broker: the LibDataBroker data object and the LibDBIcon minimap icon. Click toggles the
 -- options window (opens it, or closes it if open).
--- Fields: type, label "SSF", icon, text "N (cap M)" (+ " Full" at or over the cap, the
--- count in the state color), value = N. No suffix, no per-bag breakdown.
+-- Fields: type, label "SSF", icon, text = the count alone in its state color (the icon
+-- names it, the color is the state; the cap is a setting and lives in the tooltip: Mike,
+-- 2026-10-21), value = N. No suffix, no "Full", no per-bag breakdown.
 -- Tooltip: the same rows every time. The title in the class color; the count, always in
 -- its state color (the tooltip teaches the bag's colors); a blank line; then the settings
 -- in white: the cap, the low mark, and SSF paused Yes/No. Every value's wording and color
@@ -11,8 +12,8 @@
 --
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED
 --          (the text; "minimap" also shows or hides the icon).
--- Reads:   Bags:Count(), Cap:Get/IsFull, Status:CapText/CountValue/CapValue/LowMarkValue/
---          PausedValue, Colors:Class and Colors.DIM, Window:Toggle(), SSF.ICON;
+-- Reads:   Bags:Count(), Status:CountValue/CapValue/LowMarkValue/PausedValue, Colors:Class
+--          and Colors.DIM, Window:Toggle(), SSF.ICON;
 --          profile.minimap.
 -- Touches nothing else.
 
@@ -37,10 +38,8 @@ local function ShowTooltip(tooltip)
 end
 
 function Broker:Refresh()
-    local Cap = SSF:GetModule("Cap")
-    local count, cap = SSF:GetModule("Bags"):Count(), Cap:Get()
-    local full = Cap:IsFull(count) and (" " .. L["Full"]) or ""
-    self.object.text = SSF:GetModule("Status"):CapText(count, cap) .. full
+    local count = SSF:GetModule("Bags"):Count()
+    self.object.text = SSF:GetModule("Status"):CountValue(count)
     self.object.value = count
 end
 
