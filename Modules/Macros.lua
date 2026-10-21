@@ -3,7 +3,8 @@
 -- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 -- Holds their text (the one source: the help text shows exactly what Create writes), says
 -- whether each exists, makes the missing ones on a click, reloads (a new macro shows a stale
--- icon until a reload: a game bug) and then opens Blizzard's macro window on them. The
+-- icon until a reload: a game bug) and then opens Blizzard's macro window on the first of
+-- them (SSF_LT). The
 -- player drags them to a bar; SSF never places a macro.
 --
 -- Found by name in both the account and the character section, so a renamed one counts as
@@ -123,8 +124,8 @@ function Macros:Create()
     ReloadUI()
 end
 
--- After Create's reload: the macro window on the new macros, once. The tab comes from the
--- macro's slot number, so nothing else is saved.
+-- After Create's reload: the macro window on the first of SSF's macros (ShowFirst), once.
+-- The tab comes from the macro's slot number, so nothing else is saved.
 function Macros:LOADING_SCREEN_DISABLED()
     self:UnregisterEvent("LOADING_SCREEN_DISABLED")
     SSF.db.profile.macroWindowAfterReload = false

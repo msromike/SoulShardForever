@@ -12,7 +12,7 @@
 -- Volume: SSF's own sounds play through their sound kit with C_Sound.PlaySound, which
 -- takes a per-play volume (Forever's volumeOverride, tested in game). A sound another
 -- addon registered is a file only; PlaySoundFile has no volume, so it plays at full.
--- Levels: each one half the one before, about 6 dB apart, so the steps sound even to the
+-- Levels: each one about half the one before (about 6 dB), so the steps sound even to the
 -- ear (tested by ear against evenly spaced levels). The key is what the dropdown stores;
 -- the volume goes into profile.pauseSoundVolume. (A fifth level, 0.06, was too faint to
 -- be useful and was dropped in 1.8.1.)
@@ -79,7 +79,7 @@ function Sounds:IsLevel(volume)
     return LevelOf(volume) ~= nil
 end
 
--- Setup in OnEnable, as every module: the warlock gate leaves it unregistered elsewhere.
+-- Setup in OnEnable (Core's warlock gate): on another class the sound stays unregistered.
 function Sounds:OnEnable()
     for name, sound in pairs(OWN) do
         LSM:Register("sound", name, sound.file)

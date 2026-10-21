@@ -1,9 +1,9 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- DeleteHelp: the text that teaches every way to delete a shard: a first paragraph (the
--- caller's own), the two recommended macros, then what the Bane macro is for and its
--- warning. The Delete Shard tooltip and the welcome note both show it, each with its own
--- first paragraph.
+-- caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro
+-- is for and its warning. The Delete Shard tooltip and the welcome note both show it, each
+-- with its own first paragraph.
 --
 -- Public:  Blocks(first) -> the content as a list, for the welcome note's layout:
 --            { text } paragraphs and { text, macro = true } macros.
@@ -22,7 +22,8 @@ function DeleteHelp:Blocks(first)
     local lifeTap, bane = Macros:SpellName("LT"), Macros:SpellName("BoA")
     -- English names "Bane" itself and takes only Life Tap's name (%s); a translation names
     -- both, positionally (%1$s Life Tap, %2$s Bane). Extra arguments are ignored.
-    -- What it is for first, then the warning (the warning takes only Bane's name).
+    -- What it is for first, then the warning (English names Bane itself; a translation takes
+    -- its name as %s).
     return {
         { text = first },
         { text = L["In a macro, put /ssf delete on the line before the ability:"] },

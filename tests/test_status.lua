@@ -2,6 +2,7 @@
 --
 -- test_status: the one wording for the numbers, with its color codes, as chat, the window
 -- and the minimap tooltip all build from it. Color codes are checked by their hex.
+-- Saves:   profile.paused, autoMax, maxShards, lowMark, for the test at hand.
 -- Touches nothing else.
 
 local SHARD = SSF.SHARD_ITEM_ID

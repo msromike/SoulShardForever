@@ -8,9 +8,10 @@
 -- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard
 -- warning, Bag count) and Other, then a small version/credit line. Toggles are full width
 -- except Play pause sound, which shares its row with the volume dropdown; a label that
--- does not fit wraps and grows its row (Widgets\SSFCentered.lua). The window sizes itself
--- to the content after every feed, width then height (Feed -> SSFFrame:FitWidth,
--- FitToContent), so no text is cut short and it never scrolls. No default size: the first
+-- does not fit (the window is capped at the screen's width) wraps and grows its row
+-- (Widgets\SSFCentered.lua). The window sizes itself to the content after every feed,
+-- width then height (Feed -> SSFFrame:FitWidth, FitToContent), so no text is cut short and
+-- it never scrolls short of the screen's height. No default size: the first
 -- feed lays out at AceConfigDialog's own default and the fit sets both.
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
@@ -33,13 +34,16 @@
 -- Lib internals: the InlineGroup widgets AceConfigDialog builds (their type, titletext
 --          and frame, for the title style and strip), the window's first child, the
 --          ScrollFrame AceConfigDialog adds (children[1]) and its children list, and the
---          window widget's frame (for IsShown and Tooltip:Attach). BAND_BACKDROP is a copy
+--          window widget's frame (for IsShown and Tooltip:Attach), and the top and left
+--          keys of AceConfigDialog's status table (AceGUI Frame's position fields, written
+--          before an open). BAND_BACKDROP is a copy
 --          of the InlineGroup's own PaneBackdrop, which AceGUI keeps local. An AceGUI bump
 --          that changes those shows up as stock gold titles with no strip, or a strip of
 --          a different shape.
 -- Reads:   Macros:AnyMissing() for the "Create macros" button, Options.APP and
---          Options:IsHelpOn/ToggleHelp, KeyBindings:Open, Colors:Class/Gold, Tooltip:Attach,
---          SSF.VERSION, the BINDING_NAME_* labels KeyBindings sets.
+--          Options:IsHelpOn/ToggleHelp, KeyBindings:Open, Colors:Class/Gold and
+--          Colors.BLACK, Tooltip:Attach, SSF.VERSION, the BINDING_NAME_* labels KeyBindings
+--          sets; profile.window (the saved spot, at Open).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
 --          saved on).
 -- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog
@@ -182,8 +186,8 @@ end
 -- Not the window's own OnLayoutFinished: AceConfigDialog adds its ScrollFrame to the window
 -- first, which lays the window out while the ScrollFrame is still empty, then fills the
 -- ScrollFrame and lays out only that (tested: no styling at all).
--- The container can be nil: Ace calls Open(APP) with none after a change made in Blizzard's
--- Interface Options panel, before our window may exist (nil == nil).
+-- The container can be nil (an Open of AceConfigDialog's own frame passes none), and so
+-- can Window.window before its first open: without the guard, nil == nil would pass.
 local function AfterDialogOpen(_, app, container)
     if app ~= APP or not container or container ~= Window.window then return end
     StyleGroupTitles(container.children[1]) -- the ScrollFrame AceConfigDialog puts in
@@ -231,8 +235,8 @@ function Window:OnOptionsChanged(_, _, source)
 end
 
 -- The window's own strings or buttons may have changed: Options built and re-registered
--- the table (a Language change), or the player's macros changed ("Create macros" shows or
--- hides). Re-dress an existing window, then redraw.
+-- the table (a Language change or a help toggle), or the player's macros changed ("Create
+-- macros" shows or hides). Re-dress an existing window, then redraw.
 function Window:Redress()
     if self.window then self:DressWindow() end
     self:Refresh()
@@ -284,7 +288,8 @@ function Window:Open()
         self:DressWindow()
         -- The first open of a session measures before every text size is settled (the
         -- window has not been drawn yet), which leaves a gap above the buttons. Feed again
-        -- one frame later, after the first draw, so the fit is measured on settled sizes.
+        -- a tick later (a zero timer, AceTimer's 0.01 s floor), after the first draw, so the
+        -- fit is measured on settled sizes.
         self:ScheduleTimer("Feed", 0)
     end
     self:Feed()

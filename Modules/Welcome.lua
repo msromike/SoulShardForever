@@ -73,7 +73,8 @@ end
 
 function Welcome:LOADING_SCREEN_DISABLED()
     self:UnregisterEvent("LOADING_SCREEN_DISABLED")
-    -- first run starts with help on: the "i" shows blue, and every option explains itself
+    -- a load with the note owed starts with help on: the "i" shows blue, and every option
+    -- explains itself
     local Options = SSF:GetModule("Options")
     if not Options:IsHelpOn() then Options:ToggleHelp() end
     self:Show()

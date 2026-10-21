@@ -1,15 +1,18 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- run: the headless test runner. Loads the WoW stub, the Ace3 libraries SSF's logic
--- modules need, then a saved file as a 1.8.1 user has it (one profile under the old AceDB
--- key, so Core's profile-key migration runs), then Core and the logic modules (never the
--- widgets or the window), then every tests/test_*.lua. Exit code 0 when every check
--- passes, 1 otherwise. Run from the addon root:  lua tests/run.lua  (tools/check.py does).
+-- modules need, then Core and the logic modules (never the widgets or the window), then
+-- sets a saved file as a 1.8.1 user has it (one profile under the old AceDB key) before
+-- OnInitialize, so Core's profile-key migration runs, then every tests/test_*.lua. Exit
+-- code 0 when every check passes, 1 otherwise. Run from the addon root:  lua tests/run.lua
+-- (tools/check.py does).
 --
 -- Public:  test(name, fn) -- one test; fresh bags, no combat and an empty pick record
 --            before fn runs. Inside fn: eq(got, want, label) and ok(cond, label) record
 --            one check each.
 --          SSF, the addon object, as a global for the test files.
+--          SoulShardForeverDB, the saved file, as the game would hold it (test_core reads
+--            the old profile in it).
 --          WoW.initialProfile -- the profile's values right after OnInitialize, before any
 --            test touches them (test_core reads them to prove the migration).
 -- Touches nothing else.

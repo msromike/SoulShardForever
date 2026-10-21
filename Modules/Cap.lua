@@ -6,9 +6,10 @@
 --            number is written into the saved cap as it changes, so turning AutoMax off
 --            leaves the cap where the player last saw it (no hidden value jumping back:
 --            Mike, 2026-10-20); otherwise the saved cap, clamped to MIN-MAX and whole.
---   The low mark: the saved Low shard warn, never above the cap. The slider cannot set it
---     higher (SSFStepperSlider's bound, fed the cap by Options), and when the cap drops
---     under it (Match soul bag size, a lower cap) Recompute writes it down to the cap,
+--   The low mark: the saved Low shard warn, read as saved (LowMark) and held under the cap
+--     by Recompute. The slider cannot set it higher (SSFStepperSlider's bound, fed the cap
+--     by Options), and when the cap drops under it (Match soul bag size, a lower cap)
+--     Recompute writes it down to the cap,
 --     once, where the player sees it move. What the slider shows is what is saved: no
 --     hidden value, nothing comes back by itself when the cap rises (Mike, 2026-10-20).
 --   State(count): "paused" while SSF is paused, whatever the count (the player is
@@ -85,7 +86,7 @@ function Cap:Recompute()
     local now = self:Get()
     local p = SSF.db.profile
     if self:IsAuto() then p.maxShards = now end -- what the slider shows is what is saved
-    if p.lowMark > now then p.lowMark = now end -- the one invariant: the mark is never above the cap
+    if p.lowMark > now then p.lowMark = now end -- the one invariant, kept here: the mark is written down to the cap
     if now ~= last then
         last = now
         self:SendMessage("SSF_CAP_CHANGED", now)

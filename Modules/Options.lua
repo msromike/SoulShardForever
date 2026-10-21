@@ -9,9 +9,10 @@
 --
 -- The window's layout and life cycle are in Modules\Window.lua.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
--- window; their GUI twins live inside the groups.
+-- window; their GUI twins, where a command has one, live inside the groups (Delete Shard's
+-- sits at the top, outside the groups; options and settings have none).
 --
--- Pause: the "pause" setting (/ssf pause, the checkbox in the cap group) stops every press
+-- Pause: the "pause" setting (/ssf pause, the checkbox in the Pause group) stops every press
 -- from moving or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
 -- key binding's entry (Bindings.xml SSF_PAUSE); it goes through the chat command's own
 -- path, so it applies, redraws an open window and prints the same echo, Status:PauseText
@@ -23,7 +24,8 @@
 --
 -- Stateful settings (cap, announce, pause) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
--- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call.
+-- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call,
+-- then placing its two entries in the table below.
 --
 -- Language (in Other, GUI-only): the strings in this table are read from L when it is built,
 -- so a change goes Core:ApplyLanguage -> Options:Rebuild, which builds and re-registers the
@@ -39,7 +41,7 @@
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
 -- Reads:   Settings:Define/TabUsage, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
---          Bags:Count/HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
+--          Bags:HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
 --          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
@@ -62,7 +64,7 @@ local AceConfigCmd = LibStub("AceConfigCmd-3.0")
 local AceTab = LibStub("AceTab-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
-Options.APP = "SSF" -- the AceConfig app: every line AceConfigCmd prints is prefixed with it
+Options.APP = "SSF" -- the AceConfig app: AceConfigCmd's help header names it
 local APP = Options.APP
 
 local function Cap() return SSF:GetModule("Cap") end
@@ -574,11 +576,11 @@ function Options:OnEnable()
     AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, SSF:GetModule("Settings").TabUsage)
 end
 
--- After a Language change: the table captured its strings when built, so build it again
--- and re-register (AceConfigRegistry replaces by app name; Settings:Define's AceTab
--- registrations are no-ops the second time). Window resets the window's own strings and
--- redraws on SSF_OPTIONS_REBUILT. The Interface Options category keeps the name it was added
--- under until a reload.
+-- After a Language change or a help toggle: the table captured its strings and its tooltip
+-- style when built, so build it again and re-register (AceConfigRegistry replaces by app
+-- name; Settings:Define's AceTab registrations are no-ops the second time). Window resets
+-- the window's own strings and redraws on SSF_OPTIONS_REBUILT. The Interface Options
+-- category keeps the name it was added under until a reload.
 function Options:Rebuild()
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table)

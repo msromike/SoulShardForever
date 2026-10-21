@@ -85,7 +85,7 @@ function Settings:Define(key, def)
     }
     if def.kind == "range" then
         gui.min, gui.max, gui.step = def.min, def.max, def.step
-        gui.dialogControl = "SSFStepperSlider" -- Widgets\SSFStepperSlider.lua: arrows on both edges
+        gui.dialogControl = "SSFStepperSlider" -- Widgets\SSFStepperSlider.lua: "-" and "+" buttons at the value box
     else
         gui.dialogControl = "SSFIndentCheckBox" -- Widgets\SSFCentered.lua: inset in its group
         -- "/ssf announce o<Tab>" completes the value word too

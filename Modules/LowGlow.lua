@@ -2,9 +2,10 @@
 --
 -- LowGlow: while the count is in the "low" state (Cap:State: below the low mark in use),
 -- the bag button the counter sits on gets a running border (LibCustomGlow's pixel glow)
--- on its own edge, in the same red the number shows, three pixels thick, moving slowly. Not
--- the game's proc glow: that one is sized 40% past the button, spills onto the bags beside
--- it, is gold while the number is red, and says "press this" (Amelia, Mike, 2026-10-21).
+-- on its own edge, in the red the number shows when colorized (Colors.RED), three pixels
+-- thick, moving slowly. Not the game's proc glow: that one is sized 40% past the button,
+-- spills onto the bags beside it, is gold while the number is red, and says "press this"
+-- (Amelia, Mike, 2026-10-21).
 -- The border stays on until the count is back at the mark, so a glance at the bag bar says
 -- "go farm shards". Paused is never "low" (Cap:State), so the border is off while paused. Part of the bag display: it runs only while "Show shard count on bag
 -- bar" is on (a glow with no number explains nothing; Counter sends no button then), and

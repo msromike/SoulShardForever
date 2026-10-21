@@ -1,6 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share.
+-- Saves:   profile.paused, maxShards, autoMax, for the test at hand.
 -- Touches nothing else.
 
 local SHARD = SSF.SHARD_ITEM_ID

@@ -68,8 +68,8 @@ function Colors:State(text, good)
     return self:Paint(good and Colors.GREEN or Colors.RED, text)
 end
 
--- r, g, b of the warlock class color: the window title, its group titles, the minimap
--- tooltip title, and nothing else
+-- r, g, b of the warlock class color: the window title (and the side note's, which copies
+-- it), its group titles, the minimap tooltip title, and nothing else
 function Colors:Class()
     local c = RAID_CLASS_COLORS and RAID_CLASS_COLORS.WARLOCK
     if c then return c.r, c.g, c.b end

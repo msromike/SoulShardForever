@@ -20,7 +20,8 @@
 local WoW = { bags = {}, combat = false, chat = {}, frames = {} }
 _G.WoW = WoW
 
--- Lua 5.1 names the game has and Lua 5.4 does not
+-- Lua 5.1 names the game has and Lua 5.4 does not, and the game's bit library (LuaBitOp on
+-- 5.1, the 5.4 operators otherwise)
 unpack = unpack or table.unpack
 loadstring = loadstring or load
 if not getfenv then

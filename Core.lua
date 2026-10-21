@@ -18,10 +18,11 @@
 --          profile.language (ApplyLanguage: the saved pick, or the client's locale).
 -- Saves:   every profile key's default; the migrations: profile.window.open (dropped in
 --          1.8), profile.pauseSoundVolume (a dropped level goes back to full, 1.8.1), and
---          the one-time copy of a 1.8.1 profile key into the AceDB 39 key (1.8.2).
+--          the one-time copy of a 1.8.1 profile key into the AceDB 39 key (1.9.0).
 -- Exceptions: ApplyLanguage rewrites the AceLocale table in place, repeating AceLocale's
---          two rules (enGB is enUS; a `true` value means the key is the string). AceLocale
---          has no runtime switch: NewLocale refuses any locale but the client's, so the
+--          two rules (enGB is enUS; a `true` value in the default means the key is the
+--          string). AceLocale has no runtime switch: NewLocale keeps only the default and
+--          the client's locale (GAME_LOCALE, when set, stands in for the client's), so the
 --          Language setting can only be done by writing into the table every module holds.
 -- Touches nothing else.
 
@@ -41,7 +42,7 @@ local function Defaults()
     local Sounds = SSF:GetModule("Sounds")
     return {
         profile = {
-            maxShards = 8,              -- the cap while autoMax is off (Cap clamps to MIN-MAX)
+            maxShards = 8,              -- the cap while autoMax is off, or no soul bag is equipped (Cap clamps to MIN-MAX)
             autoMax = false,            -- cap follows the soul bags' slot total (Cap)
             counter = true,             -- the number on a bag button (Counter)
             counterSoulBag = true,      -- under counter: the number sits on a soul bag while one is equipped
@@ -53,14 +54,14 @@ local function Defaults()
             soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
             announce = false,           -- one chat line per deletion (Trimmer)
             paused = false,             -- a press neither moves nor deletes
-            pauseSound = false,         -- while paused, a press that would have deleted plays a sound
+            pauseSound = false,         -- while paused, every press out of combat plays a sound (Trimmer)
             pauseLog = false,           -- ... and prints a chat line
             pauseSoundName = Sounds:DefaultName(),     -- LibSharedMedia sound name (Sounds)
             pauseSoundVolume = Sounds:LevelVolume("full"), -- 0-1; SSF's own sounds only (Sounds)
             minimap = { hide = false }, -- LibDBIcon state
             welcomed = false,           -- the welcome version this character last saw at load (Welcome)
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
-            window = {},                -- options window position: top, left (set after a drag)
+            window = {},                -- options window position: top, left and the screen size (set after a drag)
             -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         },
     }
@@ -75,7 +76,7 @@ local function Migrate(p)
     p.pauseSoundVolume = Sounds:LevelVolume(Sounds:LevelKey(p.pauseSoundVolume))
 end
 
--- 1.8.2: the AceDB in this release names a character "Name Surname" on Forever, where the
+-- 1.9.0: the AceDB in this release names a character "Name Surname" on Forever, where the
 -- one before named it "Name - PvE" (or PvP, RP, Hardcore, or the realm name). A character
 -- whose profile is new under the new name takes its old profile over, settings and welcome
 -- mark alike, so a library update resets nobody. The keys are read before AceDB:New,
@@ -102,10 +103,11 @@ local function MigrateProfileKey(db, known)
 end
 
 -- The Language setting. Rewrites the one AceLocale table every module holds, in place:
--- English first (the default, key = string), then the chosen locale over it, which is
--- exactly what AceLocale built at load for the client's locale. Auto = the client's locale,
--- so switching back restores the stock result. Callers that cached strings rebuild
--- afterwards (Options:Rebuild); modules that read L live need nothing.
+-- English first (the default, key = string), then the chosen locale over it, the way
+-- AceLocale built it at load for the client's locale (with two differences: esES takes the
+-- esMX table, and GetLocale() is read, not GAME_LOCALE). Auto = the client's locale. Callers
+-- that cached strings rebuild afterwards (Options:Rebuild); modules that read L live need
+-- nothing.
 function SSF:ApplyLanguage()
     local code = self.db.profile.language or GetLocale()
     if code == "enGB" then code = "enUS" end -- AceLocale's own rule

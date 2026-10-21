@@ -48,8 +48,8 @@ function Bags:IsFreeAt(bag, slot)
     return C_Container.GetContainerItemID(bag, slot) == nil
 end
 
--- The server still holds the slot's item (a move or delete in flight). Only a plain false
--- counts as unlocked.
+-- The server still holds the slot's item (a move or delete in flight). An empty slot is
+-- unlocked; otherwise only a plain false counts as unlocked.
 function Bags:IsLocked(bag, slot)
     local loc = ItemLocation:CreateFromBagAndSlot(bag, slot)
     if not C_Item.DoesItemExist(loc) then return false end
@@ -153,7 +153,8 @@ end
 
 -- The shard furthest along the sort order (topFirst as in ForEachSlot) that is not locked:
 -- in the backpack-most bag that has one, the top-most shard, or the bottom-most when
--- topFirst. Returns bag, slot, or nil when there is none.
+-- topFirst and that bag is a regular one (a soul bag walks bottom first either way).
+-- Returns bag, slot, or nil when there is none.
 function Bags:LastShard(topFirst)
     local vbag, vslot
     self:ForEachSlot(function(bag, slot)

@@ -2,8 +2,9 @@
 """tools/check.py: the pre-commit check for Soul Shards Forever.
 
 Job:    run luacheck, run the headless tests (tests/run.lua, when present), check that
-        every locale carries every key enUS has, lint every file header against the
-        template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
+        every locale carries every key enUS has, lint every file header that carries the
+        contract (Core, the modules, the widgets, the locale registrar, the tests) against
+        the template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
         Hooks, the modules called, the profile keys touched and Saves) against the code,
         apply the rules luacheck cannot see (no raw hooks, every widget type used, the
         shard id only in Core), regenerate ARCHITECTURE.md from the
@@ -12,7 +13,9 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), chec
 Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars override the
         tool locations (the GitHub workflow sets them; locally they are found on PATH or
         at the fallback paths below).
-Writes: ARCHITECTURE.md, only when its content changed.
+Writes: ARCHITECTURE.md, only when its content changed. Through tools/sync_libs.py (the
+        libs report) it also makes and removes the scratch folder tools/.sync/ and fetches
+        each upstream over the network.
 Touches nothing else.
 """
 import os
@@ -237,10 +240,11 @@ def profile_refs(text):
 
 def check_header_truth():
     """Every claim a header makes that code can verify: Listens names exactly the messages
-    and events the file registers; Sends names exactly the messages it sends; every hooked
-    method is named under Hooks; every module it calls and every profile key it touches is
-    named somewhere in the header; every profile key it writes is named under Saves, and
-    Saves names nothing it does not write."""
+    and events the file registers; Sends names exactly the messages it sends; every method
+    hooked on an object (HOOK_RE: a target, then the quoted name) is named under Hooks; every
+    module it calls and every profile key it touches is named somewhere in the header; every
+    profile key it writes is named under Saves, and no `profile.<key>` written in Saves is
+    one the code does not write (a bare key name there is not checked)."""
     print("== header truth")
     ok = True
     code_files = [f for f in lua_files() if not f.startswith("tests/")]
@@ -280,7 +284,7 @@ def check_header_truth():
         for m in sorted(code_sends - hdr_sends):
             problems.append(f"the code sends {m}, Sends does not name it")
 
-        # Hooks: every hooked method named under Hooks
+        # Hooks: every method hooked on an object, named under Hooks
         hooks = fields.get("Hooks", "")
         for name in sorted(set(HOOK_RE.findall(text))):
             if not word_in(name, hooks):
@@ -317,7 +321,7 @@ def check_rules():
     ok = True
     code_files = [f for f in lua_files() if not f.startswith("tests/")]
     texts = {rel: read(rel) for rel in code_files}
-    # raw hooks: AceHook or nothing, unless the header names the raw call as an exception
+    # raw hooks: AceHook or nothing, unless the header names the raw call (anywhere in it)
     for rel, text in texts.items():
         header = "\n".join(header_lines(rel))
         for m in re.finditer(r"hooksecurefunc\(|:HookScript\(", text):

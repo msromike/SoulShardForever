@@ -3,17 +3,20 @@
 
 Job:    Libs/ is committed and ships as is (no packager externals). This script is the one
         way a library changes: it reads tools/externals.txt (the list the .pkgmeta externals
-        block used to hold, same syntax), fetches each library from upstream into a scratch
+        block used to hold, in its syntax; url: and tag: are read, a branch: is taken as a
+        tag, other keys are ignored), fetches each library from upstream into a scratch
         folder, and reports every file that differs from Libs/, is missing locally, or
-        exists only locally. With --apply it makes Libs/ equal upstream exactly (copies the
-        first two kinds, deletes the third), which is a deliberate library bump: in-game
+        exists only locally. With --apply it makes Libs/ equal upstream, line endings aside
+        (copies the first two kinds, deletes the third; a file that differs only in CRLF/LF
+        is left alone), which is a deliberate library bump: in-game
         pass, then a commit of its own with a changelog line.
 Takes:  --apply (copy upstream over Libs/); --quiet (one line per library).
         Upstreams: a repos.wowace.com trunk folder (fetched file by file over HTTPS), or a
         GitHub repository (fetched as the zip of its default branch, or of `tag:`).
 Writes: nothing without --apply. The scratch folder tools/.sync/ exists only while the
-        script runs; it is removed at the end and ignored by git.
-Exit:   0 always in report mode (drift is information, the check script prints it);
+        script runs; it is removed at the end of a run that finishes (and cleared at the
+        start of the next) and ignored by git.
+Exit:   0 in report mode, drift included (it is information, the check script prints it);
         1 only when an upstream could not be fetched with --apply.
 Touches nothing else.
 """
@@ -35,7 +38,8 @@ SUB_RE = re.compile(r"^\s+(url|tag|branch):\s*(\S+)\s*$")
 
 
 def read_list():
-    """[(local path, url, tag)] from tools/externals.txt, .pkgmeta externals syntax."""
+    """[(local path, url, tag)] from tools/externals.txt, .pkgmeta externals syntax: url: and
+    tag: are read, branch: is stored as the tag, other keys are ignored."""
     out, cur = [], None
     for raw in open(LIST, encoding="utf-8"):
         line = raw.rstrip("\n")
@@ -168,7 +172,7 @@ def main(argv):
                 src, dst = os.path.join(up, rel), os.path.join(local, rel)
                 os.makedirs(os.path.dirname(dst), exist_ok=True)
                 shutil.copy2(src, dst)
-            for rel in extra: # a file upstream dropped goes too: Libs/ equals upstream exactly
+            for rel in extra: # a file upstream dropped goes too: Libs/ equals upstream (line endings aside)
                 os.remove(os.path.join(local, rel))
             print(f"   applied {len(differs) + len(missing)} file(s), removed {len(extra)}")
     shutil.rmtree(SCRATCH, ignore_errors=True) # nothing to keep: a bump copies into Libs/

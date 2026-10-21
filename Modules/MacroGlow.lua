@@ -13,8 +13,8 @@
 -- Public:  Stop() (also the OnHide hook's handler).
 -- Listens: SSF_MACRO_WINDOW_SHOWN; ACTIONBAR_SLOT_CHANGED while one still glows.
 -- Hooks:   MacroSelector.RunSetup and MacroFrame's OnHide (AceHook), attached the first
---          time the window shows: Blizzard_MacroUI loads on demand, so neither frame
---          exists at OnEnable.
+--          time SSF opens the window (SSF_MACRO_WINDOW_SHOWN): Blizzard_MacroUI loads on
+--          demand, so neither frame exists at OnEnable.
 -- Reads:   Macros:Names(); Blizzard's MacroFrame.MacroSelector buttons (their Name text).
 -- Touches nothing else.
 
@@ -62,7 +62,7 @@ function MacroGlow:OnWindowShown()
     for _, name in ipairs(SSF:GetModule("Macros"):Names()) do
         if not OnABar(name) then pending[name] = true end
     end
-    -- hooked once, the first time the window exists (Blizzard_MacroUI loads on demand)
+    -- hooked once, the first time SSF opens the window (Blizzard_MacroUI loads on demand)
     if not self:IsHooked(MacroFrame.MacroSelector, "RunSetup") then
         self:SecureHook(MacroFrame.MacroSelector, "RunSetup", function(_, button) UpdateButton(button) end)
         self:SecureHookScript(MacroFrame, "OnHide", "Stop")

@@ -15,11 +15,13 @@
 --          IsShownFor(owner) -> bool (the owner refreshes an open tooltip's text)
 --          Attach(frame) -- option tooltips shown inside this frame get the anchor
 -- Hooks:   AceConfigDialog.tooltip's OnShow (AceHook), attached by Attach, hooked again
---          if a newer AceConfigDialog loaded later replaced the tooltip frame.
+--          if the frame under AceConfigDialog.tooltip is ever a different one (this
+--          AceConfigDialog keeps its frame across upgrades: `tooltip or CreateFrame`).
 -- Lib internals: AceConfigDialog.tooltip, the GameTooltip-like frame it shows help lines
 --          in. An AceConfigDialog bump that renames it leaves option tooltips at the stock
 --          anchor.
--- Reads:   Colors.YELLOW, Colors.WHITE. Owns no state beyond the attached frame.
+-- Reads:   Colors.YELLOW, Colors.WHITE. Owns no state beyond the attached frame and the
+--          tooltip frame it hooked.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -62,8 +64,8 @@ function Tooltip:OnOptionTooltipShow(tooltip)
     end
 end
 
--- Attach once per AceConfigDialog tooltip frame: a newer AceConfigDialog loaded later by
--- another addon replaces the frame, and AceHook's Unhook on a secure script hook only drops
+-- Attach once per AceConfigDialog tooltip frame: should the frame under
+-- AceConfigDialog.tooltip ever change, AceHook's Unhook on a secure script hook only drops
 -- the handler, so the new hook lands on the new frame.
 function Tooltip:Attach(frame)
     self.within = frame

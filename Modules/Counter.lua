@@ -3,7 +3,8 @@
 -- Counter: one number, the total shard count, centered on one bag button. Shown only while
 -- the "Show shard count on bag bar" option is on. Where it sits (Anchor):
 --   "Show on soul bag when equipped" ticked and a soul bag equipped: that soul bag's button,
---     the reagent slot first, then bag 4 down to bag 1. The bag's slot does not matter.
+--     if shown, the reagent slot first, then bag 4 down to bag 1. The bag's slot does not
+--     matter.
 --   otherwise: the far-left bag button (bag 4, CharacterBag3Slot), or the backpack button
 --     when that one is not shown (collapsed bag bar).
 -- LowGlow sits on the same button: after every refresh the button and the count go out as
@@ -11,13 +12,13 @@
 -- On a soul bag button the game draws its own number (CharacterReagentBag0SlotCount on the
 -- reagent slot). While the counter sits on a soul bag button, that number is set to alpha 0
 -- (alpha, because the game calls Show() on it by itself); it is set back to 1 the moment the
--- counter leaves that button or the option is turned off. Bag 4 and the backpack are never
--- touched.
+-- counter leaves that button or the option is turned off. Bag 4 as the far-left fallback and
+-- the backpack are never touched.
 -- Font is the profile's LibSharedMedia font name (Arial Narrow by default: its digits have
 -- air between them). Size is the largest that fits inside the button face with 15% of
--- the face kept clear on each side, the outline counted; the button is the bound. The old
--- two-pixel margin let the number fill the face edge to edge and hide the bag (Mike,
--- 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
+-- the face kept clear on each side, the outline counted, between MIN_SIZE and MAX_SIZE.
+-- The old two-pixel margin let the number fill the face edge to edge and hide the bag
+-- (Mike, 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
 -- "Colorize" is on; white when off, and white while paused (State answers "paused").
 --
 -- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
@@ -115,7 +116,7 @@ function Counter:Refresh()
         return
     end
     local parent, onSoulBag = Anchor()
-    -- only a soul bag button loses the game's number; bag 4 and the backpack keep theirs
+    -- only a soul bag button loses the game's number; the far-left fallback and the backpack keep theirs
     HideGameCount(self, onSoulBag and parent or nil)
     if not parent then
         self:SendMessage("SSF_COUNTER_UPDATED", nil, count)

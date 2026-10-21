@@ -31,13 +31,13 @@ Core and modules:
 - Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
 - Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
-- Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the two recommended macros, then what the Bane macro is for and its warning.
+- Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro is for and its warning.
 - Modules\Tooltip.lua: where every SSF tooltip sits and how it is shown.
 - Modules\Window.lua: SSF's own options window.
 - Modules\Welcome.lua: the first-load welcome.
 - Modules\Broker.lua: the LibDataBroker data object and the LibDBIcon minimap icon.
 - Modules\Counter.lua: one number, the total shard count, centered on one bag button.
-- Modules\LowGlow.lua: while the count is in the "low" state (Cap:State: below the low mark in use), the bag button the counter sits on gets a running border (LibCustomGlow's pixel glow) on its own edge, in the same red the number shows, three pixels thick, moving slowly.
+- Modules\LowGlow.lua: while the count is in the "low" state (Cap:State: below the low mark in use), the bag button the counter sits on gets a running border (LibCustomGlow's pixel glow) on its own edge, in the red the number shows when colorized (Colors.RED), three pixels thick, moving slowly.
 
 Locales:
 

@@ -11,7 +11,7 @@
 -- Paused (profile.paused), a press neither moves nor deletes; every paused press out of
 -- combat plays the pause sound, if profile.pauseSound is on, and prints the paused-press
 -- line (Status), if profile.pauseLog is on, whatever the count.
--- Silent unless the announce option is on.
+-- The delete is silent unless the announce option is on.
 --
 -- Public:  Delete(); WhyNot(count) -> why a press would not delete, or nil if it would:
 --          "paused" (a mode: the only answer while paused, whatever the count), "atcap",

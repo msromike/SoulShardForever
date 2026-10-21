@@ -26,8 +26,9 @@
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
 -- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
 --          3 px side insets, for the dim region), frame and alignoffset fields, its min,
---          max, step and disabled fields, and its OnMouseWheel script. An AceGUI bump that
---          renames those breaks the steppers; one that moves the rail misplaces the dim.
+--          max and disabled fields, its OnMouseWheel script, and AceGUI's frame.width field.
+--          An AceGUI bump that renames those breaks the steppers; one that moves the rail
+--          misplaces the dim.
 -- Reads:   nothing of SSF's.
 -- Touches nothing else.
 

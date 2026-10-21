@@ -1,10 +1,11 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- SSFSideNote: the note beside the options window's top-right corner (the first-load
--- welcome). An AceGUI widget SSFFrame creates once and attaches to its frame, SIDE_GAP px
--- out, tops level. Top to bottom: a title (the window's title color), a divider, an arrow
--- pointing left at the window's help button beside a copy of its "i", a body line in gold,
--- then the blocks (paragraphs left-justified, macros each in a dark box), a small note
+-- welcome). An AceGUI widget SSFFrame creates once and attaches to its frame, out by the
+-- gap it passes to AttachTo, tops level. Top to bottom: a title (the window's title color),
+-- a divider, an arrow pointing left at the window's help button beside a copy of its "i", a
+-- body line in gold, then the blocks (paragraphs left-justified, macros each in a dark
+-- box), a small note
 -- above the button, the button, and a gold note line last. Its width is SIDE_WIDTH of the
 -- window's, never so narrow that the centered title runs into its X. It closes by its own X
 -- or when the window closes (SSFFrame tells it), and tells its owner once either way.
@@ -18,13 +19,14 @@
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's
 --            width changes.
 --          Close() -- hide and tell the owner once. IsShown() -> bool.
--- Reads:   nothing of SSF's. Owns no state beyond the shown texts and the onClose.
+-- Reads:   nothing of SSF's. Owns no state beyond the shown texts, the onClose and its owner
+--          frame (AttachTo).
 -- Touches nothing else.
 
 local Type, Version = "SSFSideNote", 1
 local AceGUI = LibStub("AceGUI-3.0")
 
-local SIDE_PAD = 14                   -- the panel's inset from its border, top and bottom
+local SIDE_PAD = 14                   -- the panel's inset from its border, top and bottom; the title's and divider's sides too
 local SIDE_TEXT_PAD = 24              -- the text inset from its sides
 local SIDE_WIDTH = 0.86               -- the panel's width, as a share of the window's
 local SIDE_ROW_GAP = 8                -- px between the title, divider, arrow row and text
@@ -244,7 +246,7 @@ local function Constructor()
     arrow:SetSize(SIDE_ICON * 62 / 40, SIDE_ICON) -- the art's own shape
     arrow:SetPoint("RIGHT", icon, "LEFT", -SIDE_ICON_GAP, 0)
 
-    -- in gold: the pointer at the help button, and a divider between it and the text below
+    -- in gold: the pointer at the help button
     local body = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
     body:SetPoint("TOP", icon, "BOTTOM", 0, -SIDE_ROW_GAP)
     body:SetJustifyH("CENTER")

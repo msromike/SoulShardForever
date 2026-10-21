@@ -10,13 +10,15 @@
 -- SoulSort legacy (soulsortLegacy on): SoulSort's sort instead. A shard goes to any earlier
 -- slot in the order, in its own bag too, and the slot may hold another item: that item
 -- swaps into the shard's old slot (SoulSort did the same pickup-pickup). The order is top
--- slot first (Normal) or bottom slot first (Reverse, soulsortReverse); Bags walks it, and
--- TopFirst() is the one place that rule is written (Trimmer asks it too).
+-- slot first in a regular bag (Normal) or bottom slot first (Reverse, soulsortReverse); a
+-- soul bag is bottom first either way. Bags walks it, and TopFirst() is the one place the
+-- Normal/Reverse rule is written (Trimmer asks it too).
 --
 -- A pass plans every move from one snapshot and fires them all; it never reads the bags
 -- back between moves (a move in flight shows its shard locked at the source and maybe not
 -- yet at the target). Leftovers (locked slots, shards still in flight) are picked up by
--- re-running the pass on the next SSF_BAGS_CHANGED, until a pass finds nothing to do.
+-- re-running the pass on the next SSF_BAGS_CHANGED, until a pass finds nothing to do or
+-- MAX_RERUNS follow-ups have run.
 --
 -- Public:  Pass() -> moves fired; TopFirst() -> true under SoulSort legacy Normal.
 -- Listens: SSF_BAGS_CHANGED (re-run a pass with leftovers).
@@ -27,7 +29,7 @@
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Sorter = SSF:NewModule("Sorter", "AceEvent-3.0")
 
-local MAX_RERUNS = 5 -- bag updates a press may follow up on; a server that keeps refusing a move does not loop forever
+local MAX_RERUNS = 5 -- follow-up passes in a row (a press mid-chain does not reset the count); a server that keeps refusing a move does not loop forever
 
 function Sorter:TopFirst()
     local p = SSF.db.profile

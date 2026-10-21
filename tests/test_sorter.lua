@@ -2,8 +2,9 @@
 --
 -- test_sorter: TopFirst and the moves one pass plans from a snapshot, read back from the
 -- stub's record of PickupContainerItem calls (pairs: source, then target).
--- Exceptions: reads and resets Sorter.reruns, the module's private leftover counter, to
---          prove a rerun is pending or forgotten; nothing public exposes it, and a test
+-- Saves:   profile.soulsortLegacy, soulsortReverse, for the test at hand.
+-- Exceptions: reads, seeds and resets Sorter.reruns, the module's private leftover counter,
+--          to prove a rerun is pending or forgotten; nothing public exposes it, and a test
 --          is the one place allowed to look.
 -- Touches nothing else.
 

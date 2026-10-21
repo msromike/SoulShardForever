@@ -3,10 +3,12 @@
 -- SSFFrame: SSF's options window, an extension of AceGUI's stock Frame container. The stock
 -- Frame is created through AceGUI:Create and kept for the addon's life (never released, so
 -- it is never handed to another addon; it may itself have been another addon's released
--- Frame, which the stock OnAcquire resets); SSF's parts are added on top of it, and the
--- result is registered as this type. Nothing the stock Frame does is written again here:
--- the art, the title, the drag, the status table, the content frame and the container
--- plumbing are all its own. Resize is off, through the stock Frame's own switch: the
+-- Frame, whose parent, strata, title, status text, size, position and resize switch the
+-- stock OnAcquire resets); SSF's parts are added on top of it, and the result is registered
+-- as this type. Nothing the stock Frame does is written again here, but one fallback (the
+-- stock Close's click, copied for the case the stock button is not found): the art, the
+-- title, the drag, the status table, the content frame and the container plumbing are all
+-- its own. Resize is off, through the stock Frame's own switch: the
 -- window is sized to its content after every feed.
 --
 -- What SSF adds: an X close button top-right with an optional help button left of it
@@ -43,13 +45,16 @@
 --          the frame's children by its CLOSE text, hidden, and its OnClick reused for
 --          SSF's X and Close; the title handle, titletext's parent, for the hook. Also
 --          read: titletext and titlebg (the band's anchors, the title's color and width),
---          localstatus (the status fallback), content (re-anchored for SSF's taller bottom
---          row); FitWidth reads the fed widgets' titletext, label, text, frame.label and
---          frame.text; FitToContent reads children[1].content (the ScrollFrame's scroll
---          child). An AceGUI bump that renames those shows as a window that no longer fits
---          its content or styles its title.
+--          localstatus (the status fallback), status (the table AceConfigDialog hands over),
+--          content (re-anchored for SSF's taller bottom row); FitWidth reads the fed
+--          widgets' titletext, label, text, frame.label and frame.text, and AceGUI's layout
+--          fields width, children, content.width and frame.width; FitToContent reads
+--          children[1].content (the ScrollFrame's scroll child). An AceGUI bump that renames
+--          titletext, titlebg, content or localstatus errors at the first open (they are
+--          read bare); one that renames the rest shows as a window that no longer fits its
+--          content.
 -- Reads:   the Tooltip module at runtime for every tooltip it shows; Colors.BLACK for the
---          shade layer.
+--          title band.
 -- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
 --          Escape; the stock Frame is unnamed and Escape has no other way in.
 -- Touches nothing else.
@@ -154,7 +159,8 @@ local function Close_OnClick(button)
 end
 
 -- SSF's methods. The ones that share a name with a stock Frame method call the stock one
--- first and add to it (self.stock.* is captured in the constructor).
+-- and add to it (self.stock.* is captured in the constructor); ApplyStatus seeds its
+-- defaults first, the others call the stock one first.
 local methods = {
     ["OnAcquire"] = function(self)
         self.stock.OnAcquire(self)
@@ -192,8 +198,8 @@ local methods = {
     -- that fills the content, so LayoutFinished above only ever echoes our own height back;
     -- the real content height is the ScrollFrame's scroll child, measured here after
     -- AceConfigDialog:Open returns (its layout runs inside Open). Saved to the status table
-    -- so the next ApplyStatus starts at this size. The view then always equals the content,
-    -- so the ScrollFrame never shows its bar.
+    -- so the next ApplyStatus starts at this size. The view then equals the content, so the
+    -- ScrollFrame never shows its bar, up to the screen cap below.
     ["FitToContent"] = function(self)
         local scroll = self.children[1]
         if not (scroll and scroll.content) then return end
@@ -345,7 +351,7 @@ local methods = {
         end
     end,
 
-    -- the small line between the two bottom buttons
+    -- the small line across the bottom, under the button row
     ["SetFooter"] = function(self, text)
         self.footer:SetText(text or "")
     end,

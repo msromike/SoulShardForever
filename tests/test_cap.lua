@@ -2,6 +2,7 @@
 --
 -- test_cap: the cap right now, the low mark held under it, State (paused first), IsFull,
 -- SetManual and SSF_CAP_CHANGED.
+-- Saves:   profile.autoMax, maxShards, lowMark, paused, for the test at hand.
 -- Touches nothing else.
 
 local Cap = SSF:GetModule("Cap")

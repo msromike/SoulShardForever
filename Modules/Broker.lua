@@ -6,9 +6,10 @@
 -- names it, the color is the state; the cap is a setting and lives in the tooltip: Mike,
 -- 2026-10-21), value = N. No suffix, no "Full", no per-bag breakdown.
 -- Tooltip: the same rows every time. The title in the class color; the count, always in
--- its state color (the tooltip teaches the bag's colors); a blank line; then the settings
--- in white: the cap, the low mark, and SSF paused Yes/No. Every value's wording and color
--- comes from Status, so chat, window and tooltip never drift apart.
+-- its state color (the tooltip teaches the bag's colors); a blank line; then the settings:
+-- the cap and the low mark in white, SSF paused as a red Yes or a green No; every label in
+-- the dim grey. Every value's wording and color comes from Status, so chat, window and
+-- tooltip never drift apart.
 --
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED
 --          (the text; "minimap" also shows or hides the icon).

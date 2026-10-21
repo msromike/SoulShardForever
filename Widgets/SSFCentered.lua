@@ -32,9 +32,11 @@
 --          SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level); MinWidth().
 --          MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth
 --          sizes the window to.
--- Lib internals: the stock Button's text and frame, the stock CheckBox's text and frame,
---          and AceGUI.WidgetRegistry (the Dropdown constructor, for the re-typed one). An
---          AceGUI bump that renames those breaks the top row and the check boxes' layout.
+-- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
+--          frame.width field (read, and written by the check box's Fit), and
+--          AceGUI.WidgetRegistry (the Dropdown constructor, for the re-typed one). An AceGUI
+--          bump that renames those breaks the top row, the check boxes' layout, or the
+--          volume dropdown's construction.
 -- Reads:   nothing of SSF's.
 -- Touches nothing else.
 
