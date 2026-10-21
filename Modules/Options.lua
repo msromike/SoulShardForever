@@ -205,7 +205,14 @@ local function BuildTable()
             cmdHidden = true,
             dialogControl = "SSFCountButton",
             name = L["Delete Shard"],
-            desc = SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."]),
+            -- greyed, the tooltip is only why (Mike's words, 2026-10-20); live, it teaches
+            -- every way to delete
+            desc = function()
+                local why = SSF:GetModule("Trimmer"):WhyNot()
+                if why == "paused" then return L["Nothing to delete, SSF is paused."] end
+                if why then return L["Nothing to delete, you are at or under the cap."] end
+                return SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."])
+            end,
             arg = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
                 return Status():CountText(), why and BLOCKER_TEXT[why]()

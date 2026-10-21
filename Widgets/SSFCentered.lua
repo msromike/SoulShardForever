@@ -8,6 +8,7 @@
 --                         under the button (why it is greyed). For an `execute` option: its
 --                         name is the button's label, its `arg` a function that returns the
 --                         text and the reason (nil for none), its `disabled` greys it.
+--                         Greyed, it still shows its tooltip on hover.
 --   SSFUnlabeledDropdown: a Dropdown whose label never shows; its name is only the title
 --                         of its tooltip.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
@@ -97,7 +98,14 @@ do
             self.reason:SetText(reason or "")
             Layout(self)
         end,
-        ["SetDisabled"] = function(self, v) self.inner:SetDisabled(v) end,
+        -- Greyed, the button still answers a hover with its tooltip (what it does, and the
+        -- reason sits under it in gold): a disabled button blocks the mouse without using
+        -- it, so the mouse is let through to the widget's own frame, which fires OnEnter.
+        ["SetDisabled"] = function(self, v)
+            self.inner:SetDisabled(v)
+            self.inner.frame:EnableMouse(not v)
+            self.frame:EnableMouse(v and true or false)
+        end,
         ["MinWidth"] = function(self) return PairWidth(self) end,
     }
 
@@ -112,6 +120,8 @@ do
         widget.inner = inner
         inner:SetCallback("OnClick", function(_, _, ...) widget:Fire("OnClick", ...) end)
         ForwardHover(inner, widget)
+        frame:SetScript("OnEnter", function() widget:Fire("OnEnter") end)
+        frame:SetScript("OnLeave", function() widget:Fire("OnLeave") end)
         for method, func in pairs(methods) do widget[method] = func end
         return AceGUI:RegisterAsWidget(widget)
     end
