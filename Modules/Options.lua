@@ -66,9 +66,13 @@ local function Status() return SSF:GetModule("Status") end
 local function Colors() return SSF:GetModule("Colors") end
 local function Gold(text) return Colors():Gold(text) end
 
--- the two greyed-out rules the window shares between its controls
+-- the greyed-out rules the window shares between its controls
 local function NotPaused() return not SSF.db.profile.paused end
 local function CounterOff() return not SSF.db.profile.counter end
+-- Colorize and the glow while paused: the count is white and the border off (Cap:State
+-- answers "paused"), so the two boxes grey and keep their ticks, the mirror image of the
+-- pause sound rows greying while unpaused (Mike, 2026-10-21)
+local function CounterOffOrPaused() return CounterOff() or SSF.db.profile.paused end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
@@ -310,7 +314,7 @@ local function BuildTable()
                         SSF.db.profile.lowGlow = value
                         changed("lowglow")
                     end,
-                    CounterOff, nil, 2),
+                    CounterOffOrPaused, nil, 2),
                 -- the number follows an equipped soul bag (Counter); greyed with the
                 -- count off, but never for a missing soul bag: it waits for one to go on
                 soulbag = Toggle(4, L["Show on soul bag when equipped"],
@@ -327,7 +331,7 @@ local function BuildTable()
                         SSF.db.profile.counterColorize = value
                         changed("countercolorize")
                     end,
-                    CounterOff, nil, 2),
+                    CounterOffOrPaused, nil, 2),
                 -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {

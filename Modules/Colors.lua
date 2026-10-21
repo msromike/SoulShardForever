@@ -5,6 +5,7 @@
 --   low   red     below the low mark in use: you're running out, go farm
 --   ok    green   from the low mark to the cap: fine
 --   over  yellow  over the cap: excess, the next press trims one
+--   paused white  stockpiling on purpose: no opinion until unpause
 -- One red everywhere (bag number, chat, tooltip), one green, one yellow. The yellow is
 -- also the game's label gold (NORMAL_FONT_COLOR), used for names quoted in help lines.
 -- White is the neutral value color for settings. Green doubles as the branding accent on
@@ -13,7 +14,7 @@
 -- read as a terminal prompt. Black is the title strips' color (their alpha is Window's).
 --
 -- Public:  Colors.RED, GREEN, YELLOW, WHITE, DIM, ECHO, BLACK -> { r, g, b, hex }
---          Colors:ForState(state) -> r, g, b, hex for "low" / "ok" / "over"
+--          Colors:ForState(state) -> r, g, b, hex for "low" / "ok" / "over" / "paused"
 --          Colors:Paint(color, text) -> text wrapped in the color's escape codes
 --          Colors:PaintState(state, text) -> text in the state's color
 --          Colors:Value(v) -> v in white (a setting's value)
@@ -39,7 +40,7 @@ Colors.DIM    = { 0.8, 0.8, 0.8, "cccccc" }
 Colors.ECHO   = { 0.5, 0.5, 0.5, "808080" }
 Colors.BLACK  = { 0, 0, 0, "000000" }
 
-local BY_STATE = { low = Colors.RED, ok = Colors.GREEN, over = Colors.YELLOW }
+local BY_STATE = { low = Colors.RED, ok = Colors.GREEN, over = Colors.YELLOW, paused = Colors.WHITE }
 
 function Colors:ForState(state)
     local c = BY_STATE[state] or Colors.WHITE

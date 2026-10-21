@@ -73,6 +73,7 @@ When you're stockpiling for soulstones, healthstones and summons, SSF stops dele
 
 - Pause and unpause with a key, or the checkbox in the window.
 - A soft thunk and a chat line, if you want them, so you know it's paused.
+- The count goes white, no red, no yellow, no border, until you unpause.
 - Your cap stays where it was when you resume SSF.
 
 This is only for WoW Forever. On Classic Era use SoulSort by Anilusion, which the idea for SSF came from.

@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_cap: the cap right now, the low mark held under it, State, IsFull, SetManual and
--- SSF_CAP_CHANGED.
+-- test_cap: the cap right now, the low mark held under it, State (paused first), IsFull,
+-- SetManual and SSF_CAP_CHANGED.
 -- Touches nothing else.
 
 local Cap = SSF:GetModule("Cap")
@@ -104,15 +104,19 @@ test("IsFull: at or over the cap", function()
     eq(Cap:IsFull(9), true, "over")
 end)
 
-test("State ignores pause", function()
+test("State says paused first, whatever the count; unpaused it is the scale again", function()
     profile.autoMax = false
-    profile.paused = true
     Cap:SetManual(8)
     profile.lowMark = 4
-    eq(Cap:State(33), "over", "33 > 8, paused or not")
-    eq(Cap:State(3), "low", "3 < 4")
-    eq(Cap:State(8), "ok", "at the cap")
+    profile.paused = true
+    eq(Cap:State(0), "paused", "zero, paused")
+    eq(Cap:State(3), "paused", "under the mark, paused: no red")
+    eq(Cap:State(8), "paused", "at the cap, paused")
+    eq(Cap:State(33), "paused", "over the cap, paused: no yellow")
     profile.paused = false
+    eq(Cap:State(3), "low", "unpaused: 3 < 4")
+    eq(Cap:State(8), "ok", "unpaused: at the cap")
+    eq(Cap:State(33), "over", "unpaused: 33 > 8")
 end)
 
 test("SetManual stores the clamped value and sends SSF_CAP_CHANGED once per change", function()

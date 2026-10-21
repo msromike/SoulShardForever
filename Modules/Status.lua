@@ -6,7 +6,8 @@
 -- two status lines once.
 --
 -- Public:  CountValue(count) -> "N" in its state color (Cap:State, Colors), always: only
---            the bag number follows the colorize option. count defaults to the bags.
+--            the bag number follows the colorize option; white while paused. count
+--            defaults to the bags.
 --          CapText(count, cap) -> "N (cap M)", the broker text; the cap in the value white.
 --          StatusText(count, cap) -> "Soul Shards: N (cap M)", chat (a bare /ssf, the login
 --            lines, the announce line, the paused-press line). Both arguments optional:

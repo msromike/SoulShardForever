@@ -30,6 +30,19 @@ test("the count carries its state color, the cap the value white", function()
     ok(Status:CapText(5, 8):find("|cffffffff8|r", 1, true), "the cap is white")
 end)
 
+test("the count is white while paused, everywhere it is painted; the cap stays white", function()
+    profile.autoMax = false
+    profile.maxShards = 8
+    profile.lowMark = 4
+    profile.paused = true
+    eq(Status:CountValue(3), "|cffffffff3|r", "under the mark: white, not red")
+    eq(Status:CountValue(5), "|cffffffff5|r", "in range: white, not green")
+    eq(Status:CountValue(9), "|cffffffff9|r", "over the cap: white, not yellow")
+    ok(Status:StatusText(9, 8):find("|cffffffff9|r", 1, true), "the chat line too")
+    profile.paused = false
+    eq(Status:CountValue(3), "|cffff40403|r", "unpaused: red again")
+end)
+
 test("CountValue, CountText and InBagsText with no count read the bags", function()
     WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [3] = SHARD }) })
     profile.maxShards = 8

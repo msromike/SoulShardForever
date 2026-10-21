@@ -11,22 +11,26 @@
 --     under it (Match soul bag size, a lower cap) Recompute writes it down to the cap,
 --     once, where the player sees it move. What the slider shows is what is saved: no
 --     hidden value, nothing comes back by itself when the cap rises (Mike, 2026-10-20).
---   State(count): "over" above the cap (over the cap wins), "low" below the low mark in
---     use, "ok" between. IsFull(count): at or over the cap (the broker's "Full", the
---     Delete Shard button's "At cap"). The threshold tests live here and nowhere else;
---     Counter's color, the glow, the chat and tooltip count and the Delete Shard gate all
---     ask.
+--   State(count): "paused" while SSF is paused, whatever the count (the player is
+--     stockpiling on purpose: red "go farm" and yellow "delete one" would argue with that,
+--     so the count goes white and the border off until unpause; Mike, 2026-10-21). Then
+--     "over" above the cap (over the cap wins), "low" below the low mark, "ok" between.
+--     Deleting is not gated here: Trimmer:WhyNot answers "paused" before it asks State.
+--     IsFull(count): at or over the cap (the Delete Shard button's "At cap"). The
+--     threshold tests live here and nowhere else; Counter's color, the glow, the chat,
+--     tooltip and broker count and the Delete Shard gate all ask.
 -- Recomputes the cap at login and on bag changes and sends SSF_CAP_CHANGED when the number
 -- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
 -- delete.
 --
 -- Public:  Cap.MIN, Cap.MAX; Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark,
---          State(count) -> "low" | "ok" | "over", IsFull(count) -> bool, SetManual(n)
+--          State(count) -> "paused" | "low" | "ok" | "over", IsFull(count) -> bool, SetManual(n)
 --          (Options' slider and /ssf setmax; turning AutoMax off is the caller's job),
 --          Recompute().
 -- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED.
 -- Sends:   SSF_CAP_CHANGED (cap).
--- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark.
+-- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark,
+--          paused.
 -- Saves:   profile.maxShards (SetManual, and Recompute while AutoMax follows a soul bag);
 --          profile.lowMark, written down to the cap when the cap drops under it (Recompute).
 -- Touches nothing else.
@@ -62,6 +66,7 @@ function Cap:LowMark()
 end
 
 function Cap:State(count)
+    if SSF.db.profile.paused then return "paused" end
     if count > self:Get() then return "over" end
     if count < self:LowMark() then return "low" end
     return "ok"

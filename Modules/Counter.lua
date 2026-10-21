@@ -18,7 +18,7 @@
 -- the face kept clear on each side, the outline counted; the button is the bound. The old
 -- two-pixel margin let the number fill the face edge to edge and hide the bag (Mike,
 -- 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
--- "Colorize" is on; white when off.
+-- "Colorize" is on; white when off, and white while paused (State answers "paused").
 --
 -- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED.

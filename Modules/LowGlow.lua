@@ -6,7 +6,7 @@
 -- the game's proc glow: that one is sized 40% past the button, spills onto the bags beside
 -- it, is gold while the number is red, and says "press this" (Amelia, Mike, 2026-10-21).
 -- The border stays on until the count is back at the mark, so a glance at the bag bar says
--- "go farm shards". Part of the bag display: it runs only while "Show shard count on bag
+-- "go farm shards". Paused is never "low" (Cap:State), so the border is off while paused. Part of the bag display: it runs only while "Show shard count on bag
 -- bar" is on (a glow with no number explains nothing; Counter sends no button then), and
 -- is off via the "Glow bag button when low" option under it.
 --
