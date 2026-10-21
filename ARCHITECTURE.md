@@ -10,7 +10,7 @@ here is missing from the headers or the code, not from this file.
 Widgets (custom AceGUI widgets, used from the options table through dialogControl, or
 created by Window and by each other):
 
-- Widgets\SSFStepperSlider.lua: the stock AceGUI Slider with a "-" button and a "+" button framing the value box under the bar, for fine tuning after a rough slide.
+- Widgets\SSFStepperSlider.lua: the stock AceGUI Slider with a "-" button and a "+" button framing the value box under the bar, for fine tuning after a rough slide, and an optional bound the thumb cannot pass.
 - Widgets\SSFSideNote.lua: the note beside the options window's top-right corner (the first-load welcome).
 - Widgets\SSFFrame.lua: SSF's options window, an extension of AceGUI's stock Frame container.
 - Widgets\SSFCentered.lua: three AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.

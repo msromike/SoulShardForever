@@ -2,12 +2,15 @@
 --
 -- Cap: the thresholds. What the cap is right now, the low mark in use, and which state a
 -- count is in against them.
---   The cap: AutoMax on AND a soul bag equipped -> the soul bags' slot total;
---            otherwise the slider value, clamped to MIN-MAX and whole.
---   The low mark in use: the saved Low shard warn, but never above the cap. A low mark
---     over the cap would make a count both "over the cap" and "low" at once (Match soul
---     bag size can drop the cap under it). The saved value is not touched, so when the
---     cap rises again the saved low mark is back by itself.
+--   The cap: AutoMax on AND a soul bag equipped -> the soul bags' slot total, and that
+--            number is written into the saved cap as it changes, so turning AutoMax off
+--            leaves the cap where the player last saw it (no hidden value jumping back:
+--            Mike, 2026-10-20); otherwise the saved cap, clamped to MIN-MAX and whole.
+--   The low mark: the saved Low shard warn, never above the cap. The slider cannot set it
+--     higher (SSFStepperSlider's bound, fed the cap by Options), and when the cap drops
+--     under it (Match soul bag size, a lower cap) Recompute writes it down to the cap,
+--     once, where the player sees it move. What the slider shows is what is saved: no
+--     hidden value, nothing comes back by itself when the cap rises (Mike, 2026-10-20).
 --   State(count): "over" above the cap (over the cap wins), "low" below the low mark in
 --     use, "ok" between. IsFull(count): at or over the cap (the broker's "Full", the
 --     Delete Shard button's "At cap"). The threshold tests live here and nowhere else;
@@ -17,14 +20,15 @@
 -- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
 -- delete.
 --
--- Public:  Cap.MIN, Cap.MAX; Get() -> cap, IsAuto() -> bool, LowMark() -> mark in use,
+-- Public:  Cap.MIN, Cap.MAX; Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark,
 --          State(count) -> "low" | "ok" | "over", IsFull(count) -> bool, SetManual(n)
 --          (Options' slider and /ssf setmax; turning AutoMax off is the caller's job),
 --          Recompute().
 -- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED.
 -- Sends:   SSF_CAP_CHANGED (cap).
 -- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark.
--- Saves:   profile.maxShards (SetManual only).
+-- Saves:   profile.maxShards (SetManual, and Recompute while AutoMax follows a soul bag);
+--          profile.lowMark, written down to the cap when the cap drops under it (Recompute).
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -54,7 +58,7 @@ function Cap:Get()
 end
 
 function Cap:LowMark()
-    return math.min(SSF.db.profile.lowMark, self:Get())
+    return SSF.db.profile.lowMark
 end
 
 function Cap:State(count)
@@ -74,6 +78,9 @@ end
 
 function Cap:Recompute()
     local now = self:Get()
+    local p = SSF.db.profile
+    if self:IsAuto() then p.maxShards = now end -- what the slider shows is what is saved
+    if p.lowMark > now then p.lowMark = now end -- the one invariant: the mark is never above the cap
     if now ~= last then
         last = now
         self:SendMessage("SSF_CAP_CHANGED", now)

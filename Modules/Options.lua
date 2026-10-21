@@ -172,8 +172,9 @@ local function BuildTable()
     pauseGui.order = 1 -- GUI only: first in the Pause group
     Options.pauseCmd = pauseCmd -- for TogglePause; replaced on every rebuild
 
-    -- GUI only (no chat command): the cap's own range, since a warlock holding 96 shards
-    -- may want a warning at 40; a mark above the cap is held down to it in use (Cap:LowMark)
+    -- GUI only (no chat command): the cap's own scale, but the thumb stops at the cap (the
+    -- slider's bound, SSFStepperSlider:SetCustomData, fed through `arg`); Cap keeps the
+    -- saved mark under the cap when the cap drops
     local lowmarkGui = Settings:Define("lowmark", {
         order = 1, kind = "range",
         name = L["Low shard warn"],
@@ -181,6 +182,7 @@ local function BuildTable()
         get = function() return SSF.db.profile.lowMark end,
         apply = function(value) SSF.db.profile.lowMark = value end,
     })
+    lowmarkGui.arg = function() return Cap():Get() end
 
     -- the pause sound's levels, by Sounds' keys, each with its name
     local LEVEL_LABELS = {

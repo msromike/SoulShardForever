@@ -1,6 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_cap: the cap right now, the low mark in use, State, IsFull, SetManual and
+-- test_cap: the cap right now, the low mark held under it, State, IsFull, SetManual and
 -- SSF_CAP_CHANGED.
 -- Touches nothing else.
 
@@ -42,27 +42,34 @@ test("AutoMax with no soul bag falls back to the slider", function()
     profile.autoMax = false
 end)
 
-test("low mark in use never exceeds the cap", function()
+test("the cap dropping under the mark writes the mark down, once; rising leaves it", function()
     profile.autoMax = false
-    profile.maxShards = 8
+    profile.paused = false
+    Cap:SetManual(32)
+    profile.lowMark = 20
+    Cap:SetManual(15)
+    eq(profile.lowMark, 15, "cap 15 under mark 20: the mark follows")
+    eq(Cap:LowMark(), 15, "LowMark is the saved mark, nothing hidden")
+    Cap:SetManual(32)
+    eq(profile.lowMark, 15, "cap back up: the mark stays where the player saw it")
+    Cap:SetManual(8)
     profile.lowMark = 4
-    eq(Cap:LowMark(), 4, "below the cap: as saved")
-    profile.lowMark = 12
-    eq(Cap:LowMark(), 8, "above the cap: the cap")
-    profile.maxShards = 12
-    eq(Cap:LowMark(), 12, "cap raised: the saved mark is back")
-    profile.lowMark = 4
-    profile.maxShards = 8
 end)
 
-test("the low mark in use is held to the cap, paused or not", function()
+test("AutoMax writes the bag size into the cap and the mark down to it; off leaves both", function()
+    WoW.SetBags({ [0] = plain(16), [2] = soul(6) })
     profile.autoMax = false
-    profile.maxShards = 8
-    profile.lowMark = 73
-    profile.paused = true
-    eq(Cap:LowMark(), 8, "paused: still the cap")
-    profile.paused = false
-    eq(Cap:LowMark(), 8, "unpaused: the cap")
+    Cap:SetManual(32)
+    profile.lowMark = 20
+    profile.autoMax = true
+    Cap:Recompute()
+    eq(Cap:Get(), 6, "cap is the bag")
+    eq(profile.maxShards, 6, "and the saved cap is the bag: nothing hidden")
+    eq(profile.lowMark, 6, "mark followed")
+    profile.autoMax = false
+    Cap:Recompute()
+    eq(Cap:Get(), 6, "AutoMax off: the cap stays where the player saw it, no jump to 32")
+    Cap:SetManual(8)
     profile.lowMark = 4
 end)
 
@@ -78,14 +85,14 @@ test("State: low below the mark, ok to the cap, over above it", function()
     eq(Cap:State(9), "over", "9 > 8")
 end)
 
-test("State with a mark above the cap: over wins while unpaused", function()
+test("State with the mark at the cap: low below, ok at, over above", function()
     profile.autoMax = false
-    profile.maxShards = 8
-    profile.lowMark = 73
     profile.paused = false
-    eq(Cap:State(33), "over", "33 shards, cap 8: over, not low")
-    eq(Cap:State(5), "low", "5 < 8 (the mark in use is the cap)")
-    eq(Cap:State(8), "ok", "at the cap")
+    Cap:SetManual(8)
+    profile.lowMark = 8
+    eq(Cap:State(33), "over", "33 shards, cap 8: over")
+    eq(Cap:State(5), "low", "5 < 8")
+    eq(Cap:State(8), "ok", "at the cap and at the mark")
     profile.lowMark = 4
 end)
 
@@ -99,14 +106,13 @@ end)
 
 test("State ignores pause", function()
     profile.autoMax = false
-    profile.maxShards = 8
-    profile.lowMark = 73
     profile.paused = true
+    Cap:SetManual(8)
+    profile.lowMark = 4
     eq(Cap:State(33), "over", "33 > 8, paused or not")
-    eq(Cap:State(5), "low", "5 < 8 (the mark in use is the cap)")
+    eq(Cap:State(3), "low", "3 < 4")
     eq(Cap:State(8), "ok", "at the cap")
     profile.paused = false
-    profile.lowMark = 4
 end)
 
 test("SetManual stores the clamped value and sends SSF_CAP_CHANGED once per change", function()
