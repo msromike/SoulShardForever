@@ -22,8 +22,10 @@
 - The window is a touch darker, so its text reads better over bright ground.
 - Your settings carry over the game's change to how it names characters. Without this,
   the update could show the welcome screen again and start you from the defaults.
-- Under the hood: rebuilt on Ace3 throughout, with updated libraries shipped inside the
-  addon. Nothing you see changed because of it.
+- Under the hood: rebuilt on Ace3 end to end, one job per file with a header contract on
+  each, duplicate code folded into single owners, custom widgets only as extensions of
+  stock AceGUI ones, headless tests and luacheck on every push, libraries vendored and
+  shipped inside the addon. Nothing you see changed because of it.
 - Delete Shard greys out whenever a click can't delete, with the reason under it in gold:
   At cap, Under cap or SSF paused. Before, a click that couldn't delete did nothing, which
   looked like a broken button. While paused it always says SSF paused.
