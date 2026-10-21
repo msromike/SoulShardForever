@@ -36,7 +36,8 @@ end
 function LowGlow:OnCounterUpdated(_, button, count)
     local low = button and SSF.db.profile.lowGlow and SSF:GetModule("Cap"):State(count) == "low"
 
-    -- the anchor can change (bag bar collapsed): stop the old button before starting a new one
+    -- the anchor can change (a soul bag equipped or removed, the option toggled): stop the
+    -- old button before starting a new one
     if self.button and (self.button ~= button or not low) then
         LCG.PixelGlow_Stop(self.button, KEY)
         self.button = nil

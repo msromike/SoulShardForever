@@ -6,7 +6,8 @@
 --     if shown, the reagent slot first, then bag 4 down to bag 1. The bag's slot does not
 --     matter.
 --   otherwise: the far-left bag button (bag 4, CharacterBag3Slot), or the backpack button
---     when that one is not shown (collapsed bag bar).
+--     should that one be hidden (a fallback only: this client has no bag bar collapse,
+--     checked in game 2026-10-21; a bar addon could hide it).
 -- LowGlow sits on the same button: after every refresh the button and the count go out as
 -- SSF_COUNTER_UPDATED, so the glow never reads the bags or the anchor itself.
 -- On a soul bag button the game draws its own number (CharacterReagentBag0SlotCount on the
@@ -59,7 +60,7 @@ end
 
 -- The button the counter (and LowGlow) sits on, and true when it is a soul bag's button.
 -- A soul bag only while the counter and "Show on soul bag" are both on; otherwise the
--- far-left bag button, or the backpack when the bag bar is collapsed.
+-- far-left bag button, or the backpack should that button be hidden (see the header).
 local function Anchor()
     local p = SSF.db.profile
     if p.counter and p.counterSoulBag then
