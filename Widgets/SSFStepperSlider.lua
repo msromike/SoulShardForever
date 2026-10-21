@@ -166,9 +166,10 @@ local function Constructor()
     widget.inner = inner
     widget.alignoffset = inner.alignoffset -- the Flow layout aligns this row as it does a Slider
 
-    -- the bound, applied in the one place every value passes: a drag tick, the typed box
-    -- and the "+" all end in the stock OnValueChanged. Set back before it is forwarded, so
-    -- AceConfigDialog never hears a value past the bound.
+    -- the bound: a drag tick, the typed box and the "+" all end in the stock OnValueChanged,
+    -- set back before it is forwarded. The typed box also fires OnMouseUp with its raw
+    -- number (below), so the bound is applied there as well; AceConfigDialog never hears a
+    -- value past it.
     inner:SetCallback("OnValueChanged", function(_, _, value)
         local bound = Bound(widget)
         if bound and value > bound then
@@ -178,7 +179,13 @@ local function Constructor()
         UpdateButtons(widget)
         widget:Fire("OnValueChanged", value)
     end)
-    inner:SetCallback("OnMouseUp", function(_, _, value) widget:Fire("OnMouseUp", value) end)
+    -- the typed box fires OnMouseUp with the raw number (the stock EditBox_OnEnterPressed),
+    -- so the bound is applied here too before AceConfigDialog saves it
+    inner:SetCallback("OnMouseUp", function(_, _, value)
+        local bound = Bound(widget)
+        if bound and value > bound then value = bound end
+        widget:Fire("OnMouseUp", value)
+    end)
     inner:SetCallback("OnEnter", function() widget:Fire("OnEnter") end)
     inner:SetCallback("OnLeave", function() widget:Fire("OnLeave") end)
 
