@@ -10,7 +10,9 @@
 -- window is sized to its content after every feed.
 --
 -- What SSF adds: an X close button top-right with an optional help button left of it
--- (SetHelpButton: Blizzard's "i", gold while off, blue while on), an optional note beside
+-- (SetHelpButton: Blizzard's "i", gold while off, blue while on), a black shade layer under
+-- the content that makes the window a little darker than the bare art (SHADE, picked by
+-- eye), an optional note beside
 -- the window (ShowSidePanel, the SSFSideNote widget), Escape closes it, a bottom row of
 -- Close (far right, SetRightButton turns it into an action), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
@@ -85,6 +87,12 @@ local BAND_PAD = 3                    -- px of strip above and below the title t
 -- to the pixel could still wrap
 local ROUNDING = 1
 local GRAB = 60                       -- px of the window that always stay on screen
+-- The dialog background art is black with some transparency, so tinting it does nothing;
+-- a plain black layer under the content, inside the border, is what makes the window
+-- read darker. Its alpha was picked by eye (Mike, 2026-10-20): 0.3 is "a little darker"
+-- than the bare art, enough to read over bright scenery without going flat.
+local SHADE = 0.3
+local SHADE_INSET = 8                 -- the border's width: the layer stays inside it
 
 -- every tooltip this window shows goes through the Tooltip module (the one anchor)
 local function Tooltip() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Tooltip") end
@@ -383,6 +391,10 @@ local function Constructor()
     AceHook:Embed(self)
 
     frame:SetBackdropColor(1, 1, 1, 1) -- the dialog art untinted (the stock Frame tints it black)
+    local shade = frame:CreateTexture(nil, "BACKGROUND", nil, 1) -- above the art, below the border
+    shade:SetPoint("TOPLEFT", SHADE_INSET, -SHADE_INSET)
+    shade:SetPoint("BOTTOMRIGHT", -SHADE_INSET, SHADE_INSET)
+    shade:SetColorTexture(0, 0, 0, SHADE)
     frame:SetClampedToScreen(true) -- with UpdateClamp's insets: hangs off an edge, never lost
     _G[FRAME_NAME] = frame
     tinsert(UISpecialFrames, FRAME_NAME) -- Escape closes it
