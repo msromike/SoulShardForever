@@ -24,11 +24,12 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
 - Custom AceGUI widgets (Widgets\) are extension-only: a widget wraps a stock AceGUI
   widget and adds to it. It never re-implements what the stock widget does. Where AceGUI
   has no base, the widget stands alone and stays small.
-- Three documented exceptions, each explained in its own file header, and no others:
+- Four documented exceptions, each explained in its own file header, and no others:
   DeleteButton's raw named frame (/click needs a global name), Counter's raw FontString
-  on a Blizzard bag button (nothing on the list draws on a foreign button), and the
-  title strip behind option groups in Window (AceConfigDialog hardcodes the group
-  widget).
+  on a Blizzard bag button (nothing on the list draws on a foreign button), the title
+  strip behind option groups in Window (AceConfigDialog hardcodes the group widget),
+  and the global name SSFFrame gives the stock Frame's frame (UISpecialFrames closes it
+  on Escape; the stock Frame is unnamed and Escape has no other way in).
 - The stock Frame container is the window base: dialog-box art, resize disabled through
   its public EnableResize. Nothing styled like a different UI kit.
 - Reading a library's internals (an AceGUI widget's label, frame or children, an
