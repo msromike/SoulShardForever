@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Cap: the thresholds. What the cap is right now, the low mark in use, and which state a
--- count is in against them.
+-- count is in: paused while SSF is paused, otherwise against them.
 --   The cap: AutoMax on AND a soul bag equipped -> the soul bags' slot total, and that
 --            number is written into the saved cap as it changes, so turning AutoMax off
 --            leaves the cap where the player last saw it (no hidden value jumping back:

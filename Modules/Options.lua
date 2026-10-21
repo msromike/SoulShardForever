@@ -69,9 +69,9 @@ local function Gold(text) return Colors():Gold(text) end
 -- the greyed-out rules the window shares between its controls
 local function NotPaused() return not SSF.db.profile.paused end
 local function CounterOff() return not SSF.db.profile.counter end
--- Colorize and the glow while paused: the count is white and the border off (Cap:State
--- answers "paused"), so the two boxes grey and keep their ticks, the mirror image of the
--- pause sound rows greying while unpaused (Mike, 2026-10-21)
+-- Colorize and the glow grey while paused and keep their ticks, the window's own rule on
+-- the pause setting, the mirror image of the pause sound rows greying while unpaused
+-- (Mike, 2026-10-21). What the count looks like while paused is Cap's and Colors' call.
 local function CounterOffOrPaused() return CounterOff() or SSF.db.profile.paused end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
