@@ -18,11 +18,11 @@ jobs:
       - name: Install Lua and luacheck
         run: |
           sudo apt-get update -q
-          sudo apt-get install -y -q lua5.4 lua-check
+          sudo apt-get install -y -q lua5.1 lua-check
 
       - name: Run the check script
         env:
-          LUA: lua5.4
+          LUA: lua5.1
           LUACHECK: luacheck
         run: python3 tools/check.py
 

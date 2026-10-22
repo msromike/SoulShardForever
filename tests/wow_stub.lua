@@ -20,24 +20,35 @@
 local WoW = { bags = {}, combat = false, chat = {}, frames = {} }
 _G.WoW = WoW
 
--- Lua 5.1 names the game has and Lua 5.4 does not, and the game's bit library (LuaBitOp on
--- 5.1, the 5.4 operators otherwise)
-unpack = unpack or table.unpack
-loadstring = loadstring or load
-if not getfenv then
-    getfenv = function() return _G end
-    setfenv = function() end
+-- The tests run on Lua 5.1, the game's own. The game gives every addon a global `bit`
+-- (LuaBitOp); plain Lua 5.1 has none, so here it is in arithmetic, 32 bits, for
+-- non-negative numbers (all SSF passes it: bag family flags)
+assert(_VERSION == "Lua 5.1", "run the tests on Lua 5.1 (lua51), the game's Lua")
+local function BitOp(a, b, keep)
+    local result, place = 0, 1
+    a, b = a % 2 ^ 32, b % 2 ^ 32
+    for _ = 1, 32 do
+        local x, y = a % 2, b % 2
+        if keep(x, y) then result = result + place end
+        a, b, place = (a - x) / 2, (b - y) / 2, place * 2
+    end
+    return result
 end
-if not bit then
-    if _VERSION == "Lua 5.1" then
-        bit = require("bit")
-    else
-        bit = load([[return {
-            band = function(a, b) return a & b end,
-            bor  = function(a, b) return a | b end,
-            bxor = function(a, b) return a ~ b end,
-            bnot = function(a) return ~a end,
-        }]])()
+bit = bit or {
+    band = function(a, b) return BitOp(a, b, function(x, y) return x == 1 and y == 1 end) end,
+    bor  = function(a, b) return BitOp(a, b, function(x, y) return x == 1 or y == 1 end) end,
+    bxor = function(a, b) return BitOp(a, b, function(x, y) return x ~= y end) end,
+    bnot = function(a) return 2 ^ 32 - 1 - a % 2 ^ 32 end,
+}
+
+-- The game's xpcall passes its extra arguments on to the function (as Lua 5.2 does); plain
+-- 5.1's drops them, and Ace3's safecall (AceAddon's OnInitialize/OnEnable) relies on them.
+-- Set before any library loads, since each captures xpcall as a local.
+do
+    local plainXpcall = xpcall
+    xpcall = function(f, handler, ...)
+        local n, args = select("#", ...), { ... }
+        return plainXpcall(function() return f(unpack(args, 1, n)) end, handler)
     end
 end
 

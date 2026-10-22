@@ -4,7 +4,7 @@
 -- commands, AceConfigDialog
 -- turns the same table into the options window (fed by the Window module) and the Interface
 -- Options entry, AceTab
--- completes the command words. Keys are the slash words; GUI-only entries carry cmdHidden.
+-- completes the command words and a toggle's value word. Keys are the slash words; GUI-only entries carry cmdHidden.
 -- Modules that show state (Counter, Broker, Window) listen for SSF_OPTIONS_CHANGED.
 --
 -- The window's layout and life cycle are in Modules\Window.lua.
@@ -40,7 +40,7 @@
 -- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
--- Reads:   Settings:Define/TabUsage, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
+-- Reads:   Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
 --          Bags:HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
@@ -532,12 +532,46 @@ local function IsChatWord(word)
     return entry ~= nil and not entry.cmdHidden
 end
 
--- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete".
+-- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete", "/ssf pause o<Tab>" ->
+-- "/ssf pause off" or "on". One completion set of whole phrases, never a second set on
+-- "/ssf <key> ": a set nested inside another can move AceTab's insert point, and on
+-- AceTab 11 a Tab then replaced from the wrong place (seen in game 2026-10-22). Sorted, so
+-- a Tab cycles in the order the list prints (AceTab 12 keeps the order; 11 scrambles it).
 local function CommandWords(words)
+    local Settings = SSF:GetModule("Settings")
+    local list = { "help" }
     for key in pairs(Options.table.args) do
-        if IsChatWord(key) then words[#words + 1] = key end
+        if IsChatWord(key) then
+            local values = Settings:ValueWords(key)
+            if values then
+                for _, value in ipairs(values) do list[#list + 1] = key .. " " .. value end
+            else
+                list[#list + 1] = key
+            end
+        end
     end
-    words[#words + 1] = "help"
+    table.sort(list)
+    for _, word in ipairs(list) do words[#words + 1] = word end
+end
+
+-- AceTab usage, on an ambiguous Tab: the part being chosen, on one line. All matches under
+-- one command word -> its value words; otherwise the command words.
+local function TabUsage(_, matches)
+    local firsts, seconds = {}, {}
+    for phrase in pairs(matches) do
+        local first, second = phrase:match("^(%S+) (%S+)$")
+        firsts[first or phrase] = true
+        if second then seconds[second] = true end
+    end
+    local function Sorted(set)
+        local list = {}
+        for word in pairs(set) do list[#list + 1] = word end
+        table.sort(list)
+        return list
+    end
+    local list = Sorted(firsts)
+    if #list == 1 and next(seconds) then list = Sorted(seconds) end
+    return table.concat(list, "  ")
 end
 
 -- /ssf: naked opens the window (open only, never a toggle) and prints the pause line, the
@@ -578,12 +612,12 @@ function Options:OnEnable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
     SSF:RegisterChatCommand("ssf", HandleCommand)
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
-    AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, SSF:GetModule("Settings").TabUsage)
+    AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, TabUsage)
 end
 
 -- After a Language change or a help toggle: the table captured its strings and its tooltip
 -- style when built, so build it again and re-register (AceConfigRegistry replaces by app
--- name; Settings:Define's AceTab registrations are no-ops the second time). Window resets
+-- name). Window resets
 -- the window's own strings and redraws on SSF_OPTIONS_REBUILT. The Interface Options
 -- category keeps the name it was added under until a reload.
 function Options:Rebuild()

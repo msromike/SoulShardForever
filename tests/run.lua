@@ -4,7 +4,8 @@
 -- modules need, then Core and the logic modules (never the widgets or the window), then
 -- sets a saved file as a 1.8.1 user has it (one profile under the old AceDB key) before
 -- OnInitialize, so Core's profile-key migration runs, then every tests/test_*.lua. Exit
--- code 0 when every check passes, 1 otherwise. Run from the addon root:  lua tests/run.lua
+-- code 0 when every check passes, 1 otherwise. Run from the addon root, on Lua 5.1 (the
+-- game's own):  lua51 tests/run.lua
 -- (tools/check.py does).
 --
 -- Public:  test(name, fn) -- one test; fresh bags, no combat and an empty pick record

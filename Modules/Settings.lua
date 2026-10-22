@@ -17,31 +17,27 @@
 --          optional disabled, and for range: min, max, step }.
 --          Returns gui, cmd -- two entries for Options to place in its args table; a
 --          GUI-only setting places gui and drops cmd.
---          A toggle's Define also registers AceTab completion of "on"/"off" after
---          "/ssf <key> ".
---          Settings.TabUsage -- the AceTab usage callback every completion set shares
---          (Options uses it for the command words too).
+--          Settings:ValueWords(key) -> the words a toggle's chat command takes ("off",
+--            "on"), nil for a range or an unknown key: Options' tab completion offers them
+--            after the key.
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
 --          command applied it (Window redraws an open window only then).
 -- Reads:   Colors:OnOff/Value for the echo. Prints through AceConsole only.
--- Owns no state, no events, no frames. Touches nothing else.
+-- Owns no state beyond which keys are toggles, no events, no frames. Touches nothing else.
 
 local ADDON = ...
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local Settings = SSF:NewModule("Settings", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
-local AceTab = LibStub("AceTab-3.0")
 
 local function Colors() return SSF:GetModule("Colors") end
 
--- AceTab usage callback shared by every completion set: on an ambiguous Tab, list the
--- candidates on one line. Every registration passes it.
-function Settings.TabUsage(_, matches)
-    local words = {}
-    for word in pairs(matches) do words[#words + 1] = word end
-    table.sort(words)
-    return table.concat(words, "  ")
-end
+-- the words a toggle's chat command takes after its key, for tab completion; Define
+-- records each toggle key here
+local VALUE_WORDS = { "off", "on" }
+local valueWords = {}
+
+function Settings:ValueWords(key) return valueWords[key] end
 
 -- Reads "on"/"off" (toggle) or a number in range (range) from chat input.
 -- Returns the value, or nil and a usage line.
@@ -87,8 +83,7 @@ function Settings:Define(key, def)
         gui.dialogControl = "SSFStepperSlider" -- Widgets\SSFStepperSlider.lua: "-" and "+" buttons at the value box
     else
         gui.dialogControl = "SSFIndentCheckBox" -- Widgets\SSFCentered.lua: inset in its group
-        -- "/ssf announce o<Tab>" completes the value word too
-        AceTab:RegisterTabCompletion("SSF " .. key, "/ssf " .. key .. " ", { "on", "off" }, Settings.TabUsage)
+        valueWords[key] = VALUE_WORDS -- "/ssf announce o<Tab>" completes the value word too (Options)
     end
 
     local cmd = {

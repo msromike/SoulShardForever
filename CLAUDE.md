@@ -78,7 +78,8 @@ Libs\ is committed and ships exactly as committed: .pkgmeta has no externals, so
 tested is what the package holds. tools\externals.txt names each library's upstream; the
 check script reports drift from it as information. A library changes only on purpose:
 `python tools/sync_libs.py --apply`, an in-game pass, a commit of its own with a changelog
-line. Never edit a file under Libs\ by hand.
+line. Never edit a file under Libs\ by hand. One exception: Libs\AceTab-3.0 carries a
+local fix pending upstream, see tools/externals.txt. It is the only library edited by hand.
 
 ## Every commit
 

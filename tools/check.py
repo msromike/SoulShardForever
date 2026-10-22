@@ -15,7 +15,8 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), chec
         are behind their upstreams. Exit 1 on any failure, 0 when all pass.
 Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars override the
         tool locations (the GitHub workflow sets them; locally they are found on PATH or
-        at the fallback paths below).
+        at the fallback paths below). The tests run on Lua 5.1, the game's own: locally
+        `lua51` on PATH, never a plain `lua`, which may be a later version.
 Writes: ARCHITECTURE.md, only when its content changed. Through tools/sync_libs.py (the
         libs report) it also makes and removes the scratch folder tools/.sync/ and fetches
         each upstream over the network.
@@ -32,7 +33,7 @@ TOC = os.path.join(ROOT, "SoulShardForever.toc")
 MAP = os.path.join(ROOT, "ARCHITECTURE.md")
 
 FALLBACK_LUACHECK = r"C:\bin\PortableTools\luacheck\luacheck.exe"
-FALLBACK_LUA = r"C:\Users\mike\AppData\Local\Programs\Lua\bin\lua.exe"
+FALLBACK_LUA = r"C:\bin\PortableTools\lua51\lua5.1.exe"
 
 # the header template (CLAUDE.md), in order
 FIELDS = ["Public", "Listens", "Hooks", "Sends", "Lib internals", "Reads", "Saves", "Exceptions"]
@@ -97,7 +98,7 @@ def check_tests():
     if not os.path.exists(runner):
         print("== tests\n   none yet (tests/run.lua absent)")
         return True
-    exe = tool("lua", FALLBACK_LUA)
+    exe = os.environ.get("LUA") or shutil.which("lua51") or FALLBACK_LUA
     return run([exe, "tests/run.lua"], "tests")
 
 

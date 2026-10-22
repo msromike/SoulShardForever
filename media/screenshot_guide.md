@@ -1,178 +1,151 @@
 # SSF screenshot guide
 
-How to take and crop each gallery shot, in gallery order. Same file names as
-`image_captions.md`, which has the caption for each. A shot is retaken over the old file,
-same name; a new one gets the next number. Every shot in the gallery was taken before the
-1.8 window, so all of them are owed; 08 (Blizzard's keybinding page) only needs its section
-name checked.
+The gallery sells; the README teaches. Five shots, one line each, in the order a cautious
+player asks: what will I see, why do I care, will it be a pain. Same file names as
+`image_captions.md`, which has the line for each. A shot is retaken over the old file,
+same name. Decided 2026-10-22 with Amelia and Dustin, after 1.10.0 shipped; the old
+eight-shot walkthrough is gone.
+
+Two passes. **Pass one:** shoot and crop by hand, publish. **Pass two, whenever:** the
+inset script (at the bottom) lays the bag bar into the window band from the same shot;
+whichever reads better replaces the first, same names, same push.
 
 ## Rules for every shot
 
+- **Set up once, before the first shot:** help off (the "i" gold), Language on Auto, a soul
+  bag equipped, Pause off, Show shard count on bag bar on, Show on soul bag on. Drag the
+  window down so it sits right above the bag bar; leave it there for every shot.
 - **One place, one light.** Stand in the same spot for every shot, somewhere with a plain,
   dark, still backdrop and no NPCs walking through: an inn wall, a dark cave mouth. The
   gallery reads as one set when the backdrop is the same in all of them.
-- **Same UI scale as the old shots.** The window about 590 px wide in the final crop,
-  tall, as 01 is now. Do not change UI scale between shots.
-- **Nothing else on screen.** Chat frame scrolled clear (or hidden, except in 03), no
-  nameplates, no other addon windows, no tooltips except the one the shot is about. Help
-  ("i") off except where the shot shows a help tooltip.
-- **Cursor out of frame**, except where it has to be over something (07, 10, 11).
-- **Capture with Win+Shift+S**, region, at native resolution, saved as PNG. No scaling,
-  no JPEG. Crop in the Snipping Tool or afterwards; never resize.
-- **Crop rule for window shots** (01, 02, 04, 05, 06, 09): from 8 px above the window's
-  top border to 8 px below the bag bar, 8 px either side of the window. The bag bar sits
-  directly under the window, so the number on the bag and the slider that drives it are
-  in one frame. Move the window so it sits right above the bag bar before you shoot.
-- **Crop rule for small shots** (07, 10, 11): tight around the thing and its tooltip,
-  12 px of air all round. Landscape is fine here.
-- **Shoot in this order.** It walks the count and the cap through every state with the
+- **Same UI scale** for every shot.
+- **Nothing else on screen.** Chat clear, no nameplates, no other addon windows, no tooltip
+  except the one the shot is about.
+- **Cursor out of frame**, except shot 5, where it has to be on the icon.
+- **Capture with Win+Shift+S**, region, at native resolution, saved as PNG. No scaling, no
+  JPEG. Crop in the Snipping Tool or afterwards; never resize.
+- **Crop wide, never tall.** The window is a tall strip and a gallery thumbnail is a wide
+  box. Each shot crops to the part that proves its line: the window's top band (title,
+  count, Delete Shard, through the Soul shard cap box) plus the bag bar, never the whole
+  window. 8 px of air all round. Landscape every time.
+- **Shoot in this order.** It walks the count through green, yellow and red with the
   fewest changes. Start with more shards than your soul bag holds (bag 14, shards 19 is
   the set the old gallery used).
 
-## 01_window_in_range_green.png (hero; CurseForge shows this one first)
+---
 
-Shows: the whole window, the count green, the warn slider stopping at the cap with the dim
-track and the gold line, and the same number on the soul bag.
+## Shot 1 of 5: `01_in_range.png` (hero; CurseForge shows this one first)
 
-Set up: Match soul bag size off. Cap above your count, warn below it (cap 20, warn 16 with
-19 shards). Pause off. Show shard count on bag bar on, Show on soul bag on.
+**Shows:** the count green at the top of the window, the same green number on the soul bag.
+
+**Set up:** Match soul bag size off. Cap above your count, warn below it (cap 20, warn 16
+with 19 shards).
 
 ```
 /ssf setmax 20
 ```
 
-Then drag Low shard warn to 16. Check: count green at the top, 19 green on the soul bag,
-Low shard warn's track dim right of 20 with the gold line, Delete Shard greyed with "Under
-cap" under it.
+Then drag Low shard warn to 16.
 
-Crop: window rule.
+**Check:** count green at the top, 19 green on the soul bag, Delete Shard greyed with
+"Under cap" under it.
 
-## 02_pause_off.png
+**Crop:** wide. The window's top band through the Soul shard cap box, and the bag bar.
 
-Shows: Pause all SSF actions unticked, Play pause sound and Log pause to chat greyed, the
-rest as in 01.
+**Line:** Your shard count, on your bag, in one glance. Green means you're fine.
 
-Set up: same as 01. Make sure both pause options are ticked (they keep their tick while
-greyed; that is the point of the shot).
+---
 
-Crop: window rule.
+## Shot 2 of 5: `02_over_cap.png`
 
-## 03_pause.png
+**Shows:** the count yellow at the top and on the bag, Match soul bag size ticked with the
+cap at the bag size.
 
-Shows: paused, and what the player sees when they press: the chat line and the status
-`/ssf` prints. This is the one shot that keeps the chat frame.
+**Set up:** tick Match soul bag size. With a 14-slot bag and 19 shards the cap is 14 and
+the count goes yellow.
 
-Set up: tick Pause all SSF actions, Play pause sound on, Log pause to chat on. Press your
-Delete Shard key once so the chat shows the paused line, then:
+**Check:** Shards to keep box reads 14 and is greyed, count yellow at the top and on the
+bag, Delete Shard live.
 
-```
-/ssf
-```
+**Crop:** wide, the same as shot 1.
 
-Check: count white at the top and on the bag, no border, "SSF paused: Yes" in red in
-chat, Delete Shard greyed with "SSF paused" under it, Colorize bag count and Glow bag
-button when low greyed with their ticks.
+**Line:** Yellow means you're carrying dead weight. One press deletes one, down to the cap
+you set.
 
-Crop: window rule, widened to the left to take in the chat frame with those lines, as the
-old 03 does. Scroll the chat so only SSF's lines show.
+---
 
-## 04_match_soul_bag_over_cap.png
+## Shot 3 of 5: `03_low.png`
 
-Shows: Match soul bag size ticked, Shards to keep greyed at the bag size, the warn thumb
-pinned at the bag size on the gold line with the dim track past it, the count yellow.
+**Shows:** the count red on the bag, with the red running border round the bag button.
 
-Set up: untick Pause. Tick Match soul bag size. With a 14-slot bag and 19 shards the cap is
-14 and the count goes yellow; Low shard warn drops to 14 by itself if it was above.
-
-Check: Shards to keep box reads 14 and is greyed, Low shard warn thumb on the gold line at
-14, count yellow at the top and on the bag, Delete Shard live.
-
-Crop: window rule.
-
-## 05_low_shard_glow.png
-
-Shows: the low state. Count red at the top, red on the bag button with the red running
-border round the button, Low shard warn visible above the count's line so the eye connects
-the two.
-
-Set up: untick Match soul bag size. Cap back above the count, then drag Low shard warn
+**Set up:** untick Match soul bag size. Cap back above the count, then drag Low shard warn
 above your count (cap 32, warn 24 with 19 shards). Glow bag button when low on.
 
 ```
 /ssf setmax 32
 ```
 
-Check: count red, red border on the soul bag button, no gold spell glow. Catch the border
-with its segments spread round the button, not bunched in one corner: take two or three
-and keep the best.
+**Check:** count red, red border on the soul bag button. Catch the border with its
+segments spread round the button, not bunched in one corner: take two or three and keep
+the best.
 
-Crop: window rule.
+**Crop:** wide. The bag bar is the shot; the window's top band above it if it fits without
+going tall.
 
-## 06_language_menu.png
+**Line:** Red means go farm before the raid does it for you.
 
-Shows: the Language dropdown open with all six choices.
+---
 
-Set up: as 01 (put the warn back under the count first, so the count is green). Click the
-Language dropdown and leave it open.
+## Shot 4 of 5: `04_welcome.png`
 
-Crop: window rule. The open list must be inside the crop.
+**Shows:** the welcome note beside the window: the pointer at the "i", every way to
+delete, the two macros in their boxes, the Create recommended macros button.
 
-## 07_minimap_tooltip.png
+**Set up:** put Low shard warn back under the count first, so the count is green. Then
+open the note:
 
-Shows: the minimap icon with its tooltip: the title, the count in its color, then Soul
+```
+/run LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Window"):SendMessage("SSF_SHOW_WELCOME")
+```
+
+**Check:** the note's title, the arrow and the "i", both macro boxes, "reloads your UI" in
+green, the gold line last.
+
+**Crop:** wide. The window's top third and the whole note beside it, down to the gold line
+at the note's bottom. Close the note by its X afterwards.
+
+**Line:** Install it and it walks you through: every way to delete, and the two macros made
+for you with one click.
+
+---
+
+## Shot 5 of 5: `05_minimap.png`
+
+**Shows:** the minimap icon with its tooltip: the title, the count in its color, then Soul
 shard cap, Low shard warn, SSF paused.
 
-Set up: as 01. Hover the SSF minimap icon.
+**Set up:** as shot 1. Hover the SSF minimap icon.
 
-Crop: small rule: the minimap icon and the tooltip, nothing else of the minimap if you can
-help it. Cursor on the icon is fine.
+**Check:** the count green in the tooltip, cap and warn in white, SSF paused a green No.
 
-## 08_keybinding.png
+**Crop:** wide. The minimap and the tooltip, 12 px of air all round. Cursor on the icon is
+fine.
 
-Shows: Blizzard's keybinding page at the Soul Shards Forever section, Delete Shard bound,
-Pause all SSF actions bound.
+**Line:** Count, cap, low mark, paused or not. Always there, never in your way.
 
-Set up: click Keybindings in the window. Scroll so the section heading is at the top.
-
-Crop: the keybinding window, tight. Check the heading reads "Soul Shards Forever"; if it
-does, the old shot is fine and this one can be skipped.
-
-## 09_soul_bag_counter.png
-
-Shows: Show on soul bag when equipped unticked: the count on the far-left bag, the soul bag
-showing the game's own number again.
-
-Set up: as 01, then untick Show on soul bag when equipped.
-
-Crop: window rule. The far-left bag and the soul bag both in frame.
-
-## 10_broker_bar.png (new)
-
-Shows: the SSF block on a data broker bar, the count in its color, the tooltip open under
-it. The bag bar in the same frame if the layout allows, so the two numbers match.
-
-Set up: as 01. In EllesmereUI's data bar settings the SSF block's Strip Colors is off, so
-the count shows green. Hover the block.
-
-Crop: small rule, landscape: the bar from one block left of SSF to one block right, and
-the whole tooltip. If the bag bar fits in the same crop without stretching it, include it.
-
-## 11_delete_shard_greyed.png (new)
-
-Shows: Delete Shard greyed with "At cap" under it, and the help tooltip saying why:
-"Nothing to delete, you are at or under the cap."
-
-Set up: cap equal to your count (19 shards, cap 19). Help on (the "i"). Hover Delete Shard.
-
-```
-/ssf setmax 19
-```
-
-Crop: small rule: the top of the window from the title to just under the count row, with
-the tooltip. Cursor on the button is fine.
+---
 
 ## After the shots
 
-Save each over the old file (01 to 09) or under the new name (10, 11) in `media/`. Say
-"done": the files are checked as new, committed with the captions, and pushed to GitHub
-with no tag. Then paste each caption from `image_captions.md` into the gallery.
+Save the five into `media/` under the names above. Say "done": the files are checked as
+new, the nine old gallery files are removed, the whole tree is committed and pushed to
+GitHub with no tag (nothing rebuilds on CurseForge). Then paste each line from
+`image_captions.md` into the gallery and replace the old images.
+
+## Pass two: the inset
+
+A Pillow script in this folder (beside `make_icon.py`): one full-screen shot per state in,
+the window's top band with the bag bar laid into one corner out, thin border, the same
+corner and size on every image. One source per shot, so scenery and light match. Shots 1
+to 3 only; 4 and 5 have no bag in them. If the insets read better, they replace pass one's
+files, same names, same push.
