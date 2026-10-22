@@ -5,10 +5,9 @@
 -- it is never handed to another addon; it may itself have been another addon's released
 -- Frame, whose parent, strata, title, status text, size, position and resize switch the
 -- stock OnAcquire resets); SSF's parts are added on top of it, and the result is registered
--- as this type. Nothing the stock Frame does is written again here, but one fallback (the
--- stock Close's click, copied for the case the stock button is not found): the art, the
--- title, the drag, the status table, the content frame and the container plumbing are all
--- its own. Resize is off, through the stock Frame's own switch: the
+-- as this type. Nothing the stock Frame does is written again here but one fallback (see
+-- Exceptions): the art, the title, the drag, the status table, the content frame and the
+-- container plumbing are all its own. Resize is off, through the stock Frame's own switch: the
 -- window is sized to its content after every feed.
 --
 -- What SSF adds: an X close button top-right with an optional help button left of it
@@ -57,6 +56,9 @@
 --          title band.
 -- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
 --          Escape; the stock Frame is unnamed and Escape has no other way in.
+--          Close_OnClick copies the stock Close's click (the sound, then hide), used only
+--          when TakeStockClose can't find the stock button: without it, an AceGUI bump that
+--          changed that button would leave SSF's X and Close dead.
 -- Touches nothing else.
 
 local Type, Version = "SSFFrame", 2

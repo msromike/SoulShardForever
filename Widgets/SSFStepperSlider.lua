@@ -14,8 +14,8 @@
 -- The bound (the option's `arg`, a number or a function returning one; the Low shard warn
 -- slider gets the cap): the scale stays min to max, but any value past the bound, from a
 -- drag, the "+" or the typed box, is set back to the bound before AceConfigDialog hears
--- of it; the "+" greys at the bound; the track beyond the bound is drawn dim with a one
--- pixel gold tick at its edge (under where the cap thumb sits on the slider above), so
+-- of it; the "+" greys at the bound; the track beyond the bound is drawn dim with a gold
+-- tick TICK pixels wide at its edge, running TICK_BELOW past the slider's bottom (under where the cap thumb sits on the slider above), so
 -- the slider reads "this much is yours, that much is off limits" (Mike, 2026-10-20).
 -- The label is left-justified (the stock Slider centers it), so it lines up with the
 -- dropdown labels and checkboxes in the window.
@@ -41,7 +41,8 @@ local GAP = 4          -- between a button and the value box
 local VALUE_BOX = 44   -- the value box: room for three digits
 local DIM = 0.5        -- alpha of the black over the rail beyond the bound (picked by eye)
 local RAIL_INSET = 3   -- the stock Slider anchors its rail this far in from each side
-local TICK = 1         -- width of the gold line at the bound's edge
+local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint: Mike, 2026-10-21)
+local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above (Mike, 2026-10-21)
 local GOLD_R, GOLD_G, GOLD_B = 1, 0.82, 0 -- the game's label gold (NORMAL_FONT_COLOR)
 
 -- the bound as a number right now, or nil for none
@@ -49,6 +50,13 @@ local function Bound(self)
     local b = self.bound
     if type(b) == "function" then b = b() end
     return tonumber(b)
+end
+
+-- the one clamp to the bound, for both callbacks below
+local function Clamp(self, value)
+    local bound = Bound(self)
+    if bound and value > bound then return bound end
+    return value
 end
 
 -- the "+" greys where the thumb cannot go further: the bound, or the max
@@ -82,7 +90,7 @@ local function UpdateDim(self)
     dim:Show()
     tick:ClearAllPoints()
     tick:SetPoint("TOPLEFT", inner.slider, "TOPLEFT", x, 0)
-    tick:SetPoint("BOTTOMLEFT", inner.slider, "BOTTOMLEFT", x, 0)
+    tick:SetPoint("BOTTOMLEFT", inner.slider, "BOTTOMLEFT", x, -TICK_BELOW)
     tick:Show()
 end
 
@@ -174,9 +182,9 @@ local function Constructor()
     -- number (below), so the bound is applied there as well; AceConfigDialog never hears a
     -- value past it.
     inner:SetCallback("OnValueChanged", function(_, _, value)
-        local bound = Bound(widget)
-        if bound and value > bound then
-            value = bound
+        local clamped = Clamp(widget, value)
+        if clamped ~= value then
+            value = clamped
             inner:SetValue(value) -- the stock SetValue sets its setup flag: no second fire
         end
         UpdateButtons(widget)
@@ -185,9 +193,7 @@ local function Constructor()
     -- the typed box fires OnMouseUp with the raw number (the stock EditBox_OnEnterPressed),
     -- so the bound is applied here too before AceConfigDialog saves it
     inner:SetCallback("OnMouseUp", function(_, _, value)
-        local bound = Bound(widget)
-        if bound and value > bound then value = bound end
-        widget:Fire("OnMouseUp", value)
+        widget:Fire("OnMouseUp", Clamp(widget, value))
     end)
     inner:SetCallback("OnEnter", function() widget:Fire("OnEnter") end)
     inner:SetCallback("OnLeave", function() widget:Fire("OnLeave") end)
