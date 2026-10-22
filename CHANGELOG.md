@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.10.1 (2026-10-22)
+
+- Tab completion in chat no longer jumps back. Typing `/ssf pause ` and pressing Tab
+  could turn the line into `/ssf `; now each Tab stays on the command and steps through
+  `off` and `on`, and through the commands themselves, in the order the list shows.
+- Under the hood: SSF carries its own copy of the library behind Tab completion, with
+  three fixes also sent to its authors, and the headless tests now run on Lua 5.1, the
+  game's own. Nothing else you see changed.
+
 ## 1.10.0 (2026-10-22)
 
 - Guided onboarding that knows your level. Before you learn Drain Soul, SSF stays quiet:

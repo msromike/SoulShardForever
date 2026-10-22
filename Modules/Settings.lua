@@ -32,9 +32,11 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 local function Colors() return SSF:GetModule("Colors") end
 
--- the words a toggle's chat command takes after its key, for tab completion; Define
--- records each toggle key here
-local VALUE_WORDS = { "off", "on" }
+-- the words a toggle's chat command takes after its key: Parse reads them, and tab
+-- completion offers them (Define records each toggle key here). "true" and "false" are
+-- accepted too, never offered.
+local ON, OFF = "on", "off"
+local VALUE_WORDS = { OFF, ON }
 local valueWords = {}
 
 function Settings:ValueWords(key) return valueWords[key] end
@@ -43,8 +45,8 @@ function Settings:ValueWords(key) return valueWords[key] end
 -- Returns the value, or nil and a usage line.
 local function Parse(key, def, input)
     if def.kind == "toggle" then
-        if input == "on" or input == "true" then return true end
-        if input == "off" or input == "false" then return false end
+        if input == ON or input == "true" then return true end
+        if input == OFF or input == "false" then return false end
         return nil, L["Use: /ssf %s on|off"]:format(key)
     end
     local value = tonumber(input)
