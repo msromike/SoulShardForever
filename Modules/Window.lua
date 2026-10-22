@@ -48,8 +48,7 @@
 --          saved on).
 -- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog
 --          hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the
---          three raw frames in SSF (DeleteButton's named button and Counter's FontString
---          are the others).
+--          five exceptions CLAUDE.md lists.
 -- Touches nothing else.
 
 local ADDON = ...

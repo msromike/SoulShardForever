@@ -37,9 +37,10 @@ local Welcome = SSF:NewModule("Welcome", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 -- The welcome's version, two digits per part (Blizzard's ## Interface scheme): 1.8 = 10800.
--- Raised only when the note changes, so players see a changed note once. 1.8.1 raises it:
--- the note was redone and Delete Shard moved, so updaters see the window once more.
-local WELCOME_VERSION = 10801
+-- Raised only when the note changes, so players see a changed note once. 1.8.1 raised it:
+-- the note was redone and Delete Shard moved. 1.10.0 raises it again: the quiet state
+-- changed the note, and it is the last release (Mike, 2026-10-22).
+local WELCOME_VERSION = 11000
 
 -- in a fight: Window's one test (the window and the note close together)
 local function InFight() return SSF:GetModule("Window"):InFight() end

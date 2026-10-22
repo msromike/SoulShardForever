@@ -1,5 +1,24 @@
 # Changelog
 
+## 1.10.0 (2026-10-22)
+
+- Guided onboarding that knows your level. Before you learn Drain Soul, SSF stays quiet:
+  the count is white, nothing colors or glows, Delete Shard is greyed with "No Drain Soul
+  yet" under it and in its tooltip, and the welcome screen says you'll see it again at
+  level 10. Learn the spell, and the welcome comes back once to walk you through setup,
+  right when shards start dropping.
+- The welcome screen shows once more after this update, one last time.
+- The count over the cap is a brighter yellow, and the low count a truer red, everywhere
+  they show: the bag button, the window, the minimap tooltip and chat. The bag's picture
+  is darkened under the number, so the count reads on a light bag.
+- While paused, the count is white everywhere and the bag button's red border is off.
+- The gold line that marks the cap on the Low shard warn slider is taller and runs a
+  little below the track, so it's easier to spot. Typing a number past the cap into that
+  box stops at the cap, like the thumb does. A greyed slider still shows its help tooltip.
+- Under the hood: every color, size and wording lives in one place and the check script
+  fails when one is typed twice; libraries updated to upstream; comments swept so they say
+  what the code does. Nothing you see changed because of it.
+
 ## 1.9.0 (2026-10-21)
 
 - Low shard warn stops at your cap. The part of its track past the cap is dimmed, with a

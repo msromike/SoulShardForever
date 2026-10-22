@@ -9,8 +9,7 @@
 -- Exceptions: a raw, named CreateFrame. /click resolves a GLOBAL frame name, and AceGUI
 --          widgets are pooled frames meant for windows, unnamed or named by a counter, so a
 --          raw frame with a fixed name is the only way to give /click a target. One of the
---          three raw frames in SSF
---          (Counter's FontString on a bag button and Window's title strips are the others).
+--          five exceptions CLAUDE.md lists.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

@@ -14,6 +14,7 @@ There are other shard addons. This one is built to disappear.
 - “It just works™.” Install it and the defaults get you going.
 - One job: keep shards at your cap, a warning when you're low. Pause whenever you need. Nothing else.
 - SSF is bag safe. Impossible for it to delete anything but a Soul Shard.
+- Guided onboarding that knows your level.
 
 ## <span style="color:#8788EE">Feature set</span>
 
@@ -26,13 +27,12 @@ There are other shard addons. This one is built to disappear.
 
 ### <span style="color:#8788EE">QOL features</span>
 
+- Makes the recommended macros for you with one click, and shows you where they were created.
 - Cap follows your soul bag size, if you want it.
 - In-game help: click the "i" in the window, then hover any option to see what it does.
-- Closes its window by itself when combat starts, so it's never in your way in a fight.
-- Makes the recommended macros for you with one click, and shows you where they were created.
-- For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list. Tab can complete commands.
-- Shows your count on a data broker bar (Titan Panel, EllesmereUI's data bars and the like), with your cap and settings in a tooltip.
 - Speaks your language. Follows your game client, or pick English, Deutsch, Français, Español, Português or Русский.
+- Shows your count on a data broker bar (Titan Panel, EllesmereUI's data bars and the like), with your cap and settings in a tooltip.
+- For those who like CLI, SSF has slash commands too. Type `/ssf help` for the list. Tab can complete commands.
 
 ## <span style="color:#8788EE">Set it up</span>
 

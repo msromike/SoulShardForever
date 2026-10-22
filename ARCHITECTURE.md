@@ -22,7 +22,7 @@ Core and modules:
 - Modules\Colors.lua: every color SSF uses, and the helpers that paint text with them.
 - Modules\KeyBindings.lua: SSF's two rows in Blizzard's Key Bindings screen (Bindings.xml: SSF_DELETE and SSF_PAUSE), unbound until the player picks keys.
 - Modules\Bags.lua: read-only queries over the player's bags, backpack through the reagent slot (bag 5, where a soul pouch equips on Forever), and the one signal that the bags changed.
-- Modules\Cap.lua: the thresholds.
+- Modules\Cap.lua: the thresholds, and whether Drain Soul is known (the quiet state).
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
 - Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
 - Modules\Trimmer.lua: the delete press.

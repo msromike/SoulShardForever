@@ -225,6 +225,7 @@ local function BuildTable()
             desc = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
                 if why == "paused" then return L["Nothing to delete, SSF is paused."] end
+                if why == "quiet" then return L["Nothing to delete, no Drain Soul yet."] end
                 if why then return L["Nothing to delete, you are at or under the cap."] end
                 return SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."]:format(L["Delete Shard"]))
             end,

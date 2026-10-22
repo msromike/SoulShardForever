@@ -25,6 +25,7 @@ L["Delete Shard"] = true
 L["Keybindings"] = true
 L["Nothing to delete, SSF is paused."] = true
 L["Nothing to delete, you are at or under the cap."] = true
+L["Nothing to delete, no Drain Soul yet."] = true
 L["Shards to keep"] = true
 L["Match soul bag size"] = true
 L["Show shard count on bag bar"] = true

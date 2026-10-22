@@ -32,8 +32,8 @@
 -- Reads:   Bags:Count(), Bags:SoulBags(), Cap:State(), Colors; profile.counter,
 --          counterSoulBag, counterFont, counterColorize.
 -- Exceptions: the FontString and the backing texture are raw: AceGUI builds widgets inside
---          its own windows and cannot draw on a Blizzard button. One of the three raw frames in SSF
---          (DeleteButton's named button and Window's title strips are the others).
+--          its own windows and cannot draw on a Blizzard button. One of the five exceptions
+--          CLAUDE.md lists.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
