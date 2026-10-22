@@ -11,8 +11,8 @@
 -- window and the note with it leaves it owed, and it comes back with the next open of the
 -- window, from anywhere, and at the next load or reload.
 --
--- Drain Soul (Cap's quiet state): while quiet, the note leads with one more gold line under
--- the help pointer, that it comes back at level 10. Learning the spell owes the note again, under its own title, and
+-- Drain Soul (Cap's quiet state): while quiet, the note leads with one more line under the
+-- help pointer, in green, that it comes back at level 10. Learning the spell owes the note again, under its own title, and
 -- it shows when the trainer window closes, so it never lands on the trainer while the
 -- player is still buying (Mike, 2026-10-21). Learned away from a trainer, it waits for the
 -- next load or window open, like any owed note.
@@ -21,7 +21,8 @@
 -- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open),
 --          LOADING_SCREEN_DISABLED once at load while a note is owed, SSF_QUIET_ENDED
 --          (learned), TRAINER_CLOSED once after a learn.
--- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Options:IsHelpOn/ToggleHelp,
+-- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line);
+--          Options:IsHelpOn/ToggleHelp,
 --          Window:ShowNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
 --          button).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
@@ -61,10 +62,12 @@ function Welcome:Show()
     local Macros = SSF:GetModule("Macros")
     local title = p.welcomeAgain and L["You learned Drain Soul"] or L["Welcome to SSF"]
     local quiet = SSF:GetModule("Cap"):IsQuiet()
+    local Colors = SSF:GetModule("Colors")
     SSF:GetModule("Window"):ShowNote(title, L["Click for in-game tooltip help."],
         L["You won't see this welcome screen again on this character unless you click Create macros in the UI."],
         {
-            lead = quiet and L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] or nil,
+            -- in green, the note's one highlight color (as "reloads your UI"), so it stands out from the gold
+            lead = quiet and Colors:Paint(Colors.GREEN, L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."]) or nil,
             blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match."]),
             button = L["Create recommended macros"],
             onClick = function() Macros:Create() end,

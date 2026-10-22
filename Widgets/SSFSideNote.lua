@@ -4,7 +4,8 @@
 -- welcome). An AceGUI widget SSFFrame creates once and attaches to its frame, out by the
 -- gap it passes to AttachTo, tops level. Top to bottom: a title (the window's title color),
 -- a divider, an arrow pointing left at the window's help button beside a copy of its "i", a
--- body line in gold and a divider, then the optional lead (a gold line with its own divider
+-- body line in gold and a divider, then the optional lead (a line, gold unless its text
+-- carries its own color, with its own divider
 -- under it: the two show together or not at all, so dividers never double), then the blocks
 -- (paragraphs left-justified, macros each in a dark box), a small note
 -- above the button, the button, and a gold note line last. Its width is SIDE_WIDTH of the
