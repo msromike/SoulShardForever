@@ -7,9 +7,9 @@
 --   over  yellow  over the cap: excess, the next press trims one
 --   paused white  stockpiling on purpose: no opinion until unpause
 --   quiet  white  no Drain Soul yet, so no way to get a shard: no opinion until it's learned
--- One red everywhere (bag number, chat, tooltip), one green, one yellow; the green and the
--- yellow are the pure ones, as vivid as each other (the yellow was the label gold until
--- 1.9.1: Mike, 2026-10-22). Gold is the game's label color (NORMAL_FONT_COLOR): names
+-- One red everywhere (bag number, chat, tooltip, the low glow), one green, one yellow: the
+-- pure ones, as vivid as each other (the yellow was the label gold and the red a lightened
+-- coral until 1.9.1; picked by eye on the bag: Mike, 2026-10-22). Gold is the game's label color (NORMAL_FONT_COLOR): names
 -- quoted in help lines, tooltip titles, the cap tick on the Low shard warn slider. White is
 -- the neutral value color for settings. Green doubles as the branding accent on the login
 -- line, by Mike's call. Grey never colors a state (it reads as "disabled"); the two greys
@@ -50,7 +50,7 @@ local function Color(r, g, b)
     return { r, g, b, hex(r) .. hex(g) .. hex(b) }
 end
 
-Colors.RED    = Color(1, 0.25, 0.25)
+Colors.RED    = Color(1, 0, 0)
 Colors.GREEN  = Color(0, 1, 0)
 Colors.YELLOW = Color(1, 1, 0)
 Colors.GOLD   = Color(1, 0.82, 0)
