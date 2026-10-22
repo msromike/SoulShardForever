@@ -60,6 +60,7 @@ local function Defaults()
             pauseSoundVolume = Sounds:LevelVolume("full"), -- 0-1; SSF's own sounds only (Sounds)
             minimap = { hide = false }, -- LibDBIcon state
             welcomed = false,           -- the welcome version this character last saw at load (Welcome)
+            welcomeAgain = false,       -- Drain Soul learned, note not yet closed: its second title (Welcome)
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
             window = {},                -- options window position: top, left and the screen size (set after a drag)
             -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it

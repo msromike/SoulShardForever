@@ -22,8 +22,8 @@
 --          welcome share), OpenKeyBindings() (the bottom-right button).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
---          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED and
---          SSF_BAGS_CHANGED (refresh the count row), PLAYER_REGEN_DISABLED (a fight
+--          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED,
+--          SSF_BAGS_CHANGED and SSF_QUIET_ENDED (refresh the count row), PLAYER_REGEN_DISABLED (a fight
 --          starts: the window closes, and nothing opens it until the fight is over; it
 --          does not reopen by itself).
 -- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild;
@@ -317,6 +317,7 @@ function Window:OnEnable()
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:RegisterMessage("SSF_MACROS_CHANGED", "Redress")
     self:RegisterMessage("SSF_BAGS_CHANGED", "Refresh")
+    self:RegisterMessage("SSF_QUIET_ENDED", "Refresh")
     -- a fight closes the window (and Open refuses until it's over)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
 end

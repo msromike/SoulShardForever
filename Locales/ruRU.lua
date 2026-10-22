@@ -107,5 +107,8 @@ L["Creates the macros, reloads your UI and opens the macro box after the reload.
 L["Create macros"] = "Создать макросы"
 L["Opens the welcome screen to create the recommended macros."] = "Открывает приветствие, чтобы создать рекомендуемые макросы."
 L["No free macro slots. Delete a macro and try again."] = "Нет свободных ячеек для макросов. Удалите макрос и попробуйте снова."
+L["You learned Drain Soul"] = "Вы изучили «Похищение души»"
+L["No Drain Soul yet"] = "Пока нет «Похищения души»"
+L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Пока можете осваивать аддон. Когда вы изучите «Похищение души» на 10-м уровне, мы покажем это окно снова."
 
 NS.RegisterLocale("ruRU", "Русский", L)

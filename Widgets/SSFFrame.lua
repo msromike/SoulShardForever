@@ -14,7 +14,7 @@
 -- What SSF adds: an X close button top-right with an optional help button left of it
 -- (SetHelpButton: Blizzard's "i", gold while off, blue while on), a black shade layer under
 -- the content that makes the window a little darker than the bare art (SHADE, picked by
--- eye), an optional note beside
+-- eye; the note beside gets the same SHADE through AttachTo), an optional note beside
 -- the window (ShowSidePanel, the SSFSideNote widget), Escape closes it, a bottom row of
 -- Close (far right, SetRightButton turns it into an action), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
@@ -439,7 +439,7 @@ local function Constructor()
     -- hides. OnHide also fires when the whole UI hides around a loading screen, and the
     -- window comes back from that.
     local sidenote = AceGUI:Create("SSFSideNote")
-    sidenote:AttachTo(frame, SIDE_GAP)
+    sidenote:AttachTo(frame, SIDE_GAP, SHADE) -- the note takes the window's shade: one number
     self:SecureHookScript(frame, "OnHide", function(f)
         if f:IsShown() or not sidenote:IsShown() then return end
         sidenote:Close()

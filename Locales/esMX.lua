@@ -107,5 +107,8 @@ L["Creates the macros, reloads your UI and opens the macro box after the reload.
 L["Create macros"] = "Crear macros"
 L["Opens the welcome screen to create the recommended macros."] = "Abre la pantalla de bienvenida para crear los macros recomendados."
 L["No free macro slots. Delete a macro and try again."] = "No hay espacios de macro libres. Elimina un macro e inténtalo de nuevo."
+L["You learned Drain Soul"] = "Aprendiste Drenar alma"
+L["No Drain Soul yet"] = "Aún sin Drenar alma"
+L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Por ahora puedes probar el addon. Cuando aprendas Drenar alma en el nivel 10, te mostraremos esta ventana otra vez."
 
 NS.RegisterLocale("esMX", "Español", L)

@@ -15,7 +15,13 @@
 --   State(count): "paused" while SSF is paused, whatever the count (the player is
 --     stockpiling on purpose: red "go farm" and yellow "delete one" would argue with that,
 --     so the count goes white and the border off until unpause; Mike, 2026-10-21). Then
---     "over" above the cap (over the cap wins), "low" below the low mark, "ok" between.
+--     "quiet" until the character knows Cap.QUIET_UNTIL, Drain Soul: before it there is no way
+--     to get a shard, so "go farm" would be a lie (white, no border, like paused; Mike,
+--     2026-10-21). Then "over" above the cap (over the cap wins), "low" below the low mark,
+--     "ok" between.
+--   The quiet state ends once: when the spell turns up known (a learn, or the spell list
+--     arriving late at login), Cap sends SSF_QUIET_ENDED, with learned = true only when a
+--     learn event came first, so a login never counts as learning it.
 --     Deleting is not gated here: Trimmer:WhyNot answers "paused" before it asks State.
 --     IsFull(count): at or over the cap (the Delete Shard button's "At cap"). The
 --     threshold tests live here and nowhere else; Counter's color, the glow, the chat,
@@ -24,12 +30,13 @@
 -- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
 -- delete.
 --
--- Public:  Cap.MIN, Cap.MAX; Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark,
---          State(count) -> "paused" | "low" | "ok" | "over", IsFull(count) -> bool, SetManual(n)
---          (Options' slider and /ssf setmax; turning AutoMax off is the caller's job),
---          Recompute().
--- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED.
--- Sends:   SSF_CAP_CHANGED (cap).
+-- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark,
+--          State(count) -> "paused" | "quiet" | "low" | "ok" | "over", IsFull(count) -> bool,
+--          IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax
+--          off is the caller's job), Recompute().
+-- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED; LEARNED_SPELL_IN_SKILL_LINE and
+--          SPELLS_CHANGED while quiet.
+-- Sends:   SSF_CAP_CHANGED (cap), SSF_QUIET_ENDED (learned) once.
 -- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark,
 --          paused.
 -- Saves:   profile.maxShards (SetManual, and Recompute while AutoMax follows a soul bag);
@@ -41,7 +48,13 @@ local Cap = SSF:NewModule("Cap", "AceEvent-3.0")
 
 Cap.MIN, Cap.MAX = 1, 100
 
+-- The spell that ends the quiet state: Drain Soul (Rank 1), learned at 10 (wowhead classic
+-- spell 1120). Tested on the stress test 2026-10-21 with Immolate (348) standing in: any
+-- trainer spell the character lacks makes a test shot.
+Cap.QUIET_UNTIL = 1120
+
 local last -- the cap as of the last Recompute, for change detection
+local quiet, learned -- quiet as of the last check; a learn event came since
 
 local function clamp(n)
     n = tonumber(n) or Cap.MIN
@@ -66,8 +79,13 @@ function Cap:LowMark()
     return SSF.db.profile.lowMark
 end
 
+function Cap:IsQuiet()
+    return not (IsPlayerSpell(self.QUIET_UNTIL) or C_SpellBook.IsSpellKnown(self.QUIET_UNTIL))
+end
+
 function Cap:State(count)
     if SSF.db.profile.paused then return "paused" end
+    if self:IsQuiet() then return "quiet" end
     if count > self:Get() then return "over" end
     if count < self:LowMark() then return "low" end
     return "ok"
@@ -93,8 +111,27 @@ function Cap:Recompute()
     end
 end
 
+-- While quiet: a learn marks the next end as learned; any spell change checks for the end.
+function Cap:LEARNED_SPELL_IN_SKILL_LINE()
+    learned = true
+    self:CheckQuiet()
+end
+
+function Cap:CheckQuiet()
+    if not quiet or self:IsQuiet() then return end
+    quiet = false
+    self:UnregisterEvent("LEARNED_SPELL_IN_SKILL_LINE")
+    self:UnregisterEvent("SPELLS_CHANGED")
+    self:SendMessage("SSF_QUIET_ENDED", learned == true)
+end
+
 function Cap:OnEnable()
     self:RegisterEvent("PLAYER_ENTERING_WORLD", "Recompute")
     self:RegisterMessage("SSF_BAGS_CHANGED", "Recompute")
     self:Recompute()
+    quiet = self:IsQuiet()
+    if quiet then
+        self:RegisterEvent("LEARNED_SPELL_IN_SKILL_LINE")
+        self:RegisterEvent("SPELLS_CHANGED", "CheckQuiet")
+    end
 end

@@ -28,6 +28,20 @@ test("WhyNot unpaused: nil over the cap, atcap at it, undercap below", function(
     eq(Trimmer:WhyNot(0), "undercap", "zero")
 end)
 
+test("WhyNot before Drain Soul: quiet, whatever the count; paused still wins", function()
+    profile.paused = false
+    profile.maxShards = 8
+    profile.autoMax = false
+    local Cap = SSF:GetModule("Cap")
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = true
+    eq(Trimmer:WhyNot(0), "quiet", "zero, no Drain Soul")
+    eq(Trimmer:WhyNot(9), "quiet", "over the cap, no Drain Soul")
+    profile.paused = true
+    eq(Trimmer:WhyNot(0), "paused", "paused and quiet: paused")
+    profile.paused = false
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = nil
+end)
+
 test("WhyNot with no count reads the bags", function()
     WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD }) })
     profile.paused = false

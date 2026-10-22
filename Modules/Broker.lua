@@ -11,8 +11,8 @@
 -- the dim grey. Every value's wording and color comes from Status, so chat, window and
 -- tooltip never drift apart.
 --
--- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED
---          (the text; "minimap" also shows or hides the icon).
+-- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_QUIET_ENDED,
+--          SSF_OPTIONS_CHANGED (the text; "minimap" also shows or hides the icon).
 -- Reads:   Bags:Count(), Status:CountValue/CapValue/LowMarkValue/PausedValue, Colors:Class
 --          and Colors.DIM, Window:Toggle(), SSF.ICON;
 --          profile.minimap.
@@ -60,6 +60,7 @@ function Broker:OnEnable()
     self:RegisterMessage("SSF_BAGS_CHANGED", "Refresh")
     self:RegisterMessage("SSF_CAP_CHANGED", "Refresh")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
+    self:RegisterMessage("SSF_QUIET_ENDED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:Refresh()
 end

@@ -143,6 +143,10 @@ function RegionalUniqueNamesEnabled() return true end
 function UnitRace() return "Undead", "Scourge" end
 function UnitFactionGroup() return "Horde" end
 function GetRealmName() return "Hrodbar" end
+-- spells: known unless a test lists it in WoW.unknownSpells (Cap's quiet state)
+WoW.unknownSpells = {}
+function IsPlayerSpell(id) return not WoW.unknownSpells[id] end
+C_SpellBook = { IsSpellKnown = function(id) return not WoW.unknownSpells[id] end }
 function GetLocale() return "enUS" end
 function GetCurrentRegion() return 1 end
 function GetBuildInfo() return "1.15.0", "70124", "2026-10-01", 16001 end

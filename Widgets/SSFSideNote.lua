@@ -4,14 +4,18 @@
 -- welcome). An AceGUI widget SSFFrame creates once and attaches to its frame, out by the
 -- gap it passes to AttachTo, tops level. Top to bottom: a title (the window's title color),
 -- a divider, an arrow pointing left at the window's help button beside a copy of its "i", a
--- body line in gold, then the blocks (paragraphs left-justified, macros each in a dark
--- box), a small note
+-- body line in gold and a divider, then the optional lead (a gold line with its own divider
+-- under it: the two show together or not at all, so dividers never double), then the blocks
+-- (paragraphs left-justified, macros each in a dark box), a small note
 -- above the button, the button, and a gold note line last. Its width is SIDE_WIDTH of the
 -- window's, never so narrow that the centered title runs into its X. It closes by its own X
 -- or when the window closes (SSFFrame tells it), and tells its owner once either way.
 --
--- Public:  AttachTo(frame, gap) -- the window's frame; called once by SSFFrame.
---          Show(title, body, note, opts, titleColor) -- opts, all optional: blocks (a list
+-- Public:  AttachTo(frame, gap, shade) -- the window's frame; called once by SSFFrame. shade:
+--            the window's own shade alpha (SSFFrame's SHADE), laid as black inside the
+--            note's border, so the two panels read the same darkness from one number.
+--          Show(title, body, note, opts, titleColor) -- opts, all optional: lead (the gold
+--            line under the body's divider, with its own divider), blocks (a list
 --            of { text } paragraphs and { text, macro = true } macros), button and onClick
 --            (a button as wide as its text), buttonNote (a small line just above the
 --            button: what a click does), buttonDisabled (greys the button), onClose
@@ -55,6 +59,14 @@ local MACRO_BACKDROP = {
     edgeFile = "Interface\\ChatFrame\\ChatFrameBackground",
     edgeSize = 1,
 }
+
+-- a divider: a 1 px white line at a quarter alpha; the width is Layout's
+local function Divider(layer)
+    local divider = layer:CreateTexture(nil, "OVERLAY")
+    divider:SetColorTexture(1, 1, 1, 0.25)
+    divider:SetHeight(1)
+    return divider
+end
 
 -- The blocks: a paragraph is a left-justified FontString; a macro is its text in a dark
 -- box, indented. Made on first use and kept for the next Show.
@@ -115,6 +127,11 @@ local function Fit(self)
         end
         y = y + height
     end
+    Place(self.bodyDivider, 1)
+    if self.lead:IsShown() then -- the lead and its divider, together
+        Place(self.lead, self.lead:GetStringHeight())
+        Place(self.leadDivider, 1)
+    end
     for _, item in ipairs(self.items) do
         if item.isMacro then
             SizeMacroBox(item)
@@ -133,8 +150,9 @@ end
 local methods = {
     ["OnAcquire"] = function() end, -- created once by SSFFrame and never released
 
-    ["AttachTo"] = function(self, frame, gap)
+    ["AttachTo"] = function(self, frame, gap, shade)
         self.owner = frame
+        self.shade:SetColorTexture(0, 0, 0, shade or 0)
         self.frame:SetParent(frame)
         self.frame:ClearAllPoints()
         self.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", gap, 0)
@@ -146,8 +164,10 @@ local methods = {
             clearX + (self.title:GetUnboundedStringWidth() or 0)))
         self.frame:SetWidth(width)
         self.title:SetWidth(width - 2 * SIDE_PAD)
-        self.divider:SetWidth(width - 2 * SIDE_PAD)
-        for _, text in ipairs({ self.body, self.note, self.buttonNote }) do
+        for _, divider in ipairs({ self.divider, self.bodyDivider, self.leadDivider }) do
+            divider:SetWidth(width - 2 * SIDE_PAD)
+        end
+        for _, text in ipairs({ self.body, self.lead, self.note, self.buttonNote }) do
             text:SetWidth(width - 2 * SIDE_TEXT_PAD)
         end
         Fit(self)
@@ -159,6 +179,9 @@ local methods = {
         self.title:SetText(titleText)
         if titleColor then self.title:SetTextColor(unpack(titleColor)) end
         self.body:SetText(bodyText)
+        self.lead:SetText(opts.lead or "")
+        self.lead:SetShown(opts.lead ~= nil)
+        self.leadDivider:SetShown(opts.lead ~= nil)
         self.note:SetText(noteText or "")
         -- the blocks in order; spares left from a longer list stay hidden
         wipe(self.items)
@@ -218,6 +241,13 @@ local function Constructor()
     frame:Hide()
     local widget = { frame = frame, type = Type, items = {}, paragraphs = {}, macros = {} }
 
+    -- the shade: above the art, below the border, inside the border's insets (AttachTo colors it)
+    local inset = PANEL_BACKDROP.insets.left
+    local shade = frame:CreateTexture(nil, "BACKGROUND", nil, 1)
+    shade:SetPoint("TOPLEFT", inset, -inset)
+    shade:SetPoint("BOTTOMRIGHT", -inset, inset)
+    widget.shade = shade
+
     -- everything sits on its own layer, raised above the panel when it shows
     local layer = CreateFrame("Frame", nil, frame)
     layer:SetAllPoints()
@@ -228,9 +258,7 @@ local function Constructor()
     title:SetJustifyH("CENTER")
     widget.title = title
 
-    local divider = layer:CreateTexture(nil, "OVERLAY")
-    divider:SetColorTexture(1, 1, 1, 0.25)
-    divider:SetHeight(1)
+    local divider = Divider(layer)
     divider:SetPoint("TOP", title, "BOTTOM", 0, -SIDE_ROW_GAP)
     widget.divider = divider
 
@@ -252,6 +280,14 @@ local function Constructor()
     body:SetJustifyH("CENTER")
     body:SetWordWrap(true)
     widget.body = body
+    widget.bodyDivider = Divider(layer) -- placed by Fit, as are the lead and its divider
+
+    -- the optional lead in gold, and its own divider (Show shows them together)
+    local lead = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    lead:SetJustifyH("CENTER")
+    lead:SetWordWrap(true)
+    widget.lead = lead
+    widget.leadDivider = Divider(layer)
 
     -- in gold so it stands out (the one-time notice), last on the panel
     local note = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")

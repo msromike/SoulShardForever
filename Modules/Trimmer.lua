@@ -14,12 +14,12 @@
 -- The delete is silent unless the announce option is on.
 --
 -- Public:  Delete(); WhyNot(count) -> why a press would not delete, or nil if it would:
---          "paused" (a mode: the only answer while paused, whatever the count), "atcap",
---          "undercap". The window's Delete Shard button greys on it with the reason under
---          it. No combat reason: Delete checks combat itself and the window is shut in a
+--          "paused" (a mode: the only answer while paused, whatever the count), "quiet"
+--          (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap". The window's Delete Shard
+--          button greys on it with the reason under it. No combat reason: Delete checks combat itself and the window is shut in a
 --          fight.
 -- Sends:   SSF_SHARD_DELETED (count after the delete, cap).
--- Reads:   Bags:LastShard/Count, Cap:Get/State/IsFull, Sorter:TopFirst/Pass,
+-- Reads:   Bags:LastShard/Count, Cap:Get/State/IsFull/IsQuiet, Sorter:TopFirst/Pass,
 --          Sounds:PlayPause, Status:DeletedText/PausedPressText; profile.paused,
 --          pauseSound, pauseLog, announce.
 -- Touches nothing else.
@@ -57,6 +57,7 @@ end
 function Trimmer:WhyNot(count)
     if SSF.db.profile.paused then return "paused" end
     local Cap = SSF:GetModule("Cap")
+    if Cap:IsQuiet() then return "quiet" end
     count = count or SSF:GetModule("Bags"):Count()
     if Cap:State(count) == "over" then return nil end
     return Cap:IsFull(count) and "atcap" or "undercap"

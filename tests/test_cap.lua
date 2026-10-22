@@ -1,8 +1,9 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_cap: the cap right now, the low mark held under it, State (paused first), IsFull,
--- SetManual and SSF_CAP_CHANGED.
--- Saves:   profile.autoMax, maxShards, lowMark, paused, for the test at hand.
+-- test_cap: the cap right now, the low mark held under it, State (paused first, then quiet),
+-- IsFull, the quiet state's one end (SSF_QUIET_ENDED), SetManual and SSF_CAP_CHANGED.
+-- Saves:   profile.autoMax, maxShards, lowMark, paused, for the test at hand; the stub's
+--          WoW.unknownSpells, cleared after.
 -- Touches nothing else.
 
 local Cap = SSF:GetModule("Cap")
@@ -118,6 +119,58 @@ test("State says paused first, whatever the count; unpaused it is the scale agai
     eq(Cap:State(3), "low", "unpaused: 3 < 4")
     eq(Cap:State(8), "ok", "unpaused: at the cap")
     eq(Cap:State(33), "over", "unpaused: 33 > 8")
+end)
+
+test("State says quiet before Drain Soul, whatever the count; paused still wins", function()
+    profile.autoMax = false
+    Cap:SetManual(8)
+    profile.lowMark = 4
+    profile.paused = false
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = true
+    eq(Cap:IsQuiet(), true, "no Drain Soul: quiet")
+    eq(Cap:State(0), "quiet", "zero, quiet: no red")
+    eq(Cap:State(33), "quiet", "over the cap, quiet")
+    profile.paused = true
+    eq(Cap:State(0), "paused", "paused and quiet: paused")
+    profile.paused = false
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = nil
+    eq(Cap:IsQuiet(), false, "Drain Soul known: not quiet")
+    eq(Cap:State(0), "low", "known: the scale again")
+end)
+
+-- the login test first: the learn test leaves Cap's learn flag set
+test("quiet ending without a learn (spells arriving at login) sends learned = false, once", function()
+    local got = {}
+    local listener = {}
+    LibStub("AceEvent-3.0"):Embed(listener)
+    listener:RegisterMessage("SSF_QUIET_ENDED", function(_, learned) got[#got + 1] = learned end)
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = true
+    Cap:OnEnable() -- quiet at load
+    Cap:CheckQuiet()
+    eq(#got, 0, "still quiet: no message")
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = nil
+    Cap:CheckQuiet()
+    eq(#got, 1, "one message")
+    eq(got[1], false, "not a learn")
+    Cap:CheckQuiet()
+    eq(#got, 1, "never again")
+    listener:UnregisterAllMessages()
+end)
+
+test("learning Drain Soul ends quiet with learned = true, once", function()
+    local got = {}
+    local listener = {}
+    LibStub("AceEvent-3.0"):Embed(listener)
+    listener:RegisterMessage("SSF_QUIET_ENDED", function(_, learned) got[#got + 1] = learned end)
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = true
+    Cap:OnEnable()
+    WoW.unknownSpells[Cap.QUIET_UNTIL] = nil
+    Cap:LEARNED_SPELL_IN_SKILL_LINE()
+    eq(#got, 1, "one message")
+    eq(got[1], true, "a learn")
+    Cap:LEARNED_SPELL_IN_SKILL_LINE()
+    eq(#got, 1, "never again")
+    listener:UnregisterAllMessages()
 end)
 
 test("SetManual stores the clamped value and sends SSF_CAP_CHANGED once per change", function()

@@ -143,6 +143,7 @@ local BLOCKER_TEXT = {
     atcap = function() return L["At cap"] end,
     undercap = function() return L["Under cap"] end,
     paused = function() return L["SSF paused"] end,
+    quiet = function() return L["No Drain Soul yet"] end,
 }
 
 local function BuildTable()

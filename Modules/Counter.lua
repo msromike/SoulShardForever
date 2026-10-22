@@ -20,10 +20,12 @@
 -- the face kept clear on each side, the outline counted, between MIN_SIZE and MAX_SIZE.
 -- The old two-pixel margin let the number fill the face edge to edge and hide the bag
 -- (Mike, 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
--- "Colorize" is on; white when off, and white while paused (State answers "paused").
+-- "Colorize" is on; white when off, and white while paused or quiet (State answers
+-- "paused" or "quiet").
 --
 -- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
--- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED.
+-- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED,
+--          SSF_QUIET_ENDED.
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
 -- Reads:   Bags:Count(), Bags:SoulBags(), Cap:State(), Colors; profile.counter,
 --          counterSoulBag, counterFont, counterColorize.
@@ -147,5 +149,6 @@ function Counter:OnEnable()
     self:RegisterMessage("SSF_CAP_CHANGED", "Refresh")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "Refresh")
+    self:RegisterMessage("SSF_QUIET_ENDED", "Refresh")
     self:Refresh()
 end

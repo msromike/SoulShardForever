@@ -56,6 +56,7 @@ Locales:
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
 | SSF_OPTIONS_REBUILT | Options | Window |  |
+| SSF_QUIET_ENDED | Cap | Broker, Counter, Welcome, Window | learned == true |
 | SSF_SHARD_DELETED | Trimmer | Broker, Counter, Window | count - 1, cap |
 | SSF_SHOW_WELCOME | Window | Welcome |  |
 | SSF_SORTED | Sorter | none | moved |
@@ -66,12 +67,12 @@ Locales:
 | Module | Events |
 |---|---|
 | Bags | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
-| Cap | PLAYER_ENTERING_WORLD |
+| Cap | PLAYER_ENTERING_WORLD; LEARNED_SPELL_IN_SKILL_LINE; SPELLS_CHANGED |
 | Status | PLAYER_ENTERING_WORLD; BAG_UPDATE_DELAYED |
 | Macros | LOADING_SCREEN_DISABLED; bucket UPDATE_MACROS (0.5s) |
 | MacroGlow | ACTIONBAR_SLOT_CHANGED |
 | Window | PLAYER_REGEN_DISABLED |
-| Welcome | LOADING_SCREEN_DISABLED |
+| Welcome | TRAINER_CLOSED; LOADING_SCREEN_DISABLED |
 
 ## Shared state and exceptions
 
