@@ -1,5 +1,5 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
--- French strings. Blizzard terms from the frFR client: Fragment d'âme (item 6265),
+-- French strings. Blizzard terms from the frFR client: Fragment d'âme (the shard item),
 -- Sac d'âme (the soul bag container type). Registered at the bottom through
 -- Locales\Register.lua.
 
@@ -81,7 +81,10 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = "R
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = "Si le nombre de fragments passe sous ce seuil, vous êtes averti par un passage au rouge (et une lueur si activée)."
 L["The bag button glows while you are below \"%s\"."] = "Le bouton de sac luit tant que vous êtes sous \"%s\"."
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = "Affiche votre nombre de fragments sur un bouton de sac (le sac d'âme par défaut, sinon l'emplacement de sac de gauche)."
-L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Rouge|r sous \"%s\", |cff00ff00vert|r dans la plage et |cffffd100jaune|r au-dessus de la limite."
+L["Red"] = "Rouge"
+L["green"] = "vert"
+L["yellow"] = "jaune"
+L["%s when below \"%s\", %s in range, and %s over the cap."] = "%1$s sous \"%2$s\", %3$s dans la plage et %4$s au-dessus de la limite."
 L["Moves the counter to your soul bag, whatever slot it's in."] = "Place le compteur sur votre sac d'âme, quel que soit son emplacement."
 L["The font used on the shard counter."] = "La police du compteur de fragments."
 L["Enables SSF minimap icon."] = "Affiche l'icône de minicarte de SSF."
@@ -96,14 +99,15 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = "Ouvre le menu des raccourcis de WoW pour assigner %s et %s."
 L["Welcome to SSF"] = "Bienvenue dans SSF"
 L["Click for in-game tooltip help."] = "Cliquez pour l'aide en jeu dans les infobulles."
-L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = "Vous ne reverrez pas cet écran d'accueil sur ce personnage, sauf si vous cliquez sur Créer les macros dans l'interface."
-L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."] = "SSF supprime un fragment d'âme quand vous dépassez la limite. Utilisez le raccourci Supprimer fragment, ce bouton, une macro, ou combinez le tout."
-L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match."] = "SSF supprime un fragment d'âme quand vous dépassez la limite. Utilisez le raccourci Supprimer fragment, le bouton Supprimer fragment, une macro, ou combinez le tout."
+L["You won't see this welcome screen again on this character unless you click %s in the UI."] = "Vous ne reverrez pas cet écran d'accueil sur ce personnage, sauf si vous cliquez sur %s dans l'interface."
+L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."] = "SSF supprime un fragment d'âme quand vous dépassez la limite. Utilisez le raccourci %s, ce bouton, une macro, ou combinez le tout."
+L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = "SSF supprime un fragment d'âme quand vous dépassez la limite. Utilisez le raccourci %1$s, le bouton %2$s, une macro, ou combinez le tout."
 L["In a macro, put /ssf delete on the line before the ability:"] = "Dans une macro, placez /ssf delete sur la ligne avant la technique :"
 L["The Bane macro lets you delete on the move when you don't want to use %s."] = "La macro %2$s permet de supprimer en mouvement quand vous ne voulez pas utiliser %1$s."
 L["Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat."] = "Ne ciblez pas d'ennemi avec la macro %s, car elle vous met en combat. SSF ne peut pas supprimer de fragment en combat."
 L["Create recommended macros"] = "Créer les macros recommandées"
-L["Creates the macros, reloads your UI and opens the macro box after the reload."] = "Crée les macros, |cff00ff00recharge votre interface|r\net ouvre la fenêtre des macros après le rechargement."
+L["reloads your UI"] = "recharge votre interface"
+L["Creates the macros, %s and opens the macro box after the reload."] = "Crée les macros, %s\net ouvre la fenêtre des macros après le rechargement."
 L["Create macros"] = "Créer les macros"
 L["Opens the welcome screen to create the recommended macros."] = "Ouvre l'écran d'accueil pour créer les macros recommandées."
 L["No free macro slots. Delete a macro and try again."] = "Aucun emplacement de macro libre. Supprimez une macro et réessayez."

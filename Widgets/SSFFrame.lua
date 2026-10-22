@@ -13,7 +13,7 @@
 -- What SSF adds: an X close button top-right with an optional help button left of it
 -- (SetHelpButton: Blizzard's "i", gold while off, blue while on), a black shade layer under
 -- the content that makes the window a little darker than the bare art (SHADE, picked by
--- eye; the note beside gets the same SHADE through AttachTo), an optional note beside
+-- eye; the note beside gets the same SHADE, help art and button height through AttachTo), an optional note beside
 -- the window (ShowSidePanel, the SSFSideNote widget), Escape closes it, a bottom row of
 -- Close (far right, SetRightButton turns it into an action), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
@@ -52,8 +52,9 @@
 --          titletext, titlebg, content or localstatus errors at the first open (they are
 --          read bare); one that renames the rest shows as a window that no longer fits its
 --          content.
--- Reads:   the Tooltip module at runtime for every tooltip it shows; Colors.BLACK for the
---          title band.
+-- Reads:   the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
+--          and the title band), WHITE (the art and the "i" untinted) and BLUE (the "i"
+--          while help is on).
 -- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
 --          Escape; the stock Frame is unnamed and Escape has no other way in.
 --          Close_OnClick copies the stock Close's click (the sound, then hide), used only
@@ -61,7 +62,7 @@
 --          changed that button would leave SSF's X and Close dead.
 -- Touches nothing else.
 
-local Type, Version = "SSFFrame", 2
+local Type, Version = "SSFFrame", 3
 local AceGUI = LibStub("AceGUI-3.0")
 local AceHook = LibStub("AceHook-3.0")
 
@@ -85,7 +86,6 @@ local HELP_SIZE = 22                  -- the help button, square: the visible "i
 local HELP_CROP = { 14 / 64, 49 / 64 } -- the circle's edges in the 64 px art (measured); the rest is transparent
 local HELP_DROP = 6                   -- px below the X's middle, so the circle clears the frame's top border
 local HELP_GAP = 4                    -- px between the circle and the X
-local HELP_ON = { 0.35, 0.65, 1 }     -- the "i" while help is on: blue (the art greyed, then tinted); off it is its own gold
 local SIDE_GAP = 8                    -- px between the window's right edge and the side note
 local TITLE_CAP = 30                  -- each end cap of the header art (the stock Frame's titlebg_l, titlebg_r)
 local BAND_REACH = 16                 -- px the title strip runs into each end cap, to the art's inner opening
@@ -104,6 +104,7 @@ local SHADE_INSET = 8                 -- the border's width: the layer stays ins
 
 -- every tooltip this window shows goes through the Tooltip module (the one anchor)
 local function Tooltip() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Tooltip") end
+local function Colors() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors") end
 
 -- the status table AceConfigDialog handed over, or the widget's own
 local function Status(self) return self.status or self.localstatus end
@@ -296,7 +297,7 @@ local methods = {
 
     -- a black strip behind the title text inside the header art; alpha 0 = none
     ["SetTitleBand"] = function(self, alpha)
-        local black = LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors").BLACK
+        local black = Colors().BLACK
         self.titleband:SetColorTexture(black[1], black[2], black[3], alpha or 0)
     end,
 
@@ -336,8 +337,9 @@ local methods = {
         button.tipText = tipText
         button:SetScript("OnClick", onClick)
         local art = button:GetNormalTexture()
-        art:SetDesaturated(isOn)
-        if isOn then art:SetVertexColor(unpack(HELP_ON)) else art:SetVertexColor(1, 1, 1) end
+        art:SetDesaturated(isOn) -- on: the art greyed, then tinted blue; off: its own gold, untinted
+        local tint = isOn and Colors().BLUE or Colors().WHITE
+        art:SetVertexColor(tint[1], tint[2], tint[3])
         button:Show()
         RefreshTip(button)
     end,
@@ -401,11 +403,12 @@ local function Constructor()
     for method, func in pairs(methods) do self[method] = func end
     AceHook:Embed(self)
 
-    frame:SetBackdropColor(1, 1, 1, 1) -- the dialog art untinted (the stock Frame tints it black)
+    local white, black = Colors().WHITE, Colors().BLACK
+    frame:SetBackdropColor(white[1], white[2], white[3], 1) -- the dialog art untinted (the stock Frame tints it black)
     local shade = frame:CreateTexture(nil, "BACKGROUND", nil, 1) -- above the art, below the border
     shade:SetPoint("TOPLEFT", SHADE_INSET, -SHADE_INSET)
     shade:SetPoint("BOTTOMRIGHT", -SHADE_INSET, SHADE_INSET)
-    shade:SetColorTexture(0, 0, 0, SHADE)
+    shade:SetColorTexture(black[1], black[2], black[3], SHADE)
     frame:SetClampedToScreen(true) -- with UpdateClamp's insets: hangs off an edge, never lost
     _G[FRAME_NAME] = frame
     tinsert(UISpecialFrames, FRAME_NAME) -- Escape closes it
@@ -441,7 +444,8 @@ local function Constructor()
     -- hides. OnHide also fires when the whole UI hides around a loading screen, and the
     -- window comes back from that.
     local sidenote = AceGUI:Create("SSFSideNote")
-    sidenote:AttachTo(frame, SIDE_GAP, SHADE) -- the note takes the window's shade: one number
+    -- the note copies the window's look, one number each, so the two panels read as one
+    sidenote:AttachTo(frame, SIDE_GAP, { shade = SHADE, helpArt = HELP_ART, helpCrop = HELP_CROP, buttonHeight = BUTTON_HEIGHT })
     self:SecureHookScript(frame, "OnHide", function(f)
         if f:IsShown() or not sidenote:IsShown() then return end
         sidenote:Close()
@@ -480,7 +484,7 @@ local function Constructor()
     titleband:SetPoint("BOTTOM", self.titletext, "BOTTOM", 0, -BAND_PAD)
     titleband:SetPoint("LEFT", self.titlebg, "LEFT", -BAND_REACH, 0)
     titleband:SetPoint("RIGHT", self.titlebg, "RIGHT", BAND_REACH, 0)
-    titleband:SetColorTexture(0, 0, 0, 0)
+    titleband:SetColorTexture(black[1], black[2], black[3], 0)
 
     self.titleband = titleband
     self.actionbutton = actionbutton

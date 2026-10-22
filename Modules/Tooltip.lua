@@ -20,7 +20,7 @@
 -- Lib internals: AceConfigDialog.tooltip, the GameTooltip-like frame it shows help lines
 --          in. An AceConfigDialog bump that renames it leaves option tooltips at the stock
 --          anchor.
--- Reads:   Colors.YELLOW, Colors.WHITE. Owns no state beyond the attached frame and the
+-- Reads:   Colors.GOLD, Colors.WHITE. Owns no state beyond the attached frame and the
 --          tooltip frame it hooked.
 -- Touches nothing else.
 
@@ -32,7 +32,7 @@ local ANCHOR, ANCHOR_X, ANCHOR_Y = "ANCHOR_CURSOR_RIGHT", 60, 0
 
 function Tooltip:Show(owner, title, text, titleGold)
     local Colors = SSF:GetModule("Colors")
-    local c = titleGold and Colors.YELLOW or Colors.WHITE
+    local c = titleGold and Colors.GOLD or Colors.WHITE
     local w = Colors.WHITE
     GameTooltip:SetOwner(owner, ANCHOR, ANCHOR_X, ANCHOR_Y)
     GameTooltip:SetText(title or "", c[1], c[2], c[3], 1, true)

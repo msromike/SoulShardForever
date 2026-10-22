@@ -21,7 +21,9 @@
 -- The old two-pixel margin let the number fill the face edge to edge and hide the bag
 -- (Mike, 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
 -- "Colorize" is on; white when off, and white while paused or quiet (State answers
--- "paused" or "quiet").
+-- "paused" or "quiet"). Under the number, the bag's icon is darkened by BACKING, so the
+-- number reads on a light bag: the count comes first, the bag only has to stay
+-- recognizable (Mike, 2026-10-22). It shows and hides with the number.
 --
 -- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED,
@@ -29,8 +31,8 @@
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
 -- Reads:   Bags:Count(), Bags:SoulBags(), Cap:State(), Colors; profile.counter,
 --          counterSoulBag, counterFont, counterColorize.
--- Exceptions: the FontString is raw: AceGUI builds widgets inside its own windows and
---          cannot draw on a Blizzard button. One of the three raw frames in SSF
+-- Exceptions: the FontString and the backing texture are raw: AceGUI builds widgets inside
+--          its own windows and cannot draw on a Blizzard button. One of the three raw frames in SSF
 --          (DeleteButton's named button and Window's title strips are the others).
 -- Touches nothing else.
 
@@ -42,6 +44,8 @@ local MARGIN = 0.15 -- of the face kept clear on each side of the number (so it 
                     -- tuned by eye for Arial Narrow, the default; another font is the player's pick
 local OUTLINE = 1  -- px the OUTLINE flag draws round each glyph; GetStringWidth leaves it out
 local MAX_SIZE, MIN_SIZE = 48, 6
+local BACKING = 0.6 -- alpha of the black laid over the bag's icon under the number: the number
+                    -- reads on a light bag, the bag still shows through (Mike, 2026-10-22)
 
 -- The bag bar button for an equipped bag: bags 1-4 are CharacterBag0Slot-CharacterBag3Slot,
 -- the reagent slot is CharacterReagentBag0Slot.
@@ -114,7 +118,7 @@ function Counter:Refresh()
     local count = SSF:GetModule("Bags"):Count()
     if not p.counter then
         HideGameCount(self, nil) -- count off: the game's number is always back
-        if self.text then self.text:Hide() end
+        if self.text then self.text:Hide() self.backing:Hide() end
         self:SendMessage("SSF_COUNTER_UPDATED", nil, count)
         return
     end
@@ -127,12 +131,19 @@ function Counter:Refresh()
     end
     if not self.text then
         self.text = parent:CreateFontString(nil, "OVERLAY")
+        local black = SSF:GetModule("Colors").BLACK
+        self.backing = parent:CreateTexture(nil, "ARTWORK", nil, 7) -- above the icon, under the number
+        self.backing:SetColorTexture(black[1], black[2], black[3], BACKING)
     end
     if self.text:GetParent() ~= parent then
         self.text:SetParent(parent)
+        self.backing:SetParent(parent)
     end
     self.text:ClearAllPoints()
     self.text:SetPoint("CENTER", parent, "CENTER", 0, 0)
+    self.backing:ClearAllPoints()
+    self.backing:SetAllPoints(parent.icon or parent) -- the bag's picture, not its slot border
+    self.backing:Show()
 
     Fit(self, parent, count)
     -- the one place the colorize option applies

@@ -21,7 +21,8 @@
 -- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open),
 --          LOADING_SCREEN_DISABLED once at load while a note is owed, SSF_QUIET_ENDED
 --          (learned), TRAINER_CLOSED once after a learn.
--- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line);
+-- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
+--          button note's "reloads your UI");
 --          Options:IsHelpOn/ToggleHelp,
 --          Window:ShowNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
 --          button).
@@ -64,14 +65,14 @@ function Welcome:Show()
     local quiet = SSF:GetModule("Cap"):IsQuiet()
     local Colors = SSF:GetModule("Colors")
     SSF:GetModule("Window"):ShowNote(title, L["Click for in-game tooltip help."],
-        L["You won't see this welcome screen again on this character unless you click Create macros in the UI."],
+        L["You won't see this welcome screen again on this character unless you click %s in the UI."]:format(L["Create macros"]),
         {
             -- in green, the note's one highlight color (as "reloads your UI"), so it stands out from the gold
             lead = quiet and Colors:Paint(Colors.GREEN, L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."]) or nil,
-            blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match."]),
+            blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."]:format(L["Delete Shard"], L["Delete Shard"])),
             button = L["Create recommended macros"],
             onClick = function() Macros:Create() end,
-            buttonNote = L["Creates the macros, reloads your UI and opens the macro box after the reload."],
+            buttonNote = L["Creates the macros, %s and opens the macro box after the reload."]:format(Colors:Paint(Colors.GREEN, L["reloads your UI"])),
             buttonDisabled = not Macros:AnyMissing(), -- both made already: nothing to do
             onClose = function()
                 self.noteOpen = false

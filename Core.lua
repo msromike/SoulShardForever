@@ -7,7 +7,7 @@
 -- on Ace3 for Forever only; no original code remains. The standard every file follows is
 -- CLAUDE.md at the addon root; the map of files and messages is ARCHITECTURE.md.
 --
--- Public:  SSF.SHARD_ITEM_ID, SSF.ICON, SSF.VERSION and SSF.AUTHOR (from the toc), SSF.db
+-- Public:  SSF.SHARD_ITEM_ID; SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db
 --          (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
 -- Lib internals: db.keys.char (AceDB's key for this character) and the raw
 --          SoulShardForeverDB.profileKeys table, both only in the profile-key migration.
@@ -32,7 +32,9 @@ local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 SSF.SHARD_ITEM_ID = 6265
-SSF.ICON = "Interface\\Icons\\inv_misc_gem_amethyst_02"
+-- the toc's IconTexture (the AddOns list shows it) is the icon's one home; a client that
+-- cannot read that field shows the question mark on the minimap, which says so
+SSF.ICON = C_AddOns.GetAddOnMetadata(ADDON, "IconTexture") or "Interface\\Icons\\INV_Misc_QuestionMark"
 SSF.VERSION = C_AddOns.GetAddOnMetadata(ADDON, "Version") or "?"
 SSF.AUTHOR = C_AddOns.GetAddOnMetadata(ADDON, "Author") or "?"
 

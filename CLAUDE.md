@@ -26,7 +26,7 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   has no base, the widget stands alone and stays small.
 - Five documented exceptions, each explained in its own file header, and no others:
   DeleteButton's raw named frame (/click needs a global name), Counter's raw FontString
-  on a Blizzard bag button (nothing on the list draws on a foreign button), the title
+  and backing texture on a Blizzard bag button (nothing on the list draws on a foreign button), the title
   strip behind option groups in Window (AceConfigDialog hardcodes the group widget),
   the global name SSFFrame gives the stock Frame's frame (UISpecialFrames closes it
   on Escape; the stock Frame is unnamed and Escape has no other way in), and SSFFrame's

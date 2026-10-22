@@ -29,6 +29,8 @@ until it's over. The help below still shows on the greyed button while help is o
 
 SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match.
 
+"Delete Shard" is filled in from its own label.
+
 In a macro, put /ssf delete on the line before the ability:
 
     #showtooltip
@@ -100,8 +102,9 @@ greyed with it off (the glow needs the count).
 
 Red when below "Low shard warn", green in range, and yellow over the cap.
 
-Each color word is drawn in its own color, the bag's shades (red ff4040, green 00ff00,
-yellow ffd100); the color codes are in each translation.
+Each color word is drawn in its own color, the bag's shades (Colors' red, green and over-cap
+yellow). The code paints the words; each translation takes them as arguments, like "Low shard
+warn".
 
 ### Show on soul bag when equipped
 
@@ -180,7 +183,9 @@ The Delete Shard block above, with its own first paragraph:
 
 SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match.
 
-### Line above the button (two lines, the break is in the string; "reloads your UI" in green, the color code is in each translation)
+"Delete Shard" is filled in from its own label, twice.
+
+### Line above the button (two lines, the break is in the string; "reloads your UI" in green, painted by the code and taken by each translation as an argument)
 
 Creates the macros, reloads your UI
 and opens the macro box after the reload.
@@ -192,6 +197,8 @@ Create recommended macros
 ### Gold line (last)
 
 You won't see this welcome screen again on this character unless you click Create macros in the UI.
+
+"Create macros" is filled in from the button's label.
 
 ## Red error text (top of the screen)
 

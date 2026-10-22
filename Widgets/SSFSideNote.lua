@@ -12,9 +12,11 @@
 -- window's, never so narrow that the centered title runs into its X. It closes by its own X
 -- or when the window closes (SSFFrame tells it), and tells its owner once either way.
 --
--- Public:  AttachTo(frame, gap, shade) -- the window's frame; called once by SSFFrame. shade:
---            the window's own shade alpha (SSFFrame's SHADE), laid as black inside the
---            note's border, so the two panels read the same darkness from one number.
+-- Public:  AttachTo(frame, gap, look) -- the window's frame; called once by SSFFrame. look:
+--            what the note copies from the window so the two panels read as one, each a
+--            number the window owns: shade (its SHADE, laid as black inside the note's
+--            border), helpArt and helpCrop (its help button's art and crop, for the copy
+--            of the "i"), buttonHeight (its bottom buttons').
 --          Show(title, body, note, opts, titleColor) -- opts, all optional: lead (the gold
 --            line under the body's divider, with its own divider), blocks (a list
 --            of { text } paragraphs and { text, macro = true } macros), button and onClick
@@ -24,12 +26,16 @@
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's
 --            width changes.
 --          Close() -- hide and tell the owner once. IsShown() -> bool.
--- Reads:   nothing of SSF's. Owns no state beyond the shown texts, the onClose and its owner
---          frame (AttachTo).
+-- Reads:   Colors.CODE (macro text), SLATE (a macro box's edge), WHITE (the dividers) and
+--          BLACK (a macro box's fill, the shade). Owns no state beyond the shown texts, the
+--          onClose and its owner frame (AttachTo).
 -- Touches nothing else.
 
-local Type, Version = "SSFSideNote", 1
+local Type, Version = "SSFSideNote", 2
 local AceGUI = LibStub("AceGUI-3.0")
+
+-- SSF's colors (the addon is loaded by the time a widget is made)
+local function Colors() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors") end
 
 local SIDE_PAD = 14                   -- the panel's inset from its border, top and bottom; the title's and divider's sides too
 local SIDE_TEXT_PAD = 24              -- the text inset from its sides
@@ -37,15 +43,14 @@ local SIDE_WIDTH = 0.86               -- the panel's width, as a share of the wi
 local SIDE_ROW_GAP = 8                -- px between the title, divider, arrow row and text
 local MACRO_INDENT = 16               -- a macro box's inset from the paragraphs' left edge
 local MACRO_PAD = 6                   -- a macro's text inset inside its box
-local MACRO_TEXT = { 0.71, 0.80, 0.92 } -- a macro's text: pale blue-grey, so it reads as code to copy
+local MACRO_FILL = 0.6                -- alpha of the black filling a macro box
+local DIVIDER = 0.25                  -- alpha of a divider's white: a rule, not a bar
 local SIDE_BUTTON_EDGE = 12           -- the button's end caps: its width is its text plus this
-local BUTTON_HEIGHT = 22
 local SIDE_ICON = 20                  -- the copy of the "i"; the arrow is as tall
 local SIDE_ICON_GAP = 6               -- px between the arrow and the "i"
-local HELP_ART = 616343               -- Interface\Common\help-i: Blizzard's own help button, a gold "i"
-local HELP_CROP = { 14 / 64, 49 / 64 } -- the circle's edges in the 64 px art (measured)
 local ARROW_ART = 131906              -- Interface\Glues\Login\UI-BackArrow: a gold arrow pointing left
-local ARROW_CROP = { 2 / 64, 1, 10 / 64, 50 / 64 } -- the arrow in its 64 px art (measured): 62 x 40
+local ARROW_CROP = { 2 / 64, 1, 10 / 64, 50 / 64 } -- the arrow in its 64 px art (measured)
+local ARROW_ASPECT = (ARROW_CROP[2] - ARROW_CROP[1]) / (ARROW_CROP[4] - ARROW_CROP[3]) -- the arrow's own shape
 local LEVEL_ABOVE = 20                -- frame levels above the window, so the note draws over its widgets
 
 local PANEL_BACKDROP = {
@@ -61,10 +66,11 @@ local MACRO_BACKDROP = {
     edgeSize = 1,
 }
 
--- a divider: a 1 px white line at a quarter alpha; the width is Layout's
+-- a divider: a 1 px white line at DIVIDER alpha; the width is Layout's
 local function Divider(layer)
+    local white = Colors().WHITE
     local divider = layer:CreateTexture(nil, "OVERLAY")
-    divider:SetColorTexture(1, 1, 1, 0.25)
+    divider:SetColorTexture(white[1], white[2], white[3], DIVIDER)
     divider:SetHeight(1)
     return divider
 end
@@ -86,12 +92,13 @@ local function MacroBox(self, i)
     local box = self.macros[i]
     if not box then
         box = CreateFrame("Frame", nil, self.layer, "BackdropTemplate")
+        local black, slate, code = Colors().BLACK, Colors().SLATE, Colors().CODE
         box:SetBackdrop(MACRO_BACKDROP)
-        box:SetBackdropColor(0, 0, 0, 0.6)
-        box:SetBackdropBorderColor(0.3, 0.33, 0.36, 1)
+        box:SetBackdropColor(black[1], black[2], black[3], MACRO_FILL)
+        box:SetBackdropBorderColor(slate[1], slate[2], slate[3], 1)
         box.text = box:CreateFontString(nil, "OVERLAY", "GameFontHighlight")
         box.text:SetJustifyH("LEFT")
-        box.text:SetTextColor(unpack(MACRO_TEXT))
+        box.text:SetTextColor(code[1], code[2], code[3]) -- reads as text to copy
         box.text:SetPoint("TOPLEFT", MACRO_PAD, -MACRO_PAD)
         box.isMacro = true
         self.macros[i] = box
@@ -151,9 +158,13 @@ end
 local methods = {
     ["OnAcquire"] = function() end, -- created once by SSFFrame and never released
 
-    ["AttachTo"] = function(self, frame, gap, shade)
+    ["AttachTo"] = function(self, frame, gap, look)
         self.owner = frame
-        self.shade:SetColorTexture(0, 0, 0, shade or 0)
+        local black = Colors().BLACK
+        self.shade:SetColorTexture(black[1], black[2], black[3], look.shade or 0)
+        self.icon:SetTexture(look.helpArt)
+        self.icon:SetTexCoord(look.helpCrop[1], look.helpCrop[2], look.helpCrop[1], look.helpCrop[2])
+        self.button:SetHeight(look.buttonHeight)
         self.frame:SetParent(frame)
         self.frame:ClearAllPoints()
         self.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", gap, 0)
@@ -263,16 +274,16 @@ local function Constructor()
     divider:SetPoint("TOP", title, "BOTTOM", 0, -SIDE_ROW_GAP)
     widget.divider = divider
 
-    -- the "i" centered on the panel, the arrow left of it pointing at the real one
+    -- the "i" centered on the panel (its art is the window's, set by AttachTo), the arrow
+    -- left of it pointing at the real one
     local icon = layer:CreateTexture(nil, "OVERLAY")
-    icon:SetTexture(HELP_ART)
-    icon:SetTexCoord(HELP_CROP[1], HELP_CROP[2], HELP_CROP[1], HELP_CROP[2])
     icon:SetSize(SIDE_ICON, SIDE_ICON)
     icon:SetPoint("TOP", divider, "BOTTOM", 0, -SIDE_ROW_GAP)
+    widget.icon = icon
     local arrow = layer:CreateTexture(nil, "OVERLAY")
     arrow:SetTexture(ARROW_ART)
     arrow:SetTexCoord(unpack(ARROW_CROP))
-    arrow:SetSize(SIDE_ICON * 62 / 40, SIDE_ICON) -- the art's own shape
+    arrow:SetSize(SIDE_ICON * ARROW_ASPECT, SIDE_ICON)
     arrow:SetPoint("RIGHT", icon, "LEFT", -SIDE_ICON_GAP, 0)
 
     -- in gold: the pointer at the help button
@@ -296,9 +307,8 @@ local function Constructor()
     note:SetWordWrap(true)
     widget.note = note
 
-    -- the optional button, as wide as its text (Show)
+    -- the optional button, as wide as its text (Show), as tall as the window's (AttachTo)
     local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate")
-    button:SetHeight(BUTTON_HEIGHT)
     button:Hide()
     widget.button = button
 

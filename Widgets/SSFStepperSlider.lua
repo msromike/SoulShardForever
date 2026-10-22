@@ -29,11 +29,14 @@
 --          max and disabled fields, its OnMouseWheel script, and AceGUI's frame.width field.
 --          An AceGUI bump that renames those breaks the steppers; one that moves the rail
 --          misplaces the dim.
--- Reads:   nothing of SSF's.
+-- Reads:   Colors.GOLD (the tick) and Colors.BLACK (the dim).
 -- Touches nothing else.
 
-local Type, Version = "SSFStepperSlider", 7
+local Type, Version = "SSFStepperSlider", 8
 local AceGUI = LibStub("AceGUI-3.0")
+
+-- SSF's colors (the addon is loaded by the time a widget is made)
+local function Colors() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors") end
 
 local BUTTON = 20      -- +/- button size
 local VALUE_GAP = 5    -- px between the bar and the value row
@@ -43,7 +46,6 @@ local DIM = 0.5        -- alpha of the black over the rail beyond the bound (pic
 local RAIL_INSET = 3   -- the stock Slider anchors its rail this far in from each side
 local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint: Mike, 2026-10-21)
 local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above (Mike, 2026-10-21)
-local GOLD_R, GOLD_G, GOLD_B = 1, 0.82, 0 -- the game's label gold (NORMAL_FONT_COLOR)
 
 -- the bound as a number right now, or nil for none
 local function Bound(self)
@@ -199,14 +201,15 @@ local function Constructor()
     inner:SetCallback("OnLeave", function() widget:Fire("OnLeave") end)
 
     -- the dim region over the track beyond the bound: on the slider itself, under its thumb
+    local black, gold = Colors().BLACK, Colors().GOLD
     local dim = inner.slider:CreateTexture(nil, "ARTWORK", nil, -1)
-    dim:SetColorTexture(0, 0, 0, DIM)
+    dim:SetColorTexture(black[1], black[2], black[3], DIM)
     dim:Hide()
     widget.dim = dim
 
     -- the gold tick on the dim region's left edge: one layer up, so it draws over the dim
     local tick = inner.slider:CreateTexture(nil, "ARTWORK", nil, 0)
-    tick:SetColorTexture(GOLD_R, GOLD_G, GOLD_B, 1)
+    tick:SetColorTexture(gold[1], gold[2], gold[3], 1)
     tick:SetWidth(TICK)
     tick:Hide()
     widget.tick = tick

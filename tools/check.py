@@ -2,12 +2,15 @@
 """tools/check.py: the pre-commit check for Soul Shards Forever.
 
 Job:    run luacheck, run the headless tests (tests/run.lua, when present), check that
-        every locale carries every key enUS has, lint every file header that carries the
+        every locale carries every key enUS has and keeps its placeholders, check that
+        every color is typed in Colors.lua only (code, locales, tests and the shipped
+        docs read it by name), lint every file header that carries the
         contract (Core, the modules, the widgets, the locale registrar, the tests) against
         the template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
         Hooks, the modules called, the profile keys touched and Saves) against the code,
         apply the rules luacheck cannot see (no raw hooks, every widget type used, the
-        shard id only in Core), regenerate ARCHITECTURE.md from the
+        shard id only in Core, every message listened for is sent, no constant typed in
+        two files), regenerate ARCHITECTURE.md from the
         code and the file headers, and report (never fail on) how far the committed Libs/
         are behind their upstreams. Exit 1 on any failure, 0 when all pass.
 Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars override the
@@ -100,20 +103,78 @@ def check_tests():
 
 # ---------------------------------------------------------------- locales
 
-KEY_RE = re.compile(r'^L\["((?:[^"\\]|\\.)*)"\]\s*=', re.M)
+# one L[...] = ... line: the key in either quote style, then its value (a string in either
+# quote style, or `true`: the key is the string)
+LINE_RE = re.compile(
+    r'^L\[(?:"((?:[^"\\]|\\.)*)"|\'((?:[^\'\\]|\\.)*)\')\]\s*=\s*'
+    r'(?:"((?:[^"\\]|\\.)*)"|\'((?:[^\'\\]|\\.)*)\'|(true))', re.M)
 CODE_RE = re.compile(r'NS\.RegisterLocale\(\s*"(\w+)"')
+PLACEHOLDER_RE = re.compile(r"%(?:(\d+)\$)?([sd])")
+
+
+def locale_files():
+    """Locales/<code>.lua, every string table (not the registrar)."""
+    return [f"Locales/{fn}" for fn in sorted(os.listdir(os.path.join(ROOT, "Locales")))
+            if fn.endswith(".lua") and fn != "Register.lua"]
+
+
+def locale_table(rel):
+    """key -> value string (the key itself for `true`), from one Locales/*.lua."""
+    out = {}
+    for k1, k2, v1, v2, is_true in LINE_RE.findall(read(rel)):
+        key = k1 or k2
+        out[key] = key if is_true else (v1 or v2)
+    return out
+
+
+def placeholders(text):
+    """(positional, [(index, type)]): the %s / %d / %1$s arguments a string takes, in
+    order; positional is True when every one carries an index, False when none does, None
+    when they are mixed (Lua's format rejects that)."""
+    found = PLACEHOLDER_RE.findall(text)
+    indexed = [i for i, _ in found if i]
+    if indexed and len(indexed) != len(found):
+        return None, []
+    if indexed:
+        return True, [(int(i), t) for i, t in found]
+    return False, [(n + 1, t) for n, (_, t) in enumerate(found)]
+
+
+def placeholder_problems(key, value):
+    """Why a translation's placeholders do not fit the key's: it may use more than the key
+    (the two Bane lines are handed both spell names and English uses one), never fewer,
+    never another type in a position, and never a mix of plain and positional."""
+    _, want = placeholders(key)
+    positional, got = placeholders(value)
+    if positional is None:
+        return ["mixes plain and positional placeholders"]
+    out = []
+    by_index = {}
+    for i, t in got:
+        by_index.setdefault(i, t)
+    for i, t in want:
+        if i not in by_index:
+            out.append(f"drops argument {i} (%{t})")
+        elif by_index[i] != t:
+            out.append(f"argument {i} is %{by_index[i]}, the key has %{t}")
+    if positional and got:
+        top = max(i for i, _ in got)
+        for i in range(1, top + 1):
+            if i not in by_index:
+                out.append(f"skips argument {i}: positions must run 1 to {top}")
+    return out
 
 
 def check_locales():
+    """Every translation carries every key enUS has and no other, every translation's
+    placeholders fit its key's (placeholder_problems), and the toc has a Notes line for
+    every locale code registered."""
     print("== locales")
-    folder = os.path.join(ROOT, "Locales")
     ref = None
     tables = {}
-    for name in sorted(os.listdir(folder)):
-        if not name.endswith(".lua") or name == "Register.lua":
-            continue
-        text = read(f"Locales/{name}")
-        tables[name] = (set(KEY_RE.findall(text)), CODE_RE.findall(text))
+    for rel in locale_files():
+        name = os.path.basename(rel)
+        tables[name] = (locale_table(rel), CODE_RE.findall(read(rel)))
         if name == "enUS.lua":
             ref = tables[name][0]
     if ref is None:
@@ -121,18 +182,94 @@ def check_locales():
         return False
     ok = True
     toc = read("SoulShardForever.toc")
-    for name, (keys, codes) in tables.items():
-        for k in sorted(ref - keys):
+    for name, (strings, codes) in tables.items():
+        keys = set(strings)
+        for k in sorted(set(ref) - keys):
             print(f"   {name}: missing {k!r}")
             ok = False
-        for k in sorted(keys - ref):
+        for k in sorted(keys - set(ref)):
             print(f"   {name}: extra {k!r} (not in enUS)")
             ok = False
+        for k in sorted(keys & set(ref)):
+            for p in placeholder_problems(k, strings[k]):
+                print(f"   {name}: {k[:40]!r}: {p}")
+                ok = False
         for code in codes:
             if code != "enUS" and f"## Notes-{code}:" not in toc:
                 print(f"   toc: no Notes-{code} line for {name}")
                 ok = False
     print(f"   {len(ref)} keys in enUS, {len(tables) - 1} translations" + ("" if ok else ", FAILED"))
+    return ok
+
+
+# ---------------------------------------------------------------- colors
+
+COLORS = "Modules/Colors.lua"
+COLOR_DEF_RE = re.compile(r"\bColor\(\s*([\d.]+)\s*,\s*([\d.]+)\s*,\s*([\d.]+)\s*\)")
+ESCAPE_RE = re.compile(r"\|c[0-9a-fA-F]{8}")
+HEX_RE = re.compile(r"(?<![0-9a-zA-Z])[0-9a-fA-F]{6}(?![0-9a-zA-Z])")
+NUM = r"\d+(?:\.\d+)?"
+TRIPLE_RE = re.compile(rf"(?<![\w.])({NUM})\s*,\s*({NUM})\s*,\s*({NUM})(?![\w.])")
+COLOR_CALL_RE = re.compile(rf"(?:Color|ColorTexture|VertexColor|TextColor|BackdropColor|BackdropBorderColor)\(\s*{NUM}\s*,\s*{NUM}\s*,\s*{NUM}")
+COLOR_TABLE_RE = re.compile(rf"\{{\s*{NUM}\s*,\s*{NUM}\s*,\s*{NUM}\s*(?:,\s*{NUM}\s*)?\}}")
+
+
+def known_colors():
+    """The colors Colors.lua defines, as (r, g, b) tuples and as the hex Colors derives."""
+    triples = {tuple(float(x) for x in m) for m in COLOR_DEF_RE.findall(read(COLORS))}
+    hexes = {"%02x%02x%02x" % tuple(int(v * 255 + 0.5) for v in t) for t in triples}
+    return triples, hexes
+
+
+def color_files():
+    """Every file a color could be typed into: the Lua that carries a header, every locale,
+    and the shipped docs (README, CHANGELOG, media/*.md; .docs/ is local work and not
+    walked). Colors.lua itself is the home and is left out."""
+    out = [f for f in lua_files() if f != COLORS] + locale_files()
+    out += [fn for fn in ("README.md", "CHANGELOG.md") if os.path.exists(os.path.join(ROOT, fn))]
+    out += [f"media/{fn}" for fn in sorted(os.listdir(os.path.join(ROOT, "media"))) if fn.endswith(".md")]
+    return out
+
+
+def check_colors():
+    """Every color lives in Colors.lua and is read by name. Outside it, in code, locales,
+    tests and the shipped docs: no |cRRGGBBAA escape code (Colors:Paint makes them), no hex
+    of a color Colors defines; in code lines, no r, g, b that equals one Colors defines, no
+    color-setting call with its r, g, b typed as numbers, and no bare table of three or
+    four numbers (a color's shape). An alpha stays the caller's own."""
+    print("== colors")
+    if not os.path.exists(os.path.join(ROOT, COLORS)):
+        print(f"   FAILED: {COLORS} not found")
+        return False
+    triples, hexes = known_colors()
+    if not triples:
+        print(f"   FAILED: no Color(r, g, b) definitions found in {COLORS}")
+        return False
+    ok = True
+
+    def report(rel, line_no, what):
+        nonlocal ok
+        print(f"   {rel}:{line_no}: {what}")
+        ok = False
+
+    for rel in color_files():
+        lua = rel.endswith(".lua")
+        for n, line in enumerate(read(rel).splitlines(), 1):
+            if ESCAPE_RE.search(line):
+                report(rel, n, "a color escape code is typed here; paint the text through Colors")
+            for h in HEX_RE.findall(line):
+                if h.lower() in hexes:
+                    report(rel, n, f"the hex {h} is a Colors value typed here; read it by name")
+            if not lua or line.lstrip().startswith("--"):
+                continue
+            for m in TRIPLE_RE.findall(line):
+                if tuple(float(x) for x in m) in triples:
+                    report(rel, n, f"{', '.join(m)} is a Colors value typed as numbers; read it by name")
+            if COLOR_CALL_RE.search(line):
+                report(rel, n, "a color is typed as numbers in a color call; read it from Colors")
+            if COLOR_TABLE_RE.search(line):
+                report(rel, n, "a table of three or four numbers: a color belongs in Colors")
+    print("   ok" if ok else "   FAILED")
     return ok
 
 
@@ -316,7 +453,16 @@ def check_header_truth():
 
 # ---------------------------------------------------------------- rules luacheck cannot see
 
+# `local NAME = <literal>`: a number, a string or a table on one line
+CONST_RE = re.compile(r'^local\s+([A-Z][A-Z0-9_]*)\s*=\s*(-?\d[\d.]*|"[^"]*"|\{[^}]*\})\s*(?:--.*)?$', re.M)
+
+
 def check_rules():
+    """No raw hooks (AceHook, or named under Exceptions); every widget type registered is
+    used; the shard id is typed in Core only (the locale files' comments included); every
+    message a module listens for is sent by some module; and the same ALL_CAPS local with
+    the same literal in two files is one value with two homes (or two things that need two
+    names)."""
     print("== rules")
     ok = True
     code_files = [f for f in lua_files() if not f.startswith("tests/")]
@@ -336,10 +482,26 @@ def check_rules():
             if not re.search(r'dialogControl\s*=\s*"' + name + r'"|Create\(\s*"' + name + r'"', used):
                 print(f"   {rel}: widget type {name} is registered but nothing uses it")
                 ok = False
-    # the shard item id lives in Core (the stub knows it too, before Core loads)
-    for rel, text in texts.items():
+    # the shard item id lives in Core (the stub knows it too, before Core loads); the locale
+    # files are walked as well, comments included
+    for rel, text in list(texts.items()) + [(rel, read(rel)) for rel in locale_files()]:
         if rel != "Core.lua" and re.search(r"\b6265\b", text):
             print(f"   {rel}: the shard id is typed here; read SSF.SHARD_ITEM_ID")
+            ok = False
+    # a message a module listens for is sent by some module: a misspelt name never arrives
+    sent = {m for text in texts.values() for m, _ in SEND_RE.findall(code_lines(text))}
+    for rel, text in texts.items():
+        for m in sorted(set(LISTEN_RE.findall(code_lines(text))) - sent):
+            print(f"   {rel}: listens for {m}, nothing sends it")
+            ok = False
+    # one value, one home: the same ALL_CAPS local with the same literal in two files
+    homes = {}
+    for rel, text in texts.items():
+        for name, value in CONST_RE.findall(code_lines(text)):
+            homes.setdefault((name, re.sub(r"\s+", "", value)), []).append(rel)
+    for (name, _), files in sorted(homes.items()):
+        if len(files) > 1:
+            print(f"   {name} is typed in {' and '.join(files)}: one home, or two names if they are two things")
             ok = False
     print("   ok" if ok else "   FAILED")
     return ok
@@ -473,7 +635,7 @@ def check_map():
 
 
 def main():
-    results = [check_luacheck(), check_tests(), check_locales(), check_headers(),
+    results = [check_luacheck(), check_tests(), check_locales(), check_colors(), check_headers(),
                check_header_truth(), check_rules(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")

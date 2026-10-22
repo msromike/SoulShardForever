@@ -1,5 +1,5 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
--- Russian strings. Blizzard terms from the ruRU client: Осколок души (item 6265), Сумка душ
+-- Russian strings. Blizzard terms from the ruRU client: Осколок души (the shard item), Сумка душ
 -- (the soul bag container type). Counts sit after a colon or in their own column, so no
 -- string needs plural forms. Registered at the bottom through Locales\Register.lua.
 
@@ -81,7 +81,10 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = "�
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = "Если осколков меньше этого числа, счетчик краснеет (и подсвечивается, если включено)."
 L["The bag button glows while you are below \"%s\"."] = "Кнопка сумки подсвечивается, пока осколков меньше, чем \"%s\"."
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = "Показывает число осколков на кнопке сумки (по умолчанию на сумке душ, иначе на левой ячейке сумки)."
-L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Красный|r ниже \"%s\", |cff00ff00зеленый|r в норме и |cffffd100желтый|r выше лимита."
+L["Red"] = "Красный"
+L["green"] = "зеленый"
+L["yellow"] = "желтый"
+L["%s when below \"%s\", %s in range, and %s over the cap."] = "%1$s ниже \"%2$s\", %3$s в норме и %4$s выше лимита."
 L["Moves the counter to your soul bag, whatever slot it's in."] = "Переносит счетчик на сумку душ, в какой бы ячейке она ни была."
 L["The font used on the shard counter."] = "Шрифт счетчика осколков."
 L["Enables SSF minimap icon."] = "Включает значок SSF у миникарты."
@@ -96,14 +99,15 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = "Открывает меню назначения клавиш WoW, чтобы назначить «%s» и «%s»."
 L["Welcome to SSF"] = "Добро пожаловать в SSF"
 L["Click for in-game tooltip help."] = "Нажмите, чтобы включить подсказки в игре."
-L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = "Вы больше не увидите это приветствие на этом персонаже, если не нажмёте «Создать макросы» в интерфейсе."
-L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."] = "SSF удаляет один осколок души, когда лимит превышен. Используйте клавишу «Удалить осколок», эту кнопку, макрос или сочетайте их."
-L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match."] = "SSF удаляет один осколок души, когда лимит превышен. Используйте клавишу «Удалить осколок», кнопку «Удалить осколок», макрос или сочетайте их."
+L["You won't see this welcome screen again on this character unless you click %s in the UI."] = "Вы больше не увидите это приветствие на этом персонаже, если не нажмёте «%s» в интерфейсе."
+L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."] = "SSF удаляет один осколок души, когда лимит превышен. Используйте клавишу «%s», эту кнопку, макрос или сочетайте их."
+L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = "SSF удаляет один осколок души, когда лимит превышен. Используйте клавишу «%1$s», кнопку «%2$s», макрос или сочетайте их."
 L["In a macro, put /ssf delete on the line before the ability:"] = "В макросе поставьте /ssf delete строкой перед способностью:"
 L["The Bane macro lets you delete on the move when you don't want to use %s."] = "Макрос «%2$s» позволяет удалять на ходу, когда вы не хотите использовать «%1$s»."
 L["Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat."] = "Не берите врага в цель, когда используете макрос «%s»: он вводит вас в бой. SSF не может удалить осколок в бою."
 L["Create recommended macros"] = "Создать рекомендуемые макросы"
-L["Creates the macros, reloads your UI and opens the macro box after the reload."] = "Создаёт макросы, |cff00ff00перезагружает интерфейс|r\nи после перезагрузки открывает окно макросов."
+L["reloads your UI"] = "перезагружает интерфейс"
+L["Creates the macros, %s and opens the macro box after the reload."] = "Создаёт макросы, %s\nи после перезагрузки открывает окно макросов."
 L["Create macros"] = "Создать макросы"
 L["Opens the welcome screen to create the recommended macros."] = "Открывает приветствие, чтобы создать рекомендуемые макросы."
 L["No free macro slots. Delete a macro and try again."] = "Нет свободных ячеек для макросов. Удалите макрос и попробуйте снова."

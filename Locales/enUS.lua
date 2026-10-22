@@ -82,7 +82,11 @@ L["Sets cap automatically to the size of all soul bags (one or multiple)."] = tr
 L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."] = true
 L["The bag button glows while you are below \"%s\"."] = true
 L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."] = true
-L["Red when below \"%s\", green in range, and yellow over the cap."] = "|cffff4040Red|r when below \"%s\", |cff00ff00green|r in range, and |cffffd100yellow|r over the cap."
+-- the three color words, which Options paints in the bag's own state colors, then the line
+L["Red"] = true
+L["green"] = true
+L["yellow"] = true
+L["%s when below \"%s\", %s in range, and %s over the cap."] = true
 L["Moves the counter to your soul bag, whatever slot it's in."] = true
 L["The font used on the shard counter."] = true
 L["Enables SSF minimap icon."] = true
@@ -97,19 +101,24 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = true
 L["Welcome to SSF"] = true
 L["Click for in-game tooltip help."] = true
-L["You won't see this welcome screen again on this character unless you click Create macros in the UI."] = true
+-- %s: the "Create macros" button's label
+L["You won't see this welcome screen again on this character unless you click %s in the UI."] = true
 L["You learned Drain Soul"] = true
 L["No Drain Soul yet"] = true
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = true
-L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."] = true
-L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match."] = true
+-- %s: the "Delete Shard" label (the keybind's name, the button's text); the second line
+-- takes it twice, a translation as %1$s and %2$s
+L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."] = true
+L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = true
 L["In a macro, put /ssf delete on the line before the ability:"] = true
 -- %s: Life Tap's name. A translation names both: %1$s Life Tap, %2$s Bane of Agony.
 L["The Bane macro lets you delete on the move when you don't want to use %s."] = true
 -- a translation may name Bane of Agony with %s
 L["Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat."] = true
 L["Create recommended macros"] = true
-L["Creates the macros, reloads your UI and opens the macro box after the reload."] = "Creates the macros, |cff00ff00reloads your UI|r\nand opens the macro box after the reload."
+-- the phrase Welcome paints green, then the line that takes it as %s; its break is in the string
+L["reloads your UI"] = true
+L["Creates the macros, %s and opens the macro box after the reload."] = "Creates the macros, %s\nand opens the macro box after the reload."
 L["Create macros"] = true
 L["Opens the welcome screen to create the recommended macros."] = true
 L["No free macro slots. Delete a macro and try again."] = true

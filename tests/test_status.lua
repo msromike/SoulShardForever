@@ -1,12 +1,14 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- test_status: the one wording for the numbers, with its color codes, as chat, the window
--- and the minimap tooltip all build from it. Color codes are checked by their hex.
+-- and the minimap tooltip all build from it. The expected codes are Colors', by name.
+-- Reads:   Colors (the expected escape codes).
 -- Saves:   profile.paused, autoMax, maxShards, lowMark, for the test at hand.
 -- Touches nothing else.
 
 local SHARD = SSF.SHARD_ITEM_ID
 local Status = SSF:GetModule("Status")
+local Colors = SSF:GetModule("Colors")
 local profile = SSF.db.profile
 
 local function plain(text) return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) end
@@ -25,10 +27,10 @@ test("the count carries its state color, the cap the value white", function()
     profile.autoMax = false
     profile.maxShards = 8
     profile.lowMark = 4
-    ok(Status:CapText(3, 8):find("|cffff40403|r", 1, true), "3 is red (low)")
-    ok(Status:CapText(5, 8):find("|cff00ff005|r", 1, true), "5 is green (ok)")
-    ok(Status:CapText(9, 8):find("|cffffd1009|r", 1, true), "9 is yellow (over)")
-    ok(Status:CapText(5, 8):find("|cffffffff8|r", 1, true), "the cap is white")
+    ok(Status:CapText(3, 8):find(Colors:Paint(Colors.RED, 3), 1, true), "3 is red (low)")
+    ok(Status:CapText(5, 8):find(Colors:Paint(Colors.GREEN, 5), 1, true), "5 is green (ok)")
+    ok(Status:CapText(9, 8):find(Colors:Paint(Colors.YELLOW, 9), 1, true), "9 is yellow (over)")
+    ok(Status:CapText(5, 8):find(Colors:Paint(Colors.WHITE, 8), 1, true), "the cap is white")
 end)
 
 test("the count is white while paused, everywhere it is painted; the cap stays white", function()
@@ -36,12 +38,12 @@ test("the count is white while paused, everywhere it is painted; the cap stays w
     profile.maxShards = 8
     profile.lowMark = 4
     profile.paused = true
-    eq(Status:CountValue(3), "|cffffffff3|r", "under the mark: white, not red")
-    eq(Status:CountValue(5), "|cffffffff5|r", "in range: white, not green")
-    eq(Status:CountValue(9), "|cffffffff9|r", "over the cap: white, not yellow")
-    ok(Status:StatusText(9, 8):find("|cffffffff9|r", 1, true), "the chat line too")
+    eq(Status:CountValue(3), Colors:Paint(Colors.WHITE, 3), "under the mark: white, not red")
+    eq(Status:CountValue(5), Colors:Paint(Colors.WHITE, 5), "in range: white, not green")
+    eq(Status:CountValue(9), Colors:Paint(Colors.WHITE, 9), "over the cap: white, not yellow")
+    ok(Status:StatusText(9, 8):find(Colors:Paint(Colors.WHITE, 9), 1, true), "the chat line too")
     profile.paused = false
-    eq(Status:CountValue(3), "|cffff40403|r", "unpaused: red again")
+    eq(Status:CountValue(3), Colors:Paint(Colors.RED, 3), "unpaused: red again")
 end)
 
 test("CountValue, CountText and InBagsText with no count read the bags", function()
@@ -66,10 +68,10 @@ end)
 test("PausedValue and PauseText", function()
     profile.paused = true
     eq(plain(Status:PauseText()), "SSF paused: Yes", "paused")
-    ok(Status:PausedValue():find("|cffff4040", 1, true), "Yes in the one red")
+    ok(Status:PausedValue():find(Colors:Paint(Colors.RED, "Yes"), 1, true), "Yes in the one red")
     profile.paused = false
     eq(plain(Status:PauseText()), "SSF paused: No", "running")
-    ok(Status:PausedValue():find("|cff00ff00", 1, true), "No in green")
+    ok(Status:PausedValue():find(Colors:Paint(Colors.GREEN, "No"), 1, true), "No in green")
 end)
 
 test("the two press lines wrap StatusText", function()

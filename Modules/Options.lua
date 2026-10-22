@@ -226,7 +226,7 @@ local function BuildTable()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
                 if why == "paused" then return L["Nothing to delete, SSF is paused."] end
                 if why then return L["Nothing to delete, you are at or under the cap."] end
-                return SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match."])
+                return SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."]:format(L["Delete Shard"]))
             end,
             arg = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
@@ -492,7 +492,10 @@ local function BuildTable()
         bagcount = {
             counter = L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."],
             lowglow = L['The bag button glows while you are below "%s".']:format(lowWarn),
-            colorize = L['Red when below "%s", green in range, and yellow over the cap.']:format(lowWarn),
+            -- the three color words in the bag's own state colors, so the line shows what it teaches
+            colorize = L['%s when below "%s", %s in range, and %s over the cap.']:format(
+                Colors():PaintState("low", L["Red"]), lowWarn,
+                Colors():PaintState("ok", L["green"]), Colors():PaintState("over", L["yellow"])),
             soulbag = L["Moves the counter to your soul bag, whatever slot it's in."],
             font = L["The font used on the shard counter."],
         },
