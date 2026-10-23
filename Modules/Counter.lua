@@ -3,18 +3,17 @@
 -- Counter: one number, the total shard count, centered on one bag button. Shown only while
 -- the "Show shard count on bag bar" option is on. Where it sits (Anchor):
 --   "Show on soul bag when equipped" ticked and a soul bag equipped: that soul bag's button,
---     if shown, the reagent slot first, then bag 4 down to bag 1. The bag's slot does not
---     matter.
---   otherwise: the far-left bag button (bag 4, CharacterBag3Slot), or the backpack button
---     should that one be hidden (a fallback only: this client has no bag bar collapse,
---     checked in game 2026-10-21; a bar addon could hide it).
+--     the reagent slot first, then bag 4 down to bag 1. The bag's slot does not matter.
+--   otherwise: the far-left bag button (bag 4, CharacterBag3Slot). Bag buttons are always
+--     on the bar on this client, empty or not (no bag bar collapse: checked in game
+--     2026-10-21 and 2026-10-22), so the anchor always exists.
 -- LowGlow sits on the same button: after every refresh the button and the count go out as
 -- SSF_COUNTER_UPDATED, so the glow never reads the bags or the anchor itself.
 -- On a soul bag button the game draws its own number (CharacterReagentBag0SlotCount on the
 -- reagent slot). While the counter sits on a soul bag button, that number is set to alpha 0
 -- (alpha, because the game calls Show() on it by itself); it is set back to 1 the moment the
--- counter leaves that button or the option is turned off. Bag 4 as the far-left fallback and
--- the backpack are never touched.
+-- counter leaves that button or the option is turned off. Bag 4 as the far-left fallback is
+-- never touched.
 -- Font is the profile's LibSharedMedia font name (Arial Narrow by default: its digits have
 -- air between them). Size is the largest that fits inside the button face with 15% of
 -- the face kept clear on each side, the outline counted, between MIN_SIZE and MAX_SIZE.
@@ -54,28 +53,24 @@ local function BagButton(bag)
     return _G["CharacterBag" .. (bag - 1) .. "Slot"]
 end
 
--- The first equipped soul bag's button, if it is shown: the reagent slot first, then bag 4
--- down to bag 1 (Bags:SoulBags walked backwards). Nil when there is none.
+-- The first equipped soul bag's button: the reagent slot first, then bag 4 down to bag 1
+-- (the last of Bags:SoulBags, which is ascending). Nil when there is none.
 local function SoulBagButton()
     local soulBags = SSF:GetModule("Bags"):SoulBags()
-    for i = #soulBags, 1, -1 do
-        local button = BagButton(soulBags[i])
-        if button and button:IsShown() then return button end
-    end
+    local last = soulBags[#soulBags]
+    return last and BagButton(last)
 end
 
 -- The button the counter (and LowGlow) sits on, and true when it is a soul bag's button.
 -- A soul bag only while the counter and "Show on soul bag" are both on; otherwise the
--- far-left bag button, or the backpack should that button be hidden (see the header).
+-- far-left bag button (see the header).
 local function Anchor()
     local p = SSF.db.profile
     if p.counter and p.counterSoulBag then
         local soulBag = SoulBagButton()
         if soulBag then return soulBag, true end
     end
-    local farLeft = CharacterBag3Slot
-    if farLeft and farLeft:IsShown() then return farLeft, false end
-    return MainMenuBarBackpackButton, false
+    return CharacterBag3Slot, false
 end
 
 -- The game's own number on a bag button (the ItemButton's Count text), or nil.
@@ -123,12 +118,8 @@ function Counter:Refresh()
         return
     end
     local parent, onSoulBag = Anchor()
-    -- only a soul bag button loses the game's number; the far-left fallback and the backpack keep theirs
+    -- only a soul bag button loses the game's number; the far-left fallback keeps its own
     HideGameCount(self, onSoulBag and parent or nil)
-    if not parent then
-        self:SendMessage("SSF_COUNTER_UPDATED", nil, count)
-        return
-    end
     if not self.text then
         self.text = parent:CreateFontString(nil, "OVERLAY")
         local black = SSF:GetModule("Colors").BLACK

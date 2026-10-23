@@ -25,7 +25,7 @@ read_globals = {
     -- frames and UI globals
     "CreateFrame", "UIParent", "GameTooltip", "UISpecialFrames", "UIErrorsFrame",
     "GameFontNormal", "GameFontNormalLarge",
-    "MainMenuBarBackpackButton", "CharacterBag3Slot", "CharacterReagentBag0Slot",
+    "CharacterBag3Slot", "CharacterReagentBag0Slot",
     "MacroFrame", "ShowMacroFrame", "Settings", "SettingsPanel",
     -- API namespaces and enums
     "C_Container", "C_Item", "C_AddOns", "C_Spell", "C_SpellBook", "C_Sound", "Enum", "Constants",
