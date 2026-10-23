@@ -22,4 +22,4 @@ Open the SSF window from the minimap or a data broker. Hover either one for a qu
 
 ### 05_welcome_window.png
 
-After install, SSF walks you through the setup and helps you create the macros.
+After install, SSF shows you how to find help and lets you create the macros.
