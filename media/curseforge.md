@@ -10,9 +10,14 @@ Keeps your Soul Shards at the cap you set, one press at a time, but not in comba
 
 There are other shard addons. This one is built to disappear.
 
-- Made for the Forever client, not ported to it.
 - “It just works™.” Install it and the defaults get you going.
-- One job: keep shards at your cap, a warning when you're low. Pause whenever you need. Nothing else.
+- Made for the Forever client. **Not ported to it.**
+- Your soul bag can sit in any slot. SSF finds it.
+- Works on a key, a macro, or a button. Your pick.
+- Pause whenever you need.
+- By default, shards go to your soul bag and nothing else moves.
+- One job: keep shards at your cap, and a warning when you're low.
+- Six languages: English, Deutsch, Français, Español, Português, Русский.
 - SSF is bag safe. Impossible for it to delete anything but a Soul Shard.
 - Guided onboarding that knows your level.
 
@@ -56,7 +61,7 @@ Every keybind press or macro click deletes one shard if you're over the cap, and
 - Or let SSF make it: click *Create macros* at the bottom of the window. It makes the Life Tap macro and a Bane of Agony macro, then opens your macro window so you can drag them onto your bars.
 - Or tap your keybind whenever.
 - Set the cap with the slider, or tick *Match soul bag size*: a 14-slot bag means a cap of 14.
-- SoulSort Mode, if you prefer it. It sorts your bags the same way SoulSort does.
+- Or a sort mode, if you prefer your shards in one solid block, top down or bottom up.
 
 ## <span style="color:#8788EE">See how many you have</span>
 
@@ -76,6 +81,6 @@ When you're stockpiling for soulstones, healthstones and summons, SSF stops dele
 - The count goes white, no red, no yellow, no border, until you unpause.
 - Your cap stays where it was when you resume SSF.
 
-This is only for WoW Forever. On Classic Era use SoulSort by Anilusion, which the idea for SSF came from.
+This is written specifically for WoW Forever.
 
 The code lives on [GitHub](https://github.com/msromike/SoulShardForever). Have a look, tell me what you'd change, or send a PR. Happy to hear from you.
