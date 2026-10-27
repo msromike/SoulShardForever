@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.10.2 (2026-10-27)
+
+- The README and the CurseForge page are rewritten: what each option does, and why SSF.
+- Under the hood: the count on the bag bar no longer has a fallback for a hidden bag
+  button, which the Forever bag bar never hides. Nothing you see changed.
+
 ## 1.10.1 (2026-10-22)
 
 - Tab completion in chat no longer jumps back. Typing `/ssf pause ` and pressing Tab

@@ -2,11 +2,11 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.10.2: The README and the CurseForge page are rewritten. Under the hood cleanup; nothing you see changed.
+
 1.10.1: Tab completion in chat no longer jumps back to `/ssf `, and cycles in order.
 
 1.10.0: Guided onboarding that knows your level: before Drain Soul, SSF stays quiet, and the welcome comes back when you learn it. A brighter yellow over the cap, a truer red when low, and the number on a darkened bag. The welcome shows once more after this update.
-
-1.9.0: Low shard warn stops at your cap: the slider dims the track past the cap, with a gold line where the cap sits. A red border on the bag button when you're low, a smaller count, and the count alone on data broker bars. Delete Shard greys out when a click can't delete, and says why. The window closes itself when a fight starts.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
