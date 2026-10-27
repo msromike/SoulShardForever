@@ -3,6 +3,7 @@
 
 Job:    run luacheck, run the headless tests (tests/run.lua, when present), check that
         every locale carries every key enUS has and keeps its placeholders, check that
+        every literal L[...] the code looks up is a key enUS has, check that
         every color is typed in Colors.lua only (code, locales, tests and the shipped
         docs read it by name), lint every file header that carries the
         contract (Core, the modules, the widgets, the locale registrar, the tests) against
@@ -200,6 +201,40 @@ def check_locales():
                 print(f"   toc: no Notes-{code} line for {name}")
                 ok = False
     print(f"   {len(ref)} keys in enUS, {len(tables) - 1} translations" + ("" if ok else ", FAILED"))
+    return ok
+
+
+# L["..."] or L['...'] typed in code: the key as written, either quote style
+CODE_KEY_RE = re.compile(r'\bL\[\s*(?:"((?:[^"\\]|\\.)*)"|\'((?:[^\'\\]|\\.)*)\')\s*\]')
+
+
+def unescape(key):
+    r"""A key as Lua reads it, for \" \' and \\: so a key typed in one quote style matches
+    the same key typed in the other."""
+    return re.sub(r"\\([\"'\\])", r"\1", key)
+
+
+def check_code_keys():
+    """Every key Core, the modules and the widgets look up as a literal L[...] is a key enUS
+    has. AceLocale answers a missing key with an error once per session and the key itself
+    as the text, and check_locales only compares the locale files with each other, so a
+    key renamed in the locales but not in the code passes everything else. A key built at
+    runtime (L[name]) is not a literal and is not checked."""
+    print("== code keys")
+    ref = {unescape(k) for k in locale_table("Locales/enUS.lua")}
+    ok = True
+    count = 0
+    for rel in [f for f in lua_files() if not f.startswith("tests/") and f != "Locales/Register.lua"]:
+        for n, line in enumerate(read(rel).splitlines(), 1):
+            if line.lstrip().startswith("--"):
+                continue
+            for k1, k2 in CODE_KEY_RE.findall(line):
+                count += 1
+                key = unescape(k1 or k2)
+                if key not in ref:
+                    print(f"   {rel}:{n}: L[{key[:50]!r}] is not a key in enUS")
+                    ok = False
+    print(f"   {count} lookups, " + ("ok" if ok else "FAILED"))
     return ok
 
 
@@ -636,7 +671,7 @@ def check_map():
 
 
 def main():
-    results = [check_luacheck(), check_tests(), check_locales(), check_colors(), check_headers(),
+    results = [check_luacheck(), check_tests(), check_locales(), check_code_keys(), check_colors(), check_headers(),
                check_header_truth(), check_rules(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
