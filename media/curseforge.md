@@ -16,7 +16,7 @@ There are other shard addons. This one is built to disappear.
 - Works on a key, a macro, or a button. Your pick.
 - Pause whenever you need.
 - By default, shards go to your soul bag and nothing else moves.
-- One job: keep shards at your cap, and a warning when you're low.
+- One job: keep shards at your cap, and show you when you're low.
 - Six languages: English, Deutsch, Français, Español, Português, Русский.
 - SSF is bag safe. Impossible for it to delete anything but a Soul Shard.
 - Guided onboarding that knows your level.
@@ -27,7 +27,7 @@ There are other shard addons. This one is built to disappear.
 
 - Deletes shards with a key, a macro, or the UI button next to your count.
 - Displays shard count on the bag bar, and offers some placement and appearance options.
-- Warns you when you're running low (red count, and the bag button can glow).
+- Shows you when you're running low (red count, and the bag button can glow).
 - Offers a "pause" feature. Use it for raid night or whenever you need to farm shards for healthstones and summons duty.
 
 ### <span style="color:#8788EE">QOL features</span>

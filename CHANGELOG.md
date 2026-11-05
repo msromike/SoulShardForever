@@ -3,9 +3,10 @@
 ## 1.11.0 (2026-11-05)
 
 - The two sort choices under How shards move are now called Sort top down and Sort bottom
-  up, more consistent with how their help text describes them. They work the same, and
+  up, so each name says what it does. They work the same, and
   your choice carries over.
-- The line at the bottom of the window is shorter and cleaner: just the version.
+- The version now sits centered between the two bottom buttons, which match in width, and
+  the window is a little shorter.
 - Chat logging now reads the same in the window and in chat: Log deletions to chat, Log
   pauses to chat, and `/ssf log on/off`. `/ssf announce` still works, so your macros won't
   break.

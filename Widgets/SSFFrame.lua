@@ -17,7 +17,8 @@
 -- the window (ShowSidePanel, the SSFSideNote widget), Escape closes it, a bottom row of
 -- Close (far right, SetRightButton turns it into an action), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
--- footer line under them (SetFooter); the buttons size to their text. A dark strip behind
+-- footer line in the row's middle while that button is hidden (SetFooter); the buttons
+-- size to their text, and the two outer ones match the wider of the two while both show. A dark strip behind
 -- the title text (SetTitleBand) across the header art's inner opening, and the title's
 -- color (SetTitleColor). The window's width fits its content (FitWidth: every text on one
 -- line, see there) and so does its height (FitToContent, called by the owner after each
@@ -62,22 +63,21 @@
 --          changed that button would leave SSF's X and Close dead.
 -- Touches nothing else.
 
-local Type, Version = "SSFFrame", 3
+local Type, Version = "SSFFrame", 4
 local AceGUI = LibStub("AceGUI-3.0")
 local AceHook = LibStub("AceHook-3.0")
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
 local EDGE = 17                       -- the content's, buttons' and footer's inset from the sides
 local TOP_INSET = 35                  -- the content's inset from the top (the title art)
-local BOTTOM_INSET = 58               -- the content's inset from the bottom: the button row and the footer
+local BOTTOM_INSET = 42               -- the content's inset from the bottom: the button row
 local CHROME = TOP_INSET + BOTTOM_INSET
 local STOCK_BOTTOM_INSET = 57         -- what the stock Frame's OnHeightSet takes off the height it records for its content
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 420, 380 -- before the first fit
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
 local BUTTON_HEIGHT = 22              -- the bottom row's buttons
-local ROW_OFFSET = 30                 -- the bottom row's distance from the frame's bottom edge
-local FOOTER_OFFSET = 12              -- the footer line's
+local ROW_OFFSET = 14                 -- the bottom row's distance from the frame's bottom edge
 local SCREEN_MARGIN = 40              -- the window is never taller or wider than the screen minus this
 local BUTTON_GAP = 8                  -- px kept between the two bottom buttons
 local X_INSET = 5                     -- the X sits this far in from the corner
@@ -124,6 +124,18 @@ end
 local function FitButton(button, text)
     button:SetText(text)
     button:SetWidth(math.max(BUTTON_MIN, (button:GetFontString():GetStringWidth() or 0) + BUTTON_PAD))
+end
+
+-- the two outer bottom buttons, both as wide as the wider one while both show, so what sits
+-- between them is centered between them. Alone, the right one fits its own text.
+local function MatchOuterButtons(self)
+    local close, action = self.closebutton, self.actionbutton
+    FitButton(close, close:GetText())
+    if not action:IsShown() then return end
+    FitButton(action, action:GetText())
+    local widest = math.max(close:GetWidth(), action:GetWidth())
+    close:SetWidth(widest)
+    action:SetWidth(widest)
 end
 
 -- only the circle of the help art: the button's box is the visible "i", nothing transparent around it
@@ -177,7 +189,7 @@ local methods = {
     end,
 
     -- the stock OnHeightSet records content.height as the height less STOCK_BOTTOM_INSET;
-    -- SSF hands it the height less the extra its taller bottom row adds, which leaves the
+    -- SSF hands it the height adjusted for its own bottom row, which leaves the
     -- recorded number 35 px over the anchored content (CHROME inside). Nothing reads it:
     -- FitToContent measures the ScrollFrame's child
     ["OnHeightSet"] = function(self, height)
@@ -268,18 +280,13 @@ local methods = {
         local clear = (self.xbutton:GetWidth() or 0) + X_INSET
         if self.helpbutton:IsShown() then clear = clear + HELP_GAP + self.helpbutton:GetWidth() end
         Need((self.titlebg:GetWidth() or 0) + 2 * TITLE_CAP + 2 * clear)
-        -- the bottom row: the buttons, EDGE px in from each side, and the footer under them
+        -- the bottom row: the buttons, EDGE px in from each side, and the middle button or the
+        -- footer, centered, so each side needs room for the wider of the two outer buttons
         local close = self.closebutton:GetWidth() or 0
         local action = self.actionbutton:IsShown() and (self.actionbutton:GetWidth() or 0) or 0
-        if self.middlebutton:IsShown() then
-            -- centered, so each side needs room for the wider of the two outer buttons
-            Need(2 * EDGE + 2 * math.max(close, action) + 2 * BUTTON_GAP + (self.middlebutton:GetWidth() or 0))
-        elseif action > 0 then
-            Need(2 * EDGE + close + BUTTON_GAP + action)
-        else
-            Need(2 * EDGE + close)
-        end
-        Text(self.footer)
+        local middle = self.middlebutton:IsShown() and (self.middlebutton:GetWidth() or 0)
+            or (self.footer:GetUnboundedStringWidth() or 0)
+        Need(2 * EDGE + 2 * math.max(close, action) + 2 * BUTTON_GAP + middle)
 
         local new = math.min(need + ROUNDING, UIParent:GetWidth() - SCREEN_MARGIN)
         if math.abs(new - width) < ROUNDING then return false end
@@ -304,17 +311,27 @@ local methods = {
     -- the bottom-left button, sized to its text; nil text hides it. tipText: its help line
     -- (ButtonTip), nil for none
     ["SetActionButton"] = function(self, text, onClick, tipText)
-        if not text then self.actionbutton:Hide() return end
-        FitButton(self.actionbutton, text)
+        if not text then
+            self.actionbutton:Hide()
+            MatchOuterButtons(self)
+            return
+        end
+        self.actionbutton:SetText(text)
         self.actionbutton:SetScript("OnClick", onClick)
         SetButtonTip(self.actionbutton, tipText)
         self.actionbutton:Show()
+        MatchOuterButtons(self)
     end,
 
     -- the bottom-middle button, centered between the other two, sized to its text; nil text
     -- hides it. tipText: as SetActionButton
     ["SetMiddleButton"] = function(self, text, onClick, tipText)
-        if not text then self.middlebutton:Hide() return end
+        if not text then
+            self.middlebutton:Hide()
+            self.footer:Show()
+            return
+        end
+        self.footer:Hide() -- they share the row's middle
         FitButton(self.middlebutton, text)
         self.middlebutton:SetScript("OnClick", onClick)
         SetButtonTip(self.middlebutton, tipText)
@@ -324,9 +341,10 @@ local methods = {
     -- turns the bottom-right button into an action button, sized to its text; the X and
     -- Escape still close the window. tipText: as SetActionButton
     ["SetRightButton"] = function(self, text, onClick, tipText)
-        FitButton(self.closebutton, text)
+        self.closebutton:SetText(text)
         self.closebutton:SetScript("OnClick", onClick)
         SetButtonTip(self.closebutton, tipText)
+        MatchOuterButtons(self)
     end,
 
     -- The help button left of the X: what a click does, whether help is on (blue) or off (gold), and
@@ -357,7 +375,7 @@ local methods = {
         end
     end,
 
-    -- the small line across the bottom, under the button row
+    -- the small line in the middle of the button row
     ["SetFooter"] = function(self, text)
         self.footer:SetText(text or "")
     end,
@@ -417,7 +435,7 @@ local function Constructor()
     local closeClick = TakeStockClose(self) or Close_OnClick
     local handle = HookTitleHandle(self) or frame
 
-    -- SSF's content insets: clear of its bottom row and footer
+    -- SSF's content insets: clear of its bottom row
     local content = self.content
     content:ClearAllPoints()
     content:SetPoint("TOPLEFT", EDGE, -TOP_INSET)
@@ -451,11 +469,9 @@ local function Constructor()
         sidenote:Close()
     end)
 
-    -- bottom: a button row (action far left, Close far right), then the footer line centered
-    -- along the bottom edge under it
+    -- bottom: a button row (action far left, Close far right), the footer line centered in it
     local footer = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightSmall")
-    footer:SetPoint("BOTTOMLEFT", EDGE, FOOTER_OFFSET)
-    footer:SetPoint("BOTTOMRIGHT", -EDGE, FOOTER_OFFSET)
+    footer:SetPoint("CENTER", frame, "BOTTOM", 0, ROW_OFFSET + BUTTON_HEIGHT / 2)
     footer:SetJustifyH("CENTER")
     footer:SetWordWrap(false)
 

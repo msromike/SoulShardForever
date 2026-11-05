@@ -128,9 +128,9 @@ Writes a line to chat every time a shard is deleted.
 
     • SSF Mode: SSF does not sort (does NOT change item positions in bags).
 
-    • Sort top down: Shards sort top down (CHANGES item positions in your bags).
+    • Sort top down: Shards fill from the top (CHANGES item positions in your bags).
 
-    • Sort bottom up: Shards sort bottom up (CHANGES item positions in your bags).
+    • Sort bottom up: Shards fill from the bottom (CHANGES item positions in your bags).
 
 SSF Mode's name is drawn green (the safe pick); the sort names are gold.
 

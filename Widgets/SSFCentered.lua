@@ -35,7 +35,7 @@
 --          SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level); MinWidth().
 --          MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth
 --          sizes the window to.
--- Lib internals: the stock Button's frame and text, the stock CheckBox's text and frame, AceGUI's
+-- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
 --          frame.width field (read, and written by the check box's Fit), and
 --          AceGUI.WidgetRegistry (the Dropdown constructor, for the re-typed one). An AceGUI
 --          bump that renames those breaks the top row, the check boxes' layout, or the
@@ -58,7 +58,7 @@ do
     local Type, Version = "SSFCountButton", 5
     local GAP = 12     -- px between the text and the button
     local HEIGHT = 36  -- the button: two lines of text
-    local PAD = 30     -- the button's side margins, the stock autoWidth's
+    local ROOM = 400   -- the button's width while measuring, so no line wraps
     local BELOW = 6    -- air under the button, before the first group
 
     -- the text and the button side by side, on one line
@@ -79,19 +79,22 @@ do
         self:SetHeight(height + BELOW)
     end
 
-    -- the button's width: its longest line in any state, so it never changes size. Measured
-    -- on the button's own text, then the face is written over it: the label, and the reason
-    -- under it when there is one.
+    -- the button's width: its longest line in any state, so it never changes size. The stock
+    -- Button's autoWidth sizes it to each line in turn and the widest is kept, then the face
+    -- is written over it: the label, and the reason under it when there is one.
     local function Refresh(self)
-        local text, widest = self.inner.text, 0
+        local inner, widest = self.inner, 0
         local function Measure(line)
-            text:SetText(line)
-            widest = math.max(widest, text:GetUnboundedStringWidth() or 0)
+            inner:SetWidth(ROOM)
+            inner:SetText(line)
+            widest = math.max(widest, inner.frame:GetWidth() or 0)
         end
+        inner:SetAutoWidth(true)
         Measure(self.name or "")
         for _, reason in ipairs(self.reasons or {}) do Measure(reason) end
-        self.inner:SetWidth(widest + PAD)
-        self.inner:SetText(self.reason and ((self.name or "") .. "\n" .. self.reason) or self.name)
+        inner:SetAutoWidth(false)
+        inner:SetWidth(widest)
+        inner:SetText(self.reason and ((self.name or "") .. "\n" .. self.reason) or self.name)
         Layout(self)
     end
 

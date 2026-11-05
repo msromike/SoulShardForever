@@ -31,7 +31,7 @@
 
 A Warlock addon that keeps your Soul Shards at a cap you set. Each press of a key, a macro line or a button deletes one shard if you're over the cap and moves shards into your soul bag, but never in combat. It can show your shard count on the bag bar, color-coded, and glow the bag button when you're running low. A new feature is a pause so you can stockpile for an instance or summoning session without dragging your sliders around.
 
-Why did I write it? The shard addon I used for years had no Forever port when I started (and was somewhat dated). There are a handful of addons that do shard management, but they tend to be hard to configure or have features not related to the task at hand. So this addon is focused on one thing only: deleting soul shards and warning you when low.
+Why did I write it? The shard addon I used for years had no Forever port when I started (and was somewhat dated). There are a handful of addons that do shard management, but they tend to be hard to configure or have features not related to the task at hand. So this addon is focused on one thing only: deleting soul shards and showing you when you're low.
 
 This addon is for Forever only, and not tied to backwards compatibility.
 

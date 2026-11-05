@@ -36,7 +36,7 @@
 -- AceConfigCmd's dispatch ignores cmdHidden, has no "help" word, and would not open the
 -- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
 -- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
--- "log", still works so old macros do; it is not listed anywhere.
+-- "log", is a second, hidden chat command, so old macros keep working; it is not listed anywhere.
 --
 -- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
@@ -138,6 +138,9 @@ local function Gap(order)
     return { type = "description", order = order, name = " ", width = "full", cmdHidden = true }
 end
 
+-- The old word for "/ssf log": a hidden chat command, so old macros keep working.
+local OLD_LOG_WORD = "announce"
+
 -- The reason on a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
 -- Language change shows at once.
 local function CapIs() return L["cap is %d"]:format(Cap():Get()) end
@@ -181,6 +184,12 @@ local function BuildTable()
         apply = function(value) SSF.db.profile.announce = value end,
     })
     announceGui.order = 2 -- GUI only: Other is minimap, announce, How shards move, language; the chat order stays
+
+    -- "/ssf announce", the old word for "/ssf log": the same command, hidden from the help
+    -- list and from Tab, so old macros keep working. The handler below lets it through.
+    local announceOld = {}
+    for field, value in pairs(announceCmd) do announceOld[field] = value end
+    announceOld.cmdHidden = true
 
     local pauseGui, pauseCmd = Settings:Define("pause", {
         order = 1, kind = "toggle",
@@ -247,7 +256,7 @@ local function BuildTable()
         },
 
         -- a blank line between each pair of groups
-        gap0 = Gap(3), gap1 = Gap(7), gap2 = Gap(15), gap3 = Gap(25), gap4 = Gap(35),
+        gap0 = Gap(3), gap1 = Gap(7), gap2 = Gap(15), gap3 = Gap(35),
 
         -- keyed pausegroup: "pause" is the chat command's key in this same table
         pausegroup = {
@@ -447,6 +456,7 @@ local function BuildTable()
         -- chat commands, hidden from the window
         setmax = setmaxCmd,
         log = announceCmd,
+        [OLD_LOG_WORD] = announceOld,
         pause = pauseCmd,
         delete = {
             type = "execute",
@@ -507,9 +517,9 @@ local function BuildTable()
                 .. "\n\n" .. bullet .. Colors():State(L["SSF Mode"] .. ":", true) .. " "
                 .. L["SSF does not sort (does NOT change item positions in bags)."]
                 .. "\n\n" .. bullet .. Gold(L["Sort top down"] .. ":") .. " "
-                .. L["Shards sort top down (CHANGES item positions in your bags)."]
+                .. L["Shards fill from the top (CHANGES item positions in your bags)."]
                 .. "\n\n" .. bullet .. Gold(L["Sort bottom up"] .. ":") .. " "
-                .. L["Shards sort bottom up (CHANGES item positions in your bags)."],
+                .. L["Shards fill from the bottom (CHANGES item positions in your bags)."],
             minimap = L["Enables SSF minimap icon."],
             language = L["Auto uses game client language."],
         },
@@ -586,10 +596,6 @@ local function HandleCommand(input)
     if first ~= "delete" then
         SSF:Print(Colors():Echo("> /ssf" .. (input ~= "" and (" " .. input) or "")))
     end
-    if first == "announce" then -- the old word for "log": old macros keep working
-        input = "log" .. input:sub(#first + 1)
-        first = "log"
-    end
     if input == "" then
         SSF:GetModule("Window"):Open()
         Status():PrintStatus()
@@ -600,7 +606,7 @@ local function HandleCommand(input)
         AceConfigCmd:HandleCommand("ssf", APP, "")
         return
     end
-    if not IsChatWord(first) then
+    if not IsChatWord(first) and first ~= OLD_LOG_WORD then
         SSF:Print(L['Unknown command "%s".']:format(first))
         AceConfigCmd:HandleCommand("ssf", APP, "")
         return

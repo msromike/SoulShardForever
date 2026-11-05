@@ -6,7 +6,7 @@
 -- app name "SSF". Tooltips are the Tooltip module's: the window hands it its frame.
 --
 -- Layout: the count with Delete Shard beside it, then inline groups (Pause, Limits, Bag count)
--- and Other, then a small version line. Toggles are full width
+-- and Other, then the bottom row with a small version line. Toggles are full width
 -- except Play pause sound, which shares its row with the volume dropdown; a label that
 -- does not fit (the window is capped at the screen's width) wraps and grows its row
 -- (Widgets\SSFCentered.lua). The window sizes itself to the content after every feed,
@@ -283,7 +283,7 @@ function Window:Open()
             window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
         end)
         -- bottom row: Create macros far left while shown, Key Bindings far right, the
-        -- the version under them
+        -- version between them
         self:DressWindow()
         -- The first open of a session measures before every text size is settled (the
         -- window has not been drawn yet), which leaves a gap above the buttons. Feed again

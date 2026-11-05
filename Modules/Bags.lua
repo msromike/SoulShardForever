@@ -86,7 +86,7 @@ function Bags:IsRegularBag(bag)
 end
 
 -- Every equipped soul bag's id, ascending (bag 1 to the reagent slot; the backpack is
--- never one). Counter walks it backwards for the button the number sits on.
+-- never one). Counter takes the last soul bag for the button the number sits on.
 function Bags:SoulBags()
     local list = {}
     for bag = FIRST_BAG, LAST_BAG do
