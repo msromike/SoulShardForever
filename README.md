@@ -12,6 +12,7 @@
 
 ---
 
+- **NEW: Delete Shard says why it's grey, right on the button.**
 - **NEW: Guided onboarding that knows your level: before Drain Soul, SSF stays quiet; learn it, and the welcome walks you through setup.**
 - **NEW: Low shard mark stops at your cap: the slider shows the cap in gold and dims the track past it.**
 - **NEW: Shard count on data broker bars (Titan Panel, EllesmereUI's data bars and the like).**
