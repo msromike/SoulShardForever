@@ -1,8 +1,8 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Counter: one number, the total shard count, centered on one bag button. Shown only while
--- the "Show shard count on bag bar" option is on. Where it sits (Anchor):
---   "Show on soul bag when equipped" ticked and a soul bag equipped: that soul bag's button,
+-- the "Show shard counter on bag bar" option is on. Where it sits (Anchor):
+--   "Show counter on soul bag" ticked and a soul bag equipped: that soul bag's button,
 --     the reagent slot first, then bag 4 down to bag 1. The bag's slot does not matter.
 --   otherwise: the far-left bag button (bag 4, CharacterBag3Slot). Bag buttons are always
 --     on the bar on this client, empty or not (no bag bar collapse: checked in game

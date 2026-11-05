@@ -1,5 +1,23 @@
 # Changelog
 
+## 1.11.0 (2026-11-05)
+
+- The two sort choices under How shards move are now called Sort top down and Sort bottom
+  up, more consistent with how their help text describes them. They work the same, and
+  your choice carries over.
+- The line at the bottom of the window is shorter and cleaner: just the version.
+- Chat logging now reads the same in the window and in chat: Log deletions to chat, Log
+  pauses to chat, and `/ssf log on/off`. `/ssf announce` still works, so your macros won't
+  break.
+- Bag counter options now all say "counter": Show shard counter on bag bar, Colorize bag
+  counter, Show counter on soul bag.
+- Shards to keep and Low shard mark (was Low shard warn) now share one box, Soul shard
+  limits. Match soul bag size just goes grey when you have no soul bag.
+- The Delete Shard button now says why it's grey right on the button: cap is 8, SSF paused
+  or no Drain Soul yet.
+- Under the hood: the library behind saved settings (AceDB) is on its latest version.
+  Nothing you see changed.
+
 ## 1.10.2 (2026-10-27)
 
 - The README and the CurseForge page are rewritten: what each option does, and why SSF.
@@ -103,7 +121,7 @@
 - Colorize bag count's help tooltip shows red, green and yellow in their own colors, the
   same shades as on the bag.
 - How shards move's help tooltip shows SSF Mode in green, the safe pick that moves nothing
-  else in your bags. The SoulSort choices stay gold.
+  else in your bags. The sort choices stay gold.
 - All new text in all six languages.
 
 ## 1.8.0 (2026-10-19)
@@ -151,18 +169,17 @@
 
 ## 1.6.0 (2026-10-18)
 
-- How shards move: one selector in Other settings replaces Use legacy SoulSort method and
-  Legacy SoulSort fill order. Pick SSF Mode (the default), SoulSort Normal or SoulSort
-  Reverse; hover a choice for a short description. Your setting carries over.
+- How shards move: one selector in Other settings replaces the two older sort settings.
+  Pick SSF Mode (the default), Normal or Reverse; hover a choice for a short description. Your setting carries over.
 - SSF Mode moves shards only into free slots in your soul bag. Without a soul bag, or with
   a full one, nothing moves, and nothing else in your bags ever moves. Shards are no longer
   gathered into bag 4, and loose shards are deleted before your soul bag's. For one solid
-  block, pick SoulSort Normal or Reverse.
+  block, pick Normal or Reverse.
 - Fixed: a press over the cap always deletes a shard now, even when shards also need to
   move. Before, that press only moved them and the delete waited for a later press.
 - `/ssf` opens the options window as well as printing the status. It only opens: an open
   window stays open. The minimap icon still opens and closes it.
-- `/ssf soulsort` is gone. The mode is set in the options window.
+- The chat command for the sort is gone. The mode is set in the options window.
 - Options window: the section titles no longer flicker when you click a setting.
 - Language: Auto always reads "Auto", like the language names, so you can find your way
   back from a language you can't read.
@@ -186,8 +203,7 @@
   at login and reload.
 - Options window: the two sliders sit together with their checkboxes under them, the
   section titles are larger and in the warlock color, every label lines up on the left,
-  and several labels are clearer (Show minimap button, Use legacy SoulSort method,
-  Legacy SoulSort fill order, Shard bag counter).
+  and several labels are clearer (Show minimap button, Shard bag counter).
 - Low shard warn goes up to 100, the same range as the cap, for warlocks who carry a lot of
   shards. While the cap is lower than it (Match soul bag size with a small pouch), the cap
   is used as the low mark, so the count and the glow always agree. Your setting comes back
@@ -216,9 +232,8 @@
 
 ## 1.3.0 (2026-10-05)
 
-- SoulSort legacy method (Other settings, `/ssf soulsort on|off`), off by default. Sorts
-  the way SoulSort does: shards take every slot in order and an item in the way swaps
-  into the shard's old slot. A dropdown picks SoulSort's Normal (top to bottom) or
+- A sort method (Other settings), off by default. Shards take every slot in order and an
+  item in the way swaps into the shard's old slot. A dropdown picks Normal (top to bottom) or
   Reverse (bottom to top). A soul bag still fills first.
 - A chat command now updates the options window while it is open.
 

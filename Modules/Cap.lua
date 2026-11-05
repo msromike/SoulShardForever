@@ -7,7 +7,7 @@
 --            number is written into the saved cap as it changes, so turning AutoMax off
 --            leaves the cap where the player last saw it (no hidden value jumping back:
 --            Mike, 2026-10-20); otherwise the saved cap, clamped to MIN-MAX and whole.
---   The low mark: the saved Low shard warn, read as saved (LowMark) and held under the cap
+--   The low mark: the saved Low shard mark, read as saved (LowMark) and held under the cap
 --     by Recompute. The slider cannot set it higher (SSFStepperSlider's bound, fed the cap
 --     by Options), and when the cap drops under it (Match soul bag size, a lower cap)
 --     Recompute writes it down to the cap,
@@ -24,7 +24,7 @@
 --     arriving late at login), Cap sends SSF_QUIET_ENDED, with learned = true only when a
 --     learn event came first, so a login never counts as learning it.
 --     Deleting is not gated here: Trimmer:WhyNot answers "paused" before it asks State.
---     IsFull(count): at or over the cap (the Delete Shard button's "At cap"). The
+--     IsFull(count): at or over the cap (Trimmer:WhyNot's "atcap"). The
 --     threshold tests live here and nowhere else; Counter's color, the glow, the chat,
 --     tooltip and broker count and the Delete Shard gate all ask.
 -- Recomputes the cap at login and on bag changes and sends SSF_CAP_CHANGED when the number

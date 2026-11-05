@@ -35,7 +35,8 @@
 -- The /ssf handler wraps AceConfigCmd instead of registering a slash command with it:
 -- AceConfigCmd's dispatch ignores cmdHidden, has no "help" word, and would not open the
 -- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
--- run before every cast), then hands the rest to AceConfigCmd.
+-- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
+-- "log", still works so old macros do; it is not listed anywhere.
 --
 -- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
@@ -137,14 +138,22 @@ local function Gap(order)
     return { type = "description", order = order, name = " ", width = "full", cmdHidden = true }
 end
 
--- The reason under a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
+-- The reason on a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
 -- Language change shows at once.
+local function CapIs() return L["cap is %d"]:format(Cap():Get()) end
 local BLOCKER_TEXT = {
-    atcap = function() return L["At cap"] end,
-    undercap = function() return L["Under cap"] end,
+    atcap = CapIs,
+    undercap = CapIs,
     paused = function() return L["SSF paused"] end,
-    quiet = function() return L["No Drain Soul yet"] end,
+    quiet = function() return L["no Drain Soul yet"] end,
 }
+
+-- every reason the button can show: it sizes itself to the longest
+local function AllBlockers()
+    local list = {}
+    for _, text in pairs(BLOCKER_TEXT) do list[#list + 1] = text() end
+    return list
+end
 
 local function BuildTable()
     local Settings = SSF:GetModule("Settings")
@@ -164,9 +173,9 @@ local function BuildTable()
         disabled = function() return Cap():IsAuto() end,
     })
 
-    local announceGui, announceCmd = Settings:Define("announce", {
+    local announceGui, announceCmd = Settings:Define("log", {
         order = 1, kind = "toggle",
-        name = L["Announce deletions in chat"],
+        name = L["Log deletions to chat"],
         desc = L["Writes a line to chat every time a shard is deleted."],
         get = function() return SSF.db.profile.announce end,
         apply = function(value) SSF.db.profile.announce = value end,
@@ -189,8 +198,8 @@ local function BuildTable()
     -- slider's bound, SSFStepperSlider:SetCustomData, fed through `arg`); Cap keeps the
     -- saved mark under the cap when the cap drops
     local lowmarkGui = Settings:Define("lowmark", {
-        order = 1, kind = "range",
-        name = L["Low shard warn"],
+        order = 3, kind = "range",
+        name = L["Low shard mark"],
         min = Cap().MIN, max = Cap().MAX, step = 1,
         get = function() return SSF.db.profile.lowMark end,
         apply = function(value) SSF.db.profile.lowMark = value end,
@@ -211,8 +220,8 @@ local function BuildTable()
         -- the top row: the count, with Delete Shard right after it, so a click and the number
         -- it changes sit together (Widgets\SSFCentered.lua). A mouse click is the hardware
         -- event Trimmer:Delete needs. Its help is every way to delete (DeleteHelp).
-        -- Greyed whenever a click could not delete (Trimmer:WhyNot), with the reason in gold
-        -- under it, so a click that does nothing never looks like a broken button.
+        -- Greyed whenever a click could not delete (Trimmer:WhyNot), with the reason on its
+        -- face, so a click that does nothing never looks like a broken button.
         deletebutton = {
             type = "execute",
             order = 0,
@@ -231,7 +240,7 @@ local function BuildTable()
             end,
             arg = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
-                return Status():CountText(), why and BLOCKER_TEXT[why]()
+                return Status():CountText(), why and BLOCKER_TEXT[why](), AllBlockers()
             end,
             disabled = function() return SSF:GetModule("Trimmer"):WhyNot() ~= nil end,
             func = function() SSF:GetModule("Trimmer"):Delete() end,
@@ -275,7 +284,7 @@ local function BuildTable()
                     end,
                     disabled = function() return NotPaused() or not SSF.db.profile.pauseSound end,
                 },
-                pauselog = Toggle(4, L["Log pause to chat"],
+                pauselog = Toggle(4, L["Log pauses to chat"],
                     function() return SSF.db.profile.pauseLog end,
                     function(_, value)
                         SSF.db.profile.pauseLog = value
@@ -287,14 +296,11 @@ local function BuildTable()
 
         cap = {
             type = "group", inline = true, order = 10, cmdHidden = true,
-            name = L["Soul shard cap"],
+            name = L["Soul shard limits"],
             args = {
                 setmaxGui = setmaxGui,
                 automax = Toggle(2, -- left-aligned like every other checkbox
-                    function()
-                        if Bags():HasSoulBag() then return L["Match soul bag size"] end
-                        return L["Match soul bag size (no soul bag)"]
-                    end,
+                    L["Match soul bag size"],
                     function() return SSF.db.profile.autoMax end,
                     function(_, value)
                         SSF.db.profile.autoMax = value
@@ -302,6 +308,9 @@ local function BuildTable()
                         changed("automax")
                     end,
                     function() return not Bags():HasSoulBag() end),
+                -- the two sliders sit together. The low mark sets where red starts everywhere
+                -- (bag, tooltip, window, chat), so it is never greyed
+                lowmark = lowmarkGui,
             },
         },
 
@@ -309,7 +318,7 @@ local function BuildTable()
             type = "group", inline = true, order = 30, cmdHidden = true,
             name = L["Soul shard counter"],
             args = {
-                counter = Toggle(1, L["Show shard count on bag bar"],
+                counter = Toggle(1, L["Show shard counter on bag bar"],
                     function() return SSF.db.profile.counter end,
                     function(_, value)
                         SSF.db.profile.counter = value
@@ -327,7 +336,7 @@ local function BuildTable()
                     CounterOffOrPaused, nil, 2),
                 -- the number follows an equipped soul bag (Counter); greyed with the
                 -- count off, but never for a missing soul bag: it waits for one to go on
-                soulbag = Toggle(4, L["Show on soul bag when equipped"],
+                soulbag = Toggle(4, L["Show counter on soul bag"],
                     function() return SSF.db.profile.counterSoulBag end,
                     function(_, value)
                         SSF.db.profile.counterSoulBag = value
@@ -335,7 +344,7 @@ local function BuildTable()
                     end,
                     CounterOff, nil, 2),
                 -- glow, colorize and soul bag all hang off the count checkbox, one step in
-                colorize = Toggle(3, L["Colorize bag count"],
+                colorize = Toggle(3, L["Colorize bag counter"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
                         SSF.db.profile.counterColorize = value
@@ -363,19 +372,11 @@ local function BuildTable()
             },
         },
 
-        -- right under the cap group, so the two sliders sit together. The low mark sets where
-        -- red starts everywhere (bag, tooltip, window, chat), so it is never greyed
-        glow = {
-            type = "group", inline = true, order = 20, cmdHidden = true,
-            name = L["Soul shard warning"],
-            args = { lowmark = lowmarkGui },
-        },
-
         other = {
             type = "group", inline = true, order = 40, cmdHidden = true,
             name = L["Other settings"],
             args = {
-                -- How shards move: SSF Mode, or SoulSort's sort in its Normal or Reverse
+                -- How shards move: SSF Mode, or a sort in top down or bottom up
                 -- order (soulsortLegacy, soulsortReverse). What each choice does is in its help
                 -- line, with the others' (help table below). SSF Mode leaves soulsortReverse as it is.
                 shardmode = {
@@ -387,8 +388,8 @@ local function BuildTable()
                     name = L["How shards move"],
                     values = {
                         ssf = L["SSF Mode"],
-                        normal = L["SoulSort Normal"],
-                        reverse = L["SoulSort Reverse"],
+                        normal = L["Sort top down"],
+                        reverse = L["Sort bottom up"],
                     },
                     sorting = { "ssf", "normal", "reverse" },
                     get = function()
@@ -445,7 +446,7 @@ local function BuildTable()
 
         -- chat commands, hidden from the window
         setmax = setmaxCmd,
-        announce = announceCmd,
+        log = announceCmd,
         pause = pauseCmd,
         delete = {
             type = "execute",
@@ -476,7 +477,7 @@ local function BuildTable()
     -- Help lines: each option's tooltip while help mode is on (ApplyHelp), by group and key.
     -- The cap, Pause and Announce lines come with their Settings:Define above. Plain
     -- sentences: the tooltip wraps them itself. Only How shards move keeps one line per choice.
-    local lowWarn = L["Low shard warn"] -- quoted by name in two lines, in the player's language
+    local lowWarn = L["Low shard mark"] -- quoted by name in two lines, in the player's language
     local bullet = "\226\128\162 "     -- "• "
     local help = {
         pausegroup = {
@@ -486,8 +487,6 @@ local function BuildTable()
         },
         cap = {
             automax = L["Sets cap automatically to the size of all soul bags (one or multiple)."],
-        },
-        glow = {
             lowmark = L["If shard count is lower than this, you will be notified with a red color change (and glow if enabled)."],
         },
         bagcount = {
@@ -503,13 +502,13 @@ local function BuildTable()
         other = {
             -- the intro, then one bullet per choice with a blank line between, each led by
             -- the choice's own name: SSF Mode in the state green (the safe pick, it moves
-            -- nothing else), the SoulSort ones in neutral gold
+            -- nothing else), the sort ones in neutral gold
             shardmode = L["How a macro or keybind moves shards."] .. " " .. L["Shards move to soul bag."]
                 .. "\n\n" .. bullet .. Colors():State(L["SSF Mode"] .. ":", true) .. " "
                 .. L["SSF does not sort (does NOT change item positions in bags)."]
-                .. "\n\n" .. bullet .. Gold(L["SoulSort Normal"] .. ":") .. " "
+                .. "\n\n" .. bullet .. Gold(L["Sort top down"] .. ":") .. " "
                 .. L["Shards sort top down (CHANGES item positions in your bags)."]
-                .. "\n\n" .. bullet .. Gold(L["SoulSort Reverse"] .. ":") .. " "
+                .. "\n\n" .. bullet .. Gold(L["Sort bottom up"] .. ":") .. " "
                 .. L["Shards sort bottom up (CHANGES item positions in your bags)."],
             minimap = L["Enables SSF minimap icon."],
             language = L["Auto uses game client language."],
@@ -586,6 +585,10 @@ local function HandleCommand(input)
     -- it before every cast, and an echo there would flood chat.
     if first ~= "delete" then
         SSF:Print(Colors():Echo("> /ssf" .. (input ~= "" and (" " .. input) or "")))
+    end
+    if first == "announce" then -- the old word for "log": old macros keep working
+        input = "log" .. input:sub(#first + 1)
+        first = "log"
     end
     if input == "" then
         SSF:GetModule("Window"):Open()

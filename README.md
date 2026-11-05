@@ -2,11 +2,11 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.11.0: Clearer labels throughout, one Soul shard limits box, and Delete Shard says why it's grey right on the button.
+
 1.10.2: The README and the CurseForge page are rewritten. Under the hood cleanup; nothing you see changed.
 
 1.10.1: Tab completion in chat no longer jumps back to `/ssf `, and cycles in order.
-
-1.10.0: Guided onboarding that knows your level: before Drain Soul, SSF stays quiet, and the welcome comes back when you learn it. A brighter yellow over the cap, a truer red when low, and the number on a darkened bag. The welcome shows once more after this update.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
@@ -63,7 +63,7 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
   and SSF_BoA, reloads your UI, and opens the macro window with them glowing until you
   drag them onto a bar.
 
-- **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason under it: At cap, Under cap, SSF paused or No Drain Soul yet. The window closes itself when a fight starts and opens again only after it.
+- **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason on the button: your cap (cap is 8), SSF paused or no Drain Soul yet. The window closes itself when a fight starts and opens again only after it.
 
 Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless you pick one of the sort modes.
 
@@ -90,7 +90,7 @@ The minimap icon opens and closes the window. Its tooltip always shows the count
 | `/ssf delete` | Delete one shard if over the cap, then move shards |
 | `/ssf pause on/off` | Pause all SSF actions. Naked shows status |
 | `/ssf setmax N` | Set the cap, and turn off Match soul bag size. Naked shows cap |
-| `/ssf announce on/off` | Chat line per deletion. Naked shows status |
+| `/ssf log on/off` | Chat line per deletion. Naked shows status |
 | `/ssf options` | Opens the GUI window (`/ssf settings` does as well) |
 
 Tab autocompletes the SSF commands in chat (try it, I hate typing). `/click SSFDelete` does the same as `/ssf delete` (for keybind addons that can't run slash commands).

@@ -11,7 +11,7 @@
 -- A "-" or "+" press runs the stock wheel handler one notch, which clamps, rounds to the
 -- step, updates the text and fires OnValueChanged; then OnMouseUp fires as the stock value
 -- box does on Enter, so AceConfigDialog refreshes.
--- The bound (the option's `arg`, a number or a function returning one; the Low shard warn
+-- The bound (the option's `arg`, a number or a function returning one; the Low shard mark
 -- slider gets the cap): the scale stays min to max, but any value past the bound, from a
 -- drag, the "+" or the typed box, is set back to the bound before AceConfigDialog hears
 -- of it; the "+" greys at the bound; the track beyond the bound is drawn dim with a gold

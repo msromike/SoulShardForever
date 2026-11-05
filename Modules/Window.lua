@@ -5,8 +5,8 @@
 -- Options'; this module reaches it only through AceConfigDialog / AceConfigRegistry by the
 -- app name "SSF". Tooltips are the Tooltip module's: the window hands it its frame.
 --
--- Layout: the count with Delete Shard beside it, then inline groups (Pause, Cap, Low shard
--- warning, Bag count) and Other, then a small version/credit line. Toggles are full width
+-- Layout: the count with Delete Shard beside it, then inline groups (Pause, Limits, Bag count)
+-- and Other, then a small version line. Toggles are full width
 -- except Play pause sound, which shares its row with the volume dropdown; a label that
 -- does not fit (the window is capped at the screen's width) wraps and grows its row
 -- (Widgets\SSFCentered.lua). The window sizes itself to the content after every feed,
@@ -126,7 +126,7 @@ function Window:DressWindow()
     self.window:SetHelpButton(function() Options:ToggleHelp() end, on,
         on and L["Help ON: Click to hide tooltip help."]
         or L["Help OFF: Click to show tooltip help when you hover over an option."])
-    self.window:SetFooter("v" .. SSF.VERSION .. "  " .. L["Started as a fork of SoulSort by Anilusion."])
+    self.window:SetFooter("v" .. SSF.VERSION)
 end
 
 -- Group titles one font size up in SSF's own window, so the sections stand apart. The boxes
@@ -283,7 +283,7 @@ function Window:Open()
             window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
         end)
         -- bottom row: Create macros far left while shown, Key Bindings far right, the
-        -- version and credit under them
+        -- the version under them
         self:DressWindow()
         -- The first open of a session measures before every text size is settled (the
         -- window has not been drawn yet), which leaves a gap above the buttons. Feed again

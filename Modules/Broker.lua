@@ -34,7 +34,7 @@ local function ShowTooltip(tooltip)
     tooltip:AddDoubleLine(L["Soul Shards"], Status:CountValue(), dr, dg, db)
     tooltip:AddLine(" ")
     tooltip:AddDoubleLine(L["Soul shard cap"], Status:CapValue(), dr, dg, db)
-    tooltip:AddDoubleLine(L["Low shard warn"], Status:LowMarkValue(), dr, dg, db)
+    tooltip:AddDoubleLine(L["Low shard mark"], Status:LowMarkValue(), dr, dg, db)
     tooltip:AddDoubleLine(L["SSF paused"], Status:PausedValue(), dr, dg, db)
 end
 

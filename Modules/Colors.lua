@@ -10,7 +10,7 @@
 -- One red everywhere (bag number, chat, tooltip, the low glow), one green, one yellow: the
 -- pure ones, as vivid as each other (the yellow was the label gold and the red a lightened
 -- coral until 1.9.1; picked by eye on the bag: Mike, 2026-10-22). Gold is the game's label color (NORMAL_FONT_COLOR): names
--- quoted in help lines, tooltip titles, the cap tick on the Low shard warn slider. White is
+-- quoted in help lines, tooltip titles, the cap tick on the Low shard mark slider. White is
 -- the neutral value color for settings. Green doubles as the branding accent on the login
 -- line, by Mike's call. Grey never colors a state (it reads as "disabled"); the two greys
 -- here are the tooltip's dim label and the chat command echo, which is meant to read as a

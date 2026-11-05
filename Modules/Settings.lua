@@ -85,7 +85,7 @@ function Settings:Define(key, def)
         gui.dialogControl = "SSFStepperSlider" -- Widgets\SSFStepperSlider.lua: "-" and "+" buttons at the value box
     else
         gui.dialogControl = "SSFIndentCheckBox" -- Widgets\SSFCentered.lua: inset in its group
-        valueWords[key] = VALUE_WORDS -- "/ssf announce o<Tab>" completes the value word too (Options)
+        valueWords[key] = VALUE_WORDS -- "/ssf log o<Tab>" completes the value word too (Options)
     end
 
     local cmd = {

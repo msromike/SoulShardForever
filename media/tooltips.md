@@ -22,9 +22,9 @@ Help ON: Click to hide tooltip help.
 
 ## Delete Shard * (top row, beside the count)
 
-Greyed whenever a click could not delete (Options' Blocker), with one reason under it in
-gold. While paused it always says SSF paused, whatever the count. Unpaused: At cap or
-Under cap. No combat reason: the window closes when a fight starts and can't be opened
+Greyed whenever a click could not delete (Options' Blocker), with one reason on the button,
+under its name. While paused it always says SSF paused, whatever the count. Unpaused:
+cap is N, or no Drain Soul yet. No combat reason: the window closes when a fight starts and can't be opened
 until it's over. The help below still shows on the greyed button while help is on.
 
 SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match.
@@ -63,11 +63,11 @@ Each press while paused plays a sound.
 
 Sets how loud the pause sound is.
 
-### Log pause to chat
+### Log pauses to chat
 
 Each press while paused prints a chat line.
 
-## Soul shard cap
+## Soul shard limits
 
 ### Shards to keep *
 
@@ -77,9 +77,7 @@ Your shard cap. Shards over this number are deleted one per press.
 
 Sets cap automatically to the size of all soul bags (one or multiple).
 
-## Soul shard warning
-
-### Low shard warn
+### Low shard mark
 
 If shard count is lower than this, you will be notified with a red color change (and glow if enabled).
 
@@ -87,26 +85,26 @@ Never greyed: it sets where red starts everywhere.
 
 ## Soul shard counter
 
-### Show shard count on bag bar
+### Show shard counter on bag bar
 
 Shows your shard count on a bag button (soul bag by default, left bag slot otherwise).
 
 ### Glow bag button when low
 
-The bag button glows while you are below "Low shard warn".
+The bag button glows while you are below "Low shard mark".
 
-"Low shard warn" is filled in from its own label. First under Show shard count on bag bar,
+"Low shard mark" is filled in from its own label. First under Show shard counter on bag bar,
 greyed with it off (the glow needs the count).
 
-### Colorize bag count
+### Colorize bag counter
 
-Red when below "Low shard warn", green in range, and yellow over the cap.
+Red when below "Low shard mark", green in range, and yellow over the cap.
 
 Each color word is drawn in its own color, the bag's shades (Colors' red, green and over-cap
 yellow). The code paints the words; each translation takes them as arguments, like "Low shard
-warn".
+mark".
 
-### Show on soul bag when equipped
+### Show counter on soul bag
 
 Moves the counter to your soul bag, whatever slot it's in.
 
@@ -120,7 +118,7 @@ The font used on the shard counter.
 
 Enables SSF minimap icon.
 
-### Announce deletions in chat *
+### Log deletions to chat *
 
 Writes a line to chat every time a shard is deleted.
 
@@ -130,11 +128,11 @@ Writes a line to chat every time a shard is deleted.
 
     • SSF Mode: SSF does not sort (does NOT change item positions in bags).
 
-    • SoulSort Normal: Shards sort top down (CHANGES item positions in your bags).
+    • Sort top down: Shards sort top down (CHANGES item positions in your bags).
 
-    • SoulSort Reverse: Shards sort bottom up (CHANGES item positions in your bags).
+    • Sort bottom up: Shards sort bottom up (CHANGES item positions in your bags).
 
-SSF Mode's name is drawn green (the safe pick); the SoulSort names are gold.
+SSF Mode's name is drawn green (the safe pick); the sort names are gold.
 
 ### Language
 
@@ -162,7 +160,7 @@ The same lines every time; labels grey, values as noted:
     Soul Shards        13    red below warn / green in range / yellow over cap, always
     (blank line)             the count above, the settings below
     Soul shard cap     16    white
-    Low shard warn      6    white, the setting as set
+    Low shard mark      6    white, the setting as set
     SSF paused         No    green No / red Yes
 
 ## Welcome note (first load, once per welcome version per character; also from Create macros)

@@ -4,11 +4,14 @@
 -- the options table through `dialogControl`. AceConfigDialog drives them exactly like the
 -- originals.
 --   SSFCountButton      : a Button with a line of large text before it, the pair centered
---                         in its row (the count and Delete Shard), and a small gold reason
---                         under the button (why it is greyed). For an `execute` option: its
---                         name is the button's label, its `arg` a function that returns the
---                         text and the reason (nil for none), its `disabled` greys it.
---                         Greyed, it still shows its tooltip on hover.
+--                         in its row (the count and Delete Shard). The button is one fixed
+--                         size, tall enough for two lines and wide enough for its longest:
+--                         its label alone sits centered, a reason (why it is greyed) goes
+--                         on the line under the label. For an `execute` option: its name
+--                         is the button's label, its `arg` a function that returns the
+--                         text, the reason (nil for none) and a list of every reason it
+--                         can show, its `disabled` greys it. Greyed, it still shows its
+--                         tooltip on hover.
 --   SSFUnlabeledDropdown: a Dropdown whose label never shows; its name is only the title
 --                         of its tooltip.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
@@ -32,7 +35,7 @@
 --          SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level); MinWidth().
 --          MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth
 --          sizes the window to.
--- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
+-- Lib internals: the stock Button's frame and text, the stock CheckBox's text and frame, AceGUI's
 --          frame.width field (read, and written by the check box's Fit), and
 --          AceGUI.WidgetRegistry (the Dropdown constructor, for the re-typed one). An AceGUI
 --          bump that renames those breaks the top row, the check boxes' layout, or the
@@ -52,19 +55,18 @@ end
 -- SSFCountButton
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFCountButton", 4
+    local Type, Version = "SSFCountButton", 5
     local GAP = 12     -- px between the text and the button
-    local REASON_GAP = 2 -- px between the button and the reason under it
-    local BELOW = 6    -- air under the reason line, before the first group
+    local HEIGHT = 36  -- the button: two lines of text
+    local PAD = 30     -- the button's side margins, the stock autoWidth's
+    local BELOW = 6    -- air under the button, before the first group
 
     -- the text and the button side by side, on one line
     local function PairWidth(self)
         return (self.label:GetUnboundedStringWidth() or 0) + GAP + (self.inner.frame:GetWidth() or 0)
     end
 
-    -- the text, then the button right after it, the pair centered in the row; the reason
-    -- under the button, its line's height kept even when empty, so nothing moves. The
-    -- button sizes itself to its label: the stock Button's autoWidth.
+    -- the text, then the button right after it, the pair centered in the row
     local function Layout(self)
         local width = self.frame.width or self.frame:GetWidth() or 0
         local button = self.inner
@@ -74,34 +76,47 @@ do
             -(height - (self.label:GetStringHeight() or 0)) / 2)
         button.frame:ClearAllPoints()
         button.frame:SetPoint("LEFT", self.label, "RIGHT", GAP, 0)
-        self.reason:ClearAllPoints()
-        self.reason:SetPoint("TOP", button.frame, "BOTTOM", 0, -REASON_GAP)
-        local _, size = self.reason:GetFont()
-        self:SetHeight(height + REASON_GAP + (size or 10) + BELOW)
+        self:SetHeight(height + BELOW)
+    end
+
+    -- the button's width: its longest line in any state, so it never changes size. Measured
+    -- on the button's own text, then the face is written over it: the label, and the reason
+    -- under it when there is one.
+    local function Refresh(self)
+        local text, widest = self.inner.text, 0
+        local function Measure(line)
+            text:SetText(line)
+            widest = math.max(widest, text:GetUnboundedStringWidth() or 0)
+        end
+        Measure(self.name or "")
+        for _, reason in ipairs(self.reasons or {}) do Measure(reason) end
+        self.inner:SetWidth(widest + PAD)
+        self.inner:SetText(self.reason and ((self.name or "") .. "\n" .. self.reason) or self.name)
+        Layout(self)
     end
 
     local methods = {
         ["OnAcquire"] = function(self)
             self.inner:OnAcquire() -- the stock reset, which turns autoWidth off
-            self.inner:SetAutoWidth(true)
+            self.inner:SetHeight(HEIGHT)
             self:SetWidth(200)
             self.label:SetText("")
-            self.reason:SetText("")
+            self.name, self.reason, self.reasons = nil, nil, nil
         end,
         ["OnWidthSet"] = function(self) Layout(self) end,
         -- the option's name: the button's label
-        ["SetText"] = function(self, text) self.inner:SetText(text) Layout(self) end,
-        -- the option's `arg`: a function returning the text before the button and the
-        -- reason under it (nil for none)
+        ["SetText"] = function(self, text) self.name = text Refresh(self) end,
+        -- the option's `arg`: a function returning the text before the button, the reason
+        -- on it (nil for none) and every reason it can show
         ["SetCustomData"] = function(self, getText)
-            local text, reason
-            if type(getText) == "function" then text, reason = getText() end
+            local text, reason, reasons
+            if type(getText) == "function" then text, reason, reasons = getText() end
             self.label:SetText(text or "")
-            self.reason:SetText(reason or "")
-            Layout(self)
+            self.reason, self.reasons = reason, reasons
+            Refresh(self)
         end,
         -- Greyed, the button still answers a hover with its tooltip (what it does, and the
-        -- reason sits under it in gold): a disabled button blocks the mouse without using
+        -- reason on its face): a disabled button blocks the mouse without using
         -- it, so the mouse is let through to the widget's own frame, which fires OnEnter.
         ["SetDisabled"] = function(self, v)
             self.inner:SetDisabled(v)
@@ -115,7 +130,6 @@ do
         local frame = CreateFrame("Frame", nil, UIParent)
         local widget = { frame = frame, type = Type }
         widget.label = frame:CreateFontString(nil, "OVERLAY", "GameFontHighlightLarge")
-        widget.reason = frame:CreateFontString(nil, "OVERLAY", "GameFontNormalSmall") -- gold
         local inner = AceGUI:Create("Button")
         inner.frame:SetParent(frame)
         inner.frame:Show()
