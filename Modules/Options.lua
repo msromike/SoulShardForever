@@ -176,19 +176,19 @@ local function BuildTable()
         disabled = function() return Cap():IsAuto() end,
     })
 
-    local announceGui, announceCmd = Settings:Define("log", {
+    local logGui, logCmd = Settings:Define("log", {
         order = 1, kind = "toggle",
         name = L["Log deletions to chat"],
         desc = L["Writes a line to chat every time a shard is deleted."],
         get = function() return SSF.db.profile.announce end,
         apply = function(value) SSF.db.profile.announce = value end,
     })
-    announceGui.order = 2 -- GUI only: Other is minimap, announce, How shards move, language; the chat order stays
+    logGui.order = 2 -- GUI only: Other is minimap, log deletions, How shards move, language; the chat order stays
 
     -- "/ssf announce", the old word for "/ssf log": the same command, hidden from the help
     -- list and from Tab, so old macros keep working. The handler below lets it through.
     local announceOld = {}
-    for field, value in pairs(announceCmd) do announceOld[field] = value end
+    for field, value in pairs(logCmd) do announceOld[field] = value end
     announceOld.cmdHidden = true
 
     local pauseGui, pauseCmd = Settings:Define("pause", {
@@ -413,7 +413,7 @@ local function BuildTable()
                         changed("shardmode")
                     end,
                 },
-                announceGui = announceGui,
+                logGui = logGui,
                 minimap = Toggle(1, L["Show minimap icon"],
                     function() return not SSF.db.profile.minimap.hide end,
                     function(_, value)
@@ -455,7 +455,7 @@ local function BuildTable()
 
         -- chat commands, hidden from the window
         setmax = setmaxCmd,
-        log = announceCmd,
+        log = logCmd,
         [OLD_LOG_WORD] = announceOld,
         pause = pauseCmd,
         delete = {
@@ -485,9 +485,9 @@ local function BuildTable()
     }
 
     -- Help lines: each option's tooltip while help mode is on (ApplyHelp), by group and key.
-    -- The cap, Pause and Announce lines come with their Settings:Define above. Plain
+    -- The cap, Pause and Log lines come with their Settings:Define above. Plain
     -- sentences: the tooltip wraps them itself. Only How shards move keeps one line per choice.
-    local lowWarn = L["Low shard mark"] -- quoted by name in two lines, in the player's language
+    local lowMarkName = L["Low shard mark"] -- quoted by name in two lines, in the player's language
     local bullet = "\226\128\162 "     -- "• "
     local help = {
         pausegroup = {
@@ -501,10 +501,10 @@ local function BuildTable()
         },
         bagcount = {
             counter = L["Shows your shard count on a bag button (soul bag by default, left bag slot otherwise)."],
-            lowglow = L['The bag button glows while you are below "%s".']:format(lowWarn),
+            lowglow = L['The bag button glows while you are below "%s".']:format(lowMarkName),
             -- the three color words in the bag's own state colors, so the line shows what it teaches
             colorize = L['%s when below "%s", %s in range, and %s over the cap.']:format(
-                Colors():PaintState("low", L["Red"]), lowWarn,
+                Colors():PaintState("low", L["Red"]), lowMarkName,
                 Colors():PaintState("ok", L["green"]), Colors():PaintState("over", L["yellow"])),
             soulbag = L["Moves the counter to your soul bag, whatever slot it's in."],
             font = L["The font used on the shard counter."],

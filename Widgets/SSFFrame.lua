@@ -69,15 +69,16 @@ local AceHook = LibStub("AceHook-3.0")
 
 local FRAME_NAME = "SSFOptionsWindow" -- global name so UISpecialFrames (Escape) can find it
 local EDGE = 17                       -- the content's, buttons' and footer's inset from the sides
+local BUTTON_HEIGHT = 22              -- the bottom row's buttons
+local ROW_OFFSET = 14                 -- the bottom row's distance from the frame's bottom edge
+local ROW_GAP = 6                     -- px between the content and the bottom row
 local TOP_INSET = 35                  -- the content's inset from the top (the title art)
-local BOTTOM_INSET = 42               -- the content's inset from the bottom: the button row
+local BOTTOM_INSET = ROW_OFFSET + BUTTON_HEIGHT + ROW_GAP -- the content's inset from the bottom: the button row
 local CHROME = TOP_INSET + BOTTOM_INSET
 local STOCK_BOTTOM_INSET = 57         -- what the stock Frame's OnHeightSet takes off the height it records for its content
 local DEFAULT_WIDTH, DEFAULT_HEIGHT = 420, 380 -- before the first fit
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
-local BUTTON_HEIGHT = 22              -- the bottom row's buttons
-local ROW_OFFSET = 14                 -- the bottom row's distance from the frame's bottom edge
 local SCREEN_MARGIN = 40              -- the window is never taller or wider than the screen minus this
 local BUTTON_GAP = 8                  -- px kept between the two bottom buttons
 local X_INSET = 5                     -- the X sits this far in from the corner
@@ -308,7 +309,7 @@ local methods = {
         self.titleband:SetColorTexture(black[1], black[2], black[3], alpha or 0)
     end,
 
-    -- the bottom-left button, sized to its text; nil text hides it. tipText: its help line
+    -- the bottom-left button, as wide as the wider of it and the right one; nil text hides it. tipText: its help line
     -- (ButtonTip), nil for none
     ["SetActionButton"] = function(self, text, onClick, tipText)
         if not text then
@@ -338,7 +339,7 @@ local methods = {
         self.middlebutton:Show()
     end,
 
-    -- turns the bottom-right button into an action button, sized to its text; the X and
+    -- turns the bottom-right button into an action button, as wide as the wider of it and the left one while that shows; the X and
     -- Escape still close the window. tipText: as SetActionButton
     ["SetRightButton"] = function(self, text, onClick, tipText)
         self.closebutton:SetText(text)
