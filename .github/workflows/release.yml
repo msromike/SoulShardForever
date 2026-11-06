@@ -1,0 +1,34 @@
+# Builds the addon zip from a version tag and posts it as a GitHub Release, for addon managers
+# that install from Releases (Strongbox). CurseForge builds its own package from the same tag
+# through its webhook; no CurseForge token is set here, so this never uploads there.
+# Run by hand on an existing tag to publish it or to retry a failed run, without re-tagging:
+#   gh workflow run release.yml -f tag=v1.2.3
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing tag to publish, such as v1.11.0
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ inputs.tag || github.ref }}
+
+      # -u keeps LF line endings, so the zip's files match the repo's. The packager's default is CRLF.
+      - uses: BigWigsMods/packager@v2
+        with:
+          args: -u
+        env:
+          GH_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
