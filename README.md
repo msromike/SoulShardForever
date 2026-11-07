@@ -2,11 +2,11 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.11.1: Verify build consistent against Strongbox and CurseForge. No user-facing changes.
+
 1.11.0: Clearer labels throughout, one Soul shard limits box, and Delete Shard says why it's grey right on the button.
 
 1.10.2: The README and the CurseForge page are rewritten. Under the hood cleanup; nothing you see changed.
-
-1.10.1: Tab completion in chat no longer jumps back to `/ssf `, and cycles in order.
 
 [..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 

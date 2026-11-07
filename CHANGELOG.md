@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.11.1 (2026-11-06)
+
+- Verify build consistent against Strongbox and CurseForge. No user-facing changes.
+
 ## 1.11.0 (2026-11-05)
 
 - The two sort choices under How shards move are now called Sort top down and Sort bottom
