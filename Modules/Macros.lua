@@ -2,7 +2,8 @@
 --
 -- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 -- Holds their text (the one source: the help text shows exactly what Create writes), says
--- whether each exists, makes the missing ones on a click, reloads (a new macro shows a stale
+-- whether each exists, makes the missing ones on a click and hands back /reload for the
+-- note's secure button to run (a new macro shows a stale
 -- icon until a reload: a game bug) and then opens Blizzard's macro window on the first of
 -- them (SSF_LT). The
 -- player drags them to a bar; SSF never places a macro.
@@ -12,7 +13,8 @@
 -- free slot for each, else all to the account's, else a red error and nothing is made.
 -- In combat Create does nothing.
 --
--- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create().
+-- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(),
+--          Create() -> "/reload" once it made macros, else nil.
 --          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
 -- Listens: UPDATE_MACROS, bucketed (it fires in bursts of about five, even on a click in
 --          Blizzard's macro window); LOADING_SCREEN_DISABLED once, after Create's reload.
@@ -119,9 +121,11 @@ function Macros:Create()
     end
     -- A new macro shows a stale icon (another macro's) until the next reload, even made
     -- exactly as Blizzard's macro window makes it, and nothing short of a reload clears it
-    -- (tested in game, 2026-10-19). So: reload, then open the macro window on them.
+    -- (tested in game, 2026-10-19). So: hand the note's button /reload to run as its click
+    -- (the secure path; a direct ReloadUI() from addon code can be blocked, as MSBT's was on
+    -- 2026-11-08), then open the macro window on them.
     SSF.db.profile.macroWindowAfterReload = true
-    ReloadUI()
+    return "/reload"
 end
 
 -- After Create's reload: the macro window on the first of SSF's macros (ShowFirst), once.

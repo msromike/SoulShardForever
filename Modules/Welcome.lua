@@ -25,7 +25,7 @@
 --          button note's "reloads your UI");
 --          Options:IsHelpOn/ToggleHelp,
 --          Window:ShowNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
---          button).
+--          button; Create's return is the click's command).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
 --          Soul is learned), and WELCOME_VERSION once the player closes it outside a fight.
 --          profile.welcomeAgain: true from the learn until that close (the second title).
@@ -72,7 +72,7 @@ function Welcome:Show()
             lead = quiet and Colors:Paint(Colors.GREEN, L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."]) or nil,
             blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."]:format(L["Delete Shard"], L["Delete Shard"])),
             button = L["Create recommended macros"],
-            onClick = function() Macros:Create() end,
+            onClick = function() return Macros:Create() end,
             buttonNote = L["Creates the macros, %s and opens the macro box after the reload."]:format(Colors:Paint(Colors.GREEN, L["reloads your UI"])),
             buttonDisabled = not Macros:AnyMissing(), -- both made already: nothing to do
             onClose = function()

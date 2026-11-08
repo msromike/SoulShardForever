@@ -31,7 +31,7 @@ read_globals = {
     "C_Container", "C_Item", "C_AddOns", "C_Spell", "C_SpellBook", "C_Sound", "Enum", "Constants",
     "ItemLocation", "NUM_BAG_SLOTS", "RAID_CLASS_COLORS",
     -- functions
-    "InCombatLockdown", "UnitAffectingCombat", "UnitClassBase", "GetLocale", "ReloadUI",
+    "InCombatLockdown", "UnitAffectingCombat", "UnitClassBase", "GetLocale", "GetCVarBool",
     "GetRealmName", "IsPlayerSpell",
     "ClearCursor", "GetCursorInfo", "DeleteCursorItem",
     "GetMacroIndexByName", "GetNumMacros", "CreateMacro", "GetActionText",

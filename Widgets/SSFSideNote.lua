@@ -8,7 +8,7 @@
 -- carries its own color, with its own divider
 -- under it: the two show together or not at all, so dividers never double), then the blocks
 -- (paragraphs left-justified, macros each in a dark box), a small note
--- above the button, the button, and a gold note line last. Its width is SIDE_WIDTH of the
+-- above the button, the button (a secure action button), and a gold note line last. Its width is SIDE_WIDTH of the
 -- window's, never so narrow that the centered title runs into its X. It closes by its own X
 -- or when the window closes (SSFFrame tells it), and tells its owner once either way.
 --
@@ -20,7 +20,9 @@
 --          Show(title, body, note, opts, titleColor) -- opts, all optional: lead (the gold
 --            line under the body's divider, with its own divider), blocks (a list
 --            of { text } paragraphs and { text, macro = true } macros), button and onClick
---            (a button as wide as its text), buttonNote (a small line just above the
+--            (a button as wide as its text; onClick runs on the click, before it, and a
+--            slash command it returns then runs as the click through the game's secure
+--            path, so /reload from it can't be blocked), buttonNote (a small line just above the
 --            button: what a click does), buttonDisabled (greys the button), onClose
 --            (called once when the note closes). titleColor: { r, g, b } or nil.
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's
@@ -28,7 +30,7 @@
 --          Close() -- hide and tell the owner once. IsShown() -> bool.
 -- Reads:   Colors.CODE (macro text), SLATE (a macro box's edge), WHITE (the dividers) and
 --          BLACK (a macro box's fill, the shade). Owns no state beyond the shown texts, the
---          onClose and its owner frame (AttachTo).
+--          onClick, the onClose and its owner frame (AttachTo).
 -- Touches nothing else.
 
 local Type, Version = "SSFSideNote", 2
@@ -219,7 +221,8 @@ local methods = {
             local button = self.button
             button:SetText(" " .. opts.button .. " ")
             button:SetWidth((button:GetFontString():GetStringWidth() or 0) + SIDE_BUTTON_EDGE)
-            button:SetScript("OnClick", opts.onClick)
+            self.onClick = opts.onClick -- run by PreClick; never SetScript OnClick, it would replace the secure handler
+            button:RegisterForClicks(GetCVarBool("ActionButtonUseKeyDown") and "LeftButtonDown" or "LeftButtonUp")
             button:SetEnabled(not opts.buttonDisabled)
         end
         self.button:SetShown(opts.button ~= nil)
@@ -308,7 +311,17 @@ local function Constructor()
     widget.note = note
 
     -- the optional button, as wide as its text (Show), as tall as the window's (AttachTo)
-    local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate")
+    -- a secure action button: what onClick returns runs as the click, through the game's
+    -- secure path, so /reload from it can't be blocked (TSM's reload buttons work the same way)
+    local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate, SecureActionButtonTemplate")
+    button:SetAttribute("*type1", "macro")
+    button:SetAttribute("*macrotext1", "")
+    -- onClick runs first; the attribute is set fresh on every click, so a stale command never fires
+    button:SetScript("PreClick", function()
+        if InCombatLockdown() then return end -- attributes are locked in a fight
+        local command = widget.onClick and widget.onClick()
+        button:SetAttribute("*macrotext1", command or "")
+    end)
     button:Hide()
     widget.button = button
 
