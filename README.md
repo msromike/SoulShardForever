@@ -2,6 +2,8 @@
 
 **\*\*\* Changelog \*\*\***
 
+1.11.2: Create recommended macros reloads your UI the way typing /reload does, so the game can't block it. Nothing you see changed.
+
 1.11.1: Verify build consistent against Strongbox and CurseForge. No user-facing changes.
 
 1.11.0: Clearer labels throughout, one Soul shard limits box, and Delete Shard says why it's grey right on the button.

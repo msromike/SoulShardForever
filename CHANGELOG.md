@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.11.2 (2026-11-08)
+
+- Create recommended macros now reloads your UI the same way typing /reload does, so the
+  game can't block the reload with an error. It looks and works the same.
+
 ## 1.11.1 (2026-11-06)
 
 - Verify build consistent against Strongbox and CurseForge. No user-facing changes.

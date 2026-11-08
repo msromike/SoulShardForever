@@ -29,7 +29,9 @@
 --            width changes.
 --          Close() -- hide and tell the owner once. IsShown() -> bool.
 -- Reads:   Colors.CODE (macro text), SLATE (a macro box's edge), WHITE (the dividers) and
---          BLACK (a macro box's fill, the shade). Owns no state beyond the shown texts, the
+--          BLACK (a macro box's fill, the shade); the ActionButtonUseKeyDown CVar (whether the
+--          button acts on the press or the release) and InCombatLockdown (in a fight the
+--          button's command can't be set). Owns no state beyond the shown texts, the
 --          onClick, the onClose and its owner frame (AttachTo).
 -- Touches nothing else.
 
@@ -316,7 +318,8 @@ local function Constructor()
     local button = CreateFrame("Button", nil, layer, "UIPanelButtonTemplate, SecureActionButtonTemplate")
     button:SetAttribute("*type1", "macro")
     button:SetAttribute("*macrotext1", "")
-    -- onClick runs first; the attribute is set fresh on every click, so a stale command never fires
+    -- onClick runs first; out of a fight the command is set fresh on every click (in one it
+    -- can't be set, and the note is closed anyway)
     button:SetScript("PreClick", function()
         if InCombatLockdown() then return end -- attributes are locked in a fight
         local command = widget.onClick and widget.onClick()
