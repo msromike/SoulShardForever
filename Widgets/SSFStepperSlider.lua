@@ -25,21 +25,24 @@
 --          it); MinWidth() -> the narrowest it stays usable, its label on one line or the
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
 -- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
---          3 px side insets, for the dim region), frame and alignoffset fields, its min,
+--          3 px side insets, for the dim region), frame (also handed to Help:KeepHover as
+--          the frame that gives up the mouse while greyed) and alignoffset fields, its min,
 --          max and disabled fields, its OnMouseWheel script, and AceGUI's frame.width field.
 --          The inner Slider's OnAcquire is called directly, outside AceGUI:Create, as a
 --          full repeatable reset; the 44 in OnAcquire copies the stock Slider's height; the
 --          clamp relies on the stock SetValue's setup flag to swallow the second
 --          OnValueChanged (the value check there would also stop it). An AceGUI bump that
 --          renames those breaks the steppers; one that moves the rail misplaces the dim.
--- Reads:   Colors.GOLD (the tick) and Colors.BLACK (the dim).
+-- Reads:   Colors.GOLD (the tick) and Colors.BLACK (the dim); Help:KeepHover/Greyed (the
+--          tooltip on a greyed slider).
 -- Touches nothing else.
 
-local Type, Version = "SSFStepperSlider", 8
+local Type, Version = "SSFStepperSlider", 9
 local AceGUI = LibStub("AceGUI-3.0")
 
--- SSF's colors (the addon is loaded by the time a widget is made)
+-- SSF's modules (the addon is loaded by the time a widget is made)
 local function Colors() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors") end
+local function Help() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Help") end
 
 local BUTTON = 20      -- +/- button size
 local VALUE_GAP = 5    -- px between the bar and the value row
@@ -123,9 +126,7 @@ local methods = {
 
     ["SetDisabled"] = function(self, disabled)
         self.inner:SetDisabled(disabled)
-        -- the stock Slider's frame keeps the mouse when disabled and covers the wrapper; off
-        -- while greyed, so the wrapper's OnEnter gets the hover and the tooltip still shows
-        self.inner.frame:EnableMouse(not disabled)
+        Help():Greyed(self, disabled) -- greyed, the wrapper takes the hover: the tooltip still shows
         if disabled then self.left:Disable() self.right:Disable()
         else self.left:Enable() self.right:Enable() UpdateButtons(self) end
     end,
@@ -167,12 +168,6 @@ local function Constructor()
     local frame = CreateFrame("Frame", nil, UIParent)
     local widget = { frame = frame, type = Type }
 
-    -- the wrapper takes the hover while the slider is disabled (a disabled slider swallows
-    -- no mouse), so a greyed slider still shows its tooltip
-    frame:EnableMouse(true)
-    frame:SetScript("OnEnter", function() widget:Fire("OnEnter") end)
-    frame:SetScript("OnLeave", function() widget:Fire("OnLeave") end)
-
     -- the real slider fills the widget
     local inner = AceGUI:Create("Slider")
     inner.frame:SetParent(frame)
@@ -180,6 +175,7 @@ local function Constructor()
     inner.frame:SetAllPoints(frame)
     inner.frame:Show()
     widget.inner = inner
+    Help():KeepHover(widget, frame, { inner.frame }) -- a greyed slider still shows its tooltip
     widget.alignoffset = inner.alignoffset -- the Flow layout aligns this row as it does a Slider
 
     -- the bound: a drag tick, the typed box and the "+" all end in the stock OnValueChanged,

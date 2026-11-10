@@ -40,8 +40,8 @@
 --          of the InlineGroup's own PaneBackdrop, which AceGUI keeps local. An AceGUI bump
 --          that changes those shows up as stock gold titles with no strip, or a strip of
 --          a different shape.
--- Reads:   Macros:AnyMissing() for the "Create macros" button, Options.APP and
---          Options:IsHelpOn/ToggleHelp, KeyBindings:Open, Colors:Class/Gold and
+-- Reads:   Macros:AnyMissing() for the "Create macros" button, Options.APP,
+--          Help:IsOn/Toggle, KeyBindings:Open, Colors:Class/Gold and
 --          Colors.BLACK, Tooltip:Attach, SSF.VERSION, the BINDING_NAME_* labels KeyBindings
 --          sets; profile.window (the saved spot, at Open).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
@@ -97,8 +97,8 @@ end
 -- Bottom right is the Keybindings button; the X and Escape close the window. Each bottom
 -- button gets its help line only while help is on, like every option.
 function Window:DressWindow()
-    local Options = SSF:GetModule("Options")
-    local on = Options:IsHelpOn()
+    local Help = SSF:GetModule("Help")
+    local on = Help:IsOn()
 
     -- Delete Shard sits beside the count at the top (Options' deletebutton); the middle
     -- slot stays empty
@@ -122,8 +122,8 @@ function Window:DressWindow()
 
     self.window:SetTitleColor(ClassColor()) -- "Soul Shards Forever" at the top, as the group titles
     self.window:SetTitleBand(TITLE_BAND)    -- the same dark strip behind it
-    -- the help button: toggles help mode (Options), blue while on, its tooltip says which
-    self.window:SetHelpButton(function() Options:ToggleHelp() end, on,
+    -- the help button: toggles help mode (Help), blue while on, its tooltip says which
+    self.window:SetHelpButton(function() Help:Toggle() end, on,
         on and L["Help ON: Click to hide tooltip help."]
         or L["Help OFF: Click to show tooltip help when you hover over an option."])
     self.window:SetFooter("v" .. SSF.VERSION)

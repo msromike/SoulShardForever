@@ -40,16 +40,24 @@
 --          own width field (read for "fill"), and AceGUI.WidgetRegistry (the Dropdown
 --          constructor, for the re-typed one; the re-typed widget keeps the Dropdown
 --          version it was made from, so a newer Dropdown loaded later in the session never
---          reaches it). The inner widget's OnAcquire is called directly, outside
+--          reaches it). The stock Dropdown's frame, button and button_cover and its
+--          SetDisabled (wrapped, stock first). The Button's and CheckBox's frame and the
+--          Dropdown's button and button_cover are handed to Help:KeepHover as the frames
+--          that give up the mouse while greyed; a stock widget that moves its mouse to
+--          another frame leaves a greyed control silent again. The inner widget's
+--          OnAcquire is called directly, outside
 --          AceGUI:Create, as a full repeatable reset. The CheckBox's text FontString is
 --          also written (height 0, word wrap, width) so a label can wrap; BOX copies the
 --          stock checkbg size. An AceGUI bump that renames those breaks the top row, the
 --          check boxes' layout, or the volume dropdown's construction; one whose CheckBox
 --          re-sets its text height clips wrapped labels.
--- Reads:   nothing of SSF's.
+-- Reads:   Help:KeepHover/Greyed (the tooltip on a greyed control).
 -- Touches nothing else.
 
 local AceGUI = LibStub("AceGUI-3.0")
+
+-- SSF's Help module (the addon is loaded by the time a widget is made)
+local function Help() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Help") end
 
 -- the inner widget's OnEnter/OnLeave become ours (the window's tooltips hang on them)
 local function ForwardHover(inner, widget)
@@ -61,7 +69,7 @@ end
 -- SSFCountButton
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFCountButton", 5
+    local Type, Version = "SSFCountButton", 6
     local GAP = 12     -- px between the text and the button
     local HEIGHT = 36  -- the button: two lines of text
     local ROOM = 400   -- the button's width while measuring, so no line wraps
@@ -124,13 +132,11 @@ do
             self.reason, self.reasons = reason, reasons
             Refresh(self)
         end,
-        -- Greyed, the button still answers a hover with its tooltip (what it does, and the
-        -- reason on its face): a disabled button blocks the mouse without using
-        -- it, so the mouse is let through to the widget's own frame, which fires OnEnter.
+        -- greyed, the button still answers a hover with its tooltip (what it does, and the
+        -- reason on its face): Help hands the hover to the widget's own frame
         ["SetDisabled"] = function(self, v)
             self.inner:SetDisabled(v)
-            self.inner.frame:EnableMouse(not v)
-            self.frame:EnableMouse(v and true or false)
+            Help():Greyed(self, v)
         end,
         ["MinWidth"] = function(self) return PairWidth(self) end,
     }
@@ -145,8 +151,7 @@ do
         widget.inner = inner
         inner:SetCallback("OnClick", function(_, _, ...) widget:Fire("OnClick", ...) end)
         ForwardHover(inner, widget)
-        frame:SetScript("OnEnter", function() widget:Fire("OnEnter") end)
-        frame:SetScript("OnLeave", function() widget:Fire("OnLeave") end)
+        Help():KeepHover(widget, frame, { inner.frame })
         for method, func in pairs(methods) do widget[method] = func end
         return AceGUI:RegisterAsWidget(widget)
     end
@@ -162,13 +167,21 @@ end
 -- puts at the top of the option's tooltip, but the row stays a bare dropdown beside the
 -- control it belongs to (the pause volume beside Play pause sound).
 do
-    local Type, Version = "SSFUnlabeledDropdown", 1
+    local Type, Version = "SSFUnlabeledDropdown", 2
 
     local function Constructor()
         local widget = AceGUI.WidgetRegistry["Dropdown"]()
         widget.type = Type
         local stockSetLabel = widget.SetLabel
         widget.SetLabel = function(self) stockSetLabel(self, nil) end -- nil: the stock no-label layout
+        -- greyed, the stock Dropdown disables its button and its cover and goes silent; the
+        -- stock frame under them takes the hover, so a greyed Volume still shows its tooltip
+        local stockSetDisabled = widget.SetDisabled
+        widget.SetDisabled = function(self, v)
+            stockSetDisabled(self, v)
+            Help():Greyed(self, v)
+        end
+        Help():KeepHover(widget, widget.frame, { widget.button, widget.button_cover })
         return widget
     end
 
@@ -179,7 +192,7 @@ end
 -- SSFIndentCheckBox
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFIndentCheckBox", 4
+    local Type, Version = "SSFIndentCheckBox", 5
     local INDENT = 10 -- one indent level, in px
     local BOX = 24    -- the stock CheckBox's box; its label starts right of it
     local GAP = 12    -- after the label, when the checkbox shares its row: air before the next control
@@ -229,7 +242,10 @@ do
         ["SetValue"] = function(self, value) self.inner:SetValue(value) end,
         ["GetValue"] = function(self) return self.inner:GetValue() end,
         ["SetTriState"] = function(self, v) self.inner:SetTriState(v) end,
-        ["SetDisabled"] = function(self, v) self.inner:SetDisabled(v) end,
+        ["SetDisabled"] = function(self, v)
+            self.inner:SetDisabled(v)
+            Help():Greyed(self, v) -- a greyed box still shows its tooltip
+        end,
         ["SetDescription"] = function(self, v) self.inner:SetDescription(v) end,
         ["SetType"] = function(self, v) self.inner:SetType(v) end,
         ["SetImage"] = function(self, ...) self.inner:SetImage(...) end,
@@ -252,6 +268,7 @@ do
         widget.inner = inner
         inner:SetCallback("OnValueChanged", function(_, _, value) widget:Fire("OnValueChanged", value) end)
         ForwardHover(inner, widget)
+        Help():KeepHover(widget, frame, { inner.frame })
         for method, func in pairs(methods) do widget[method] = func end
         return AceGUI:RegisterAsWidget(widget)
     end

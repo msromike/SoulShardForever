@@ -23,7 +23,7 @@
 --          (learned), TRAINER_CLOSED once after a learn.
 -- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
 --          button note's "reloads your UI");
---          Options:IsHelpOn/ToggleHelp,
+--          Help:IsOn/Toggle,
 --          Window:ShowNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
 --          button; Create's return is the click's command).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
@@ -108,8 +108,8 @@ function Welcome:LOADING_SCREEN_DISABLED()
     self:UnregisterEvent("LOADING_SCREEN_DISABLED")
     -- a load with the note owed starts with help on: the "i" shows blue, and every option
     -- explains itself
-    local Options = SSF:GetModule("Options")
-    if not Options:IsHelpOn() then Options:ToggleHelp() end
+    local Help = SSF:GetModule("Help")
+    if not Help:IsOn() then Help:Toggle() end
     self:Show()
 end
 

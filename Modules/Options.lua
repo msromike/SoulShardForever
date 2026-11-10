@@ -19,8 +19,8 @@
 -- ("SSF paused: Yes/No"). A bare /ssf opens the window and prints that line above
 -- Status:StatusText.
 --
--- Help mode (IsHelpOn, ToggleHelp; the window's help button): each option's help line, its
--- desc, shows as a hover tooltip while on. Off at load; nothing saved.
+-- Help mode is the Help module's: the table hands itself to Help:Apply at the end of every
+-- build (each option's help line is its desc), and rebuilds on SSF_HELP_CHANGED.
 --
 -- Stateful settings (cap, announce, pause) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
@@ -38,15 +38,11 @@
 -- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
 -- "log", is a second, hidden chat command, so old macros keep working; it is not listed anywhere.
 --
--- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
+-- Public:  TogglePause() (the pause key binding), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
+-- Listens: SSF_HELP_CHANGED (Rebuild: the table captured its tooltip style when built).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
--- Lib internals: descStyle = "hidden" (ApplyHelp, the one place it is set) is not a value
---          the AceConfig spec names (it has "inline" and "tooltip"); AceConfigDialog treats
---          anything but "tooltip" as no tooltip, and AceConfigRegistry only checks for a
---          string. A registry that validates the value as an enum rejects the whole table:
---          no window, no /ssf.
--- Reads:   Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
+-- Reads:   Help:Apply, Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
 --          Bags:HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
@@ -91,31 +87,6 @@ local function CounterOffOrPaused() return CounterOff() or SSF.db.profile.paused
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
     self.pauseCmd.set(nil, SSF.db.profile.paused and "off" or "on")
-end
-
--- Help mode, the window's help button: while on, every option in the window shows its help
--- line (its desc) as a hover tooltip; while off, none does. For the session only: nil at
--- load, so a /reload turns it off, and nothing is saved.
-function Options:IsHelpOn() return self.help == true end
-
-function Options:ToggleHelp()
-    self.help = not self.help
-    self:Rebuild() -- the tooltips are set when the table is built (ApplyHelp)
-end
-
--- Every entry the window shows gets its descStyle here and nowhere else: one with a help
--- line shows it as a tooltip, or not, per help mode; one without stays "hidden", so
--- AceConfigDialog never shows a name-only tooltip. descStyle has to be a plain string
--- (AceConfigRegistry), so it is set on every build. Chat commands (dialogHidden) are
--- skipped: their desc is AceConfigCmd's help text.
-local function ApplyHelp(group, style)
-    for _, entry in pairs(group.args) do
-        if entry.args then
-            ApplyHelp(entry, style)
-        elseif not entry.dialogHidden then
-            entry.descStyle = entry.desc and style or "hidden"
-        end
-    end
 end
 
 local function changed(key)
@@ -533,7 +504,7 @@ local function BuildTable()
     end
 
     local root = { type = "group", name = L["Soul Shards Forever"], args = args }
-    ApplyHelp(root, Options.help and "tooltip" or "hidden")
+    SSF:GetModule("Help"):Apply(root) -- every option's tooltip style, per help mode
     return root
 end
 
@@ -626,11 +597,12 @@ function Options:OnEnable()
     SSF:RegisterChatCommand("ssf", HandleCommand)
     AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
     AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, TabUsage)
+    self:RegisterMessage("SSF_HELP_CHANGED", "Rebuild")
 end
 
--- After a Language change or a help toggle: the table captured its strings and its tooltip
--- style when built, so build it again and re-register (AceConfigRegistry replaces by app
--- name). Window resets
+-- After a Language change or a help toggle (SSF_HELP_CHANGED): the table captured its
+-- strings and its tooltip style when built, so build it again and re-register
+-- (AceConfigRegistry replaces by app name). Window resets
 -- the window's own strings and redraws on SSF_OPTIONS_REBUILT. The Interface Options
 -- category keeps the name it was added under until a reload.
 function Options:Rebuild()

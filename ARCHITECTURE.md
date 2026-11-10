@@ -28,6 +28,7 @@ Core and modules:
 - Modules\Trimmer.lua: the delete press.
 - Modules\DeleteButton.lua: the global button "SSFDelete".
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
+- Modules\Help.lua: help mode.
 - Modules\Options.lua: the one settings table and the /ssf command.
 - Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
 - Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
@@ -52,6 +53,7 @@ Locales:
 | SSF_BAGS_CHANGED | Bags | Broker, Cap, Counter, Sorter, Window |  |
 | SSF_CAP_CHANGED | Cap | Broker, Counter | now |
 | SSF_COUNTER_UPDATED | Counter | LowGlow | parent, count |
+| SSF_HELP_CHANGED | Help | Options | self.on |
 | SSF_MACROS_CHANGED | Macros | Window |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
