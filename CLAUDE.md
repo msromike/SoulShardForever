@@ -38,8 +38,12 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   AceConfigDialog field, AceDB's key for the character) is allowed only where no public
   API exists, only in Widgets\, the Window and Tooltip modules and Core's profile-key
   migration, and every such field is named in that file's header under "Lib internals"
-  with what breaks when it moves. Libraries change only through a
-  deliberate bump (below), so those lines can only break on a day someone tests them.
+  with what breaks when it moves. Those lines are the break list for a library change,
+  and a library change reaches players without any SSF release: LibStub runs the highest
+  MINOR of each library across every addon on the player's install, and AceGUI swaps in
+  any widget type that registers a higher Version. A newer AceGUI in any other addon runs
+  SSF's widgets on code nobody tested. So when upstream moves (tools/sync_libs.py reports
+  it), the diff is read against every "Lib internals" line before anything else.
 
 ## Rule 2: one job per file
 

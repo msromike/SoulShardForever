@@ -27,8 +27,11 @@
 -- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
 --          3 px side insets, for the dim region), frame and alignoffset fields, its min,
 --          max and disabled fields, its OnMouseWheel script, and AceGUI's frame.width field.
---          An AceGUI bump that renames those breaks the steppers; one that moves the rail
---          misplaces the dim.
+--          The inner Slider's OnAcquire is called directly, outside AceGUI:Create, as a
+--          full repeatable reset; the 44 in OnAcquire copies the stock Slider's height; the
+--          clamp relies on the stock SetValue's setup flag to swallow the second
+--          OnValueChanged (the value check there would also stop it). An AceGUI bump that
+--          renames those breaks the steppers; one that moves the rail misplaces the dim.
 -- Reads:   Colors.GOLD (the tick) and Colors.BLACK (the dim).
 -- Touches nothing else.
 

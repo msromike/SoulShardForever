@@ -7,7 +7,7 @@
 -- Blizzard's grid reuses its button frames whenever it redraws (a tab switch, a scroll, a
 -- macro change), so a glow can't stay on a frame: after Blizzard fills each button
 -- (MacroSelector:RunSetup) it is re-checked by the macro name it now shows. A drop is seen
--- by the name in the changed action slot (GetActionText); the slot's id is no help, it is
+-- by the name in the changed action slot (C_ActionBar.GetActionText); the slot's id is no help, it is
 -- the spell the macro resolves to.
 --
 -- Public:  Stop() (also the OnHide hook's handler).
@@ -37,14 +37,14 @@ end
 
 local function OnABar(name)
     for slot = 1, MAX_ACTION_SLOT do
-        if GetActionText(slot) == name then return true end
+        if C_ActionBar.GetActionText(slot) == name then return true end
     end
     return false
 end
 
 -- a conditional macro on a bar fires this constantly, so only the changed slot is read
 function MacroGlow:ACTIONBAR_SLOT_CHANGED(_, slot)
-    local name = GetActionText(slot)
+    local name = C_ActionBar.GetActionText(slot)
     if not (name and pending[name]) then return end
     pending[name] = nil
     UpdateAll()

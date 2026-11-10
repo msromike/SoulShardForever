@@ -11,16 +11,20 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), chec
         Hooks, the modules called, the profile keys touched and Saves) against the code,
         apply the rules luacheck cannot see (no raw hooks, every widget type used, the
         shard id only in Core, every message listened for is sent, no constant typed in
-        two files), regenerate ARCHITECTURE.md from the
-        code and the file headers, and report (never fail on) how far the committed Libs/
-        are behind their upstreams. Exit 1 on any failure, 0 when all pass.
+        two files), check every Blizzard name the code uses against the client's own UI
+        source (no deprecated shim, every C_ call in the API docs), regenerate
+        ARCHITECTURE.md from the code and the file headers, and report (never fail on) how
+        far the committed Libs/ are behind their upstreams. Exit 1 on any failure, 0 when
+        all pass.
 Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars override the
         tool locations (the GitHub workflow sets them; locally they are found on PATH or
         at the fallback paths below). The tests run on Lua 5.1, the game's own: locally
         `lua51` on PATH, never a plain `lua`, which may be a later version.
-Writes: ARCHITECTURE.md, only when its content changed. Through tools/sync_libs.py (the
-        libs report) it also makes and removes the scratch folder tools/.sync/ and fetches
-        each upstream over the network.
+Writes: ARCHITECTURE.md, only when its content changed. tools/.wowui/ (gitignored): a
+        shallow clone of the wow-ui-source mirror's forever branch, made on the first run
+        and pulled on every run after. Through tools/sync_libs.py (the libs report) it also
+        makes and removes the scratch folder tools/.sync/ and fetches each upstream over the
+        network.
 Touches nothing else.
 """
 import os
@@ -92,6 +96,102 @@ def check_libs():
         if "DRIFT" in l or "not fetched" in l or "NOT EMBEDDED" in l or l.startswith("libs:"):
             print("   " + l)
     return True
+
+
+# ---------------------------------------------------------------- Blizzard API
+
+WOWUI_REPO = "https://github.com/Gethe/wow-ui-source.git"
+WOWUI_BRANCH = "forever"
+WOWUI = os.path.join(ROOT, "tools", ".wowui")
+WOWUI_ADDONS = os.path.join(WOWUI, "Interface", "AddOns")
+WOWUI_DOCS = os.path.join(WOWUI_ADDONS, "Blizzard_APIDocumentationGenerated")
+NS_CALL_RE = re.compile(r"\b(C_\w+)\.(\w+)\s*\(")
+LUACHECKRC_GLOBALS_RE = re.compile(r"read_globals\s*=\s*\{(.*?)\n\}", re.S)
+LUA_STRING_RE = re.compile(r'"(\w+)"')
+NOT_BLIZZARD = {"LibStub"}
+
+
+def wowui_build():
+    """Bring tools/.wowui to the mirror's current forever build and say which it is: a
+    shallow clone of the branch if absent, a pull if present. Offline, the copy on disk is
+    used and the message says so; with no copy at all, None."""
+    git = shutil.which("git")
+    if not git:
+        return None, "git not found"
+    if not os.path.isdir(os.path.join(WOWUI, ".git")):
+        proc = subprocess.run([git, "clone", "--quiet", "--depth", "1", "--single-branch", "--branch",
+                               WOWUI_BRANCH, WOWUI_REPO, WOWUI], text=True, capture_output=True)
+        if proc.returncode != 0:
+            return None, "clone failed: " + (proc.stderr.strip().splitlines() or ["?"])[-1]
+        note = "cloned"
+    else:
+        proc = subprocess.run([git, "-C", WOWUI, "pull", "--quiet", "--ff-only"], text=True, capture_output=True)
+        note = "current" if proc.returncode == 0 else "offline, using the copy on disk"
+    build = subprocess.run([git, "-C", WOWUI, "log", "-1", "--format=%s"], text=True, capture_output=True).stdout.strip()
+    return build, note
+
+
+def blizzard_names():
+    """(globals, namespaced): every Blizzard global the code may read (.luacheckrc's
+    read_globals, the libraries left out) and every C_<namespace>.<function> call in Core,
+    the modules and the widgets, as {(namespace, function): [file:line, ...]}."""
+    m = LUACHECKRC_GLOBALS_RE.search(read(".luacheckrc"))
+    globs = [n for n in LUA_STRING_RE.findall(m.group(1)) if n not in NOT_BLIZZARD] if m else []
+    namespaced = {}
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        for n, line in enumerate(code_lines(read(rel)).splitlines(), 1):
+            for ns, fn in NS_CALL_RE.findall(line):
+                namespaced.setdefault((ns, fn), []).append(f"{rel}:{n}")
+    return globs, namespaced
+
+
+def check_blizzard_api():
+    """Every Blizzard name the code uses, against the client's own UI source (tools/.wowui,
+    the wow-ui-source mirror's forever branch, the build the live client runs): no global
+    SSF reads is defined in a Deprecated file (those are shims Blizzard removes a patch or
+    two later: IsPlayerSpell and GetActionText were both found there, 2026-11-10), and every
+    C_<namespace>.<function> it calls is in Blizzard_APIDocumentationGenerated (so a
+    namespaced call is one this client has, not one borrowed from retail)."""
+    print("== blizzard api")
+    build, note = wowui_build()
+    if build is None:
+        print(f"   SKIPPED: no UI source ({note})")
+        return True
+    print(f"   {WOWUI_BRANCH} build {build} ({note})")
+    globs, namespaced = blizzard_names()
+    ok = True
+    deprecated = []
+    for folder, _, files in os.walk(WOWUI_ADDONS):
+        if "Deprecated" not in folder:
+            continue
+        for fn in files:
+            if fn.endswith(".lua"):
+                deprecated.append(os.path.join(folder, fn))
+    def_re = re.compile(r"^\s*(?:function\s+(\w+)\s*\(|(\w+)\s*=)")
+    shimmed = {}
+    for path in deprecated:
+        for n, line in enumerate(open(path, encoding="utf-8", errors="replace"), 1):
+            m = def_re.match(line)
+            name = m and (m.group(1) or m.group(2))
+            if name in globs:
+                shimmed.setdefault(name, []).append(f"{os.path.relpath(path, WOWUI_ADDONS)}:{n}")
+    for name in sorted(shimmed):
+        print(f"   {name} is a deprecated shim ({shimmed[name][0]}); move to its C_ replacement")
+        ok = False
+    docs = {}
+    for fn in os.listdir(WOWUI_DOCS):
+        if not fn.endswith(".lua"):
+            continue
+        text = open(os.path.join(WOWUI_DOCS, fn), encoding="utf-8", errors="replace").read()
+        ns = re.search(r'Namespace\s*=\s*"(C_\w+)"', text)
+        if ns:
+            docs.setdefault(ns.group(1), set()).update(re.findall(r'Name\s*=\s*"(\w+)",', text))
+    for (ns, fn), where in sorted(namespaced.items()):
+        if fn not in docs.get(ns, ()):
+            print(f"   {ns}.{fn} is not in this client's API docs ({where[0]})")
+            ok = False
+    print(f"   {len(globs)} globals, {len(namespaced)} namespaced calls, " + ("ok" if ok else "FAILED"))
+    return ok
 
 
 def check_tests():
@@ -672,7 +772,7 @@ def check_map():
 
 def main():
     results = [check_luacheck(), check_tests(), check_locales(), check_code_keys(), check_colors(), check_headers(),
-               check_header_truth(), check_rules(), check_map(), check_libs()]
+               check_header_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1

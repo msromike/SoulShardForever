@@ -28,13 +28,13 @@ read_globals = {
     "CharacterBag3Slot", "CharacterReagentBag0Slot",
     "MacroFrame", "ShowMacroFrame", "Settings", "SettingsPanel",
     -- API namespaces and enums
-    "C_Container", "C_Item", "C_AddOns", "C_Spell", "C_SpellBook", "C_Sound", "Enum", "Constants",
+    "C_Container", "C_Item", "C_AddOns", "C_Spell", "C_SpellBook", "C_Sound", "C_ActionBar", "Enum", "Constants",
     "ItemLocation", "NUM_BAG_SLOTS", "RAID_CLASS_COLORS",
     -- functions
     "InCombatLockdown", "UnitAffectingCombat", "UnitClassBase", "GetLocale", "GetCVarBool",
-    "GetRealmName", "IsPlayerSpell",
+    "GetRealmName",
     "ClearCursor", "GetCursorInfo", "DeleteCursorItem",
-    "GetMacroIndexByName", "GetNumMacros", "CreateMacro", "GetActionText",
+    "GetMacroIndexByName", "GetNumMacros", "CreateMacro",
     "PlaySound", "PlaySoundFile",
     -- global strings
     "CLOSE",

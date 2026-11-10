@@ -41,6 +41,11 @@
 -- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
+-- Lib internals: descStyle = "hidden" (here and in Settings:Define) is not a value the
+--          AceConfig spec names (it has "inline" and "tooltip"); AceConfigDialog treats
+--          anything but "tooltip" as no tooltip, and AceConfigRegistry only checks for a
+--          string. A registry that validates the value as an enum rejects the whole table:
+--          no window, no /ssf.
 -- Reads:   Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
 --          Bags:HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,

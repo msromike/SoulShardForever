@@ -81,7 +81,7 @@ function Cap:LowMark()
 end
 
 function Cap:IsQuiet()
-    return not (IsPlayerSpell(self.QUIET_UNTIL) or C_SpellBook.IsSpellKnown(self.QUIET_UNTIL))
+    return not C_SpellBook.IsSpellKnown(self.QUIET_UNTIL)
 end
 
 function Cap:State(count)

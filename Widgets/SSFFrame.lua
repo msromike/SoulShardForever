@@ -49,10 +49,18 @@
 --          content (re-anchored for SSF's taller bottom row); FitWidth reads the fed
 --          widgets' titletext, label, text, frame.label and frame.text, and AceGUI's layout
 --          fields width, children, content.width and frame.width; FitToContent reads
---          children[1].content (the ScrollFrame's scroll child). An AceGUI bump that renames
+--          children[1].content (the ScrollFrame's scroll child). The constructor captures
+--          and wraps the stock Frame's OnAcquire, OnWidthSet, OnHeightSet and ApplyStatus
+--          (self.stock), and the ApplyStatus wrap assumes the stock one reads status.width
+--          and status.height; it sets self.type to this Type, which is what makes
+--          AceConfigDialog wrap the content in the ScrollFrame FitToContent measures
+--          (it skips the wrap only for InlineGroup and SimpleGroup). Copied numbers:
+--          STOCK_BOTTOM_INSET is the stock OnHeightSet's constant, TITLE_CAP the stock
+--          titlebg_l/_r width. The reused stock Close click reads button.obj; the backdrop
+--          tint assumes the stock frame is a BackdropTemplate. An AceGUI bump that renames
 --          titletext, titlebg, content or localstatus errors at the first open (they are
---          read bare); one that renames the rest shows as a window that no longer fits its
---          content.
+--          read bare); one that drops a wrapped method errors in the constructor; one that
+--          renames the rest shows as a window that no longer fits its content.
 -- Reads:   the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
 --          and the title band), WHITE (the art and the "i" untinted) and BLUE (the "i"
 --          while help is on).

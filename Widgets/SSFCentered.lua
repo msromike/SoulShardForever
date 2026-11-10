@@ -36,10 +36,16 @@
 --          MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth
 --          sizes the window to.
 -- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
---          frame.width field (read, and written by the check box's Fit), and
---          AceGUI.WidgetRegistry (the Dropdown constructor, for the re-typed one). An AceGUI
---          bump that renames those breaks the top row, the check boxes' layout, or the
---          volume dropdown's construction.
+--          frame.width field (read, and written by the check box's Fit) and the widget's
+--          own width field (read for "fill"), and AceGUI.WidgetRegistry (the Dropdown
+--          constructor, for the re-typed one; the re-typed widget keeps the Dropdown
+--          version it was made from, so a newer Dropdown loaded later in the session never
+--          reaches it). The inner widget's OnAcquire is called directly, outside
+--          AceGUI:Create, as a full repeatable reset. The CheckBox's text FontString is
+--          also written (height 0, word wrap, width) so a label can wrap; BOX copies the
+--          stock checkbg size. An AceGUI bump that renames those breaks the top row, the
+--          check boxes' layout, or the volume dropdown's construction; one whose CheckBox
+--          re-sets its text height clips wrapped labels.
 -- Reads:   nothing of SSF's.
 -- Touches nothing else.
 
