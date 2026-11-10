@@ -1,0 +1,30 @@
+# tools/blizzard_reaches.txt: every Blizzard UI internal SSF reaches that is not a plain
+# API call: frame globals, mixin methods, template parentKeys, FrameXML constants. The
+# "blizzard api" rule in check.py covers the API (the .luacheckrc whitelist and every C_
+# call); these are the rest, and the morning check greps a new Blizzard build's diff
+# (tools/.wowui) for them. One per line: the name, then the SSF file that reaches it.
+# Verified present on forever build 1.60.1 (70862), 2026-11-10. Add a line with the reach;
+# drop it with the reach.
+MacroFrameMixin:ChangeTab          Modules/Macros.lua
+MacroFrameMixin:SelectMacro        Modules/Macros.lua
+ShowMacroFrame                     Modules/Macros.lua
+MacroSelector                      Modules/MacroGlow.lua
+RunSetup                           Modules/MacroGlow.lua
+EnumerateButtons                   Modules/MacroGlow.lua
+UIErrorsMixin:AddExternalErrorMessage  Modules/Macros.lua
+CharacterBag0Slot                  Modules/Counter.lua
+CharacterBag1Slot                  Modules/Counter.lua
+CharacterBag2Slot                  Modules/Counter.lua
+CharacterBag3Slot                  Modules/Counter.lua
+CharacterReagentBag0Slot           Modules/Counter.lua
+ShapedBagSlotButtonTemplate        Modules/Counter.lua
+KEYBINDINGS_CATEGORY_ID            Modules/KeyBindings.lua
+SettingsPanelMixin:GetLayout       Modules/KeyBindings.lua
+GetInitializers                    Modules/KeyBindings.lua
+Settings.OpenToCategory            Modules/KeyBindings.lua
+UISpecialFrames                    Widgets/SSFFrame.lua
+UIPanelCloseButton                 Widgets/SSFFrame.lua
+UIPanelButtonTemplate              Widgets/SSFFrame.lua
+SecureActionButtonTemplate         Widgets/SSFSideNote.lua
+BackdropTemplate                   Widgets/SSFSideNote.lua
+UIDropDownMenuTemplate             Libs/AceGUI-3.0 (Dropdown)

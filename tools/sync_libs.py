@@ -10,12 +10,14 @@ Job:    Libs/ is committed and ships as is (no packager externals). This script 
         (copies the first two kinds, deletes the third; a file that differs only in CRLF/LF
         is left alone), which is a deliberate library bump: in-game
         pass, then a commit of its own with a changelog line.
-Takes:  --apply (copy upstream over Libs/); --quiet (one line per library).
+Takes:  --apply (copy upstream over Libs/); --quiet (one line per library); --keep (leave
+        tools/.sync/ in place after the run, so a drifted file can be diffed against its
+        upstream copy: the morning check reads the change before anyone bumps).
         Upstreams: a repos.wowace.com trunk folder (fetched file by file over HTTPS), or a
         GitHub repository (fetched as the zip of its default branch, or of `tag:`).
 Writes: nothing without --apply. The scratch folder tools/.sync/ exists only while the
-        script runs; it is removed at the end of a run that finishes (and cleared at the
-        start of the next) and ignored by git.
+        script runs; it is removed at the end of a run that finishes (unless --keep) and
+        cleared at the start of the next, and ignored by git.
 Exit:   0 in report mode, drift included (it is information, the check script prints it);
         1 only when an upstream could not be fetched with --apply.
 Touches nothing else.
@@ -131,6 +133,7 @@ def compare(local, upstream):
 def main(argv):
     apply_ = "--apply" in argv
     quiet = "--quiet" in argv
+    keep = "--keep" in argv
     if os.path.isdir(SCRATCH):
         shutil.rmtree(SCRATCH)
     failed, drifted = 0, 0
@@ -175,7 +178,8 @@ def main(argv):
             for rel in extra: # a file upstream dropped goes too: Libs/ equals upstream (line endings aside)
                 os.remove(os.path.join(local, rel))
             print(f"   applied {len(differs) + len(missing)} file(s), removed {len(extra)}")
-    shutil.rmtree(SCRATCH, ignore_errors=True) # nothing to keep: a bump copies into Libs/
+    if not keep:
+        shutil.rmtree(SCRATCH, ignore_errors=True) # nothing to keep: a bump copies into Libs/
     if apply_ and failed:
         return 1
     print(f"libs: {drifted} drifted, {failed} not fetched")
