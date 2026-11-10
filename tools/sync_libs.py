@@ -12,7 +12,7 @@ Job:    Libs/ is committed and ships as is (no packager externals). This script 
         pass, then a commit of its own with a changelog line.
 Takes:  --apply (copy upstream over Libs/); --quiet (one line per library); --keep (leave
         tools/.sync/ in place after the run, so a drifted file can be diffed against its
-        upstream copy: the morning check reads the change before anyone bumps).
+        upstream copy: the upkeep check reads the change before anyone bumps).
         Upstreams: a repos.wowace.com trunk folder (fetched file by file over HTTPS), or a
         GitHub repository (fetched as the zip of its default branch, or of `tag:`).
 Writes: nothing without --apply. The scratch folder tools/.sync/ exists only while the

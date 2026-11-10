@@ -1,7 +1,7 @@
 # tools/blizzard_reaches.txt: every Blizzard UI internal SSF reaches that is not a plain
 # API call: frame globals, mixin methods, template parentKeys, FrameXML constants. The
 # "blizzard api" rule in check.py covers the API (the .luacheckrc whitelist and every C_
-# call); these are the rest, and the morning check greps a new Blizzard build's diff
+# call); these are the rest, and the upkeep check greps a new Blizzard build's diff
 # (tools/.wowui) for them. One per line: the name, then the SSF file that reaches it.
 # Verified present on forever build 1.60.1 (70862), 2026-11-10. Add a line with the reach;
 # drop it with the reach.
