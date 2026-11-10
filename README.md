@@ -1,33 +1,26 @@
 # Soul Shards Forever (SSF)
 
-**\*\*\* Changelog \*\*\***
+## Features
 
-1.11.2: Create recommended macros reloads your UI the way typing /reload does, so the game can't block it. Nothing you see changed.
+- Help tooltips work on greyed options too: hover anything, available or not, and read what it does. (1.12.0)
+- Delete Shard says why it's grey, right on the button. (1.11.0)
+- Guided onboarding that knows your level: before Drain Soul, SSF stays quiet; learn it, and the welcome walks you through setup. (1.10.0)
+- Low shard mark stops at your cap: the slider shows the cap in gold and dims the track past it. (1.9.0)
+- Shard count on data broker bars (Titan Panel, EllesmereUI's data bars and the like). (1.9.0)
+- Delete Shard sits right beside your shard count at the top of the window. (1.8.1)
+- The minimap tooltip shows your count, cap, low mark and pause, every time. (1.8.1)
+- One click makes the recommended macros: Create macros, at the bottom left of the window. (1.8.0)
+- In-game tooltip help: click the "i" in the window. (1.7.0)
+- SSF Mode: shards move into your soul bag, and nothing else in your bags moves. (1.6.0)
+- Pause all SSF actions so you can stockpile for raid night. (1.5.0)
+- Shard count on your soul bag. (1.4.0)
+- Sort mode: shards in a block, top down or bottom up. (1.4.0)
+- Language localization. (1.2.0)
+- Soul bag support. (1.1.0)
 
-1.11.1: Verify build consistent against Strongbox and CurseForge. No user-facing changes.
-
-1.11.0: Clearer labels throughout, one Soul shard limits box, and Delete Shard says why it's grey right on the button.
-
-1.10.2: The README and the CurseForge page are rewritten. Under the hood cleanup; nothing you see changed.
-
-[..] [Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
+[Full changelog](https://github.com/msromike/SoulShardForever/blob/main/CHANGELOG.md)
 
 ---
-
-- **NEW: Delete Shard says why it's grey, right on the button.**
-- **NEW: Guided onboarding that knows your level: before Drain Soul, SSF stays quiet; learn it, and the welcome walks you through setup.**
-- **NEW: Low shard mark stops at your cap: the slider shows the cap in gold and dims the track past it.**
-- **NEW: Shard count on data broker bars (Titan Panel, EllesmereUI's data bars and the like).**
-- **NEW: Delete Shard sits right beside your shard count at the top of the window.**
-- **NEW: The minimap tooltip shows your count, cap, low mark and pause, every time.**
-- **NEW: One click makes the recommended macros: Create macros, at the bottom left of the window.**
-- **NEW: In-game tooltip help: click the "i" in the window.**
-- **NEW: SSF Mode: shards move into your soul bag, and nothing else in your bags moves.**
-- **NEW: Pause all SSF actions so you can stockpile for raid night.**
-- **NEW: Shard count on your soul bag.**
-- **NEW: Sort mode: shards in a block, top down or bottom up.**
-- **NEW: Language localization.**
-- **NEW: Soul Bag support!**
 
 ## Description
 

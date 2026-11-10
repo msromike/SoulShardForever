@@ -72,7 +72,7 @@ function Settings:Define(key, def)
         type = def.kind,
         order = def.order,
         width = "full",
-        cmdHidden = true, -- descStyle is Options' (ApplyHelp sets it on every build)
+        cmdHidden = true, -- descStyle is Help's (Help:Apply sets it on every build)
         name = def.name,
         desc = def.desc,
         get = function() return def.get() end,

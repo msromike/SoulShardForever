@@ -459,7 +459,7 @@ local function BuildTable()
         },
     }
 
-    -- Help lines: each option's tooltip while help mode is on (ApplyHelp), by group and key.
+    -- Help lines: each option's tooltip while help mode is on (Help:Apply), by group and key.
     -- The cap, Pause and Log lines come with their Settings:Define above. Plain
     -- sentences: the tooltip wraps them itself. Only How shards move keeps one line per choice.
     local lowMarkName = L["Low shard mark"] -- quoted by name in two lines, in the player's language

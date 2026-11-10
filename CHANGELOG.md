@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.12.0 (2026-11-10)
+
+- Help tooltips now show on greyed options too. With help on, hover any option, available
+  or not, and read what it does. Before, a greyed checkbox or the Volume box showed
+  nothing, which hid most of the help from a new warlock.
+- Under the hood: two calls SSF made to the game were on Blizzard's deprecated list, the
+  kind that stops working a patch or two later. Both now use the current calls. Nothing
+  you see changed.
+- Under the hood: help mode lives in one place (a Help module) instead of five. Nothing
+  else you see changed.
+
 ## 1.11.2 (2026-11-08)
 
 - Create recommended macros now reloads your UI the same way typing /reload does, so the
