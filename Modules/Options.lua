@@ -41,8 +41,8 @@
 -- Public:  TogglePause() (the pause key binding), IsHelpOn(), ToggleHelp(), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
--- Lib internals: descStyle = "hidden" (here and in Settings:Define) is not a value the
---          AceConfig spec names (it has "inline" and "tooltip"); AceConfigDialog treats
+-- Lib internals: descStyle = "hidden" (ApplyHelp, the one place it is set) is not a value
+--          the AceConfig spec names (it has "inline" and "tooltip"); AceConfigDialog treats
 --          anything but "tooltip" as no tooltip, and AceConfigRegistry only checks for a
 --          string. A registry that validates the value as an enum rejects the whole table:
 --          no window, no /ssf.
@@ -103,15 +103,17 @@ function Options:ToggleHelp()
     self:Rebuild() -- the tooltips are set when the table is built (ApplyHelp)
 end
 
--- Every entry the window shows that has a help line gets a tooltip, or none, per help mode.
--- descStyle has to be a plain string (AceConfigRegistry), so it is set on every build. Chat
--- commands (dialogHidden) are skipped: their desc is AceConfigCmd's help text.
+-- Every entry the window shows gets its descStyle here and nowhere else: one with a help
+-- line shows it as a tooltip, or not, per help mode; one without stays "hidden", so
+-- AceConfigDialog never shows a name-only tooltip. descStyle has to be a plain string
+-- (AceConfigRegistry), so it is set on every build. Chat commands (dialogHidden) are
+-- skipped: their desc is AceConfigCmd's help text.
 local function ApplyHelp(group, style)
     for _, entry in pairs(group.args) do
         if entry.args then
             ApplyHelp(entry, style)
-        elseif entry.desc and not entry.dialogHidden then
-            entry.descStyle = style
+        elseif not entry.dialogHidden then
+            entry.descStyle = entry.desc and style or "hidden"
         end
     end
 end
@@ -126,7 +128,7 @@ end
 local function Toggle(order, name, get, set, disabled, control, indent)
     return {
         type = "toggle", order = order, width = "full",
-        cmdHidden = true, descStyle = "hidden", dialogControl = control or "SSFIndentCheckBox",
+        cmdHidden = true, dialogControl = control or "SSFIndentCheckBox",
         name = name, get = get, set = set, disabled = disabled, arg = indent,
     }
 end
@@ -286,7 +288,7 @@ local function BuildTable()
                 -- the name titles its tooltip only: the widget never shows a label
                 pausevolume = {
                     type = "select", order = 3, width = "half",
-                    cmdHidden = true, descStyle = "hidden", name = L["Volume"],
+                    cmdHidden = true, name = L["Volume"],
                     dialogControl = "SSFUnlabeledDropdown", -- Widgets\SSFCentered.lua
                     values = LevelValues,
                     sorting = Sounds():LevelKeys(),
@@ -372,7 +374,6 @@ local function BuildTable()
                     order = 5,
                     width = "full",
                     cmdHidden = true,
-                    descStyle = "hidden",
                     dialogControl = "LSM30_Font",
                     name = L["Bag counter font"],
                     values = LSM:HashTable("font"),
@@ -398,7 +399,6 @@ local function BuildTable()
                     order = 3,
                     width = "full",
                     cmdHidden = true,
-                    descStyle = "hidden",
                     name = L["How shards move"],
                     values = {
                         ssf = L["SSF Mode"],
@@ -435,7 +435,6 @@ local function BuildTable()
                     order = 5,
                     width = "full",
                     cmdHidden = true,
-                    descStyle = "hidden",
                     name = L["Language"],
                     values = function()
                         local values = { auto = "Auto" }
