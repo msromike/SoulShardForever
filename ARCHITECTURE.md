@@ -15,6 +15,7 @@ created by Window and by each other):
 - Widgets\SSFSideNote.lua: the note beside the options window's top-right corner (the first-load welcome).
 - Widgets\SSFFrame.lua: SSF's options window, an extension of AceGUI's stock Frame container.
 - Widgets\SSFCentered.lua: three AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.
+- Widgets\SSFIndentRadio.lua: SSFIndentCheckBox drawn as a radio button, for use from the options table through `dialogControl` on a `toggle` option.
 
 Core and modules:
 

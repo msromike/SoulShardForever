@@ -89,12 +89,19 @@ Never greyed: it sets where red starts everywhere.
 
 Shows your shard count on a bag button (soul bag by default, left bag slot otherwise).
 
-### Glow bag button when low
+### Far-left bag
 
-The bag button glows while you are below "Low shard mark".
+Keeps the counter on your far-left bag.
 
-"Low shard mark" is filled in from its own label. First under Show shard counter on bag bar,
-greyed with it off (the glow needs the count).
+A radio, paired with Soul bag: the dot is on the bag the number sits on. Greyed with Show
+shard counter on bag bar off.
+
+### Soul bag
+
+Moves the counter to your soul bag, whatever slot it's in.
+
+Greyed with the counter off, and while no soul bag is equipped (the dot is then on Far-left
+bag; the number moves to the first soul bag by itself).
 
 ### Colorize bag counter
 
@@ -104,9 +111,12 @@ Each color word is drawn in its own color, the bag's shades (Colors' red, green 
 yellow). The code paints the words; each translation takes them as arguments, like "Low shard
 mark".
 
-### Show counter on soul bag
+### Glow bag button when low
 
-Moves the counter to your soul bag, whatever slot it's in.
+The bag button glows while you are below "Low shard mark".
+
+"Low shard mark" is filled in from its own label. Greyed with Show shard counter on bag bar
+off (the glow needs the count).
 
 ### Bag counter font
 

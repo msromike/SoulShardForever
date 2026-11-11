@@ -2,7 +2,7 @@
 --
 -- Counter: one number, the total shard count, centered on one bag button. Shown only while
 -- the "Show shard counter on bag bar" option is on. Where it sits (Anchor):
---   "Show counter on soul bag" ticked and a soul bag equipped: that soul bag's button,
+--   "Soul bag" picked (counterSoulBag) and a soul bag equipped: that soul bag's button,
 --     the reagent slot first, then bag 4 down to bag 1. The bag's slot does not matter.
 --   otherwise: the far-left bag button (bag 4, CharacterBag3Slot). Bag buttons are always
 --     on the bar on this client, empty or not (no bag bar collapse: checked in game
@@ -24,7 +24,9 @@
 -- number reads on a light bag: the count comes first, the bag only has to stay
 -- recognizable (Mike, 2026-10-22). It shows and hides with the number.
 --
--- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state).
+-- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state);
+--          OnSoulBag() -> bool, true when "Soul bag" is the saved place and a soul bag is
+--          equipped (Options: which of its two place radios has the dot).
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED,
 --          SSF_QUIET_ENDED.
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
@@ -62,15 +64,17 @@ local function SoulBagButton()
 end
 
 -- The button the counter (and LowGlow) sits on, and true when it is a soul bag's button.
--- A soul bag only while the counter and "Show on soul bag" are both on; otherwise the
--- far-left bag button (see the header).
+-- A soul bag only while the counter is on and OnSoulBag; otherwise the far-left bag button
+-- (see the header).
 local function Anchor()
-    local p = SSF.db.profile
-    if p.counter and p.counterSoulBag then
-        local soulBag = SoulBagButton()
-        if soulBag then return soulBag, true end
-    end
+    if SSF.db.profile.counter and Counter:OnSoulBag() then return SoulBagButton(), true end
     return CharacterBag3Slot, false
+end
+
+-- True when "Soul bag" is the saved place and a soul bag is equipped: where the number
+-- sits while the counter is on, whether or not it is on right now.
+function Counter:OnSoulBag()
+    return (SSF.db.profile.counterSoulBag and SoulBagButton() ~= nil) or false
 end
 
 -- The game's own number on a bag button (the ItemButton's Count text), or nil.

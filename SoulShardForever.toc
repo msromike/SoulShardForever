@@ -27,6 +27,7 @@ Widgets\SSFStepperSlider.lua
 Widgets\SSFSideNote.lua
 Widgets\SSFFrame.lua
 Widgets\SSFCentered.lua
+Widgets\SSFIndentRadio.lua
 Core.lua
 Modules\Colors.lua
 Modules\KeyBindings.lua

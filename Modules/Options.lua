@@ -43,7 +43,7 @@
 -- Listens: SSF_HELP_CHANGED (Rebuild: the table captured its tooltip style when built).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
 -- Reads:   Help:Apply, Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
---          Bags:HasSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
+--          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
 --          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
@@ -71,6 +71,7 @@ local APP = Options.APP
 
 local function Cap() return SSF:GetModule("Cap") end
 local function Bags() return SSF:GetModule("Bags") end
+local function Counter() return SSF:GetModule("Counter") end
 local function Sounds() return SSF:GetModule("Sounds") end
 local function Status() return SSF:GetModule("Status") end
 local function Colors() return SSF:GetModule("Colors") end
@@ -102,6 +103,23 @@ local function Toggle(order, name, get, set, disabled, control, indent)
         cmdHidden = true, dialogControl = control or "SSFIndentCheckBox",
         name = name, get = get, set = set, disabled = disabled, arg = indent,
     }
+end
+
+-- One of the two radios for the counter's place (Widgets\SSFIndentRadio.lua), under the
+-- counter checkbox. The dot is where the number sits (Counter:OnSoulBag), not the saved
+-- key: with no soul bag equipped the dot is on the far-left radio while the key still says
+-- soul bag, so the number moves to the first soul bag by itself. A click saves only on a
+-- real change: a click on the radio that has the dot writes nothing and sends nothing
+-- (AceConfigDialog redraws after every set, which puts the dot back). Mike, 2026-11-11.
+local function PlaceRadio(order, name, onSoulBag, disabled)
+    return Toggle(order, name,
+        function() return Counter():OnSoulBag() == onSoulBag end,
+        function()
+            if Counter():OnSoulBag() == onSoulBag then return end
+            SSF.db.profile.counterSoulBag = onSoulBag
+            changed("countersoulbag")
+        end,
+        disabled, "SSFIndentRadio", 2)
 end
 
 -- an entry with a narrower width than its builder gave it, so a second control fits on its row
@@ -311,27 +329,24 @@ local function BuildTable()
                         SSF.db.profile.counter = value
                         changed("counter")
                     end),
+                -- where the number sits, first under the count checkbox: far-left bag, or a
+                -- soul bag. Both grey with the count off; Soul bag also greys while no soul
+                -- bag is equipped (the dot is then on Far-left bag, see PlaceRadio)
+                placeleft = PlaceRadio(2, L["Far-left bag"], false, CounterOff),
+                placesoul = PlaceRadio(3, L["Soul bag"], true,
+                    function() return CounterOff() or not Bags():HasSoulBag() end),
                 -- the glow is part of the bag display: it sits on the counter's button and
-                -- runs only while the count shows (LowGlow). First under the count, right
-                -- below the warn slider in the group above
-                lowglow = Toggle(2, L["Glow bag button when low"],
+                -- runs only while the count shows (LowGlow). After Colorize: both follow
+                -- the low mark
+                lowglow = Toggle(5, L["Glow bag button when low"],
                     function() return SSF.db.profile.lowGlow end,
                     function(_, value)
                         SSF.db.profile.lowGlow = value
                         changed("lowglow")
                     end,
                     CounterOffOrPaused, nil, 2),
-                -- the number follows an equipped soul bag (Counter); greyed with the
-                -- count off, but never for a missing soul bag: it waits for one to go on
-                soulbag = Toggle(4, L["Show counter on soul bag"],
-                    function() return SSF.db.profile.counterSoulBag end,
-                    function(_, value)
-                        SSF.db.profile.counterSoulBag = value
-                        changed("countersoulbag")
-                    end,
-                    CounterOff, nil, 2),
-                -- glow, colorize and soul bag all hang off the count checkbox, one step in
-                colorize = Toggle(3, L["Colorize bag counter"],
+                -- the place radios, colorize and glow all hang off the count checkbox, one step in
+                colorize = Toggle(4, L["Colorize bag counter"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
                         SSF.db.profile.counterColorize = value
@@ -342,7 +357,7 @@ local function BuildTable()
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {
                     type = "select",
-                    order = 5,
+                    order = 6,
                     width = "full",
                     cmdHidden = true,
                     dialogControl = "LSM30_Font",
@@ -481,7 +496,8 @@ local function BuildTable()
             colorize = L['%s when below "%s", %s in range, and %s over the cap.']:format(
                 Colors():PaintState("low", L["Red"]), lowMarkName,
                 Colors():PaintState("ok", L["green"]), Colors():PaintState("over", L["yellow"])),
-            soulbag = L["Moves the counter to your soul bag, whatever slot it's in."],
+            placeleft = L["Keeps the counter on your far-left bag."],
+            placesoul = L["Moves the counter to your soul bag, whatever slot it's in."],
             font = L["The font used on the shard counter."],
         },
         other = {
