@@ -16,7 +16,14 @@
 --                         of its tooltip.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
 --                         An option's `arg` sets the indent level (2 = 20px); no `arg` is
---                         level 1. AceConfigDialog hands `arg` to SetCustomData. Not full
+--                         level 1. A table `arg`, { level = 2, radio = true }, also draws
+--                         it as a radio button: the stock CheckBox's own "radio" type,
+--                         centered in the check box's square so its rows line up with the
+--                         check box rows; looks only (which radio of a pair has the dot, and what a click
+--                         saves, is the options table's). AceConfig's own radio form, a
+--                         `select` with style "radio", takes no `dialogControl`, draws a
+--                         titled box of its own and cannot grey one choice.
+--                         AceConfigDialog hands `arg` to SetCustomData. Not full
 --                         width (sharing a row), it is as wide as its label on one line.
 --                         A label that does not fit the row wraps and the row's height
 --                         follows the wrapped text (the Flow layout reads a full-width
@@ -32,7 +39,8 @@
 --
 -- Public:  SSFCountButton: SetText, SetCustomData(getText), SetDisabled, MinWidth();
 --          SSFIndentCheckBox: the CheckBox's SetLabel, SetValue, GetValue, SetTriState,
---          SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level); MinWidth().
+--          SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level, or
+--          { level, radio }); MinWidth().
 --          MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth
 --          sizes the window to.
 -- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
@@ -48,7 +56,10 @@
 --          OnAcquire is called directly, outside
 --          AceGUI:Create, as a full repeatable reset. The CheckBox's text FontString is
 --          also written (height 0, word wrap, width) so a label can wrap; BOX copies the
---          stock checkbg size. An AceGUI bump that renames those breaks the top row, the
+--          stock checkbg size and RADIO the stock radio art's. For a radio, the CheckBox's
+--          checkbg (TOPLEFT) and text (LEFT) anchors are written, and put back on acquire;
+--          a CheckBox that anchors them differently leaves the radios off the check boxes'
+--          column. An AceGUI bump that renames those breaks the top row, the
 --          check boxes' layout, or the volume dropdown's construction; one whose CheckBox
 --          re-sets its text height clips wrapped labels.
 -- Reads:   Help:KeepHover/Greyed (the tooltip on a greyed control).
@@ -192,11 +203,25 @@ end
 -- SSFIndentCheckBox
 -------------------------------------------------------------------------------
 do
-    local Type, Version = "SSFIndentCheckBox", 5
+    local Type, Version = "SSFIndentCheckBox", 6
     local INDENT = 10 -- one indent level, in px
     local BOX = 24    -- the stock CheckBox's box; its label starts right of it
     local GAP = 12    -- after the label, when the checkbox shares its row: air before the next control
     local WRAP_PAD = 4 -- px of row under a wrapped label
+    local RADIO = 16  -- the stock radio art, smaller than the check box's
+
+    -- Radio or check box art. The radio is drawn in the middle of the check box's square
+    -- (the stock widget pins it to the square's top left), and its label starts where a
+    -- check box's label starts, so a radio row lines up with the check box rows around it
+    -- and BOX stays true for both. Off puts the stock anchors back (the art itself is
+    -- reset by the stock OnAcquire).
+    local function SetRadio(self, on)
+        local inner = self.inner
+        local inset = on and (BOX - RADIO) / 2 or 0
+        if on then inner:SetType("radio") end
+        inner.checkbg:SetPoint("TOPLEFT", inset, -inset)
+        inner.text:SetPoint("LEFT", inner.checkbg, "RIGHT", inset, 0)
+    end
 
     -- the label on one line, in px from the widget's left edge
     local function Natural(self)
@@ -228,6 +253,7 @@ do
         ["OnAcquire"] = function(self)
             self.inner:OnAcquire() -- the stock reset: type, value, tri-state, image, enabled, description
             self.inner:SetLabel("")
+            SetRadio(self, false) -- pooled: a radio's anchors must not leak to a check box
             -- AceGUI pools widgets: back to level 1, or a deeper indent leaks to another row
             self.indent = INDENT
             self:SetWidth(200)
@@ -249,8 +275,15 @@ do
         ["SetDescription"] = function(self, v) self.inner:SetDescription(v) end,
         ["SetType"] = function(self, v) self.inner:SetType(v) end,
         ["SetImage"] = function(self, ...) self.inner:SetImage(...) end,
-        -- the option's `arg`: the indent level (AceConfigDialog InjectInfo calls this)
-        ["SetCustomData"] = function(self, level)
+        -- the option's `arg` (AceConfigDialog InjectInfo calls this): the indent level, or
+        -- a table { level = n, radio = true } for a radio button. OnAcquire's stock reset
+        -- puts the check box art back for the next use
+        ["SetCustomData"] = function(self, data)
+            local level = data
+            if type(data) == "table" then
+                level = data.level
+                if data.radio then SetRadio(self, true) end
+            end
             self.indent = INDENT * (tonumber(level) or 1)
             if self.frame.width then Fit(self, self.frame.width) end
         end,

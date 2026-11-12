@@ -30,7 +30,7 @@
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED,
 --          SSF_QUIET_ENDED.
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
--- Reads:   Bags:Count(), Bags:SoulBags(), Cap:State(), Colors; profile.counter,
+-- Reads:   Bags:Count(), Bags:SoulBags(), Bags:HasSoulBag(), Cap:State(), Colors; profile.counter,
 --          counterSoulBag, counterFont, counterColorize.
 -- Exceptions: the FontString and the backing texture are raw: AceGUI builds widgets inside
 --          its own windows and cannot draw on a Blizzard button. One of the five exceptions
@@ -67,14 +67,17 @@ end
 -- A soul bag only while the counter is on and OnSoulBag; otherwise the far-left bag button
 -- (see the header).
 local function Anchor()
-    if SSF.db.profile.counter and Counter:OnSoulBag() then return SoulBagButton(), true end
+    if SSF.db.profile.counter and Counter:OnSoulBag() then
+        local soulBag = SoulBagButton()
+        if soulBag then return soulBag, true end -- no button for it: the far-left one
+    end
     return CharacterBag3Slot, false
 end
 
 -- True when "Soul bag" is the saved place and a soul bag is equipped: where the number
 -- sits while the counter is on, whether or not it is on right now.
 function Counter:OnSoulBag()
-    return (SSF.db.profile.counterSoulBag and SoulBagButton() ~= nil) or false
+    return (SSF.db.profile.counterSoulBag and SSF:GetModule("Bags"):HasSoulBag()) or false
 end
 
 -- The game's own number on a bag button (the ItemButton's Count text), or nil.

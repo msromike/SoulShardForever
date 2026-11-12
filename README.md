@@ -2,6 +2,7 @@
 
 ## Features
 
+- Pick where the shard counter sits: Far-left bag or Soul bag. (1.13.0)
 - Help tooltips work on greyed options too: hover anything, available or not, and read what it does. (1.12.0)
 - Delete Shard says why it's grey, right on the button. (1.11.0)
 - Guided onboarding that knows your level: before Drain Soul, SSF stays quiet; learn it, and the welcome walks you through setup. (1.10.0)

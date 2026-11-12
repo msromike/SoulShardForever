@@ -96,7 +96,8 @@ end
 
 -- a full-width, GUI-only checkbox, indented 10px inside its group unless
 -- `control` names another dialogControl (see Widgets\SSFCentered.lua). `indent` is the
--- SSFIndentCheckBox level (2 = 20px), passed as the option's `arg`; nil is level 1.
+-- SSFIndentCheckBox level (2 = 20px), or its { level, radio } table, passed as the option's
+-- `arg`; nil is level 1.
 local function Toggle(order, name, get, set, disabled, control, indent)
     return {
         type = "toggle", order = order, width = "full",
@@ -105,7 +106,7 @@ local function Toggle(order, name, get, set, disabled, control, indent)
     }
 end
 
--- One of the two radios for the counter's place (Widgets\SSFIndentRadio.lua), under the
+-- One of the two radios for the counter's place (SSFIndentCheckBox drawn as a radio), under the
 -- counter checkbox. The dot is where the number sits (Counter:OnSoulBag), not the saved
 -- key: with no soul bag equipped the dot is on the far-left radio while the key still says
 -- soul bag, so the number moves to the first soul bag by itself. A click saves only on a
@@ -119,7 +120,7 @@ local function PlaceRadio(order, name, onSoulBag, disabled)
             SSF.db.profile.counterSoulBag = onSoulBag
             changed("countersoulbag")
         end,
-        disabled, "SSFIndentRadio", 2)
+        disabled, nil, { level = 2, radio = true })
 end
 
 -- an entry with a narrower width than its builder gave it, so a second control fits on its row

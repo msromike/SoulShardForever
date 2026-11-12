@@ -1,5 +1,16 @@
 # Changelog
 
+## 1.13.0 (2026-11-11)
+
+- Where the shard counter sits is now one pick out of two: Far-left bag or Soul bag,
+  right under Show shard counter on bag bar. It replaces the Show counter on soul bag
+  checkbox, and your choice carries over.
+- Soul bag is grey until you equip a soul bag. Until then the counter waits on your
+  far-left bag, and it moves to your first soul bag by itself.
+- Colorize bag counter and Glow bag button when low now sit together, under the two picks.
+- Under the hood: the library behind the font list (LibSharedMedia) is on its latest
+  version. Nothing you see changed.
+
 ## 1.12.0 (2026-11-10)
 
 - Help tooltips now show on greyed options too. With help on, hover any option, available
