@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.13.1 (2026-11-12)
+
+- Far-left bag and Soul bag now sit side by side on one row, so they read as one pick.
+- Colorize bag counter and Glow bag button when low line up under Show shard counter on
+  bag bar, with a little space above them.
+
 ## 1.13.0 (2026-11-11)
 
 - Where the shard counter sits is now one pick out of two: Far-left bag or Soul bag,

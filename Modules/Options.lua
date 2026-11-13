@@ -106,27 +106,32 @@ local function Toggle(order, name, get, set, disabled, control, indent)
     }
 end
 
+-- an entry with a narrower width than its builder gave it, so a second control fits on its row
+local function Width(entry, width)
+    entry.width = width
+    return entry
+end
+
 -- One of the two radios for the counter's place (SSFIndentCheckBox drawn as a radio), under the
 -- counter checkbox. The dot is where the number sits (Counter:OnSoulBag), not the saved
 -- key: with no soul bag equipped the dot is on the far-left radio while the key still says
 -- soul bag, so the number moves to the first soul bag by itself. A click saves only on a
 -- real change: a click on the radio that has the dot writes nothing and sends nothing
 -- (AceConfigDialog redraws after every set, which puts the dot back). Mike, 2026-11-11.
-local function PlaceRadio(order, name, onSoulBag, disabled)
-    return Toggle(order, name,
+-- The two share one row, a half line over Colorize and the glow, so they read as one pick
+-- (Mike, 2026-11-12). Not full width: each is as wide as its label (SSFIndentCheckBox).
+-- `follows` marks the second one: it starts one check box width after the first's label.
+local function PlaceRadio(order, name, onSoulBag, disabled, follows)
+    return Width(Toggle(order, name,
         function() return Counter():OnSoulBag() == onSoulBag end,
         function()
             if Counter():OnSoulBag() == onSoulBag then return end
             SSF.db.profile.counterSoulBag = onSoulBag
             changed("countersoulbag")
         end,
-        disabled, nil, { level = 2, radio = true })
-end
-
--- an entry with a narrower width than its builder gave it, so a second control fits on its row
-local function Width(entry, width)
-    entry.width = width
-    return entry
+        disabled, nil,
+        { level = 2, radio = true, after = true, follows = follows }),
+        "normal")
 end
 
 -- a blank line between two groups, so the sections stand apart (a plain description entry:
@@ -330,12 +335,12 @@ local function BuildTable()
                         SSF.db.profile.counter = value
                         changed("counter")
                     end),
-                -- where the number sits, first under the count checkbox: far-left bag, or a
-                -- soul bag. Both grey with the count off; Soul bag also greys while no soul
+                -- where the number sits, first under the count checkbox, side by side: far-left
+                -- bag, or a soul bag. Both grey with the count off; Soul bag also greys while no soul
                 -- bag is equipped (the dot is then on Far-left bag, see PlaceRadio)
                 placeleft = PlaceRadio(2, L["Far-left bag"], false, CounterOff),
                 placesoul = PlaceRadio(3, L["Soul bag"], true,
-                    function() return CounterOff() or not Bags():HasSoulBag() end),
+                    function() return CounterOff() or not Bags():HasSoulBag() end, true),
                 -- the glow is part of the bag display: it sits on the counter's button and
                 -- runs only while the count shows (LowGlow). After Colorize: both follow
                 -- the low mark
@@ -345,15 +350,16 @@ local function BuildTable()
                         SSF.db.profile.lowGlow = value
                         changed("lowglow")
                     end,
-                    CounterOffOrPaused, nil, 2),
-                -- the place radios, colorize and glow all hang off the count checkbox, one step in
+                    CounterOffOrPaused),
+                -- the place radios hang off the count checkbox, one step in; colorize and glow
+                -- line up under the count checkbox itself, under the radios' half line (Mike, 2026-11-12)
                 colorize = Toggle(4, L["Colorize bag counter"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
                         SSF.db.profile.counterColorize = value
                         changed("countercolorize")
                     end,
-                    CounterOffOrPaused, nil, 2),
+                    CounterOffOrPaused),
                 -- LibSharedMedia supplies the font list; the AceGUI SharedMedia widget draws
                 -- the dropdown with previews. Size auto-fits the button.
                 font = {
