@@ -1,10 +1,17 @@
+## <span style="color:#8788EE">Coming soon</span>
+
+- **Delete in combat:**  SSF will be able to delete a Soul Shard over your cap while you are in combat.
+- **Delete as you play:**  An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind.
+
+Each one comes out first as a beta on CurseForge.
+
 ## <span style="color:#8788EE">Summary</span>
 
 This addon helps you prune excess Warlock Soul Shards held in your bags in WoW Forever. Set the cap, tap a key (or macro), and done. Works out of the box with minimal setup. Doesn't sort shards in your bags unless you want it to. Multi-language support.
 
 ## <span style="color:#8788EE">Description</span>
 
-Keeps your Soul Shards at the cap you set, one press at a time, but not in combat (Blizzard limitation). Displays shard count, and can be paused.
+Keeps your Soul Shards at the cap you set, one press at a time, but not in combat yet. Displays shard count, and can be paused.
 
 ## <span style="color:#8788EE">Why this one</span>
 
