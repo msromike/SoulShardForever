@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- Russian strings. Blizzard terms from the ruRU client: Осколок души (the shard item), Сумка душ
 -- (the soul bag container type). Counts sit after a colon or in their own column, so no
--- string needs plural forms. Registered at the bottom through Locales\Register.lua.
+-- string needs plural forms. Registered at the bottom through Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

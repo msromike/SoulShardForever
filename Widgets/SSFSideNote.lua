@@ -229,23 +229,31 @@ local function MakePlain(self)
     self.button:SetScript("PostClick", function() self:Close() end)
 end
 
+-- The button's label: its text with a space each side, so it reads as a button, not a bar.
+local function Pad(text) return " " .. text .. " " end
+
+-- The button as wide as the widest of the labels it may carry, plus its end caps, so it
+-- never changes size when it is relabelled; the last label given is the one left on it.
+local function SizeButton(button, ...)
+    local widest = 0
+    for i = 1, select("#", ...) do
+        button:SetText((select(i, ...)))
+        widest = math.max(widest, button:GetFontString():GetStringWidth() or 0)
+    end
+    button:SetWidth(widest + SIDE_BUTTON_EDGE)
+end
+
 -- The plain layout's row, on every Show: the tick box as wide as its label, unticked
 -- unless opts.ticked, the button on the label that goes with it and as wide as the wider
 -- of its two, so it never changes size when the tick relabels it.
 local function SizeTickRow(self, opts)
     local button, check = self.button, self.check
     self.labels = {
-        [false] = " " .. (opts.button or "") .. " ",
-        [true] = " " .. (opts.buttonTicked or opts.button or "") .. " ",
+        [false] = Pad(opts.button or ""),
+        [true] = Pad(opts.buttonTicked or opts.button or ""),
     }
-    local widest = 0
-    for _, label in pairs(self.labels) do
-        button:SetText(label)
-        widest = math.max(widest, button:GetFontString():GetStringWidth() or 0)
-    end
     local ticked = opts.ticked == true
-    button:SetText(self.labels[ticked])
-    button:SetWidth(widest + SIDE_BUTTON_EDGE)
+    SizeButton(button, self.labels[not ticked], self.labels[ticked])
     self.onTick = opts.onTick
     check:SetLabel(opts.tick or "")
     check:SetValue(ticked)
@@ -329,10 +337,8 @@ local methods = {
         for i = p + 1, #self.paragraphs do self.paragraphs[i]:Hide() end
         for i = m + 1, #self.macros do self.macros[i]:Hide() end
         if opts.button then
-            -- as wide as its text plus a space each side: it reads as a button, not a bar
             local button = self.button
-            button:SetText(" " .. opts.button .. " ")
-            button:SetWidth((button:GetFontString():GetStringWidth() or 0) + SIDE_BUTTON_EDGE)
+            SizeButton(button, Pad(opts.button)) -- as wide as its own label
             self.onClick = opts.onClick -- run by PreClick; never SetScript OnClick, it would replace the secure handler
             button:RegisterForClicks(GetCVarBool("ActionButtonUseKeyDown") and "LeftButtonDown" or "LeftButtonUp")
             button:SetEnabled(not opts.buttonDisabled)

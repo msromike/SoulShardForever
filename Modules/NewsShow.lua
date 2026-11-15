@@ -14,12 +14,12 @@
 -- in the new language, the tick as the player left it.
 --
 -- Public:  Show(auto) (the panel, through Window:ShowLeftNote; auto: NewsShow is opening
---          the window by itself, so the window is centered first), Owed() -> bool.
+--          the window by itself, which Window turns into a centered open), Owed() -> bool.
 -- Listens: SSF_WINDOW_OPENED (any open), SSF_OPTIONS_REBUILT (a Language change or a help
 --          toggle: the open panel is filled again), LOADING_SCREEN_DISABLED (once at load,
 --          only while an announcement is owed).
 -- Reads:   NS.news from News\News.lua (the announcement: id, on, title, text);
---          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote/InFight/Center;
+--          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote/InFight;
 --          Colors:Gold (a paragraph's lead).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
 -- Touches nothing else.
@@ -82,9 +82,9 @@ function NewsShow:Show(auto)
     local news = Current()
     local Window = SSF:GetModule("Window")
     if not news or self.noteOpen or Window:InFight() then return end
-    if auto then Window:Center() end -- our own open: a position reset
     self.noteOpen = true
-    Window:ShowLeftNote(Note(self, news))
+    local title, opts = Note(self, news)
+    Window:ShowLeftNote(title, opts, auto)
 end
 
 -- Options rebuilt its table (the Language changed, or help was toggled): the open panel

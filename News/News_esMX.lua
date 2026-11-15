@@ -1,6 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- The current announcement's lines, Spanish: the keys News\News.lua names. Added to the
--- esMX table through Locales\Register.lua.
+-- esMX table through Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

@@ -8,7 +8,7 @@
 --
 -- When Welcome opens the window by itself (at load, and when the trainer closes after Drain
 -- Soul is learned) the window goes to the center of the screen, whatever spot was saved,
--- and the center is the character's spot from then on (Window:Center; Mike, 2026-11-15).
+-- and the center is the character's spot from then on (Window's automatic open; Mike, 2026-11-15).
 -- "Create macros" and a note that comes back with the player's own open leave the window
 -- where it is.
 --
@@ -27,7 +27,7 @@
 -- in place, in the language the window now shows (Mike, 2026-11-15, as NewsShow does).
 --
 -- Public:  Show(auto) (the note, through Window:ShowNote; auto: Welcome is opening the
---          window by itself, so the window is centered first).
+--          window by itself, which Window turns into a centered open).
 -- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open),
 --          SSF_OPTIONS_REBUILT (a Language change or a help toggle: the open note is
 --          filled again), LOADING_SCREEN_DISABLED once at load while a note is owed,
@@ -35,7 +35,7 @@
 -- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
 --          button note's "reloads your UI");
 --          Help:IsOn/Toggle,
---          Window:ShowNote/RefreshNote/InFight/Center, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
+--          Window:ShowNote/RefreshNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
 --          button; Create's return is the click's command).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
 --          Soul is learned), and WELCOME_VERSION once the player closes it outside a fight.
@@ -96,10 +96,10 @@ end
 -- brings it back.
 function Welcome:Show(auto)
     if InFight() then return end -- the window stays shut in a fight (Window)
-    if auto then SSF:GetModule("Window"):Center() end -- our own open: a position reset
     self.noteOpen = true
     SSF.db.profile.welcomed = false
-    SSF:GetModule("Window"):ShowNote(Note(self))
+    local title, body, note, opts = Note(self)
+    SSF:GetModule("Window"):ShowNote(title, body, note, opts, auto)
 end
 
 -- Options rebuilt its table (the Language changed, or help was toggled): the open note is

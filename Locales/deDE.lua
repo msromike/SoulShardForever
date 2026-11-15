@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- German strings. Blizzard terms from the deDE client: Seelensplitter (the shard item),
 -- Seelentasche (the soul bag container type). Registered at the bottom through
--- Locales\Register.lua.
+-- Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

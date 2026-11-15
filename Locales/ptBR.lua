@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- Brazilian Portuguese strings. Blizzard terms from the ptBR client: Estilhaço de Alma
 -- (the shard item), Bolsa de Almas (the soul bag container type). Registered at the bottom
--- through Locales\Register.lua.
+-- through Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

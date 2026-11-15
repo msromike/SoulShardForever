@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- Latin American Spanish strings. Blizzard terms from the Spanish client: Fragmento de alma
 -- (the shard item), Bolsa de almas (the soul bag container type). Registered at the bottom through
--- Locales\Register.lua.
+-- Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

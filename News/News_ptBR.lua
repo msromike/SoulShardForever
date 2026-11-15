@@ -1,6 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- The current announcement's lines, Brazilian Portuguese: the keys News\News.lua names. Added to the
--- ptBR table through Locales\Register.lua.
+-- ptBR table through Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

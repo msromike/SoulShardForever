@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.14.0 (2026-11-15)
+
+- SSF can now show an occasional announcement on the left of its window. Tick "Don't
+  show this again" and it stays gone. Until then, it comes back when you log in or open
+  the window.
+- The first one: delete in combat and delete as you play are on the way, each coming
+  first as a beta on CurseForge.
+- When the welcome opens by itself, the SSF window now opens in the middle of the screen.
+- A note beside the window no longer hangs off the edge of the screen when the window
+  sits near it.
+- The welcome now switches language right away when you change the Language setting.
+
 ## 1.13.1 (2026-11-12)
 
 - Far-left bag and Soul bag now sit side by side on one row, so they read as one pick.

@@ -1,6 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- The current announcement's lines, German: the keys News\News.lua names. Added to the
--- deDE table through Locales\Register.lua.
+-- deDE table through Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

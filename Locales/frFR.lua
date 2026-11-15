@@ -1,7 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- French strings. Blizzard terms from the frFR client: Fragment d'âme (the shard item),
 -- Sac d'âme (the soul bag container type). Registered at the bottom through
--- Locales\Register.lua.
+-- Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

@@ -1,6 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 -- English strings, the default. Every user-facing string lives here; modules read L["..."].
--- Registered at the bottom through Locales\Register.lua.
+-- Registered at the bottom through Locales\Register.lua. Touches nothing else.
 
 local _, NS = ...
 local L = {}

@@ -2,7 +2,8 @@
 --
 -- test_newsshow: when the announcement is owed, and when and how NewsShow shows it. The
 -- window is a stand-in module that records what NewsShow asks of it and answers an open the
--- way the real one does (the window-opened message comes back before the note shows). The
+-- way the real one does (the window-opened message comes back before the note shows), and
+-- counts the opens NewsShow marks as its own (auto: the real window centers those). The
 -- announcement is one the tests swap in (WoW.NS.news), its lines added the way a
 -- News\News_<code>.lua adds them, so nothing here depends on the announcement that ships.
 -- Reads:   NewsShow; NS.AddLocaleStrings (Locales\Register.lua); Colors (the expected gold).
@@ -20,8 +21,8 @@ NS.AddLocaleStrings("enUS", { ["A test title"] = true, ["First line."] = true, [
 local asked
 local Window = SSF:NewModule("Window")
 function Window:InFight() return WoW.combat end
-function Window:Center() asked.centered = asked.centered + 1 end
-function Window:ShowLeftNote(title, opts)
+function Window:ShowLeftNote(title, opts, auto)
+    if auto then asked.centered = asked.centered + 1 end
     NewsShow:OnWindowOpened() -- the real open sends SSF_WINDOW_OPENED before the note shows
     asked.shown[#asked.shown + 1] = { title = title, opts = opts }
 end
