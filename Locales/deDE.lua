@@ -115,4 +115,9 @@ L["You learned Drain Soul"] = "Du hast Seelendieb gelernt"
 L["no Drain Soul yet"] = "noch kein Seelendieb"
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Bis dahin kannst du das Addon ausprobieren. Wenn du auf Stufe 10 Seelendieb lernst, zeigen wir dir dieses Fenster noch einmal."
 
+-- the announcement panel (NewsShow): the tick box and the button's two labels
+L["Don't show this again"] = "Nicht mehr anzeigen"
+L["Remind me later"] = "Später erinnern"
+L["Got it"] = "Verstanden"
+
 NS.RegisterLocale("deDE", "Deutsch", L)

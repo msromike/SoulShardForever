@@ -21,7 +21,7 @@
 --                         centered in the check box's square so its rows line up with the
 --                         check box rows; looks only (which radio of a pair has the dot, and what a click
 --                         saves, is the options table's). The table's `after` adds half a
---                         line (HALF_LINE) of empty row under the control; `follows` marks the second
+--                         line (Core's SSF.HALF_LINE) of empty row under the control; `follows` marks the second
 --                         choice on a shared row, one check box width (CHOICE_GAP) after the
 --                         first choice's label. AceConfig's own radio form, a
 --                         `select` with style "radio", takes no `dialogControl`, draws a
@@ -65,7 +65,7 @@
 --          column. An AceGUI bump that renames those breaks the top row, the
 --          check boxes' layout, or the volume dropdown's construction; one whose CheckBox
 --          re-sets its text height clips wrapped labels.
--- Reads:   Help:KeepHover/Greyed (the tooltip on a greyed control).
+-- Reads:   Help:KeepHover/Greyed (the tooltip on a greyed control); SSF.HALF_LINE (Core).
 -- Touches nothing else.
 
 local AceGUI = LibStub("AceGUI-3.0")
@@ -215,8 +215,9 @@ do
     local RADIO_INSET = (BOX - RADIO) / 2 -- the radio art's margin inside the check box's square
     local CHOICE_GAP = BOX -- px from one choice's label to the next choice's button on a shared
                            -- row: one check box width, the window's own unit (Mike, 2026-11-12)
-    local HALF_LINE = 5 -- px of empty row under a control with `after`: SSF's own spacing for
-                        -- the radio row, the look Mike approved (2026-11-12)
+    -- px of empty row under a control with `after`: SSF's half line, whose one home is
+    -- Core. Read when a control is set up, not here: Core loads after the widgets.
+    local function HalfLine() return LibStub("AceAddon-3.0"):GetAddon("SSF").HALF_LINE end
 
     -- Radio or check box art. The radio is drawn in the middle of the check box's square
     -- (the stock widget pins it to the square's top left), and its label starts where a
@@ -293,7 +294,7 @@ do
             if type(data) == "table" then
                 self.indent = INDENT * (tonumber(data.level) or 1)
                 if data.radio then SetRadio(self, true) end
-                self.after = data.after and HALF_LINE or 0
+                self.after = data.after and HalfLine() or 0
                 -- `follows`: the second choice on a row. Its indent is what is left of
                 -- CHOICE_GAP after the previous control's GAP and this radio's inset
                 if data.follows then

@@ -13,8 +13,9 @@
 -- What SSF adds: an X close button top-right with an optional help button left of it
 -- (SetHelpButton: Blizzard's "i", gold while off, blue while on), a black shade layer under
 -- the content that makes the window a little darker than the bare art (SHADE, picked by
--- eye; the note beside gets the same SHADE, help art and button height through AttachTo), an optional note beside
--- the window (ShowSidePanel, the SSFSideNote widget), Escape closes it, a bottom row of
+-- eye; the notes beside get the same SHADE, help art and button height through AttachTo), an optional note on each
+-- side of the window (the SSFSideNote widget: ShowSidePanel on the right, the welcome's layout; ShowLeftPanel
+-- on the left, the plain layout), room made for them on the screen (MakeRoom), Escape closes it, a bottom row of
 -- Close (far right, SetRightButton turns it into an action), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
 -- footer line in the row's middle while that button is hidden (SetFooter); the buttons
@@ -34,11 +35,14 @@
 --          FitToContent(), SetTitleColor(r, g, b), SetTitleBand(alpha),
 --          SetActionButton(text, onClick, tipText), SetMiddleButton(...),
 --          SetRightButton(text, onClick, tipText), SetHelpButton(onClick, isOn, tipText),
---          ShowSidePanel(title, body, note, opts) (opts as SSFSideNote:Show),
---          SetFooter(text). Callback: "OnMoved"(top, left).
+--          ShowSidePanel(title, body, note, opts) and ShowLeftPanel(title, opts) (opts as
+--          SSFSideNote:Show; the right note and the left one), MakeRoom() (a showing note
+--          that would hang off the screen sends the window to the center; the owner calls
+--          it after every feed, which is where the saved spot comes back and the width
+--          changes), SetFooter(text). Callback: "OnMoved"(top, left).
 -- Hooks:   AceHook, embedded on the widget: the stock title handle's OnMouseUp (to fire
 --          OnMoved after the stock handler saved the position) and the frame's OnHide (to
---          close the note with the window). Both attach in the constructor.
+--          close both notes with the window). Both attach in the constructor.
 -- Lib internals: three reaches past the stock Frame's public surface, each guarded so a
 --          changed Frame leaves the stock piece in place rather than erroring: the status
 --          strip hidden through statustext's parent; the stock Close button found among
@@ -61,7 +65,7 @@
 --          titletext, titlebg, content or localstatus errors at the first open (they are
 --          read bare); one that drops a wrapped method errors in the constructor; one that
 --          renames the rest shows as a window that no longer fits its content.
--- Reads:   the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
+-- Reads:   SSF.HALF_LINE (Core), handed to the notes; the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
 --          and the title band), WHITE (the art and the "i" untinted) and BLUE (the "i"
 --          while help is on).
 -- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
@@ -95,7 +99,7 @@ local HELP_SIZE = 22                  -- the help button, square: the visible "i
 local HELP_CROP = { 14 / 64, 49 / 64 } -- the circle's edges in the 64 px art (measured); the rest is transparent
 local HELP_DROP = 6                   -- px below the X's middle, so the circle clears the frame's top border
 local HELP_GAP = 4                    -- px between the circle and the X
-local SIDE_GAP = 8                    -- px between the window's right edge and the side note
+local SIDE_GAP = 8                    -- px between the window's edge and the note on that side
 local TITLE_CAP = 30                  -- each end cap of the header art (the stock Frame's titlebg_l, titlebg_r)
 local BAND_REACH = 16                 -- px the title strip runs into each end cap, to the art's inner opening
 local BAND_PAD = 3                    -- px of strip above and below the title text
@@ -182,6 +186,24 @@ local function Close_OnClick(button)
     button.obj:Hide()
 end
 
+-- A note beside the window that would hang off the screen: the window goes to the center
+-- of the screen, where each side has the most room (no spot in the status table is the
+-- center). Asked when a note shows and after every feed, for whichever notes are showing:
+-- the owner's open puts the saved spot back into the status table, and a fit changes the
+-- width, so a move made once would not last.
+local function MakeRoom(self)
+    local frame = self.frame
+    local right = self.sidenote:IsShown() and self.sidenote.frame:GetWidth()
+    local left = self.leftnote:IsShown() and self.leftnote.frame:GetWidth()
+    local off = (right and (frame:GetRight() or 0) + SIDE_GAP + right > UIParent:GetRight())
+        or (left and (frame:GetLeft() or 0) - SIDE_GAP - left < UIParent:GetLeft())
+    if not off then return end
+    local status = Status(self)
+    if not (status.top and status.left) then return end -- in the center already
+    status.top, status.left = nil, nil -- ApplyStatus: no spot is the center
+    self:ApplyStatus()
+end
+
 -- SSF's methods. The ones that share a name with a stock Frame method call the stock one
 -- and add to it (self.stock.* is captured in the constructor); ApplyStatus seeds its
 -- defaults first, the others call the stock one first.
@@ -194,7 +216,9 @@ local methods = {
     ["OnWidthSet"] = function(self, width)
         self.stock.OnWidthSet(self, width)
         UpdateClamp(self)
-        if self.sidenote:IsShown() then self.sidenote:Layout(width) end
+        for _, note in ipairs({ self.sidenote, self.leftnote }) do
+            if note:IsShown() then note:Layout(width) end
+        end
     end,
 
     -- the stock OnHeightSet records content.height as the height less STOCK_BOTTOM_INSET;
@@ -371,18 +395,21 @@ local methods = {
         RefreshTip(button)
     end,
 
-    -- The note beside the window (SSFSideNote:Show). Too near the screen's right edge for
-    -- it, the window goes to the center of the screen; that goes in the status table, so
-    -- the next ApplyStatus keeps it this session (a drag still saves the window's spot).
+    -- The note on the window's right (SSFSideNote:Show, the welcome's layout). Too near the
+    -- screen's edge for it, the window goes to the center of the screen (MakeRoom).
     ["ShowSidePanel"] = function(self, titleText, bodyText, noteText, opts)
-        local width = self.sidenote:Show(titleText, bodyText, noteText, opts, self.titleColor)
-        local frame = self.frame
-        if (frame:GetRight() or 0) + SIDE_GAP + width > UIParent:GetRight() then
-            local status = Status(self)
-            status.top, status.left = nil, nil -- ApplyStatus: no spot is the center
-            self:ApplyStatus()
-        end
+        self.sidenote:Show(titleText, bodyText, noteText, opts, self.titleColor)
+        MakeRoom(self)
     end,
+
+    -- The note on the window's left (SSFSideNote:Show, the plain layout: a title, the
+    -- blocks, a tick box and a button). The same rule at the screen's edge.
+    ["ShowLeftPanel"] = function(self, titleText, opts)
+        self.leftnote:Show(titleText, nil, nil, opts, self.titleColor)
+        MakeRoom(self)
+    end,
+
+    ["MakeRoom"] = MakeRoom,
 
     -- the small line in the middle of the button row
     ["SetFooter"] = function(self, text)
@@ -470,12 +497,20 @@ local function Constructor()
     -- the note beside the window, closed with the window: only when the window itself
     -- hides. OnHide also fires when the whole UI hides around a loading screen, and the
     -- window comes back from that.
-    local sidenote = AceGUI:Create("SSFSideNote")
-    -- the note copies the window's look, one number each, so the two panels read as one
-    sidenote:AttachTo(frame, SIDE_GAP, { shade = SHADE, helpArt = HELP_ART, helpCrop = HELP_CROP, buttonHeight = BUTTON_HEIGHT })
+    -- each note copies the window's look, one number each, so the panels read as one
+    local function Look(side, plain)
+        return { shade = SHADE, helpArt = HELP_ART, helpCrop = HELP_CROP, buttonHeight = BUTTON_HEIGHT,
+                 rounding = ROUNDING, halfLine = LibStub("AceAddon-3.0"):GetAddon("SSF").HALF_LINE,
+                 side = side, plain = plain }
+    end
+    local sidenote = AceGUI:Create("SSFSideNote") -- on the right: the welcome's layout
+    sidenote:AttachTo(frame, SIDE_GAP, Look())
+    local leftnote = AceGUI:Create("SSFSideNote") -- on the left: the plain layout
+    leftnote:AttachTo(frame, SIDE_GAP, Look("LEFT", true))
     self:SecureHookScript(frame, "OnHide", function(f)
-        if f:IsShown() or not sidenote:IsShown() then return end
-        sidenote:Close()
+        if f:IsShown() then return end
+        if sidenote:IsShown() then sidenote:Close() end
+        if leftnote:IsShown() then leftnote:Close() end
     end)
 
     -- bottom: a button row (action far left, Close far right), the footer line centered in it
@@ -518,6 +553,7 @@ local function Constructor()
     self.xbutton = xbutton
     self.helpbutton = helpbutton
     self.sidenote = sidenote
+    self.leftnote = leftnote
     self.footer = footer
     return self
 end

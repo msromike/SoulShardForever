@@ -14,6 +14,8 @@
 --          SSF, the addon object, as a global for the test files.
 --          SoulShardForeverDB, the saved file, as the game would hold it (test_core reads
 --            the old profile in it).
+--          WoW.NS -- the addon-private table every file is handed (the locales, the
+--            announcement), for a test that swaps what a data file set (test_newsshow).
 --          WoW.initialProfile -- the profile's values right after OnInitialize, before any
 --            test touches them (test_core reads them to prove the migration).
 -- Touches nothing else.
@@ -57,7 +59,9 @@ for _, rel in ipairs({
     "Modules/Sounds.lua",
     "Modules/Trimmer.lua",
     "Modules/Status.lua",
+    "Modules/NewsShow.lua",
 }) do loadLua(rel, ADDON, NS) end
+WoW.NS = NS
 
 -- A saved file as a 1.8.1 user has it: one profile under the old AceDB 36 key. Core's
 -- profile-key migration must carry it over to the new key at OnInitialize.

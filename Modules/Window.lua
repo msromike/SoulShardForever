@@ -17,9 +17,15 @@
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
 --          nothing in a fight, see InFight), Toggle() (the minimap icon and broker click),
 --          Refresh(), Feed() (also by name through a timer), DressWindow(),
---          ShowNote(title, body, note, opts) (open with a note beside it: Welcome's; opts
---          as SSFSideNote:Show), InFight() (the one combat test the window and the
---          welcome share), OpenKeyBindings() (the bottom-right button).
+--          ShowNote(title, body, note, opts) (open with a note on the right: Welcome's; opts
+--          as SSFSideNote:Show), ShowLeftNote(title, opts) (open with a note on the left:
+--          NewsShow's), RefreshNote(...) and RefreshLeftNote(...) (the same arguments:
+--          fill that note again while the window is showing, without an open: the note
+--          after a Language change),
+--          InFight() (the one combat test the window and the modules that
+--          open it share), OpenKeyBindings() (the bottom-right button), Center() (forget
+--          the saved spot: the next open, and every one after it until a drag, is in the
+--          center of the screen; Welcome's and NewsShow's automatic opens).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED,
@@ -45,7 +51,7 @@
 --          Colors.BLACK, Tooltip:Attach, SSF.VERSION, the BINDING_NAME_* labels KeyBindings
 --          sets; profile.window (the saved spot, at Open).
 -- Saves:   the window position, profile.window (top, left and the screen size it was
---          saved on).
+--          saved on); Center() clears it.
 -- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog
 --          hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the
 --          five exceptions CLAUDE.md lists.
@@ -214,6 +220,9 @@ function Window:Feed()
     AceConfigDialog:Open(APP, self.window)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
     self.window:FitToContent()
+    -- the open put the saved spot back and the fit may have changed the width: a note
+    -- showing beside the window still needs its room on the screen
+    self.window:MakeRoom()
 end
 
 -- Keep the status line and the AutoMax state fresh while a window is open.
@@ -292,7 +301,7 @@ function Window:Open()
         self:ScheduleTimer("Feed", 0)
     end
     self:Feed()
-    self:SendMessage("SSF_WINDOW_OPENED") -- Welcome brings back a note still owed
+    self:SendMessage("SSF_WINDOW_OPENED") -- Welcome and NewsShow bring back a note still owed
 end
 
 -- Open the window with a note beside it (SSFFrame:ShowSidePanel). Welcome fills it.
@@ -302,7 +311,32 @@ function Window:ShowNote(titleText, bodyText, noteText, opts)
     self.window:ShowSidePanel(titleText, bodyText, noteText, opts)
 end
 
--- A fight started: the window closes (the note beside it with it). It does not reopen by
+-- Open the window with a note on its left (SSFFrame:ShowLeftPanel). NewsShow fills it.
+function Window:ShowLeftNote(titleText, opts)
+    if self:InFight() then return end -- no window in a fight, so no note either
+    self:Open()
+    self.window:ShowLeftPanel(titleText, opts)
+end
+
+-- A note filled again, in place: only while the window is showing, and never an open (an
+-- open would send SSF_WINDOW_OPENED and bring other owed notes back).
+function Window:RefreshNote(titleText, bodyText, noteText, opts)
+    if IsShown(self) then self.window:ShowSidePanel(titleText, bodyText, noteText, opts) end
+end
+
+function Window:RefreshLeftNote(titleText, opts)
+    if IsShown(self) then self.window:ShowLeftPanel(titleText, opts) end
+end
+
+-- A position reset: the saved spot is forgotten, so Open puts the window in the center of
+-- the screen (no spot is the center), now and on every later open until the player drags
+-- it. For an open SSF makes by itself; an open the player asks for keeps his spot.
+function Window:Center()
+    local saved = SSF.db.profile.window
+    saved.top, saved.left, saved.width, saved.height = nil, nil, nil, nil
+end
+
+-- A fight started: the window closes (the notes beside it with it). It does not reopen by
 -- itself afterwards.
 function Window:PLAYER_REGEN_DISABLED()
     if IsShown(self) then self.window:Hide() end

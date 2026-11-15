@@ -7,7 +7,8 @@
 -- on Ace3 for Forever only; no original code remains. The standard every file follows is
 -- CLAUDE.md at the addon root; the map of files and messages is ARCHITECTURE.md.
 --
--- Public:  SSF.SHARD_ITEM_ID; SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db
+-- Public:  SSF.SHARD_ITEM_ID; SSF.HALF_LINE (px: SSF's half line of empty space, the one
+--          spacing unit its widgets share); SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db
 --          (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
 -- Lib internals: db.keys.char (AceDB's key for this character) and the raw
 --          SoulShardForeverDB.profileKeys table, both only in the profile-key migration.
@@ -32,6 +33,11 @@ local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 SSF.SHARD_ITEM_ID = 6265
+-- Half a line of empty space, in px: the air under the radio row in the options (the look
+-- Mike approved, 2026-11-12) and between a divider and the text in the announcement panel.
+-- One home, so the two stay the same; the widgets read it when they lay out (they load
+-- before this file).
+SSF.HALF_LINE = 5
 -- the toc's IconTexture (the AddOns list shows it) is the icon's one home; a client that
 -- cannot read that field shows the question mark on the minimap, which says so
 SSF.ICON = C_AddOns.GetAddOnMetadata(ADDON, "IconTexture") or "Interface\\Icons\\INV_Misc_QuestionMark"
@@ -63,6 +69,7 @@ local function Defaults()
             minimap = { hide = false }, -- LibDBIcon state
             welcomed = false,           -- the welcome version this character last saw at load (Welcome)
             welcomeAgain = false,       -- Drain Soul learned, note not yet closed: its second title (Welcome)
+            newsSeen = false,           -- the id of the announcement this character ticked "Don't show this again" on (NewsShow)
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
             window = {},                -- options window position: top, left and the screen size (set after a drag)
             -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it

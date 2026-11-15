@@ -12,7 +12,7 @@ Widgets (custom AceGUI widgets, used from the options table through dialogContro
 created by Window and by each other):
 
 - Widgets\SSFStepperSlider.lua: the stock AceGUI Slider with a "-" button and a "+" button framing the value box under the bar, for fine tuning after a rough slide, and an optional bound the thumb cannot pass.
-- Widgets\SSFSideNote.lua: the note beside the options window's top-right corner (the first-load welcome).
+- Widgets\SSFSideNote.lua: a note panel beside the options window, level with its top.
 - Widgets\SSFFrame.lua: SSF's options window, an extension of AceGUI's stock Frame container.
 - Widgets\SSFCentered.lua: three AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.
 
@@ -37,6 +37,7 @@ Core and modules:
 - Modules\Tooltip.lua: where every SSF tooltip sits and how it is shown.
 - Modules\Window.lua: SSF's own options window.
 - Modules\Welcome.lua: the first-load welcome.
+- Modules\NewsShow.lua: shows the current announcement (News\News.lua) in the panel on the window's left until the character ticks "Don't show this again".
 - Modules\Broker.lua: the LibDataBroker data object and the LibDBIcon minimap icon.
 - Modules\Counter.lua: one number, the total shard count, centered on one bag button.
 - Modules\LowGlow.lua: while the count is in the "low" state (Cap:State: below the low mark in use), the bag button the counter sits on gets a running border (LibCustomGlow's pixel glow) on its own edge, in the red the number shows when colorized (Colors.RED), three pixels thick, moving slowly.
@@ -45,6 +46,11 @@ Locales:
 
 - Locales\Register.lua: the one place a locale file hands in its strings.
 - Locales\<code>.lua: the string tables, one per locale: enUS, deDE, frFR, esMX, ptBR, ruRU.
+
+News:
+
+- News\News.lua: the current announcement, and nothing else.
+- News\News_<code>.lua: the current announcement's lines, one per locale: enUS, deDE, frFR, esMX, ptBR, ruRU.
 
 ## Messages (AceEvent, prefix SSF_)
 
@@ -57,12 +63,12 @@ Locales:
 | SSF_MACROS_CHANGED | Macros | Window |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
-| SSF_OPTIONS_REBUILT | Options | Window |  |
+| SSF_OPTIONS_REBUILT | Options | NewsShow, Welcome, Window |  |
 | SSF_QUIET_ENDED | Cap | Broker, Counter, Welcome, Window | learned == true |
 | SSF_SHARD_DELETED | Trimmer | Broker, Counter, Window | count - 1, cap |
 | SSF_SHOW_WELCOME | Window | Welcome |  |
 | SSF_SORTED | Sorter | none | moved |
-| SSF_WINDOW_OPENED | Window | Welcome |  |
+| SSF_WINDOW_OPENED | Window | NewsShow, Welcome |  |
 
 ## Game events, by module
 
@@ -75,6 +81,7 @@ Locales:
 | MacroGlow | ACTIONBAR_SLOT_CHANGED |
 | Window | PLAYER_REGEN_DISABLED |
 | Welcome | TRAINER_CLOSED; LOADING_SCREEN_DISABLED |
+| NewsShow | LOADING_SCREEN_DISABLED |
 
 ## Shared state and exceptions
 

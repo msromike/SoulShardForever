@@ -23,6 +23,13 @@ Locales\frFR.lua
 Locales\esMX.lua
 Locales\ptBR.lua
 Locales\ruRU.lua
+News\News.lua
+News\News_enUS.lua
+News\News_deDE.lua
+News\News_frFR.lua
+News\News_esMX.lua
+News\News_ptBR.lua
+News\News_ruRU.lua
 Widgets\SSFStepperSlider.lua
 Widgets\SSFSideNote.lua
 Widgets\SSFFrame.lua
@@ -46,6 +53,7 @@ Modules\DeleteHelp.lua
 Modules\Tooltip.lua
 Modules\Window.lua
 Modules\Welcome.lua
+Modules\NewsShow.lua
 Modules\Broker.lua
 Modules\Counter.lua
 Modules\LowGlow.lua

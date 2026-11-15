@@ -1,22 +1,39 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- SSFSideNote: the note beside the options window's top-right corner (the first-load
--- welcome). An AceGUI widget SSFFrame creates once and attaches to its frame, out by the
--- gap it passes to AttachTo, tops level. Top to bottom: a title (the window's title color),
--- a divider, an arrow pointing left at the window's help button beside a copy of its "i", a
--- body line in gold and a divider, then the optional lead (a line, gold unless its text
--- carries its own color, with its own divider
--- under it: the two show together or not at all, so dividers never double), then the blocks
--- (paragraphs left-justified, macros each in a dark box), a small note
--- above the button, the button (a secure action button), and a gold note line last. Its width is SIDE_WIDTH of the
--- window's, never so narrow that the centered title runs into its X. It closes by its own X
--- or when the window closes (SSFFrame tells it), and tells its owner once either way.
+-- SSFSideNote: a note panel beside the options window, level with its top. An AceGUI widget
+-- SSFFrame creates and attaches to its frame, out by the gap it passes to AttachTo. It has
+-- two layouts, chosen once at AttachTo and never per Show, so one file holds the look of
+-- both and they cannot drift apart.
+--   The welcome layout (the default; on the window's right): top to bottom, a title (the
+-- window's title color), a divider, an arrow pointing left at the window's help button
+-- beside a copy of its "i", a body line in gold and a divider, then the optional lead (a
+-- line, gold unless its text carries its own color, with its own divider under it: the two
+-- show together or not at all, so dividers never double), then the blocks (paragraphs
+-- left-justified, macros each in a dark box), a small note above the button, the button (a
+-- secure action button, as wide as its text, centered), and a gold note line last. It
+-- closes by its own X.
+--   The plain layout (look.plain; the announcement's): the title, a divider, the blocks,
+-- a second divider, then one row with a tick box at the left and the button at the right,
+-- so the text and the controls read as two parts. The blocks sit half a line further
+-- from each of the two dividers than the rows are from each other (look.halfLine). No arrow, no "i", no gold lines, no X.
+-- The tick box is unticked on a Show unless opts.ticked says otherwise; the button's label
+-- follows it (opts.button unticked, opts.buttonTicked ticked) and its width is the wider
+-- label's, so it never changes size. A click on the button closes the note.
+--   Either way its width is SIDE_WIDTH of the window's, never so narrow that the centered
+-- title runs into the X's corner, and in the plain layout never narrower than the tick row
+-- needs. It closes when the window closes (SSFFrame tells it), and tells its owner once
+-- however it closed.
 --
 -- Public:  AttachTo(frame, gap, look) -- the window's frame; called once by SSFFrame. look:
 --            what the note copies from the window so the two panels read as one, each a
 --            number the window owns: shade (its SHADE, laid as black inside the note's
 --            border), helpArt and helpCrop (its help button's art and crop, for the copy
---            of the "i"), buttonHeight (its bottom buttons').
+--            of the "i"), buttonHeight (its bottom buttons'), rounding (its px added to a
+--            measured width, for the tick box's label), halfLine (SSF's half line of empty
+--            space, px: the extra air between a divider and the text in the plain
+--            layout); and where and what this note
+--            is: side ("LEFT": on the window's left; anything else: its right), plain
+--            (true: the plain layout).
 --          Show(title, body, note, opts, titleColor) -- opts, all optional: lead (the gold
 --            line under the body's divider, with its own divider), blocks (a list
 --            of { text } paragraphs and { text, macro = true } macros), button and onClick
@@ -25,17 +42,28 @@
 --            path, so /reload from it can't be blocked), buttonNote (a small line just above the
 --            button: what a click does), buttonDisabled (greys the button), onClose
 --            (called once when the note closes). titleColor: { r, g, b } or nil.
+--            The plain layout reads title, blocks, button, onClick and onClose, and: tick
+--            (the tick box's label), ticked (true: the box starts ticked; a Show again
+--            while it is open, such as after a Language change, keeps what the player
+--            ticked), onTick(ticked) (called on every tick and untick), buttonTicked
+--            (the button's label while ticked). body, note, lead and
+--            buttonNote are not drawn there.
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's
 --            width changes.
 --          Close() -- hide and tell the owner once. IsShown() -> bool.
+-- Lib internals: the plain layout's tick box is AceGUI's CheckBox, held for life (never
+--          released, so never pooled to another addon). Its checkbg (the box art) and text
+--          (the label) are read for their widths, to size the widget to its label: the
+--          CheckBox has no fit-to-label of its own. An AceGUI bump that renames either
+--          errors on the first Show of the plain layout.
 -- Reads:   Colors.CODE (macro text), SLATE (a macro box's edge), WHITE (the dividers) and
 --          BLACK (a macro box's fill, the shade); the ActionButtonUseKeyDown CVar (whether the
 --          button acts on the press or the release) and InCombatLockdown (in a fight the
 --          button's command can't be set). Owns no state beyond the shown texts, the
---          onClick, the onClose and its owner frame (AttachTo).
+--          onClick, the onClose, the onTick and its owner frame (AttachTo).
 -- Touches nothing else.
 
-local Type, Version = "SSFSideNote", 2
+local Type, Version = "SSFSideNote", 3
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's colors (the addon is loaded by the time a widget is made)
@@ -126,9 +154,13 @@ end
 -- for the loading screen to go, so the fonts measure true).
 local function Fit(self)
     local inner = (self.frame:GetWidth() or 0) - 2 * SIDE_TEXT_PAD
-    -- the anchored rows: title, divider, arrow row, body
-    local y = SIDE_PAD + self.title:GetStringHeight() + SIDE_ROW_GAP + 1 + SIDE_ROW_GAP
-        + SIDE_ICON + SIDE_ROW_GAP + self.body:GetStringHeight()
+    -- the anchored rows: title, divider, arrow row, body (plain: title and divider only)
+    local y = SIDE_PAD + self.title:GetStringHeight() + SIDE_ROW_GAP + 1
+    if self.plain then
+        y = y + self.halfLine -- half a line more between the title's divider and the text
+    else
+        y = y + SIDE_ROW_GAP + SIDE_ICON + SIDE_ROW_GAP + self.body:GetStringHeight()
+    end
     local function Place(region, height, x)
         y = y + SIDE_ROW_GAP
         region:ClearAllPoints()
@@ -139,7 +171,7 @@ local function Fit(self)
         end
         y = y + height
     end
-    Place(self.bodyDivider, 1)
+    if not self.plain then Place(self.bodyDivider, 1) end
     if self.lead:IsShown() then -- the lead and its divider, together
         Place(self.lead, self.lead:GetStringHeight())
         Place(self.leadDivider, 1)
@@ -153,10 +185,77 @@ local function Fit(self)
             Place(item, item:GetStringHeight(), SIDE_TEXT_PAD)
         end
     end
+    if self.plain then -- a divider, then the tick box at the left, the button at the right, centered on one row
+        y = y + self.halfLine -- and half a line more between the text and the next divider
+        Place(self.bodyDivider, 1)
+        local check, button = self.check.frame, self.button
+        local row = math.max(check:GetHeight() or 0, button:GetHeight() or 0)
+        y = y + SIDE_ROW_GAP
+        check:ClearAllPoints()
+        check:SetPoint("TOPLEFT", self.layer, "TOPLEFT", SIDE_TEXT_PAD, -(y + (row - check:GetHeight()) / 2))
+        button:ClearAllPoints()
+        button:SetPoint("TOPRIGHT", self.layer, "TOPRIGHT", -SIDE_TEXT_PAD, -(y + (row - button:GetHeight()) / 2))
+        self.frame:SetHeight(y + row + SIDE_PAD)
+        return
+    end
     if self.buttonNote:IsShown() then Place(self.buttonNote, self.buttonNote:GetStringHeight()) end
     if self.button:IsShown() then Place(self.button, self.button:GetHeight()) end
     if (self.note:GetText() or "") ~= "" then Place(self.note, self.note:GetStringHeight()) end
     self.frame:SetHeight(y + SIDE_PAD)
+end
+
+-- The plain layout, set up once (AttachTo): everything the welcome layout draws and this
+-- one doesn't is hidden for good, the tick box is made, and a click on the button closes
+-- the note. The tick box is AceGUI's CheckBox, held for life; a tick or untick relabels the
+-- button and tells the owner.
+local function MakePlain(self)
+    self.plain = true
+    -- bodyDivider stays: in this layout Fit lays it between the blocks and the tick row
+    for _, region in ipairs({ self.icon, self.arrow, self.body, self.lead,
+                              self.leadDivider, self.note, self.buttonNote, self.close }) do
+        region:Hide()
+    end
+    local check = AceGUI:Create("CheckBox")
+    check.frame:SetParent(self.layer)
+    check:SetCallback("OnValueChanged", function(_, _, ticked)
+        ticked = ticked == true
+        self.button:SetText(self.labels[ticked])
+        if self.onTick then self.onTick(ticked) end
+    end)
+    check.frame:Show()
+    self.check = check
+    self.button:SetScript("PostClick", function() self:Close() end)
+end
+
+-- The plain layout's row, on every Show: the tick box as wide as its label, unticked
+-- unless opts.ticked, the button on the label that goes with it and as wide as the wider
+-- of its two, so it never changes size when the tick relabels it.
+local function SizeTickRow(self, opts)
+    local button, check = self.button, self.check
+    self.labels = {
+        [false] = " " .. (opts.button or "") .. " ",
+        [true] = " " .. (opts.buttonTicked or opts.button or "") .. " ",
+    }
+    local widest = 0
+    for _, label in pairs(self.labels) do
+        button:SetText(label)
+        widest = math.max(widest, button:GetFontString():GetStringWidth() or 0)
+    end
+    local ticked = opts.ticked == true
+    button:SetText(self.labels[ticked])
+    button:SetWidth(widest + SIDE_BUTTON_EDGE)
+    self.onTick = opts.onTick
+    check:SetLabel(opts.tick or "")
+    check:SetValue(ticked)
+    -- the window's rounding on top: a measured width comes back with float error, and a
+    -- label cut by it shows "..."
+    check:SetWidth(math.ceil((check.checkbg:GetWidth() or 0) + (check.text:GetUnboundedStringWidth() or 0)) + self.rounding)
+end
+
+-- the least width the plain layout's row needs: the tick box, a gap, the button, the insets
+local function TickRowWidth(self)
+    return math.ceil((self.check.frame:GetWidth() or 0) + SIDE_ROW_GAP + (self.button:GetWidth() or 0))
+        + 2 * SIDE_TEXT_PAD
 end
 
 local methods = {
@@ -169,15 +268,23 @@ local methods = {
         self.icon:SetTexture(look.helpArt)
         self.icon:SetTexCoord(look.helpCrop[1], look.helpCrop[2], look.helpCrop[1], look.helpCrop[2])
         self.button:SetHeight(look.buttonHeight)
+        self.rounding = look.rounding or 0
+        self.halfLine = look.halfLine or 0
         self.frame:SetParent(frame)
         self.frame:ClearAllPoints()
-        self.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", gap, 0)
+        if look.side == "LEFT" then
+            self.frame:SetPoint("TOPRIGHT", frame, "TOPLEFT", -gap, 0)
+        else
+            self.frame:SetPoint("TOPLEFT", frame, "TOPRIGHT", gap, 0)
+        end
+        if look.plain then MakePlain(self) end
     end,
 
     ["Layout"] = function(self, windowWidth)
         local clearX = 2 * (self.close:GetWidth() or 0)
         local width = math.floor(math.max((windowWidth or 0) * SIDE_WIDTH,
             clearX + (self.title:GetUnboundedStringWidth() or 0)))
+        if self.plain then width = math.max(width, TickRowWidth(self)) end
         self.frame:SetWidth(width)
         self.title:SetWidth(width - 2 * SIDE_PAD)
         for _, divider in ipairs({ self.divider, self.bodyDivider, self.leadDivider }) do
@@ -230,6 +337,7 @@ local methods = {
         self.button:SetShown(opts.button ~= nil)
         self.buttonNote:SetText(opts.buttonNote or "")
         self.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
+        if self.plain then SizeTickRow(self, opts) end
         self.onClose = opts.onClose
         local width = self:Layout(self.owner and self.owner:GetWidth())
         if self.owner then
@@ -290,6 +398,7 @@ local function Constructor()
     arrow:SetTexCoord(unpack(ARROW_CROP))
     arrow:SetSize(SIDE_ICON * ARROW_ASPECT, SIDE_ICON)
     arrow:SetPoint("RIGHT", icon, "LEFT", -SIDE_ICON_GAP, 0)
+    widget.arrow = arrow
 
     -- in gold: the pointer at the help button
     local body = layer:CreateFontString(nil, "OVERLAY", "GameFontNormal")

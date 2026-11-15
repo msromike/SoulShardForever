@@ -123,4 +123,9 @@ L["Create macros"] = true
 L["Opens the welcome screen to create the recommended macros."] = true
 L["No free macro slots. Delete a macro and try again."] = true
 
+-- the announcement panel (NewsShow): the tick box and the button's two labels
+L["Don't show this again"] = true
+L["Remind me later"] = true
+L["Got it"] = true
+
 NS.RegisterLocale("enUS", "English", L, true)

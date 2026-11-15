@@ -115,4 +115,9 @@ L["You learned Drain Soul"] = "Вы изучили «Похищение души
 L["no Drain Soul yet"] = "пока нет «Похищения души»"
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Пока можете осваивать аддон. Когда вы изучите «Похищение души» на 10-м уровне, мы покажем это окно снова."
 
+-- the announcement panel (NewsShow): the tick box and the button's two labels
+L["Don't show this again"] = "Больше не показывать"
+L["Remind me later"] = "Напомнить позже"
+L["Got it"] = "Понятно"
+
 NS.RegisterLocale("ruRU", "Русский", L)

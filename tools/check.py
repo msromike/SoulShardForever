@@ -65,9 +65,9 @@ def read(rel):
 
 
 def lua_files():
-    """Core, every module and widget, the locale registrar, and the tests: the files that
-    carry a header contract."""
-    out = ["Core.lua", "Locales/Register.lua"]
+    """Core, every module and widget, the locale registrar, the announcement (News/News.lua)
+    and the tests: the files that carry a header contract."""
+    out = ["Core.lua", "Locales/Register.lua", "News/News.lua"]
     for folder in ("Modules", "Widgets", "tests"):
         for fn in sorted(os.listdir(os.path.join(ROOT, folder))):
             if fn.endswith(".lua"):
@@ -229,6 +229,28 @@ def locale_table(rel):
     return out
 
 
+NEWS_PREFIX = "News_"  # News/News_deDE.lua adds its lines to the locale Locales/deDE.lua registers
+
+
+def news_files():
+    """News/News_<code>.lua, the current announcement's lines, one per locale (not
+    News.lua, the announcement itself)."""
+    folder = os.path.join(ROOT, "News")
+    if not os.path.isdir(folder):
+        return []
+    return [f"News/{fn}" for fn in sorted(os.listdir(folder))
+            if fn.startswith(NEWS_PREFIX) and fn.endswith(".lua")]
+
+
+def locale_strings(name):
+    """One locale's whole table, as the game has it after load: Locales/<name> plus the
+    announcement's lines in News/News_<name>, which Register merges into the same locale."""
+    out = locale_table(f"Locales/{name}")
+    if f"News/{NEWS_PREFIX}{name}" in news_files():
+        out.update(locale_table(f"News/{NEWS_PREFIX}{name}"))
+    return out
+
+
 def placeholders(text):
     """(positional, [(index, type)]): the %s / %d / %1$s arguments a string takes, in
     order; positional is True when every one carries an index, False when none does, None
@@ -270,13 +292,15 @@ def placeholder_problems(key, value):
 def check_locales():
     """Every translation carries every key enUS has and no other, every translation's
     placeholders fit its key's (placeholder_problems), and the toc has a Notes line for
-    every locale code registered."""
+    every locale code registered. A locale is its Locales file plus its News file
+    (locale_strings), so an announcement missing in one language fails here too; a News
+    file with no Locales file beside it is a locale nobody registered."""
     print("== locales")
     ref = None
     tables = {}
     for rel in locale_files():
         name = os.path.basename(rel)
-        tables[name] = (locale_table(rel), CODE_RE.findall(read(rel)))
+        tables[name] = (locale_strings(name), CODE_RE.findall(read(rel)))
         if name == "enUS.lua":
             ref = tables[name][0]
     if ref is None:
@@ -284,6 +308,11 @@ def check_locales():
         return False
     ok = True
     toc = read("SoulShardForever.toc")
+    for rel in news_files():
+        name = os.path.basename(rel)[len(NEWS_PREFIX):]
+        if name not in tables:
+            print(f"   {rel}: no Locales/{name} to add its lines to")
+            ok = False
     for name, (strings, codes) in tables.items():
         keys = set(strings)
         for k in sorted(set(ref) - keys):
@@ -321,7 +350,7 @@ def check_code_keys():
     key renamed in the locales but not in the code passes everything else. A key built at
     runtime (L[name]) is not a literal and is not checked."""
     print("== code keys")
-    ref = {unescape(k) for k in locale_table("Locales/enUS.lua")}
+    ref = {unescape(k) for k in locale_strings("enUS.lua")}
     ok = True
     count = 0
     for rel in [f for f in lua_files() if not f.startswith("tests/") and f != "Locales/Register.lua"]:
@@ -361,7 +390,7 @@ def color_files():
     """Every file a color could be typed into: the Lua that carries a header, every locale,
     and the shipped docs (README, CHANGELOG, media/*.md; .docs/ is local work and not
     walked). Colors.lua itself is the home and is left out."""
-    out = [f for f in lua_files() if f != COLORS] + locale_files()
+    out = [f for f in lua_files() if f != COLORS] + locale_files() + news_files()
     out += [fn for fn in ("README.md", "CHANGELOG.md") if os.path.exists(os.path.join(ROOT, fn))]
     out += [f"media/{fn}" for fn in sorted(os.listdir(os.path.join(ROOT, "media"))) if fn.endswith(".md")]
     return out
@@ -694,6 +723,7 @@ def build_map():
     widgets = [f for f in lua if f.startswith("Widgets/")]
     core_mods = [f for f in lua if f == "Core.lua" or f.startswith("Modules/")]
     locales = [f for f in lua if f.startswith("Locales/")]
+    news = [f for f in lua if f.startswith("News/")]
 
     senders, listeners, payload, events = {}, {}, {}, {}
     for rel in core_mods:
@@ -735,6 +765,13 @@ def build_map():
             out.append(f"- {rel.replace('/', chr(92))}: {header_job(rel)}")
     others = [module_name(r) for r in locales if not r.endswith("Register.lua")]
     out.append(f"- Locales\\<code>.lua: the string tables, one per locale: {', '.join(others)}.")
+    if news:
+        out.append("\nNews:\n")
+        for rel in news:
+            if rel.endswith("/News.lua"):
+                out.append(f"- {rel.replace('/', chr(92))}: {header_job(rel)}")
+        others = [module_name(r)[len(NEWS_PREFIX):] for r in news if not r.endswith("/News.lua")]
+        out.append(f"- News\\News_<code>.lua: the current announcement's lines, one per locale: {', '.join(others)}.")
 
     out.append("\n## Messages (AceEvent, prefix SSF_)\n")
     out.append("| Message | Sender | Listeners | Payload |")

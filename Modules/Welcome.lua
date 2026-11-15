@@ -6,6 +6,12 @@
 -- older note see the new one once too. Waits for the loading screen to go, so the window
 -- opens into a drawn, shown UI. The main window's "Create macros" shows the same note.
 --
+-- When Welcome opens the window by itself (at load, and when the trainer closes after Drain
+-- Soul is learned) the window goes to the center of the screen, whatever spot was saved,
+-- and the center is the character's spot from then on (Window:Center; Mike, 2026-11-15).
+-- "Create macros" and a note that comes back with the player's own open leave the window
+-- where it is.
+--
 -- Once shown, the note is owed until the player closes it outside a fight: showing it
 -- clears profile.welcomed, and only that close sets it again. So a fight that closes the
 -- window and the note with it leaves it owed, and it comes back with the next open of the
@@ -17,14 +23,19 @@
 -- player is still buying (Mike, 2026-10-21). Learned away from a trainer, it waits for the
 -- next load or window open, like any owed note.
 --
--- Public:  Show() (the note, through Window:ShowNote).
+-- While the note is open it follows the Language setting: Options' rebuild fills it again,
+-- in place, in the language the window now shows (Mike, 2026-11-15, as NewsShow does).
+--
+-- Public:  Show(auto) (the note, through Window:ShowNote; auto: Welcome is opening the
+--          window by itself, so the window is centered first).
 -- Listens: SSF_SHOW_WELCOME (Window's "Create macros"), SSF_WINDOW_OPENED (any open),
---          LOADING_SCREEN_DISABLED once at load while a note is owed, SSF_QUIET_ENDED
---          (learned), TRAINER_CLOSED once after a learn.
+--          SSF_OPTIONS_REBUILT (a Language change or a help toggle: the open note is
+--          filled again), LOADING_SCREEN_DISABLED once at load while a note is owed,
+--          SSF_QUIET_ENDED (learned), TRAINER_CLOSED once after a learn.
 -- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
 --          button note's "reloads your UI");
 --          Help:IsOn/Toggle,
---          Window:ShowNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
+--          Window:ShowNote/RefreshNote/InFight/Center, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
 --          button; Create's return is the click's command).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
 --          Soul is learned), and WELCOME_VERSION once the player closes it outside a fight.
@@ -54,18 +65,15 @@ end
 
 -- The note: the pointer at the help button, every way to delete with the two macros
 -- (DeleteHelp), what the button does, the button that makes them (Macros), and the gold
--- line last. Always the same box. Owed from here until a close outside a fight, saved, so
--- a reload in between still brings it back.
-function Welcome:Show()
-    if InFight() then return end -- the window stays shut in a fight (Window)
-    self.noteOpen = true
+-- line last. Always the same box. What the note is handed: its title, body line, gold
+-- note and options, looked up now, so they are in the language of the moment.
+local function Note(self)
     local p = SSF.db.profile
-    p.welcomed = false
     local Macros = SSF:GetModule("Macros")
     local title = p.welcomeAgain and L["You learned Drain Soul"] or L["Welcome to SSF"]
     local quiet = SSF:GetModule("Cap"):IsQuiet()
     local Colors = SSF:GetModule("Colors")
-    SSF:GetModule("Window"):ShowNote(title, L["Click for in-game tooltip help."],
+    return title, L["Click for in-game tooltip help."],
         L["You won't see this welcome screen again on this character unless you click %s in the UI."]:format(L["Create macros"]),
         {
             -- in green, the note's one highlight color (as "reloads your UI"), so it stands out from the gold
@@ -81,7 +89,23 @@ function Welcome:Show()
                 p.welcomed = WELCOME_VERSION
                 p.welcomeAgain = false
             end,
-        })
+        }
+end
+
+-- Owed from here until a close outside a fight, saved, so a reload in between still
+-- brings it back.
+function Welcome:Show(auto)
+    if InFight() then return end -- the window stays shut in a fight (Window)
+    if auto then SSF:GetModule("Window"):Center() end -- our own open: a position reset
+    self.noteOpen = true
+    SSF.db.profile.welcomed = false
+    SSF:GetModule("Window"):ShowNote(Note(self))
+end
+
+-- Options rebuilt its table (the Language changed, or help was toggled): the open note is
+-- filled again, in place, so its words are in the language the window now shows.
+function Welcome:OnOptionsRebuilt()
+    if self.noteOpen then SSF:GetModule("Window"):RefreshNote(Note(self)) end
 end
 
 -- Any open of the window: a note still owed comes up with it. (ShowNote opens the window
@@ -101,7 +125,7 @@ end
 
 function Welcome:TRAINER_CLOSED()
     self:UnregisterEvent("TRAINER_CLOSED")
-    self:Show()
+    self:Show(true)
 end
 
 function Welcome:LOADING_SCREEN_DISABLED()
@@ -110,7 +134,7 @@ function Welcome:LOADING_SCREEN_DISABLED()
     -- explains itself
     local Help = SSF:GetModule("Help")
     if not Help:IsOn() then Help:Toggle() end
-    self:Show()
+    self:Show(true)
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
@@ -120,5 +144,6 @@ function Welcome:OnEnable()
     -- the main window's "Create macros": the same note
     self:RegisterMessage("SSF_SHOW_WELCOME", function() self:Show() end)
     self:RegisterMessage("SSF_WINDOW_OPENED", "OnWindowOpened")
+    self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
     self:RegisterMessage("SSF_QUIET_ENDED", "OnQuietEnded")
 end
