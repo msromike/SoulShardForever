@@ -5,8 +5,12 @@
 local _, NS = ...
 local L = {}
 
-L["Test announcement"] = "Testankündigung"
-L["This is a sample announcement for testing. It is not part of any release."] = "Dies ist eine Beispielankündigung zum Testen. Sie gehört zu keiner Veröffentlichung."
-L["It shows on the left of the SSF window every time you log in, until you tick the box below."] = "Sie erscheint bei jeder Anmeldung links neben dem SSF-Fenster, bis du das Kästchen unten ankreuzt."
+L["Coming soon to SSF"] = "Demnächst in SSF"
+L["Two things you've asked for are on the way."] = "Zwei Dinge, die du dir gewünscht hast, sind unterwegs."
+L["Delete in combat:"] = "Löschen im Kampf:"
+L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] = "SSF wird einen Seelensplitter über deinem Limit auch im Kampf löschen können."
+L["Delete as you play:"] = "Löschen beim Spielen:"
+L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."] = "Ein optionaler Modus, der Seelensplitter über deinem Limit beim normalen Spielen automatisch löscht, ohne Makro oder Tastenbelegung."
+L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."] = "Beides erscheint zuerst als Beta auf CurseForge. Wir sagen dir hier Bescheid, sobald es so weit ist."
 
 NS.AddLocaleStrings("deDE", L)

@@ -36,7 +36,8 @@
 --            (true: the plain layout).
 --          Show(title, body, note, opts, titleColor) -- opts, all optional: lead (the gold
 --            line under the body's divider, with its own divider), blocks (a list
---            of { text } paragraphs and { text, macro = true } macros), button and onClick
+--            of { text } paragraphs and { text, macro = true } macros; a paragraph with
+--            blank = true has one blank line of its own font under it), button and onClick
 --            (a button as wide as its text; onClick runs on the click, before it, and a
 --            slash command it returns then runs as the click through the game's secure
 --            path, so /reload from it can't be blocked), buttonNote (a small line just above the
@@ -183,6 +184,7 @@ local function Fit(self)
         else
             item:SetWidth(inner)
             Place(item, item:GetStringHeight(), SIDE_TEXT_PAD)
+            if item.blank then y = y + item:GetLineHeight() end -- one blank line under it
         end
     end
     if self.plain then -- a divider, then the tick box at the left, the button at the right, centered on one row
@@ -319,6 +321,7 @@ local methods = {
                 p = p + 1
                 item = Paragraph(self, p)
                 item:SetText(block.text)
+                item.blank = block.blank -- kept paragraphs are reused: set on every Show
             end
             item:Show()
             self.items[#self.items + 1] = item

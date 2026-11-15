@@ -5,7 +5,7 @@
 -- way the real one does (the window-opened message comes back before the note shows). The
 -- announcement is one the tests swap in (WoW.NS.news), its lines added the way a
 -- News\News_<code>.lua adds them, so nothing here depends on the announcement that ships.
--- Reads:   NewsShow; NS.AddLocaleStrings (Locales\Register.lua).
+-- Reads:   NewsShow; NS.AddLocaleStrings (Locales\Register.lua); Colors (the expected gold).
 -- Saves:   profile.newsSeen, for the test at hand.
 -- Touches nothing else.
 
@@ -75,6 +75,20 @@ test("a load opens it by itself, centered, once the loading screen is gone", fun
     note.opts.onClose()
     WoW.FireEvent("LOADING_SCREEN_DISABLED")
     eq(#asked.shown, 1, "a later loading screen opens nothing")
+end)
+
+test("a paragraph's lead is gold, its text follows in white after two spaces", function()
+    local Colors = SSF:GetModule("Colors")
+    local news = sample()
+    news.text = { { lead = "A test title", blank = true }, { lead = "First line.", text = "Second line." }, "Second line." }
+    fresh(news)
+    NewsShow:OnWindowOpened()
+    local blocks = asked.shown[1].opts.blocks
+    eq(blocks[1].text, Colors:Gold("A test title"), "a lead alone: the whole paragraph gold")
+    eq(blocks[2].text, Colors:Gold("First line.") .. "  Second line.", "lead in gold, two spaces, the text plain")
+    eq(blocks[3].text, "Second line.", "a plain line stays plain")
+    eq(blocks[1].blank, true, "a blank line asked for is passed on")
+    eq(blocks[2].blank, nil, "and only where it was asked for")
 end)
 
 test("a load in a fight opens nothing, nor when the fight ends; the next open shows it", function()

@@ -13,21 +13,26 @@
 -- Public:  NS.news = { id, on, title, text } or nil. id: a number in the welcome's scheme
 --            (two digits per version part, 1.14.0 = 11400), higher than every id before
 --            it; a character that ticked "Don't show this again" saved the id it saw. on:
---            the switch. title: the panel's title. text: the paragraphs, in order.
+--            the switch. title: the panel's title. text: the paragraphs, in order, each
+--            a line (drawn white) or { lead = line, text = line }: the lead is drawn in
+--            gold, the text in white after it on the same paragraph; a lead with no text
+--            is a paragraph all in gold; blank = true leaves one blank line under the
+--            paragraph.
 -- Owns no state beyond that table, no events, no frames. Touches nothing else.
 
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- SAMPLE for testing the panel, switched on while the feature is tested on its branch.
--- NOT FOR A RELEASE as it stands: before one, these lines (here and in the six
--- News\News_<code>.lua) are replaced by the real first announcement, or on goes false.
+-- The first announcement: a short roadmap, in Mike's words (2026-11-15). It ships switched
+-- on and does not wait for either beta.
 NS.news = {
     id = 11400,
     on = true,
-    title = L["Test announcement"],
+    title = L["Coming soon to SSF"],
     text = {
-        L["This is a sample announcement for testing. It is not part of any release."],
-        L["It shows on the left of the SSF window every time you log in, until you tick the box below."],
+        { lead = L["Two things you've asked for are on the way."], blank = true },
+        { lead = L["Delete in combat:"], text = L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] },
+        { lead = L["Delete as you play:"], text = L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."], blank = true },
+        L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."],
     },
 }

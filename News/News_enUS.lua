@@ -5,8 +5,12 @@
 local _, NS = ...
 local L = {}
 
-L["Test announcement"] = true
-L["This is a sample announcement for testing. It is not part of any release."] = true
-L["It shows on the left of the SSF window every time you log in, until you tick the box below."] = true
+L["Coming soon to SSF"] = true
+L["Two things you've asked for are on the way."] = true
+L["Delete in combat:"] = true
+L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] = true
+L["Delete as you play:"] = true
+L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."] = true
+L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."] = true
 
 NS.AddLocaleStrings("enUS", L)

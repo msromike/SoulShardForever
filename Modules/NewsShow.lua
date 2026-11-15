@@ -19,7 +19,8 @@
 --          toggle: the open panel is filled again), LOADING_SCREEN_DISABLED (once at load,
 --          only while an announcement is owed).
 -- Reads:   NS.news from News\News.lua (the announcement: id, on, title, text);
---          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote/InFight/Center.
+--          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote/InFight/Center;
+--          Colors:Gold (a paragraph's lead).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
 -- Touches nothing else.
 
@@ -27,6 +28,10 @@ local ADDON, NS = ...
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local NewsShow = SSF:NewModule("NewsShow", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
+
+-- what stands between a paragraph's gold lead and its text: two spaces, as Mike types
+-- after a colon (2026-11-15, on purpose)
+local LEAD_GAP = "  "
 
 -- the announcement to show, or nil: none was shipped, or it is switched off
 local function Current()
@@ -49,8 +54,17 @@ end
 -- value has it: unticked on any first show (a ticked announcement is not owed), ticked
 -- when the panel is filled again after the player ticked it.
 local function Note(self, news)
+    local Colors = SSF:GetModule("Colors")
     local blocks = {}
-    for i, key in ipairs(news.text) do blocks[i] = { text = L[key] } end
+    for i, part in ipairs(news.text) do
+        local line
+        if type(part) == "table" then -- a gold lead, then its text in white (the paragraph's own color)
+            line = Colors:Gold(L[part.lead]) .. (part.text and (LEAD_GAP .. L[part.text]) or "")
+        else
+            line = L[part]
+        end
+        blocks[i] = { text = line, blank = type(part) == "table" and part.blank or nil }
+    end
     return L[news.title], {
         blocks = blocks,
         tick = L["Don't show this again"],
