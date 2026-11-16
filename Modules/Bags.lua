@@ -20,6 +20,8 @@
 --          tests' handle on the bags.
 -- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s.
 -- Sends:   SSF_BAGS_CHANGED, once per bucket.
+-- Game internals: ItemLocation.CreateFromBagAndSlot, Blizzard's Lua helper (not a documented
+--          API call), which makes the location C_Item's questions take.
 -- Owns no state. Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

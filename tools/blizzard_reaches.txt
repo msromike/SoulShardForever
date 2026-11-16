@@ -1,30 +1,48 @@
 # tools/blizzard_reaches.txt: every Blizzard UI internal SSF reaches that is not a plain
-# API call: frame globals, mixin methods, template parentKeys, FrameXML constants. The
-# "blizzard api" rule in check.py covers the API (the .luacheckrc whitelist and every C_
-# call); these are the rest, and the upkeep check greps a new Blizzard build's diff
-# (tools/.wowui) for them. One per line: the name, then the SSF file that reaches it.
-# Verified present on forever build 1.60.1 (70862), 2026-11-10. Add a line with the reach;
-# drop it with the reach.
-MacroFrameMixin:ChangeTab          Modules/Macros.lua
-MacroFrameMixin:SelectMacro        Modules/Macros.lua
-ShowMacroFrame                     Modules/Macros.lua
-MacroSelector                      Modules/MacroGlow.lua
-RunSetup                           Modules/MacroGlow.lua
-EnumerateButtons                   Modules/MacroGlow.lua
-UIErrorsMixin:AddExternalErrorMessage  Modules/Macros.lua
-CharacterBag0Slot                  Modules/Counter.lua
-CharacterBag1Slot                  Modules/Counter.lua
-CharacterBag2Slot                  Modules/Counter.lua
-CharacterBag3Slot                  Modules/Counter.lua
-CharacterReagentBag0Slot           Modules/Counter.lua
-ShapedBagSlotButtonTemplate        Modules/Counter.lua
-KEYBINDINGS_CATEGORY_ID            Modules/KeyBindings.lua
-SettingsPanelMixin:GetLayout       Modules/KeyBindings.lua
-GetInitializers                    Modules/KeyBindings.lua
-Settings.OpenToCategory            Modules/KeyBindings.lua
-UISpecialFrames                    Widgets/SSFFrame.lua
-UIPanelCloseButton                 Widgets/SSFFrame.lua
-UIPanelButtonTemplate              Widgets/SSFFrame.lua
-SecureActionButtonTemplate         Widgets/SSFSideNote.lua
-BackdropTemplate                   Widgets/SSFSideNote.lua
-UIDropDownMenuTemplate             Libs/AceGUI-3.0 (Dropdown)
+# documented API call: frame globals, mixin methods, template names, parentKeys, FrameXML
+# constants and helpers. The "blizzard api" step in tools/check.py covers the API (the
+# .luacheckrc whitelist and every C_ call) and holds this file to the truth, every run:
+# each name's last part must still be in the client's UI source (tools/.wowui), still be
+# used by the file it names, and be named in that file's header under "Game internals";
+# and every member the code reads off a Blizzard global, and every template it creates a
+# frame from, must be here. One per line: the name, the SSF file that reaches it, and
+# "built" when the code makes the name at run time (so it is not looked for in the code).
+# A field read off a local (button.Count) cannot be found by the check and is listed by
+# hand. Add a line with the reach; drop it with the reach.
+ShowMacroFrame                           Modules/Macros.lua
+MacroFrameMixin:ChangeTab                Modules/Macros.lua
+MacroFrameMixin:SelectMacro              Modules/Macros.lua
+UIErrorsMixin:AddExternalErrorMessage    Modules/Macros.lua
+MacroFrame.MacroSelector                 Modules/MacroGlow.lua
+MacroSelector:RunSetup                   Modules/MacroGlow.lua
+MacroSelector:EnumerateButtons           Modules/MacroGlow.lua
+MacroButtonTemplate.Name                 Modules/MacroGlow.lua
+CharacterBag0Slot                        Modules/Counter.lua  built
+CharacterBag1Slot                        Modules/Counter.lua  built
+CharacterBag2Slot                        Modules/Counter.lua  built
+CharacterBag3Slot                        Modules/Counter.lua
+CharacterReagentBag0Slot                 Modules/Counter.lua
+ItemButtonTemplate.Count                 Modules/Counter.lua
+ItemButtonTemplate.icon                  Modules/Counter.lua
+Settings.KEYBINDINGS_CATEGORY_ID         Modules/KeyBindings.lua
+Settings.GetCategory                     Modules/KeyBindings.lua
+Settings.OpenToCategory                  Modules/KeyBindings.lua
+SettingsPanelMixin:GetLayout             Modules/KeyBindings.lua
+SettingsLayoutMixin:GetInitializers      Modules/KeyBindings.lua
+initializer.data.name                    Modules/KeyBindings.lua
+initializer.data.expanded                Modules/KeyBindings.lua
+ItemLocation.CreateFromBagAndSlot        Modules/Bags.lua
+RAID_CLASS_COLORS.WARLOCK                Modules/Colors.lua
+GameTooltip:SetOwner                     Modules/Tooltip.lua
+GameTooltip:AddLine                      Modules/Tooltip.lua
+GameTooltip:IsOwned                      Modules/Tooltip.lua
+BackdropTemplate                         Modules/Window.lua
+UIPanelButtonTemplate                    Widgets/SSFStepperSlider.lua
+UISpecialFrames                          Widgets/SSFFrame.lua
+UIPanelCloseButton                       Widgets/SSFFrame.lua
+UIPanelButtonTemplate                    Widgets/SSFFrame.lua
+UIPanelCloseButton                       Widgets/SSFSideNote.lua
+UIPanelButtonTemplate                    Widgets/SSFSideNote.lua
+SecureActionButtonTemplate               Widgets/SSFSideNote.lua
+BackdropTemplate                         Widgets/SSFSideNote.lua
+UIDropDownMenuTemplate                   Libs/AceGUI-3.0  (Dropdown)

@@ -53,7 +53,8 @@ FALLBACK_LUACHECK = r"C:\bin\PortableTools\luacheck\luacheck.exe"
 FALLBACK_LUA = r"C:\bin\PortableTools\lua51\lua5.1.exe"
 
 # the header template (CLAUDE.md), in order
-FIELDS = ["Public", "Listens", "Hooks", "Sends", "Lib internals", "Reads", "Saves", "Acts on", "Exceptions"]
+FIELDS = ["Public", "Listens", "Hooks", "Sends", "Lib internals", "Game internals", "Reads", "Saves", "Acts on",
+          "Exceptions"]
 CLOSING = "Touches nothing else."
 
 
@@ -158,13 +159,123 @@ def blizzard_names():
     return globs, namespaced
 
 
+# Globals the code calls that this client has and its published UI source never mentions:
+# functions built into the client that Blizzard's own Lua does not happen to use and its
+# API docs leave out. Each needs a proof from the game, since no file can give one.
+KNOWN_GLOBALS = {
+    "GetMacroIndexByName": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
+    "PlaySoundFile": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
+    "MuteSoundFile": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
+    "UnmuteSoundFile": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
+}
+REACHES = "tools/blizzard_reaches.txt"
+WOWUI_FOUND = os.path.join(ROOT, "tools", ".wowui_found.txt")
+NOT_FRAMES = {"bit", "LibStub"}  # globals whose members are Lua's or a library's, not Blizzard's UI
+GAME_INTERNALS = "Game internals"
+TEMPLATE_ARG_RE = re.compile(r'\bCreateFrame\(\s*"\w+"\s*,[^,()]+,[^,()]+,\s*"([^"]+)"')
+
+
+def ui_source_has(words, build):
+    """word -> True when it appears as a whole word anywhere in the client's UI source.
+    One `git grep` over tools/.wowui for the words not yet known, remembered in
+    tools/.wowui_found.txt (gitignored) for as long as the build stays the same."""
+    known = {}
+    if os.path.exists(WOWUI_FOUND):
+        lines = open(WOWUI_FOUND, encoding="utf-8").read().splitlines()
+        if lines and lines[0] == build:
+            known = {w: flag == "1" for w, flag in (l.split() for l in lines[1:] if l.strip())}
+    ask = sorted(set(words) - set(known))
+    if ask:
+        cmd = ["git", "-C", WOWUI, "grep", "-I", "-w", "-o", "-h", "-F"]
+        for w in ask:
+            cmd += ["-e", w]
+        proc = subprocess.run(cmd + ["--", "Interface"], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        seen = set(proc.stdout.split())
+        for w in ask:
+            known[w] = w in seen
+        with open(WOWUI_FOUND, "w", encoding="utf-8", newline="\n") as f:
+            f.write(build + "\n" + "".join(f"{w} {int(v)}\n" for w, v in sorted(known.items())))
+    return known
+
+
+def read_reaches():
+    """([(name, last segment, file, built)], problems) from tools/blizzard_reaches.txt: one
+    reach per line, `Name  File  [built]`. built: the code makes the name at run time (a
+    bag button's name from its number), so the name is not looked for in the code."""
+    rows, problems = [], []
+    for n, raw in enumerate(read(REACHES).splitlines(), 1):
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(None, 2)
+        if len(parts) < 2:
+            problems.append(f"{REACHES}:{n}: a reach needs a name and a file")
+            continue
+        flag = parts[2].strip() if len(parts) > 2 else ""
+        if flag not in ("", "built") and not parts[1].startswith("Libs/"):
+            problems.append(f"{REACHES}:{n}: \"{flag}\" after the file: only \"built\" means something there")
+        rows.append((parts[0], re.split(r"[:.]", parts[0])[-1], parts[1], flag == "built"))
+    return rows, problems
+
+
+def reach_truth(reaches, has, documented, globals_read):
+    """Blizzard's frames are read past the documented API only where it is written down,
+    the way library internals are. Every reach in tools/blizzard_reaches.txt is still in
+    the client's UI source (so a new build that renames one fails here), is still in the
+    file it names, and is named in that file's header under "Game internals". And back:
+    every member the code reads off a Blizzard global (MacroFrame.MacroSelector,
+    GameTooltip:SetOwner) is either in Blizzard's own API docs or a reach listed for that
+    file. A field read off a local (button.Count) cannot be found this way and is listed
+    by hand."""
+    problems = []
+    by_file = {}
+    for name, last, rel, built in reaches:
+        by_file.setdefault(rel, set()).add(last)
+        if not has.get(last):
+            problems.append(f"{REACHES}: {name} is nowhere in this client's UI source: Blizzard renamed or removed it")
+        if rel.startswith("Libs/"):
+            continue  # a library's own reach: listed so a new build is searched for it, nothing more
+        if not exact_path(rel):
+            problems.append(f"{REACHES}: {name} names {rel}, and there is no such file")
+            continue
+        word = r"(?<![\w])" + re.escape(last) + r"(?![\w])"
+        if not built and not re.search(word, code_lines(read(rel))):
+            problems.append(f"{REACHES}: {name} is listed for {rel}, whose code no longer uses it: drop the line")
+        if not re.search(word, header_fields(rel).get(GAME_INTERNALS, "")):
+            problems.append(f"{rel}: reaches {name}, and its header's \"{GAME_INTERNALS}\" does not name {last}")
+    frames = [g for g in globals_read if g not in NOT_FRAMES]
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        lines = bare_code(read(rel))
+        text = "\n".join(code for _, code in lines)
+        for g in frames:
+            if re.search(r"\blocal\s+(?:function\s+)?" + re.escape(g) + r"\b", text):
+                continue  # the file has a local of that name (SSF's own Settings module): not Blizzard's
+            told = set()
+            for n, code in lines:
+                for member in re.findall(r"(?<![\w.:])" + re.escape(g) + r"\s*[.:]\s*(\w+)", blank_strings(code)):
+                    if member not in documented and member not in by_file.get(rel, ()) and member not in told:
+                        told.add(member)
+                        problems.append(f"{rel}:{n}: reads {g}.{member}, which is not in Blizzard's API docs and "
+                                        f"not a reach listed for this file in {REACHES}")
+        # a frame made from a Blizzard template: CreateFrame(type, name, parent, "A, B")
+        for n, code in lines:
+            for templates in TEMPLATE_ARG_RE.findall(code):
+                for template in re.findall(r"\w+", templates):
+                    if template not in by_file.get(rel, ()):
+                        problems.append(f"{rel}:{n}: creates a frame from the template {template}, which is not a "
+                                        f"reach listed for this file in {REACHES}")
+    return problems
+
+
 def check_blizzard_api():
     """Every Blizzard name the code uses, against the client's own UI source (tools/.wowui,
     the wow-ui-source mirror's forever branch, the build the live client runs): no global
     SSF reads is defined in a Deprecated file (those are shims Blizzard removes a patch or
-    two later: IsPlayerSpell and GetActionText were both found there, 2026-11-10), and every
+    two later: IsPlayerSpell and GetActionText were both found there, 2026-11-10); every
     C_<namespace>.<function> it calls is in Blizzard_APIDocumentationGenerated (so a
-    namespaced call is one this client has, not one borrowed from retail)."""
+    namespaced call is one this client has, not one borrowed from retail); every other
+    global in .luacheckrc appears in that source or is on KNOWN_GLOBALS with its proof from
+    the game; and every reach past the documented API is written down (reach_truth)."""
     print("== blizzard api")
     build, note = wowui_build()
     if build is None:
@@ -197,19 +308,45 @@ def check_blizzard_api():
     for name in sorted(shimmed):
         print(f"   {name} is a deprecated shim ({shimmed[name][0]}); move to its C_ replacement")
         ok = False
-    docs = {}
+    docs, documented = {}, set()
     for fn in os.listdir(WOWUI_DOCS):
         if not fn.endswith(".lua"):
             continue
         text = open(os.path.join(WOWUI_DOCS, fn), encoding="utf-8", errors="replace").read()
+        names = re.findall(r'Name\s*=\s*"(\w+)",', text)
+        documented.update(names)
         ns = re.search(r'Namespace\s*=\s*"(C_\w+)"', text)
         if ns:
-            docs.setdefault(ns.group(1), set()).update(re.findall(r'Name\s*=\s*"(\w+)",', text))
+            docs.setdefault(ns.group(1), set()).update(names)
     for (ns, fn), where in sorted(namespaced.items()):
         if fn not in docs.get(ns, ()):
             print(f"   {ns}.{fn} is not in this client's API docs ({where[0]})")
             ok = False
-    print(f"   {len(globs)} globals, {len(namespaced)} namespaced calls, " + ("ok" if ok else "FAILED"))
+
+    # every other global the code may read is one this client has: its name appears in the
+    # client's own UI source, or it is on the short list of ones proven in the game
+    plain = [g for g in globs if not g.startswith("C_")]
+    reaches, reach_problems = read_reaches()
+    has = ui_source_has(plain + [last for _, last, _, _ in reaches], build)
+    for name in plain:
+        if not has[name] and name not in KNOWN_GLOBALS:
+            print(f"   {name} is in .luacheckrc and nowhere in this client's UI source: prove the game has it "
+                  f"(KNOWN_GLOBALS in tools/check.py, with the proof) or stop using it")
+            ok = False
+    for name in sorted(KNOWN_GLOBALS):
+        if name not in plain:
+            print(f"   KNOWN_GLOBALS lists {name}, which .luacheckrc no longer names: drop it from the list")
+            ok = False
+        elif has[name]:
+            print(f"   KNOWN_GLOBALS lists {name}, which this client's UI source now has: drop it from the list")
+            ok = False
+
+    # reaches into Blizzard's frames past the documented API
+    for p in reach_problems + reach_truth(reaches, has, documented, plain):
+        print("   " + p)
+        ok = False
+    print(f"   {len(globs)} globals ({len(KNOWN_GLOBALS)} proven in game only), {len(namespaced)} namespaced calls, "
+          f"{len(reaches)} reaches, " + ("ok" if ok else "FAILED"))
     return ok
 
 

@@ -20,6 +20,10 @@
 --          Blizzard's macro window); LOADING_SCREEN_DISABLED once, after Create's reload.
 -- Sends:   SSF_MACROS_CHANGED; SSF_MACRO_WINDOW_SHOWN once SSF has opened Blizzard's macro
 --          window on them.
+-- Game internals: Blizzard's macro window, past its documented API: ShowMacroFrame opens it
+--          (Blizzard_MacroUI loads on demand), MacroFrame's ChangeTab and SelectMacro pick the tab
+--          and the macro; UIErrorsFrame's AddExternalErrorMessage prints the red line. A Blizzard
+--          rename breaks the "show them" step or the no-free-slot message.
 -- Reads:   profile.macroWindowAfterReload; Blizzard's macro API and MacroFrame.
 -- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
 -- Acts on: the player's macros (CreateMacro: makes the missing ones, in the character's

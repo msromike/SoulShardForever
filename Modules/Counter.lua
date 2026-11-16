@@ -30,6 +30,12 @@
 -- Listens: SSF_BAGS_CHANGED, SSF_CAP_CHANGED, SSF_SHARD_DELETED, SSF_OPTIONS_CHANGED,
 --          SSF_QUIET_ENDED.
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
+-- Game internals: the bag bar's buttons by their global names (CharacterBag0Slot,
+--          CharacterBag1Slot, CharacterBag2Slot and CharacterBag3Slot, the first three built from
+--          the bag's number, and CharacterReagentBag0Slot), each button's Count text (the game's
+--          own number, hidden while the counter sits there) and its icon texture (what the backing
+--          covers). A Blizzard rename leaves the counter with no button, or the game's number
+--          showing through.
 -- Reads:   Bags:Count(), Bags:SoulBags(), Bags:HasSoulBag(), Cap:State(), Colors; profile.counter,
 --          counterSoulBag, counterFont, counterColorize.
 -- Acts on: a Blizzard bag button (CharacterBag0Slot to CharacterBag3Slot, or

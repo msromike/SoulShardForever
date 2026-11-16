@@ -46,7 +46,16 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   spec does not name) is allowed only where no public API exists, only in Widgets\, the
   Window, Tooltip and Help modules and Core's profile-key migration, and every such
   field is named in that file's header under "Lib internals" with what breaks when it
-  moves. The check holds the headers to that list of places, both ways. Those lines are the break list for a library change,
+  moves. The check holds the headers to that list of places, both ways.
+- Blizzard's frames get the same treatment as a library's. A member read off a Blizzard
+  global that Blizzard's API docs do not have (MacroFrame.MacroSelector, GameTooltip's
+  SetOwner), a template a frame is created from, a parentKey read off a Blizzard button:
+  each is a line in tools/blizzard_reaches.txt and is named in the file's header under
+  "Game internals" with what breaks. The check finds the first two kinds by itself and
+  searches every listed name in the client's own UI source on every run, so a game patch
+  that renames one fails the check before a player meets it. A global the client has but
+  its published source never mentions is on KNOWN_GLOBALS in tools/check.py with its
+  proof from the game. Those lines are the break list for a library change,
   and a library change reaches players without any SSF release: LibStub runs the highest
   MINOR of each library across every addon on the player's install, and AceGUI swaps in
   any widget type that registers a higher Version. A newer AceGUI in any other addon runs
@@ -66,6 +75,8 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
       Hooks:      what it hooks, through AceHook, and when the hook attaches
       Sends:      SSF_* messages it sends and their payload
       Lib internals: library fields it reads past the public API, and what breaks
+      Game internals: what it reads off Blizzard's own frames past the documented API
+                  (a frame global's member, a template, a parentKey), and what breaks
       Reads:      which other modules' public methods, and which profile keys
       Saves:      which profile keys it writes
       Acts on:    what it does to the game beyond its own frames and the profile: items

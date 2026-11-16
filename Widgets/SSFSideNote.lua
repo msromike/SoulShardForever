@@ -57,6 +57,9 @@
 --          (the label) are read for their widths, to size the widget to its label: the
 --          CheckBox has no fit-to-label of its own. An AceGUI bump that renames either
 --          errors on the first Show of the plain layout.
+-- Game internals: the frame templates UIPanelCloseButton (the X), UIPanelButtonTemplate and
+--          SecureActionButtonTemplate (the button and its secure click) and BackdropTemplate (the
+--          panel's border and the macro boxes').
 -- Reads:   Colors.CODE (macro text), SLATE (a macro box's edge), WHITE (the dividers) and
 --          BLACK (a macro box's fill, the shade); the ActionButtonUseKeyDown CVar (whether the
 --          button acts on the press or the release) and InCombatLockdown (in a fight the

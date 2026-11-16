@@ -45,6 +45,8 @@
 --          of the InlineGroup's own PaneBackdrop, which AceGUI keeps local. An AceGUI bump
 --          that changes those shows up as stock gold titles with no strip, or a strip of
 --          a different shape.
+-- Game internals: the frame template BackdropTemplate, which the title strip behind each
+--          group title is made from.
 -- Reads:   Macros:AnyMissing() for the "Create macros" button, Options.APP,
 --          Help:IsOn/Toggle, KeyBindings:Open, Colors:Class/Gold and
 --          Colors.BLACK, Tooltip:Attach, SSF.VERSION, the BINDING_NAME_* labels KeyBindings

@@ -12,6 +12,11 @@
 -- Public:  KeyBindings:ApplyLabels() (Core:ApplyLanguage calls it after a language switch)
 --          KeyBindings:Open() (the window's Key Bindings button; the caller closes the
 --          window first, SSF's window draws above the settings panel)
+-- Game internals: Blizzard's settings panel, past its documented API:
+--          Settings.KEYBINDINGS_CATEGORY_ID, Settings.GetCategory and Settings.OpenToCategory,
+--          SettingsPanel's GetLayout, the layout's GetInitializers, and each initializer's data
+--          (its name, and expanded: the section's own flag, set because nothing expands a section).
+--          A Blizzard rename opens the Key Bindings screen with SSF's section shut, or not at all.
 -- Acts on: the globals BINDING_NAME_SSF_DELETE and BINDING_NAME_SSF_PAUSE (the two rows'
 --          labels, which the game reads by those names); Blizzard's settings panel, which
 --          Open brings up on the Key Bindings screen (Settings.OpenToCategory).

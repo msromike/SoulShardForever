@@ -20,6 +20,8 @@
 -- Lib internals: AceConfigDialog.tooltip, the GameTooltip-like frame it shows help lines
 --          in. An AceConfigDialog bump that renames it leaves option tooltips at the stock
 --          anchor.
+-- Game internals: GameTooltip's SetOwner, AddLine and IsOwned, which Blizzard's API docs
+--          leave out.
 -- Reads:   Colors.GOLD, Colors.WHITE. Owns no state beyond the attached frame and the
 --          tooltip frame it hooked.
 -- Acts on: the game tooltip (GameTooltip): sets its owner, fills it, shows it, and hides

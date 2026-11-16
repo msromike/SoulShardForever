@@ -15,6 +15,8 @@
 -- Hooks:   MacroSelector.RunSetup and MacroFrame's OnHide (AceHook), attached the first
 --          time SSF opens the window (SSF_MACRO_WINDOW_SHOWN): Blizzard_MacroUI loads on
 --          demand, so neither frame exists at OnEnable.
+-- Game internals: MacroFrame.MacroSelector, its EnumerateButtons and its RunSetup (hooked), and
+--          each macro button's Name text. A Blizzard rename leaves SSF's macros unlit.
 -- Reads:   Macros:Names(); Blizzard's MacroFrame.MacroSelector buttons (their Name text).
 -- Acts on: Blizzard's macro window (MacroFrame.MacroSelector's buttons): a button glow
 --          (LibCustomGlow) on each SSF macro not yet on an action bar, stopped once it is,

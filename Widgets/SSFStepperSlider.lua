@@ -33,6 +33,8 @@
 --          clamp relies on the stock SetValue's setup flag to swallow the second
 --          OnValueChanged (the value check there would also stop it). An AceGUI bump that
 --          renames those breaks the steppers; one that moves the rail misplaces the dim.
+-- Game internals: the frame template UIPanelButtonTemplate, which the "-" and "+" buttons
+--          are made from.
 -- Reads:   Colors.GOLD (the tick) and Colors.BLACK (the dim); Help:KeepHover/Greyed (the
 --          tooltip on a greyed slider).
 -- Touches nothing else.

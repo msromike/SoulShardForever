@@ -66,6 +66,8 @@
 --          titletext, titlebg, content or localstatus errors at the first open (they are
 --          read bare); one that drops a wrapped method errors in the constructor; one that
 --          renames the rest shows as a window that no longer fits its content.
+-- Game internals: UISpecialFrames (the list Escape closes), and the frame templates
+--          UIPanelCloseButton (the X) and UIPanelButtonTemplate (the bottom row's buttons).
 -- Reads:   SSF.HALF_LINE (Core), handed to the notes; the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
 --          and the title band), WHITE (the art and the "i" untinted) and BLUE (the "i"
 --          while help is on).

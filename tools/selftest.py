@@ -84,6 +84,7 @@ def restore(rel):
 PUBLIC, HEADERS, ACTS, EXCEPTIONS = (check.check_public_truth, check.check_header_truth,
                                      check.check_acts_on, check.check_exceptions)
 WINDOW, TESTS, TOC, BIND = check.check_window, check.check_tests, check.check_toc, check.check_bindings
+API = check.check_blizzard_api
 
 CASES = [
     # Public is the truth: modules and the addon object
@@ -168,6 +169,24 @@ CASES = [
          "SSFDelete:Click()", "SSFDelete:Hide()", "one delete asked for"),
     Case("tests: the pause key's own code in Bindings.xml broken", TESTS, "Bindings.xml",
          "if s and s:IsEnabled() then", "if s and not s:IsEnabled() then", "the pause key turns pause on"),
+    # Blizzard's names: the globals, and the reaches past the documented API
+    Case("blizzard: a global nobody proved the game has", API, ".luacheckrc",
+         '    "CLOSE",', '    "CLOSE", "NoSuchBlizzardThing",', "nowhere in this client's UI source"),
+    Case("blizzard: a proven-in-game global the code no longer names", API, ".luacheckrc",
+         '"MuteSoundFile", ', "", "KNOWN_GLOBALS lists MuteSoundFile"),
+    Case("blizzard: a reach taken off the list, the code still making it", API, "tools/blizzard_reaches.txt",
+         "GameTooltip:IsOwned ", "# GameTooltip:IsOwned ", "reads GameTooltip.IsOwned"),
+    Case("blizzard: a reach Blizzard renamed (not in the UI source any more)", API, "tools/blizzard_reaches.txt",
+         "MacroFrame.MacroSelector ", "MacroFrame.MacroPicker ", "MacroFrame.MacroPicker is nowhere in this client's UI source"),
+    Case("blizzard: a reach listed for a file that does not make it", API, "tools/blizzard_reaches.txt",
+         APPEND, "ShowMacroFrame                           Modules/Bags.lua\n", "whose code no longer uses it"),
+    Case("blizzard: a reach the header does not own up to", API, "Modules/Counter.lua",
+         "-- Game internals: the bag bar's buttons", "--          the bag bar's buttons", "does not name"),
+    Case("blizzard: a new member read off a Blizzard frame", API, "Modules/Bags.lua",
+         APPEND, "\nlocal function Probe() return MacroFrame.SecretField end\n", "reads MacroFrame.SecretField"),
+    Case("blizzard: a frame made from a template nobody listed", API, "Modules/Bags.lua",
+         APPEND, '\nlocal function Probe() return CreateFrame("Frame", nil, UIParent, "TooltipBorderedFrameTemplate") end\n',
+         "creates a frame from the template TooltipBorderedFrameTemplate"),
     # the exceptions and Lib internals, counted against CLAUDE.md
     Case("exceptions: a new one appears in a header", EXCEPTIONS, "Modules/LowGlow.lua",
          "-- Touches nothing else.", "-- Exceptions: a raw frame, because.\n-- Touches nothing else.", "lists 0 for LowGlow"),
@@ -332,7 +351,8 @@ def main(argv):
 
     # the check must pass on the tree as it is, or a caught break proves nothing
     clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("exceptions", EXCEPTIONS),
-             ("toc and files", TOC), ("bindings", BIND), ("window controls", WINDOW), ("tests", TESTS)]
+             ("toc and files", TOC), ("bindings", BIND), ("blizzard api", API), ("window controls", WINDOW),
+             ("tests", TESTS)]
     for label, step in clean:
         ok, out = run_step(step)
         if not ok:

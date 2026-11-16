@@ -36,6 +36,7 @@
 --          Colors:Gold(text) -> text in the label gold
 --          Colors:Echo(text) -> text in the command echo grey
 --          Colors:Class() -> r, g, b of the warlock class color (titles only)
+-- Game internals: RAID_CLASS_COLORS.WARLOCK, the game's own table of class colors.
 -- Reads:   L for ON and OFF. Owns no state, no events, no frames.
 -- Touches nothing else.
 
