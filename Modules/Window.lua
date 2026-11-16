@@ -53,7 +53,7 @@
 --          saved on); an automatic open clears it.
 -- Exceptions: the title strip behind each group title is a raw frame: AceConfigDialog
 --          hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the
---          five exceptions CLAUDE.md lists.
+--          exceptions CLAUDE.md lists.
 -- Touches nothing else.
 
 local ADDON = ...

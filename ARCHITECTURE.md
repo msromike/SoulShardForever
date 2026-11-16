@@ -94,9 +94,76 @@ News:
 | Welcome | TRAINER_CLOSED; LOADING_SCREEN_DISABLED |
 | NewsShow | LOADING_SCREEN_DISABLED |
 
+## What acts on the game
+
+Every file that does something to the game beyond its own frames and the profile, from
+its code (the ACTS list in tools/check.py). Each file's header says the same under
+"Acts on", with the why; the check fails when the two differ.
+
+| File | What it does |
+|---|---|
+| SSFSideNote | sets a secure button's action |
+| SSFFrame | adds a frame to the list Escape closes; sets a global name |
+| KeyBindings | opens Blizzard's settings panel; sets a key binding's label (a global) |
+| Sorter | picks an item up or drops it (moves items); clears the cursor |
+| Sounds | mutes a game sound; unmutes a game sound; plays a sound file; plays a sound; adds media to the list every addon shares |
+| Trimmer | picks an item up or drops it (moves items); clears the cursor; deletes the item on the cursor |
+| DeleteButton | sets a global name |
+| Options | registers a slash command |
+| Macros | makes a macro; opens Blizzard's macro window; reaches into Blizzard's macro window; puts a line in the game's red error text |
+| MacroGlow | reaches into Blizzard's macro window; starts a glow on a button |
+| Tooltip | fills or hides the game tooltip |
+| Broker | hands LibDBIcon a table it writes into |
+| Counter | draws on one of Blizzard's bag buttons |
+| LowGlow | starts a glow on a button |
+
+## Calls between files (Public)
+
+Who uses what of whom: every use of another module's Public, of an SSF widget's own
+methods by the file that created it, and of the addon object's
+(SSF, Core.lua; its db, the shared profile, is left out). Rename or remove a name
+on the right and the file on the left breaks; the check fails first.
+
+| Caller | Uses |
+|---|---|
+| SSFStepperSlider | Colors: BLACK, GOLD; Help: Greyed, KeepHover |
+| SSFSideNote | Colors: BLACK, CODE, SLATE, WHITE |
+| SSFFrame | Colors: BLACK, BLUE, WHITE; SSFSideNote: AttachTo, Close, Layout, Show; Tooltip: Hide, IsShownFor, Show |
+| SSFCentered | Help: Greyed, KeepHover |
+| Core | KeyBindings: ApplyLabels; Sounds: DefaultName, LevelKey, LevelVolume |
+| Bags | SSF: SHARD_ITEM_ID |
+| Cap | Bags: HasSoulBag, SoulBagSlots |
+| Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Sounds: Moving; Trimmer: WhyNot |
+| Trimmer | Bags: Count, LastShard; Cap: Get, IsFull, IsQuiet, State; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: Moving, PlayPause; Status: DeletedText, PausedPressText |
+| DeleteButton | Trimmer: Delete |
+| Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
+| DebugReport | Debug: Text |
+| Settings | Colors: OnOff, Value |
+| Options | Bags: HasSoulBag; Cap: Get, IsAuto, MAX, MIN, Recompute, SetManual; Colors: Echo, Gold, OnOff, PaintState, State; Counter: OnSoulBag; Debug: Clear, IsOn, Mark, Set; DebugReport: Open; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define, ValueWords; Sounds: LevelKey, LevelKeys, LevelVolume, PlayPause; Status: CountText, InBagsText, PauseText, PrintStatus; Trimmer: Delete, WhyNot; Window: Open |
+| Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION |
+| MacroGlow | Macros: Names |
+| DeleteHelp | Macros: Body, SpellName |
+| Tooltip | Colors: GOLD, WHITE |
+| Window | Colors: BLACK, Class, Gold; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
+| Welcome | Cap: IsQuiet; Colors: GREEN, Paint; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: InFight, RefreshNote, ShowNote |
+| NewsShow | Colors: Gold; Window: InFight, RefreshLeftNote, ShowLeftNote |
+| Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
+| Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
+| LowGlow | Cap: State; Colors: RED; Counter: Refresh |
+
 ## Shared state and exceptions
 
-See CLAUDE.md: the AceDB profile is the one shared state (any module may read it, only
-its owner derives a rule from it), and the documented exceptions (a raw named frame, a
-raw FontString, a raw title strip) and the library-internals rule are listed there with
-their reasons. NS is the addon-private table Core and the locale registrar share.
+The AceDB profile is the one shared state: any module may read it, only its owner derives
+a rule from it (CLAUDE.md). NS is the addon-private table Core and the locale registrar
+share.
+
+The documented exceptions to the two rules, 5 in all, from each header's Exceptions:
+
+- Core: ApplyLanguage rewrites the AceLocale table in place, repeating AceLocale's two rules (enGB is enUS; a `true` value in the default means the key is the string). AceLocale has no runtime switch: NewLocale keeps only the default and the client's locale (GAME_LOCALE, when set, stands in for the client's), so the Language setting can only be done by writing into the table every module holds.
+- Counter: the FontString and the backing texture are raw: AceGUI builds widgets inside its own windows and cannot draw on a Blizzard button. One of the exceptions CLAUDE.md lists.
+- DeleteButton: a raw, named CreateFrame. /click resolves a GLOBAL frame name, and AceGUI widgets are pooled frames meant for windows, unnamed or named by a counter, so a raw frame with a fixed name is the only way to give /click a target. One of the exceptions CLAUDE.md lists.
+- Window: the title strip behind each group title is a raw frame: AceConfigDialog hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the exceptions CLAUDE.md lists.
+- SSFFrame: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on Escape; the stock Frame is unnamed and Escape has no other way in.
+
+Library internals are read in: Core, Help, Tooltip, Window, SSFCentered, SSFFrame, SSFSideNote, SSFStepperSlider. Each header's "Lib internals"
+names the fields and what breaks when a library moves them.

@@ -53,6 +53,11 @@
 --          heard; SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records all
 --          three; no other listener).
 -- Reads:   profile.pauseSoundName, pauseSoundVolume. Owns no state, no frames.
+-- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given;
+--          PlaySoundFile for any other LSM sound), and around a move that is not heard
+--          mutes every item pick-up and put-down sound, then unmutes them (MuteSoundFile,
+--          UnmuteSoundFile). LibSharedMedia's "sound" list, which every addon shares:
+--          SSF's sounds are added to it at enable.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

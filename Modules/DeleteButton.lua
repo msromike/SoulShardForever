@@ -6,10 +6,12 @@
 -- to be clicked by name.
 --
 -- Reads:   Trimmer:Delete().
+-- Acts on: the global name SSFDelete (the frame's own name: every player's /click SSFDelete
+--          and Bindings.xml find the button by it).
 -- Exceptions: a raw, named CreateFrame. /click resolves a GLOBAL frame name, and AceGUI
 --          widgets are pooled frames meant for windows, unnamed or named by a counter, so a
 --          raw frame with a fixed name is the only way to give /click a target. One of the
---          five exceptions CLAUDE.md lists.
+--          exceptions CLAUDE.md lists.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

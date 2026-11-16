@@ -1,0 +1,117 @@
+# tests/window_controls.txt: every control in SSF's options window that carries a text,
+# and every button on the window's own frame that has none, as tests/window.lua finds them
+# when it opens the real window outside the game. Columns: kind, shown or hidden, enabled
+# or greyed, the text. One block per scene (see tests/window.lua for what a scene is).
+# Written by `python tools/check.py --accept-window`, never by hand. The check fails when
+# the window no longer matches this file. A test card names only controls listed here as
+# shown. It says what is in the window, not where it sits or how it looks.
+
+scene: settled
+Button      hidden enabled Close
+FontString  shown  enabled Soul Shards Forever
+Button      shown  enabled (no text: UIPanelCloseButton)
+Button      shown  enabled (no text: 616343)
+Button      hidden enabled (no text: UIPanelCloseButton)
+Button      hidden enabled (no text: UIPanelCloseButton)
+FontString  shown  enabled vtest
+Button      shown  enabled Keybindings
+FontString  shown  enabled Soul Shards: 5
+Button      shown  greyed  Delete Shard / cap is 8
+FontString  shown  enabled Pause SSF
+FontString  shown  enabled Pause all SSF actions
+FontString  shown  greyed  Play pause sound
+FontString  shown  enabled Full
+FontString  shown  greyed  Log pauses to chat
+FontString  shown  enabled Soul shard limits
+FontString  shown  enabled Shards to keep
+FontString  shown  enabled 1
+FontString  shown  enabled 100
+EditBox     shown  enabled 8
+Button      shown  enabled -
+Button      shown  enabled +
+FontString  shown  enabled Match soul bag size
+FontString  shown  enabled Low shard mark
+FontString  shown  enabled 1
+FontString  shown  enabled 100
+EditBox     shown  enabled 4
+Button      shown  enabled -
+Button      shown  enabled +
+FontString  shown  enabled Soul shard counter
+FontString  shown  enabled Show shard counter on bag bar
+FontString  shown  enabled Far-left bag
+FontString  shown  enabled Soul bag
+FontString  shown  enabled Colorize bag counter
+FontString  shown  enabled Glow bag button when low
+FontString  shown  enabled Bag counter font
+FontString  shown  enabled Arial Narrow
+FontString  shown  enabled Other settings
+FontString  shown  enabled Show minimap icon
+FontString  shown  enabled Log deletions to chat
+FontString  shown  enabled SSF Mode
+FontString  shown  enabled How shards move
+FontString  shown  enabled Auto
+FontString  shown  enabled Language
+
+scene: first
+Button      hidden enabled Close
+FontString  shown  enabled Soul Shards Forever
+Button      shown  enabled (no text: UIPanelCloseButton)
+Button      shown  enabled (no text: 616343)
+FontString  shown  enabled Welcome to SSF
+FontString  shown  enabled Click for in-game tooltip help.
+FontString  shown  enabled You won't see this welcome screen again on this character unless you click Create macros in the UI.
+Button      shown  enabled Create recommended macros
+FontString  shown  enabled Creates the macros, reloads your UI / and opens the macro box after the reload.
+Button      shown  enabled (no text: UIPanelCloseButton)
+FontString  shown  enabled Coming soon to SSF
+Button      shown  enabled Remind me later
+Button      hidden enabled (no text: UIPanelCloseButton)
+FontString  shown  enabled Don't show this again
+FontString  shown  enabled vtest
+Button      shown  enabled Keybindings
+Button      shown  enabled Create macros
+FontString  shown  enabled Two things you've asked for are on the way.
+FontString  shown  enabled Delete in combat:  SSF will be able to delete a Soul Shard over your cap while you are in combat.
+FontString  shown  enabled Delete as you play:  An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind.
+FontString  shown  enabled Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready.
+FontString  shown  enabled SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match.
+FontString  shown  enabled In a macro, put /ssf delete on the line before the ability:
+FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1454
+FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 980
+FontString  shown  enabled The Bane macro lets you delete on the move when you don't want to use Spell 1454. Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat.
+FontString  shown  enabled Soul Shards: 5
+Button      shown  greyed  Delete Shard / cap is 8
+FontString  shown  enabled Pause SSF
+FontString  shown  enabled Pause all SSF actions
+FontString  shown  greyed  Play pause sound
+FontString  shown  enabled Full
+FontString  shown  greyed  Log pauses to chat
+FontString  shown  enabled Soul shard limits
+FontString  shown  enabled Shards to keep
+FontString  shown  enabled 1
+FontString  shown  enabled 100
+EditBox     shown  enabled 8
+Button      shown  enabled -
+Button      shown  enabled +
+FontString  shown  enabled Match soul bag size
+FontString  shown  enabled Low shard mark
+FontString  shown  enabled 1
+FontString  shown  enabled 100
+EditBox     shown  enabled 4
+Button      shown  enabled -
+Button      shown  enabled +
+FontString  shown  enabled Soul shard counter
+FontString  shown  enabled Show shard counter on bag bar
+FontString  shown  enabled Far-left bag
+FontString  shown  enabled Soul bag
+FontString  shown  enabled Colorize bag counter
+FontString  shown  enabled Glow bag button when low
+FontString  shown  enabled Bag counter font
+FontString  shown  enabled Arial Narrow
+FontString  shown  enabled Other settings
+FontString  shown  enabled Show minimap icon
+FontString  shown  enabled Log deletions to chat
+FontString  shown  enabled SSF Mode
+FontString  shown  enabled How shards move
+FontString  shown  enabled Auto
+FontString  shown  enabled Language

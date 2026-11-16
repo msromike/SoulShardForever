@@ -34,6 +34,8 @@
 --          listener).
 -- Reads:   Bags; Sounds:Moving; Trimmer:WhyNot (paused, when combat ends);
 --          profile.soulsortLegacy, soulsortReverse.
+-- Acts on: the bags: moves shards (PickupContainerItem on the shard, then on the free soul
+--          bag slot), with ClearCursor before and after each move.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

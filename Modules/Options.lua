@@ -61,6 +61,7 @@
 --          counter, lowGlow, counterColorize, counterSoulBag, counterFont, minimap (.hide),
 --          announce, soulsortLegacy, soulsortReverse, language. The cap itself goes
 --          through Cap:SetManual.
+-- Acts on: the slash command /ssf (AceConsole's RegisterChatCommand).
 -- Touches nothing else.
 
 local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list

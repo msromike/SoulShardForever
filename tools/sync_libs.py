@@ -4,20 +4,29 @@
 Job:    Libs/ is committed and ships as is (no packager externals). This script is the one
         way a library changes: it reads tools/externals.txt (the list the .pkgmeta externals
         block used to hold, in its syntax; url: and tag: are read, a branch: is taken as a
-        tag, other keys are ignored), fetches each library from upstream into a scratch
-        folder, and reports every file that differs from Libs/, is missing locally, or
-        exists only locally. With --apply it makes Libs/ equal upstream, line endings aside
-        (copies the first two kinds, deletes the third; a file that differs only in CRLF/LF
-        is left alone), which is a deliberate library bump: in-game
-        pass, then a commit of its own with a changelog line.
-Takes:  --apply (copy upstream over Libs/); --quiet (one line per library); --keep (leave
-        tools/.sync/ in place after the run, so a drifted file can be diffed against its
-        upstream copy: the upkeep check reads the change before anyone bumps).
+        tag, other keys are ignored), holds a copy of each library's upstream in tools/.sync/,
+        and reports every file that differs from Libs/, is missing locally, or exists only
+        locally. With --apply it makes Libs/ equal upstream, line endings aside (copies the
+        first two kinds, deletes the third; a file that differs only in CRLF/LF is left
+        alone), which is a deliberate library bump: in-game pass, then a commit of its own
+        with a changelog line.
+Speed:  the kept copy is downloaded again only when its upstream's version changed. The
+        version is one small question per source (six sources for eighteen libraries), all
+        asked at once: the revision number a repos.wowace.com folder listing states (their
+        projects are Subversion; no Subversion client is needed to read the number), or
+        the commit `git ls-remote` gives for a GitHub branch or tag. A library that does
+        need fetching has its files downloaded at once, on threads. Measured 2026-11-16:
+        17 s before (everything, one request after another), 2 s with nothing kept, under
+        half a second on a normal run.
+Takes:  --apply (copy upstream over Libs/; every library is downloaded fresh first, the
+        kept copy is not trusted for a bump); --quiet (one line per library); --keep
+        (accepted and does nothing: tools/.sync/ is always kept now, so a drifted file can
+        always be diffed against its upstream copy, as the upkeep check does).
         Upstreams: a repos.wowace.com trunk folder (fetched file by file over HTTPS), or a
         GitHub repository (fetched as the zip of its default branch, or of `tag:`).
-Writes: nothing without --apply. The scratch folder tools/.sync/ exists only while the
-        script runs; it is removed at the end of a run that finishes (unless --keep) and
-        cleared at the start of the next, and ignored by git.
+Writes: tools/.sync/ (ignored by git): one folder per library and versions.txt, the
+        version each was fetched at. Deleting it costs one slower run. Libs/ only with
+        --apply.
 Exit:   0 in report mode, drift included (it is information, the check script prints it);
         1 only when an upstream could not be fetched with --apply.
 Touches nothing else.
@@ -26,17 +35,24 @@ import io
 import os
 import re
 import shutil
+import subprocess
 import sys
 import urllib.request
 import zipfile
+from concurrent.futures import ThreadPoolExecutor
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 LIST = os.path.join(ROOT, "tools", "externals.txt")
-SCRATCH = os.path.join(ROOT, "tools", ".sync")
+KEPT = os.path.join(ROOT, "tools", ".sync")
+VERSIONS = os.path.join(KEPT, "versions.txt")
 TIMEOUT = 20
+LIBRARIES_AT_ONCE = 18   # every library on the list can be in flight together
+FILES_AT_ONCE = 32       # files of the libraries being fetched, shared between them
 
 LINE_RE = re.compile(r"^\s*(Libs/[^:\s]+):\s*(\S+)?\s*$")
 SUB_RE = re.compile(r"^\s+(url|tag|branch):\s*(\S+)\s*$")
+WOWACE_PROJECT_RE = re.compile(r"(https://repos\.wowace\.com/wow/[^/]+)/")
+REVISION_RE = re.compile(r"Revision (\d+)")
 
 
 def read_list():
@@ -63,20 +79,60 @@ def http(url):
     return urllib.request.urlopen(req, timeout=TIMEOUT).read()
 
 
-def fetch_wowace(url, dest):
-    """A trunk folder on repos.wowace.com: the HTML listing gives the files, fetched one by one."""
+def is_github(url):
+    return "github.com" in url
+
+
+def source_of(url):
+    """What one version question covers: a wowace project (every trunk folder in it shares
+    the project's revision number) or a GitHub repository."""
+    m = WOWACE_PROJECT_RE.match(url)
+    return m.group(1) if m else url.rstrip("/")
+
+
+def version_of(url, tag):
+    """The upstream's version from one small question, or None when it cannot be asked
+    (offline): "r1424" from the revision a wowace folder listing states, or the commit a
+    GitHub tag or default branch points at."""
+    try:
+        if is_github(url):
+            ref = f"refs/tags/{tag}" if tag else "HEAD"
+            proc = subprocess.run(["git", "ls-remote", url, ref], text=True, capture_output=True, timeout=TIMEOUT)
+            words = proc.stdout.split()
+            return words[0] if words else None
+        m = REVISION_RE.search(http(url if url.endswith("/") else url + "/").decode("utf-8", "replace"))
+        return "r" + m.group(1) if m else None
+    except Exception:  # network, timeout, no git
+        return None
+
+
+def wowace_files(url, rel=""):
+    """Every file under a trunk folder on repos.wowace.com, as (relative path, file url),
+    read from the HTML listings."""
     if not url.endswith("/"):
         url += "/"
-    html = http(url).decode("utf-8", "replace")
-    for href in re.findall(r'href="([^"?]+)"', html):
+    out = []
+    for href in re.findall(r'href="([^"?]+)"', http(url).decode("utf-8", "replace")):
         if "://" in href or href.startswith("/") or href == "../":
             continue
         if href.endswith("/"):
-            fetch_wowace(url + href, os.path.join(dest, href.rstrip("/")))
+            out += wowace_files(url + href, rel + href)
         else:
-            os.makedirs(dest, exist_ok=True)
-            with open(os.path.join(dest, href), "wb") as f:
-                f.write(http(url + href))
+            out.append((rel + href, url + href))
+    return out
+
+
+def fetch_wowace(url, dest, files):
+    """A trunk folder on repos.wowace.com: the listings give the files, downloaded at once
+    on the shared `files` pool."""
+    def one(item):
+        rel, file_url = item
+        target = os.path.join(dest, rel.replace("/", os.sep))
+        os.makedirs(os.path.dirname(target), exist_ok=True)
+        with open(target, "wb") as f:
+            f.write(http(file_url))
+    os.makedirs(dest, exist_ok=True)
+    list(files.map(one, wowace_files(url)))
 
 
 def fetch_github(url, tag, dest):
@@ -102,6 +158,39 @@ def fetch_github(url, tag, dest):
             os.makedirs(os.path.dirname(target), exist_ok=True)
             with open(target, "wb") as f:
                 f.write(z.read(info))
+
+
+def refresh(name, url, tag, files):
+    """Download one library into tools/.sync/<name>, replacing the kept copy only once the
+    whole download is in (a broken download leaves the old copy and its version alone).
+    Returns None, or the reason it could not be fetched."""
+    final, partial = os.path.join(KEPT, name), os.path.join(KEPT, name + ".partial")
+    shutil.rmtree(partial, ignore_errors=True)
+    try:
+        if is_github(url):
+            fetch_github(url, tag, partial)
+        else:
+            fetch_wowace(url, partial, files)
+    except Exception as e:  # network, 404, bad zip
+        shutil.rmtree(partial, ignore_errors=True)
+        return f"{e.__class__.__name__}: {e}"
+    shutil.rmtree(final, ignore_errors=True)
+    os.replace(partial, final)
+    return None
+
+
+def read_versions():
+    """name -> the version its kept copy was fetched at."""
+    if not os.path.exists(VERSIONS):
+        return {}
+    return dict(line.split(None, 1) for line in open(VERSIONS, encoding="utf-8").read().splitlines() if " " in line)
+
+
+def write_versions(versions):
+    os.makedirs(KEPT, exist_ok=True)
+    with open(VERSIONS, "w", encoding="utf-8", newline="\n") as f:
+        for name in sorted(versions):
+            f.write(f"{name} {versions[name]}\n")
 
 
 def normalized(path):
@@ -130,25 +219,56 @@ def compare(local, upstream):
     return sorted(differs), sorted(missing), sorted(extra)
 
 
+def bring_up_to_date(libs, fresh):
+    """Make tools/.sync/ hold each library's current upstream. Returns (failed, offline):
+    name -> why it has no upstream copy at all, and the names compared with a kept copy
+    because the upstream could not be asked. fresh: download every one, kept or not."""
+    kept = read_versions()
+    sources = {}
+    for _, url, tag in libs:
+        sources.setdefault(source_of(url), (url, tag))
+    with ThreadPoolExecutor(len(sources) or 1) as pool:
+        now = dict(zip(sources, pool.map(lambda s: version_of(*sources[s]), sources)))
+
+    stale, offline = [], []
+    for path, url, tag in libs:
+        name = path.split("/", 1)[1]
+        version = now[source_of(url)]
+        have = os.path.isdir(os.path.join(KEPT, name))
+        if version is None and have and not fresh:
+            offline.append(name)  # cannot ask: the kept copy is the best there is
+        elif fresh or not have or kept.get(name) != version:
+            stale.append((name, url, tag, version))
+
+    failed = {}
+    with ThreadPoolExecutor(LIBRARIES_AT_ONCE) as lib_pool, ThreadPoolExecutor(FILES_AT_ONCE) as files:
+        reasons = list(lib_pool.map(lambda item: refresh(item[0], item[1], item[2], files), stale))
+    for (name, _, _, version), reason in zip(stale, reasons):
+        if reason:
+            failed[name] = reason
+            if os.path.isdir(os.path.join(KEPT, name)):
+                offline.append(name)  # the old copy is still there and still compared
+        elif version:
+            kept[name] = version
+        else:
+            kept.pop(name, None)  # fetched, version unknown: fetched again next run
+    write_versions(kept)
+    return failed, offline
+
+
 def main(argv):
     apply_ = "--apply" in argv
     quiet = "--quiet" in argv
-    keep = "--keep" in argv
-    if os.path.isdir(SCRATCH):
-        shutil.rmtree(SCRATCH)
-    failed, drifted = 0, 0
-    for path, url, tag in read_list():
+    libs = read_list()
+    failed, offline = bring_up_to_date(libs, fresh=apply_)
+    not_fetched, drifted = 0, 0
+    for path, url, tag in libs:
         name = path.split("/", 1)[1]
         local = os.path.join(ROOT, path.replace("/", os.sep))
-        up = os.path.join(SCRATCH, name)
-        try:
-            if "github.com" in url:
-                fetch_github(url, tag, up)
-            else:
-                fetch_wowace(url, up)
-        except Exception as e:  # network, 404, bad zip
-            print(f"{name}: upstream not fetched ({e.__class__.__name__}: {e})")
-            failed += 1
+        up = os.path.join(KEPT, name)
+        if name in failed and (apply_ or not os.path.isdir(up)):
+            print(f"{name}: upstream not fetched ({failed[name]})")
+            not_fetched += 1
             continue
         if not os.path.isdir(local):
             print(f"{name}: NOT EMBEDDED, upstream has it")
@@ -178,11 +298,10 @@ def main(argv):
             for rel in extra: # a file upstream dropped goes too: Libs/ equals upstream (line endings aside)
                 os.remove(os.path.join(local, rel))
             print(f"   applied {len(differs) + len(missing)} file(s), removed {len(extra)}")
-    if not keep:
-        shutil.rmtree(SCRATCH, ignore_errors=True) # nothing to keep: a bump copies into Libs/
-    if apply_ and failed:
+    if apply_ and not_fetched:
         return 1
-    print(f"libs: {drifted} drifted, {failed} not fetched")
+    tail = f", {len(offline)} compared with a kept copy (upstream not reached)" if offline else ""
+    print(f"libs: {drifted} drifted, {not_fetched} not fetched{tail}")
     return 0
 
 

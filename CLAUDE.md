@@ -24,21 +24,29 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
 - Custom AceGUI widgets (Widgets\) are extension-only: a widget wraps a stock AceGUI
   widget and adds to it. It never re-implements what the stock widget does. Where AceGUI
   has no base, the widget stands alone and stays small.
-- Five documented exceptions, each explained in its own file header, and no others:
-  DeleteButton's raw named frame (/click needs a global name), Counter's raw FontString
-  and backing texture on a Blizzard bag button (nothing on the list draws on a foreign button), the title
-  strip behind option groups in Window (AceConfigDialog hardcodes the group widget),
-  the global name SSFFrame gives the stock Frame's frame (UISpecialFrames closes it
-  on Escape; the stock Frame is unnamed and Escape has no other way in), and SSFFrame's
-  copy of the stock Close click, used only when the stock button can't be found (else an
-  AceGUI change would leave the window's X and Close dead).
+- No insurance against a library changing behavior it has had for years (the owner,
+  2026-11-16). Use the library as it is, name the reach under "Lib internals", and let the
+  library diff be the warning. A hand copy of library code kept "in case" is hand-rolling.
+- Five documented exceptions, and no others. Each is explained in its file's header under
+  Exceptions (a header with more than one numbers them: (1), (2)). The check counts this
+  list against the headers, so it stays one per line, the file first:
+    - DeleteButton: a raw named frame (/click needs a global name).
+    - Counter: a raw FontString and backing texture on a Blizzard bag button (nothing on
+      the list draws on a foreign button).
+    - Window: the title strip behind option groups (AceConfigDialog hardcodes the group
+      widget).
+    - SSFFrame: the global name it gives the stock Frame's frame (UISpecialFrames closes
+      it on Escape; the stock Frame is unnamed and Escape has no other way in).
+    - Core: ApplyLanguage writes into AceLocale's own table (AceLocale has no way to
+      switch language while the game runs).
 - The stock Frame container is the window base: dialog-box art, resize disabled through
   its public EnableResize. Nothing styled like a different UI kit.
 - Reading a library's internals (an AceGUI widget's label, frame or children, an
-  AceConfigDialog field, AceDB's key for the character) is allowed only where no public
-  API exists, only in Widgets\, the Window and Tooltip modules and Core's profile-key
-  migration, and every such field is named in that file's header under "Lib internals"
-  with what breaks when it moves. Those lines are the break list for a library change,
+  AceConfigDialog field, AceDB's key for the character, a value AceConfig accepts but its
+  spec does not name) is allowed only where no public API exists, only in Widgets\, the
+  Window, Tooltip and Help modules and Core's profile-key migration, and every such
+  field is named in that file's header under "Lib internals" with what breaks when it
+  moves. The check holds the headers to that list of places, both ways. Those lines are the break list for a library change,
   and a library change reaches players without any SSF release: LibStub runs the highest
   MINOR of each library across every addon on the player's install, and AceGUI swaps in
   any widget type that registers a higher Version. A newer AceGUI in any other addon runs
@@ -60,6 +68,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
       Lib internals: library fields it reads past the public API, and what breaks
       Reads:      which other modules' public methods, and which profile keys
       Saves:      which profile keys it writes
+      Acts on:    what it does to the game beyond its own frames and the profile: items
+                  moved or deleted, macros made, sounds muted or played, a Blizzard frame
+                  opened or drawn on, a global name set, a table handed to a library
       Exceptions: anything that breaks Rule 1 or 2 on purpose, and why
       Then the line "Touches nothing else."
 
@@ -90,6 +101,14 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
 - Run the check script (luacheck, headless tests, locale completeness, regenerate
   ARCHITECTURE.md). A regenerated map that changed in a way the commit did not intend
   means something moved that should not have. Stop and report.
+- What is in the options window is a fact, not a reading of the code. The check opens the
+  real window outside the game (tests/window.lua) and holds it to
+  tests/window_controls.txt. Anything that says what a player sees or clicks there (a
+  test card, a README line, a comment, a reply to the owner) names only controls that
+  file lists as shown. A name in the code is not evidence: SSFFrame once called its
+  Keybindings button "closebutton", and a test card sent the owner looking for Close. When a change to the window is meant, accept the new list with
+  `python tools/check.py --accept-window` and read its diff. The list cannot say where a
+  control sits or how it looks; that takes the owner's eyes or a screenshot.
 - One chunk of work per commit. The owner tests in game after any commit that changes
   behavior; say which tests, each command in its own paste block, and wait.
 - Never tag, bump or publish without the owner's explicit yes.

@@ -12,6 +12,9 @@
 -- Public:  KeyBindings:ApplyLabels() (Core:ApplyLanguage calls it after a language switch)
 --          KeyBindings:Open() (the window's Key Bindings button; the caller closes the
 --          window first, SSF's window draws above the settings panel)
+-- Acts on: the globals BINDING_NAME_SSF_DELETE and BINDING_NAME_SSF_PAUSE (the two rows'
+--          labels, which the game reads by those names); Blizzard's settings panel, which
+--          Open brings up on the Key Bindings screen (Settings.OpenToCategory).
 -- Owns no state, no events, no frames. Touches nothing else.
 
 local ADDON = ...

@@ -16,6 +16,9 @@
 --          time SSF opens the window (SSF_MACRO_WINDOW_SHOWN): Blizzard_MacroUI loads on
 --          demand, so neither frame exists at OnEnable.
 -- Reads:   Macros:Names(); Blizzard's MacroFrame.MacroSelector buttons (their Name text).
+-- Acts on: Blizzard's macro window (MacroFrame.MacroSelector's buttons): a button glow
+--          (LibCustomGlow) on each SSF macro not yet on an action bar, stopped once it is,
+--          and on every button when the window hides.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

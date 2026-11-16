@@ -61,7 +61,6 @@ L["Language"] = "Sprache"
 L["Open options"] = "Optionen öffnen"
 L["Open the options window."] = "Öffnet das Optionsfenster."
 L["Same as options."] = "Wie options."
-L["Close"] = "Schließen"
 
 -- Broker
 L["Soul Shards"] = "Seelensplitter"

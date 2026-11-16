@@ -32,8 +32,12 @@
 -- Sends:   SSF_COUNTER_UPDATED (button or nil, count) after every refresh.
 -- Reads:   Bags:Count(), Bags:SoulBags(), Bags:HasSoulBag(), Cap:State(), Colors; profile.counter,
 --          counterSoulBag, counterFont, counterColorize.
+-- Acts on: a Blizzard bag button (CharacterBag0Slot to CharacterBag3Slot, or
+--          CharacterReagentBag0Slot): draws the number and its backing on it, and hides the
+--          game's own number on a soul bag's button while the counter sits there (alpha 0,
+--          given back when the counter leaves that button).
 -- Exceptions: the FontString and the backing texture are raw: AceGUI builds widgets inside
---          its own windows and cannot draw on a Blizzard button. One of the five exceptions
+--          its own windows and cannot draw on a Blizzard button. One of the exceptions
 --          CLAUDE.md lists.
 -- Touches nothing else.
 

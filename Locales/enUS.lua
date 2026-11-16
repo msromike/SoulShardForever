@@ -60,7 +60,6 @@ L["Language"] = true
 L["Open options"] = true
 L["Open the options window."] = true
 L["Same as options."] = true
-L["Close"] = true
 
 -- Broker
 L["Soul Shards"] = true

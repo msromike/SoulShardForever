@@ -15,6 +15,8 @@
 --          which covers bag, cap, delete and option changes; nothing else is needed.
 -- Reads:   Cap:State(count), Colors.RED; profile.lowGlow. Asks Counter:Refresh() once at
 --          enable, so the first state is heard (Counter enables first and had already sent it).
+-- Acts on: the Blizzard bag button the counter sits on: a pixel glow on its edge
+--          (LibCustomGlow), started with the low state and stopped when it ends.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

@@ -22,6 +22,8 @@
 --          anchor.
 -- Reads:   Colors.GOLD, Colors.WHITE. Owns no state beyond the attached frame and the
 --          tooltip frame it hooked.
+-- Acts on: the game tooltip (GameTooltip): sets its owner, fills it, shows it, and hides
+--          it when it is still the owner's.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

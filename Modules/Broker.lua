@@ -16,6 +16,9 @@
 -- Reads:   Bags:Count(), Status:CountValue/CapValue/LowMarkValue/PausedValue, Colors:Class
 --          and Colors.DIM, Window:Toggle(), SSF.ICON;
 --          profile.minimap.
+-- Acts on: LibDBIcon: its Register is handed the table profile.minimap and keeps it, and
+--          writes the icon's place into it (minimapPos, when the player drags the icon).
+--          That write is the library's, so no Saves line of SSF's own shows it.
 -- Touches nothing else.
 
 local ADDON = ...

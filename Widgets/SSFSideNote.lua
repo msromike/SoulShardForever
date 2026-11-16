@@ -46,12 +46,12 @@
 --            The plain layout reads title, blocks, button, onClick and onClose, and: tick
 --            (the tick box's label), ticked (true: the box starts ticked; a Show again
 --            while it is open, such as after a Language change, keeps what the player
---            ticked), onTick(ticked) (called on every tick and untick), buttonTicked
+--            ticked), onTick (called with ticked, on every tick and untick), buttonTicked
 --            (the button's label while ticked). body, note, lead and
 --            buttonNote are not drawn there.
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's
 --            width changes.
---          Close() -- hide and tell the owner once. IsShown() -> bool.
+--          Close() -- hide and tell the owner once. Showing or not is AceGUI's own IsShown.
 -- Lib internals: the plain layout's tick box is AceGUI's CheckBox, held for life (never
 --          released, so never pooled to another addon). Its checkbg (the box art) and text
 --          (the label) are read for their widths, to size the widget to its label: the
@@ -62,6 +62,8 @@
 --          button acts on the press or the release) and InCombatLockdown (in a fight the
 --          button's command can't be set). Owns no state beyond the shown texts, the
 --          onClick, the onClose, the onTick and its owner frame (AttachTo).
+-- Acts on: its own button's secure action: the slash command onClick returns is set as
+--          the button's macro text and runs as the click (Macros hands it /reload).
 -- Touches nothing else.
 
 local Type, Version = "SSFSideNote", 3
@@ -356,8 +358,6 @@ local methods = {
         self.frame:Show()
         return width
     end,
-
-    ["IsShown"] = function(self) return self.frame:IsShown() end,
 
     -- closes the note and tells its owner once, whatever closed it: its X, or the window
     -- closing (X, Escape, Close, or a fight)

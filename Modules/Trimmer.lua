@@ -32,6 +32,9 @@
 -- Reads:   Bags:LastShard/Count, Cap:Get/State/IsFull/IsQuiet, Sorter:TopFirst/Pass,
 --          Sounds:PlayPause/Moving, Status:DeletedText/PausedPressText; profile.paused,
 --          pauseSound, pauseLog, announce.
+-- Acts on: the bags: deletes one shard (ClearCursor, PickupContainerItem puts the shard on
+--          the cursor, DeleteCursorItem deletes it only if the cursor holds a shard, then
+--          ClearCursor again).
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

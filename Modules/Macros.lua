@@ -22,6 +22,10 @@
 --          window on them.
 -- Reads:   profile.macroWindowAfterReload; Blizzard's macro API and MacroFrame.
 -- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
+-- Acts on: the player's macros (CreateMacro: makes the missing ones, in the character's
+--          slots when they fit, else the account's); Blizzard's macro window
+--          (ShowMacroFrame opens it, then MacroFrame's tab and selection are set); the
+--          game's red error text (UIErrorsFrame, one line when no macro slot is free).
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

@@ -16,7 +16,7 @@
 -- eye; the notes beside get the same SHADE, help art and button height through AttachTo), an optional note on each
 -- side of the window (the SSFSideNote widget: ShowSidePanel on the right, the welcome's layout; ShowLeftPanel
 -- on the left, the plain layout), room made for them on the screen (MakeRoom), Escape closes it, a bottom row of
--- Close (far right, SetRightButton turns it into an action), an optional action button
+-- an optional right button (far right, SetRightButton), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
 -- footer line in the row's middle while that button is hidden (SetFooter); the buttons
 -- size to their text, and the two outer ones match the wider of the two while both show. A dark strip behind
@@ -47,7 +47,8 @@
 --          changed Frame leaves the stock piece in place rather than erroring: the status
 --          strip hidden through statustext's parent; the stock Close button found among
 --          the frame's children by its CLOSE text, hidden, and its OnClick reused for
---          SSF's X and Close; the title handle, titletext's parent, for the hook. Also
+--          SSF's X (not found: the X does nothing and Escape still closes the window; no
+--          hand copy is kept in case, see CLAUDE.md); the title handle, titletext's parent, for the hook. Also
 --          read: titletext and titlebg (the band's anchors, the title's color and width),
 --          localstatus (the status fallback), status (the table AceConfigDialog hands over),
 --          content (re-anchored for SSF's taller bottom row); FitWidth reads the fed
@@ -68,11 +69,10 @@
 -- Reads:   SSF.HALF_LINE (Core), handed to the notes; the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
 --          and the title band), WHITE (the art and the "i" untinted) and BLUE (the "i"
 --          while help is on).
+-- Acts on: the global name of the window's frame (FRAME_NAME) and the game's
+--          UISpecialFrames list, which it is added to so Escape closes it.
 -- Exceptions: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on
 --          Escape; the stock Frame is unnamed and Escape has no other way in.
---          Close_OnClick copies the stock Close's click (the sound, then hide), used only
---          when TakeStockClose can't find the stock button: without it, an AceGUI bump that
---          changed that button would leave SSF's X and Close dead.
 -- Touches nothing else.
 
 local Type, Version = "SSFFrame", 4
@@ -140,14 +140,14 @@ local function FitButton(button, text)
 end
 
 -- the two outer bottom buttons, both as wide as the wider one while both show, so what sits
--- between them is centered between them. Alone, the right one fits its own text.
+-- between them is centered between them. Alone, each fits its own text.
 local function MatchOuterButtons(self)
-    local close, action = self.closebutton, self.actionbutton
-    FitButton(close, close:GetText())
-    if not action:IsShown() then return end
-    FitButton(action, action:GetText())
-    local widest = math.max(close:GetWidth(), action:GetWidth())
-    close:SetWidth(widest)
+    local right, action = self.rightbutton, self.actionbutton
+    if right:IsShown() then FitButton(right, right:GetText()) end
+    if action:IsShown() then FitButton(action, action:GetText()) end
+    if not (right:IsShown() and action:IsShown()) then return end
+    local widest = math.max(right:GetWidth(), action:GetWidth())
+    right:SetWidth(widest)
     action:SetWidth(widest)
 end
 
@@ -177,13 +177,6 @@ end
 local function SetButtonTip(button, tipText)
     button.tipText = tipText
     if tipText then RefreshTip(button) else Tooltip():Hide(button) end
-end
-
--- the stock Close's click (sound, then hide), or the same by hand if the stock button was
--- not found
-local function Close_OnClick(button)
-    PlaySound(799) -- SOUNDKIT.GS_TITLE_OPTION_EXIT
-    button.obj:Hide()
 end
 
 -- A note beside the window that would hang off the screen: the window goes to the center
@@ -315,11 +308,11 @@ local methods = {
         Need((self.titlebg:GetWidth() or 0) + 2 * TITLE_CAP + 2 * clear)
         -- the bottom row: the buttons, EDGE px in from each side, and the middle button or the
         -- footer, centered, so each side needs room for the wider of the two outer buttons
-        local close = self.closebutton:GetWidth() or 0
+        local right = self.rightbutton:IsShown() and (self.rightbutton:GetWidth() or 0) or 0
         local action = self.actionbutton:IsShown() and (self.actionbutton:GetWidth() or 0) or 0
         local middle = self.middlebutton:IsShown() and (self.middlebutton:GetWidth() or 0)
             or (self.footer:GetUnboundedStringWidth() or 0)
-        Need(2 * EDGE + 2 * math.max(close, action) + 2 * BUTTON_GAP + middle)
+        Need(2 * EDGE + 2 * math.max(right, action) + 2 * BUTTON_GAP + middle)
 
         local new = math.min(need + ROUNDING, UIParent:GetWidth() - SCREEN_MARGIN)
         if math.abs(new - width) < ROUNDING then return false end
@@ -371,12 +364,18 @@ local methods = {
         self.middlebutton:Show()
     end,
 
-    -- turns the bottom-right button into an action button, as wide as the wider of it and the left one while that shows; the X and
-    -- Escape still close the window. tipText: as SetActionButton
+    -- the bottom-right button, as wide as the wider of it and the left one while that shows; nil text hides it.
+    -- The window is closed by the X and by Escape, never by a button in this row. tipText: as SetActionButton
     ["SetRightButton"] = function(self, text, onClick, tipText)
-        self.closebutton:SetText(text)
-        self.closebutton:SetScript("OnClick", onClick)
-        SetButtonTip(self.closebutton, tipText)
+        if not text then
+            self.rightbutton:Hide()
+            MatchOuterButtons(self)
+            return
+        end
+        self.rightbutton:SetText(text)
+        self.rightbutton:SetScript("OnClick", onClick)
+        SetButtonTip(self.rightbutton, tipText)
+        self.rightbutton:Show()
         MatchOuterButtons(self)
     end,
 
@@ -424,7 +423,7 @@ local function HideStatusBar(self)
     if bar and bar ~= self.frame then bar:Hide() end
 end
 
--- hides the stock Close and keeps its click handler for SSF's own close buttons
+-- hides the stock Close and keeps its click handler for SSF's X
 local function TakeStockClose(self)
     for _, child in ipairs({ self.frame:GetChildren() }) do
         if child:GetObjectType() == "Button" and child.GetText and child:GetText() == CLOSE then
@@ -468,7 +467,7 @@ local function Constructor()
     tinsert(UISpecialFrames, FRAME_NAME) -- Escape closes it
 
     HideStatusBar(self)
-    local closeClick = TakeStockClose(self) or Close_OnClick
+    local closeClick = TakeStockClose(self)
     local handle = HookTitleHandle(self) or frame
 
     -- SSF's content insets: clear of its bottom row
@@ -528,9 +527,8 @@ local function Constructor()
         button.obj = self
         return button
     end
-    local closebutton = RowButton("BOTTOMRIGHT", -EDGE)
-    closebutton:SetScript("OnClick", closeClick)
-    FitButton(closebutton, CLOSE)
+    local rightbutton = RowButton("BOTTOMRIGHT", -EDGE)
+    rightbutton:Hide()
     local actionbutton = RowButton("BOTTOMLEFT", EDGE)
     actionbutton:Hide()
     local middlebutton = RowButton("BOTTOM", 0)
@@ -549,7 +547,7 @@ local function Constructor()
     self.titleband = titleband
     self.actionbutton = actionbutton
     self.middlebutton = middlebutton
-    self.closebutton = closebutton
+    self.rightbutton = rightbutton
     self.xbutton = xbutton
     self.helpbutton = helpbutton
     self.sidenote = sidenote

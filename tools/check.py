@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 """tools/check.py: the pre-commit check for Soul Shards Forever.
 
-Job:    run luacheck, run the headless tests (tests/run.lua, when present), check that
+Job:    run luacheck, run the headless tests (tests/run.lua, when present), open the real
+        options window outside the game (tests/window.lua) and compare its controls with
+        tests/window_controls.txt (--accept-window rewrites that file), check that
         every locale carries every key enUS has and keeps its placeholders, check that
         every literal L[...] the code looks up is a key enUS has, check that
         every color is typed in Colors.lua only (code, locales, tests and the shipped
@@ -9,6 +11,13 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), chec
         contract (Core, the modules, the widgets, the locale registrar, the tests) against
         the template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
         Hooks, the modules called, the profile keys touched and Saves) against the code,
+        count the documented exceptions and the Lib internals fields in the headers against
+        the two lists in CLAUDE.md, both ways,
+        check that every header's "Acts on" names what the file does to the game (the ACTS
+        list: items moved or deleted, macros made, sounds, Blizzard frames, globals),
+        check that Public is the truth (every use of another module names something that
+        module defines and lists under Public, every name under Public is defined, the
+        tests' stand-in modules included),
         apply the rules luacheck cannot see (no raw hooks, every widget type used, the
         shard id only in Core, every message listened for is sent, no constant typed in
         two files), check every Blizzard name the code uses against the client's own UI
@@ -20,11 +29,12 @@ Takes:  nothing; paths resolve from this file. LUACHECK and LUA env vars overrid
         tool locations (the GitHub workflow sets them; locally they are found on PATH or
         at the fallback paths below). The tests run on Lua 5.1, the game's own: locally
         `lua51` on PATH, never a plain `lua`, which may be a later version.
-Writes: ARCHITECTURE.md, only when its content changed. tools/.wowui/ (gitignored): a
+Writes: ARCHITECTURE.md, only when its content changed. tests/window_controls.txt, only
+        with --accept-window. tools/.wowui/ (gitignored): a
         shallow clone of the wow-ui-source mirror's forever branch, made on the first run
         and pulled on every run after. Through tools/sync_libs.py (the libs report) it also
-        makes and removes the scratch folder tools/.sync/ and fetches each upstream over the
-        network.
+        keeps a copy of each library's upstream in tools/.sync/ (gitignored), downloaded
+        again only when the upstream's version changed.
 Touches nothing else.
 """
 import os
@@ -41,7 +51,7 @@ FALLBACK_LUACHECK = r"C:\bin\PortableTools\luacheck\luacheck.exe"
 FALLBACK_LUA = r"C:\bin\PortableTools\lua51\lua5.1.exe"
 
 # the header template (CLAUDE.md), in order
-FIELDS = ["Public", "Listens", "Hooks", "Sends", "Lib internals", "Reads", "Saves", "Exceptions"]
+FIELDS = ["Public", "Listens", "Hooks", "Sends", "Lib internals", "Reads", "Saves", "Acts on", "Exceptions"]
 CLOSING = "Touches nothing else."
 
 
@@ -201,6 +211,67 @@ def check_tests():
         return True
     exe = os.environ.get("LUA") or shutil.which("lua51") or FALLBACK_LUA
     return run([exe, "tests/run.lua"], "tests")
+
+
+# ---------------------------------------------------------------- the window's controls
+
+WINDOW_RUNNER = "tests/window.lua"
+WINDOW_LIST = "tests/window_controls.txt"
+WINDOW_SCENES = ["settled", "first"]
+ACCEPT_WINDOW = "--accept-window"
+WINDOW_HEAD = """# tests/window_controls.txt: every control in SSF's options window that carries a text,
+# and every button on the window's own frame that has none, as tests/window.lua finds them
+# when it opens the real window outside the game. Columns: kind, shown or hidden, enabled
+# or greyed, the text. One block per scene (see tests/window.lua for what a scene is).
+# Written by `python tools/check.py --accept-window`, never by hand. The check fails when
+# the window no longer matches this file. A test card names only controls listed here as
+# shown. It says what is in the window, not where it sits or how it looks.
+"""
+
+
+def window_list():
+    """(text, error): what tests/window.lua prints for every scene, one block each, under
+    the file's heading; or the runner's own output when a scene fails to open."""
+    exe = os.environ.get("LUA") or shutil.which("lua51") or FALLBACK_LUA
+    blocks = []
+    for scene in WINDOW_SCENES:
+        proc = subprocess.run([exe, WINDOW_RUNNER, scene], cwd=ROOT, text=True, capture_output=True,
+                              encoding="utf-8", errors="replace")
+        if proc.returncode != 0:
+            return None, f"scene {scene}: " + (proc.stdout + proc.stderr).strip()
+        blocks.append(proc.stdout.strip())
+    return WINDOW_HEAD + "\n" + "\n\n".join(blocks) + "\n", None
+
+
+def check_window():
+    """The options window, opened for real outside the game (tests/window.lua), still holds
+    exactly the controls tests/window_controls.txt lists. A control added, removed,
+    renamed, hidden or greyed fails here until the list is accepted on purpose
+    (--accept-window), so the list is always what a player has, and nobody describes the
+    window from reading code."""
+    print("== window controls")
+    new, error = window_list()
+    if error:
+        print("   FAILED: the window did not open\n   " + error.replace("\n", "\n   "))
+        return False
+    path = os.path.join(ROOT, WINDOW_LIST)
+    old = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
+    count = sum(1 for l in new.splitlines() if l and not l.startswith(("#", "scene:")))
+    if new == old:
+        print(f"   {count} controls in {len(WINDOW_SCENES)} scenes, ok")
+        return True
+    if ACCEPT_WINDOW in sys.argv:
+        with open(path, "w", encoding="utf-8", newline="\n") as f:
+            f.write(new)
+        print(f"   {WINDOW_LIST} rewritten ({count} controls): ACCEPTED, read the diff before committing")
+        return True
+    import difflib
+    for line in difflib.unified_diff(old.splitlines(), new.splitlines(), "listed", "the window now", lineterm="", n=0):
+        if not line.startswith(("---", "+++", "@@")):
+            print("   " + line)
+    print(f"   FAILED: the window no longer matches {WINDOW_LIST}. If the change is meant, run\n"
+          f"   python tools/check.py {ACCEPT_WINDOW}")
+    return False
 
 
 # ---------------------------------------------------------------- locales
@@ -510,6 +581,8 @@ def header_fields(rel):
     field_re = re.compile(r"^(" + "|".join(re.escape(f) for f in FIELDS) + r"):\s*")
     fields, cur = {}, None
     for body in header_lines(rel):
+        if body.endswith(CLOSING):  # the closing line is no part of the field above it
+            body = body[: -len(CLOSING)].rstrip()
         m = field_re.match(body)
         if m:
             cur = m.group(1)
@@ -544,12 +617,15 @@ def check_header_truth():
     """Every claim a header makes that code can verify: Listens names exactly the messages
     and events the file registers; Sends names exactly the messages it sends; every method
     hooked on an object (HOOK_RE: a target, then the quoted name) is named under Hooks; every
-    module it calls and every profile key it touches is named somewhere in the header; every
+    module it calls is named under Reads, and every profile key it touches under Reads or
+    Saves (a mention elsewhere in the header's prose is not a claim), and no module Reads
+    names is one the code never calls; every
     profile key it writes is named under Saves, and no `profile.<key>` written in Saves is
     one the code does not write (a bare key name there is not checked)."""
     print("== header truth")
     ok = True
     code_files = [f for f in lua_files() if not f.startswith("tests/")]
+    module_names = set(module_registry()) - {ADDON}
     for rel in code_files:
         raw = read(rel)
         text = code_lines(raw)
@@ -592,17 +668,23 @@ def check_header_truth():
             if not word_in(name, hooks):
                 problems.append(f"the code hooks {name}, Hooks does not name it")
 
-        # modules it calls: named somewhere in the header
+        # modules it calls: named under Reads (a mention in the header's prose is not a claim)
+        reads_field = fields.get("Reads", "")
         for name in sorted(set(GETMODULE_RE.findall(text))):
-            if name != stem and not word_in(name, header):
-                problems.append(f"the code calls GetModule(\"{name}\"), the header never names {name}")
+            if name != stem and not word_in(name, reads_field):
+                problems.append(f"the code calls GetModule(\"{name}\"), Reads does not name {name}")
+        # and back: a module Reads names is one the code calls (a stale claim misleads)
+        called = set(GETMODULE_RE.findall(text))
+        for name in sorted(module_names - called - {stem}):
+            if word_in(name, reads_field):
+                problems.append(f"Reads names {name}, the code never calls GetModule(\"{name}\")")
 
-        # profile keys: touched -> named in the header; written -> named under Saves; Saves -> written
+        # profile keys: touched -> named under Reads or Saves; written -> named under Saves; Saves -> written
         reads, writes = profile_refs(text)
-        for key in sorted(reads | writes):
-            if not word_in(key, header):
-                problems.append(f"the code touches profile.{key}, the header never names it")
         saves = fields.get("Saves", "")
+        for key in sorted(reads | writes):
+            if not word_in(key, reads_field) and not word_in(key, saves):
+                problems.append(f"the code touches profile.{key}, neither Reads nor Saves names it")
         for key in sorted(writes):
             if not word_in(key, saves):
                 problems.append(f"the code writes profile.{key}, Saves does not name it")
@@ -614,6 +696,539 @@ def check_header_truth():
             ok = False
     print("   ok" if ok else "   FAILED")
     return ok
+
+
+# ---------------------------------------------------------------- exceptions and lib internals
+
+STANDARD = "CLAUDE.md"
+NUMBER_WORDS = ["Zero", "One", "Two", "Three", "Four", "Five", "Six", "Seven", "Eight", "Nine", "Ten",
+                "Eleven", "Twelve"]
+EXCEPTIONS_HEAD_RE = re.compile(r"^- (\w+) documented exceptions\b", re.M)
+EXCEPTION_ITEM_RE = re.compile(r"^ {4}- (\w+): ")
+LIB_PLACES_RE = re.compile(r"only in (Widgets\\.*?), and every such\s+field", re.S)
+NUMBERED_RE = re.compile(r"\(\d+\)")
+
+
+def code_headers():
+    return [f for f in lua_files() if not f.startswith("tests/")]
+
+
+def header_exceptions():
+    """file -> how many exceptions its header documents: one for an Exceptions field, or as
+    many as it numbers ((1), (2)). Shipped code only: a test's Exceptions is about the test."""
+    out = {}
+    for rel in code_headers():
+        text = header_fields(rel).get("Exceptions")
+        if text is not None:
+            out[rel] = max(1, len(NUMBERED_RE.findall(text)))
+    return out
+
+
+def standard_exceptions():
+    """(the number the standard states, [file name per list line]) from CLAUDE.md's
+    "<Number> documented exceptions" bullet and the `    - File: ...` lines under it."""
+    text = read(STANDARD)
+    m = EXCEPTIONS_HEAD_RE.search(text)
+    if not m:
+        return None, []
+    stated = NUMBER_WORDS.index(m.group(1)) if m.group(1) in NUMBER_WORDS else None
+    names, started = [], False
+    for line in text[m.end():].splitlines()[1:]:
+        item = EXCEPTION_ITEM_RE.match(line)
+        if item:
+            names.append(item.group(1))
+            started = True
+        elif started and not line.startswith("      "):
+            break
+        elif not started and line.startswith("- "):
+            break
+    return stated, names
+
+
+def lib_internal_places():
+    """(widgets allowed, {module names}) from CLAUDE.md's "only in Widgets\\, the ... modules
+    and Core's ..." clause: where a Lib internals field may appear."""
+    m = LIB_PLACES_RE.search(read(STANDARD))
+    if not m:
+        return None, set()
+    known = set(module_registry()) - {ADDON} | {"Core"}
+    return True, {w for w in re.findall(r"\w+", m.group(1)) if w in known}
+
+
+def check_exceptions():
+    """The standard's two lists are the truth, both ways. Exceptions: the number CLAUDE.md
+    states, the lines of its list, and the Exceptions the headers document all agree, file
+    by file (so a seventh exception cannot appear in a header, or stay in the list after
+    its code is gone, without failing). Lib internals: a header carries the field only in a
+    place CLAUDE.md names, and every module it names carries one."""
+    print("== exceptions and lib internals")
+    problems = []
+    stated, listed = standard_exceptions()
+    documented = header_exceptions()
+    if stated is None:
+        problems.append(f"{STANDARD}: no \"<Number> documented exceptions\" line with a number word found")
+    else:
+        if stated != len(listed):
+            problems.append(f"{STANDARD}: says {NUMBER_WORDS[stated]} documented exceptions, lists {len(listed)}")
+        by_name = {module_name(rel): (rel, n) for rel, n in documented.items()}
+        for name in sorted(set(listed) | set(by_name)):
+            want = listed.count(name)
+            rel, have = by_name.get(name, (name, 0))
+            if want != have:
+                problems.append(f"{rel}: its header documents {have} exception(s), {STANDARD} lists {want} for {name}")
+    widgets_ok, places = lib_internal_places()
+    if widgets_ok is None:
+        problems.append(f"{STANDARD}: the \"only in Widgets\\, ...\" clause for Lib internals was not found")
+    else:
+        carriers = {rel for rel in code_headers() if "Lib internals" in header_fields(rel)}
+        for rel in sorted(carriers):
+            if not rel.startswith("Widgets/") and module_name(rel) not in places:
+                problems.append(f"{rel}: has a Lib internals field, {STANDARD} does not allow one there")
+        for name in sorted(places - {module_name(rel) for rel in carriers}):
+            problems.append(f"{STANDARD}: allows Lib internals in {name}, whose header has no such field")
+    for p in problems:
+        print("   " + p)
+    print(f"   {sum(documented.values())} exceptions, {len(listed)} listed; Lib internals in "
+          f"{sum(1 for rel in code_headers() if 'Lib internals' in header_fields(rel))} files, "
+          + ("ok" if not problems else "FAILED"))
+    return not problems
+
+
+def exceptions_tail():
+    """The map's closing section, written from the headers: each documented exception in
+    its header's own words, and the files that read library internals."""
+    out = ["## Shared state and exceptions\n"]
+    out.append("The AceDB profile is the one shared state: any module may read it, only its owner derives")
+    out.append("a rule from it (CLAUDE.md). NS is the addon-private table Core and the locale registrar")
+    out.append("share.\n")
+    documented = header_exceptions()
+    out.append(f"The documented exceptions to the two rules, {sum(documented.values())} in all, from each header's Exceptions:\n")
+    for rel in [f for f in code_headers() if f in documented]:
+        out.append(f"- {module_name(rel)}: {header_fields(rel)['Exceptions']}")
+    carriers = [module_name(rel) for rel in code_headers() if "Lib internals" in header_fields(rel)]
+    out.append("\nLibrary internals are read in: " + ", ".join(carriers) + ". Each header's \"Lib internals\"")
+    out.append("names the fields and what breaks when a library moves them.")
+    return "\n".join(out) + "\n"
+
+
+# ---------------------------------------------------------------- acts on
+
+# What a file does to the game beyond its own frames and the profile. Each entry: the word
+# the header's "Acts on" field must carry, the code that counts as doing it, and what it is.
+# A word that is a call's own name (starts with a capital, no spaces) is also checked the
+# other way: an Acts on that names it while the code no longer does it is stale.
+ACTS = [
+    ("PickupContainerItem", r"\bPickupContainerItem\b", "picks an item up or drops it (moves items)"),
+    ("ClearCursor", r"\bClearCursor\b", "clears the cursor"),
+    ("DeleteCursorItem", r"\bDeleteCursorItem\b", "deletes the item on the cursor"),
+    ("UseContainerItem", r"\bUseContainerItem\b", "uses an item"),
+    ("CreateMacro", r"\bCreateMacro\b", "makes a macro"),
+    ("EditMacro", r"\bEditMacro\b", "edits a macro"),
+    ("DeleteMacro", r"\bDeleteMacro\b", "deletes a macro"),
+    ("RunMacroText", r"\bRunMacroText\b", "runs macro text"),
+    ("MuteSoundFile", r"\bMuteSoundFile\b", "mutes a game sound"),
+    ("UnmuteSoundFile", r"\bUnmuteSoundFile\b", "unmutes a game sound"),
+    ("PlaySoundFile", r"\bPlaySoundFile\b", "plays a sound file"),
+    ("PlaySound", r"\bPlaySound\b", "plays a sound"),
+    ("ShowMacroFrame", r"\bShowMacroFrame\b", "opens Blizzard's macro window"),
+    ("MacroFrame", r"\bMacroFrame\s*[.:]", "reaches into Blizzard's macro window"),
+    ("UIErrorsFrame", r"\bUIErrorsFrame\s*:", "puts a line in the game's red error text"),
+    ("OpenToCategory", r"\bOpenToCategory\b", "opens Blizzard's settings panel"),
+    ("GameTooltip", r"\bGameTooltip\s*:", "fills or hides the game tooltip"),
+    ("UISpecialFrames", r"\bUISpecialFrames\b", "adds a frame to the list Escape closes"),
+    ("StaticPopup", r"\bStaticPopup_Show\b", "shows a game popup"),
+    ("SetCVar", r"\bSetCVar\b", "changes a game setting (CVar)"),
+    ("SetBinding", r"\b(?:SetBinding\w*|SaveBindings)\b", "changes a key binding"),
+    ("ReloadUI", r"\bReloadUI\b", "reloads the UI"),
+    ("SendChatMessage", r"\bSendChatMessage\b", "sends a chat message"),
+    ("SendAddonMessage", r"\bSendAddonMessage\b", "sends an addon message"),
+    ("BINDING_NAME", r"\bBINDING_\w+\s*=(?!=)", "sets a key binding's label (a global)"),
+    ("bag button", r"\bCharacter(?:Reagent)?Bag", "draws on one of Blizzard's bag buttons"),
+    ("glow", r"\b\w+Glow_Start\b", "starts a glow on a button"),
+    ("global", r'_G\[[^\]]+\]\s*=(?!=)|\bCreateFrame\(\s*"\w+"\s*,\s*"', "sets a global name"),
+    ("slash", r":RegisterChatCommand\b", "registers a slash command"),
+    ("secure", r'SetAttribute\(\s*"\*?(?:type|macrotext)\d*"', "sets a secure button's action"),
+    ("LibDBIcon", r'LibStub\(\s*"LibDBIcon-1\.0"', "hands LibDBIcon a table it writes into"),
+    ("LibSharedMedia", r':Register\(\s*"(?:sound|font|statusbar|border|background)"', "adds media to the list every addon shares"),
+]
+
+
+def check_acts_on():
+    """Acts on is the truth: every thing on the ACTS list a file's code does is named in its
+    header's "Acts on" field by the list's word for it, and no "Acts on" names a call the
+    code no longer makes. So "what touches the bags?" is answered by the headers, and a
+    file cannot start deleting, moving, muting or writing a global without saying so."""
+    print("== acts on")
+    ok = True
+    count = 0
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        lines = bare_code(read(rel))
+        field = header_fields(rel).get("Acts on", "")
+        for word, pattern, what in ACTS:
+            at = next((n for n, code in lines if re.search(pattern, code)), None)
+            does = at is not None
+            # the word standing alone or as the start of a longer name (BINDING_NAME_SSF_DELETE),
+            # never inside another word (PlaySound in PlaySoundFile)
+            named = re.search(r"(?<![A-Za-z])" + re.escape(word) + r"(?![A-Za-z])", field) is not None
+            count += does
+            if does and not named:
+                print(f"   {rel}:{at}: {what}, Acts on does not say \"{word}\"")
+                ok = False
+            elif named and not does and re.match(r"[A-Z]\w+$", word):
+                print(f"   {rel}: Acts on names {word}, the code never does it")
+                ok = False
+    print(f"   {count} acts named, " + ("ok" if ok else "FAILED"))
+    return ok
+
+
+# ---------------------------------------------------------------- public truth
+
+MODULE_DECL_RE = re.compile(r'^local\s+(\w+)\s*=\s*[^\n]*?:New(Module|Addon)\(\s*"(\w+)"([^)\n]*)\)', re.M)
+DIRECT_CALL_RE = re.compile(r'GetModule\(\s*"(\w+)"\s*\)\s*([:.])\s*(\w+)')
+ALIAS_RHS_RE = re.compile(r'^[\w.:()"\-\s]*GetModule\(\s*"(\w+)"\s*\)$')
+VALUE_ALIAS_RE = re.compile(r'^\s*local\s+(\w+(?:\s*,\s*\w+)*)\s*=\s*(.+)$')
+FUNC_ALIAS_RE = re.compile(r'^\s*local\s+function\s+(\w+)\(\)\s*return\s+[\w.:()"\-\s]*GetModule\(\s*"(\w+)"\s*\)\s*end\s*$')
+ADDON_USE_RE = re.compile(r'(?:(?<![\w.:])SSF|GetAddon\(\s*"SSF"\s*\))\s*([:.])\s*(\w+)')
+ADDON = "SSF"            # the addon object's name: Core's Public is checked under it
+SHARED_STATE = "db"      # the AceDB profile: every module reads it, so the map leaves it out
+
+
+def strip_comment(line):
+    """One source line without its trailing comment (a `--` outside a quoted string)."""
+    quote = None
+    i = 0
+    while i < len(line):
+        c = line[i]
+        if quote:
+            if c == "\\":
+                i += 1
+            elif c == quote:
+                quote = None
+        elif c in "\"'":
+            quote = c
+        elif line.startswith("--", i):
+            return line[:i]
+        i += 1
+    return line
+
+
+def blank_strings(code):
+    """One code line with the inside of every quoted string emptied, so words in a string
+    ("SSF: Bag thunk") are not read as code."""
+    return re.sub(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'', '""', code)
+
+
+def bare_code(text):
+    """Source with comment-only lines dropped and trailing comments cut, line numbers kept:
+    [(line number, code)]."""
+    out = []
+    for n, line in enumerate(text.splitlines(), 1):
+        if line.lstrip().startswith("--"):
+            continue
+        out.append((n, strip_comment(line).rstrip()))
+    return out
+
+
+def module_registry():
+    """name -> (file, the local the file holds it in, its mixin libraries): Core's addon
+    object under "SSF", and every module a code file makes with NewModule."""
+    reg = {}
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        for var, _, name, mixins in MODULE_DECL_RE.findall(read(rel)):
+            reg[name] = (rel, var, re.findall(r'"([\w.-]+)"', mixins))
+    return reg
+
+
+def public_names(rel, var):
+    """The names a header lists under Public: every identifier followed at once by `(`, and
+    every `<var>.<FIELD>` (with the bare ALL_CAPS names that follow it in the same list),
+    that stands outside any bracket and outside a quoted string. A name qualified by
+    another module (`Window:ShowNote(`) is a mention, not a listing."""
+    text = re.sub(r'"[^"]*"', '""', header_fields(rel).get("Public", ""))
+    names, depth, i = set(), 0, 0
+    name_re = re.compile(r"(?:(\w+)[:.])?(\w+)\(")
+    # var None: a widget, which has no object name to qualify a field with
+    field_re = re.compile(re.escape(var or "\0") + r"\.(\w+)(?![\w(])((?:\s*,\s*(?:and\s+)?[A-Z][A-Z0-9_]*\b(?![.(:]))*)")
+    while i < len(text):
+        c = text[i]
+        if c in "({[":
+            depth += 1
+        elif c in ")}]":
+            depth -= 1
+        elif depth == 0 and (i == 0 or not (text[i - 1].isalnum() or text[i - 1] in "_.:")):
+            m = field_re.match(text, i)
+            if m:
+                names.add(m.group(1))
+                names.update(re.findall(r"[A-Z][A-Z0-9_]*", m.group(2)))
+                i = m.end()
+                continue
+            m = name_re.match(text, i)
+            if m:
+                if m.group(1) in (None, var):
+                    names.add(m.group(2))
+                i = m.end() - 1
+                continue
+        i += 1
+    return names
+
+
+def defined_names(rel, var):
+    """The names a module's file defines on its object: `function <var>:X(`, `function
+    <var>.X(`, and `<var>.X =` or `self.X =`."""
+    text = "\n".join(code for _, code in bare_code(read(rel)))
+    v = re.escape(var)
+    names = set(re.findall(r"\bfunction\s+" + v + r"[:.](\w+)\s*\(", text))
+    # `<var>.X =`, and each name of `<var>.X, <var>.Y = 1, 2`
+    names |= set(re.findall(r"(?<![\w.:])(?:" + v + r"|self)\.(\w+)(?=\s*(?:,\s*[\w.]+\s*)*=(?!=))", text))
+    return names
+
+
+def ace_names(mixins):
+    """Every function name AceAddon and the named mixin libraries define: what an addon or
+    module object answers without its own file defining it."""
+    names = set()
+    for lib in ["AceAddon-3.0"] + list(mixins):
+        folder = os.path.join(ROOT, "Libs", lib)
+        if not os.path.isdir(folder):
+            continue
+        for fn in os.listdir(folder):
+            if fn.endswith(".lua"):
+                names |= set(re.findall(r"\bfunction\s+(?:\w+[:.])?(\w+)\s*\(", read(f"Libs/{lib}/{fn}")))
+    return names
+
+
+def module_uses(rel, reg):
+    """Every use one file makes of another module's object or of the addon object:
+    [(module, name, line)], and the problems met resolving them. A use is
+    `GetModule("M"):X` / `.X`, the same through a local alias (`local Bags =
+    SSF:GetModule("Bags")`, or `local function Cap() return SSF:GetModule("Cap") end` used
+    as `Cap():Get()`), and `SSF:X` / `SSF.X`. An alias is taken file-wide, so one name
+    standing for two things in one file is a problem."""
+    own = {name for name, (r, _, _) in reg.items() if r == rel}
+    own_vars = {var for _, (r, var, _) in reg.items() if r == rel}
+    lines = bare_code(read(rel))
+    value_alias, func_alias, problems = {}, {}, []
+
+    def learn(table, other, alias, mod, n):
+        if alias in own_vars or alias in other or table.get(alias, mod) != mod:
+            problems.append(f"{rel}:{n}: the local {alias} stands for more than one thing; give each module's alias its own name")
+        table[alias] = mod
+
+    for n, code in lines:
+        m = FUNC_ALIAS_RE.match(code)
+        if m:
+            learn(func_alias, value_alias, m.group(1), m.group(2), n)
+            continue
+        m = VALUE_ALIAS_RE.match(code)
+        if m:
+            names = [x.strip() for x in m.group(1).split(",")]
+            values = [x.strip() for x in re.split(r",(?![^()]*\))", m.group(2))]
+            for alias, value in zip(names, values):
+                am = ALIAS_RHS_RE.match(value)
+                if am:
+                    learn(value_alias, func_alias, alias, am.group(1), n)
+    uses = []
+    for n, code in lines:
+        for mod, _, name in DIRECT_CALL_RE.findall(code):
+            uses.append((mod, name, n))
+        code = blank_strings(code)
+        for alias, mod in value_alias.items():
+            for name in re.findall(r"(?<![\w.:])" + re.escape(alias) + r"\s*[:.]\s*(\w+)", code):
+                uses.append((mod, name, n))
+        for alias, mod in func_alias.items():
+            for name in re.findall(r"(?<![\w.:])" + re.escape(alias) + r"\(\)\s*[:.]\s*(\w+)", code):
+                uses.append((mod, name, n))
+        if ADDON not in own:
+            for _, name in ADDON_USE_RE.findall(code):
+                uses.append((ADDON, name, n))
+    return [u for u in uses if u[0] not in own], problems
+
+
+def resolved_calls():
+    """(calls, problems). calls: caller file -> {module: names it uses}, every one checked:
+    the module exists, its file defines the name, and its header lists the name under
+    Public. A name the addon or module object gets from AceAddon or a mixin library
+    (Print, IsEnabled, GetModule) is the library's, not a module's Public, and is left out.
+    problems also holds every name a Public lists that its file does not define, and every
+    method a test's stand-in module defines that the real module's Public does not have."""
+    reg = module_registry()
+    public = {name: public_names(rel, var) for name, (rel, var, _) in reg.items()}
+    defined = {name: defined_names(rel, var) for name, (rel, var, _) in reg.items()}
+    ace = {name: ace_names(mixins) for name, (_, _, mixins) in reg.items()}
+    calls, problems = {}, []
+    for name, (rel, _, _) in sorted(reg.items()):
+        for missing in sorted(public[name] - defined[name]):
+            problems.append(f"{rel}: Public lists {missing}, the file does not define it")
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        uses, bad = module_uses(rel, reg)
+        problems += bad
+        for mod, name, n in uses:
+            if mod not in reg:
+                problems.append(f"{rel}:{n}: GetModule(\"{mod}\"): no file makes that module")
+            elif name in defined[mod] and name in public[mod]:
+                calls.setdefault(rel, {}).setdefault(mod, set()).add(name)
+            elif name in defined[mod]:
+                problems.append(f"{rel}:{n}: uses {mod}:{name}, which {reg[mod][0]} does not list under Public")
+            elif name in public[mod]:
+                pass  # listed and not defined: reported once above, under the module's own file
+            elif name not in ace[mod]:
+                problems.append(f"{rel}:{n}: uses {mod}:{name}, which {reg[mod][0]} does not define")
+    # the tests' stand-in modules: SSF:NewModule("Window") in a test file fakes the real one
+    for rel in [f for f in lua_files() if f.startswith("tests/")]:
+        text = "\n".join(code for _, code in bare_code(read(rel)))
+        for var, _, mod, _ in MODULE_DECL_RE.findall(text):
+            if mod not in reg:
+                continue
+            fake = set(re.findall(r"\bfunction\s+" + re.escape(var) + r"[:.](\w+)\s*\(", text))
+            fake |= set(re.findall(r"(?<![\w.:])" + re.escape(var) + r"\.(\w+)\s*=(?!=)", text))
+            for name in sorted(fake - (public[mod] & defined[mod])):
+                problems.append(f"{rel}: its stand-in {mod} defines {name}, which is not a Public method of {reg[mod][0]}")
+    widget_calls, widget_problems = resolved_widget_calls()
+    for rel, types in widget_calls.items():
+        calls.setdefault(rel, {}).update(types)
+    return calls, problems + widget_problems
+
+
+WIDGET_TYPE_RE = re.compile(r'\blocal\s+Type\s*,\s*Version\s*=\s*"(\w+)"')
+WIDGET_METHOD_RE = re.compile(r'\[\s*"(\w+)"\s*\]\s*=(?!=)|\bwidget\.(\w+)\s*=(?!=)')
+WIDGET_CREATE_RE = re.compile(r'^\s*(?:local\s+)?([\w.]+)\s*=\s*[\w.:()"\-\s]*:Create\(\s*"(\w+)"\s*\)$')
+WIDGET_HANDOVER_RE = re.compile(r'^\s*(self\.\w+)\s*=\s*(\w+)$')
+WIDGET_LOOP_RE = re.compile(r'\bfor\s+_\s*,\s*(\w+)\s+in\s+ipairs\(\s*\{([^}]*)\}\s*\)')
+ACEGUI = "Libs/AceGUI-3.0"
+
+
+def widget_registry():
+    """widget type -> the Widgets file that registers it (`local Type, Version = "SSFFrame", 4`)."""
+    reg = {}
+    for rel in [f for f in lua_files() if f.startswith("Widgets/")]:
+        for name in WIDGET_TYPE_RE.findall(read(rel)):
+            reg[name] = rel
+    return reg
+
+
+def widget_defined(rel):
+    """The method names a widget file defines: every `["Name"] =` of a methods table and
+    every `widget.Name =`. A file with several widget types answers for all of them at once."""
+    text = "\n".join(code for _, code in bare_code(read(rel)))
+    return {a or b for a, b in WIDGET_METHOD_RE.findall(text)}
+
+
+def acegui_method_names(text):
+    """The method names one AceGUI file defines, in the three ways its files write them."""
+    names = set(re.findall(r'\[\s*"(\w+)"\s*\]\s*=\s*function', text))
+    names |= set(re.findall(r"\bfunction\s+\w+[:.](\w+)\s*\(", text))
+    return names | set(re.findall(r"\b\w+\.(\w+)\s*=\s*function", text))
+
+
+def core_names():
+    """The method names AceGUI's core gives every widget (IsShown, SetCallback, Fire,
+    AddChild): the files directly in Libs/AceGUI-3.0, not the stock widgets under widgets/."""
+    names = set()
+    folder = os.path.join(ROOT, ACEGUI)
+    for fn in os.listdir(folder):
+        if fn.endswith(".lua"):
+            names |= acegui_method_names(open(os.path.join(folder, fn), encoding="utf-8", errors="replace").read())
+    return names
+
+
+def stock_names(home):
+    """The method names an SSF widget answers without its own file defining them: what
+    AceGUI's core gives every widget (SetCallback, Fire, AddChild), plus the methods of each
+    stock widget the file builds on (the types it creates: SSFFrame creates "Frame", so
+    Hide and SetTitle). A stock widget the file does not create lends it nothing, so a
+    name is never excused by some unrelated widget happening to have it."""
+    built_on = set(re.findall(r':Create\(\s*"(\w+)"\s*\)', read(home)))
+    names = set()
+    for folder, _, files in os.walk(os.path.join(ROOT, ACEGUI)):
+        for fn in files:
+            if not fn.endswith(".lua"):
+                continue
+            text = open(os.path.join(folder, fn), encoding="utf-8", errors="replace").read()
+            core = os.path.samefile(folder, os.path.join(ROOT, ACEGUI))  # not under widgets/
+            if not core and not built_on & set(re.findall(r'\bType\b[^\n=]*=\s*"(\w+)"', text)):
+                continue
+            names |= acegui_method_names(text)
+    return names
+
+
+def widget_uses(rel, types):
+    """Every method one file calls on an SSF widget it created: [(type, name, line)]. The
+    widget is known by what holds it: the target of `x = AceGUI:Create("SSFFrame")` (a local
+    or `self.window`), a `self.name = x` that hands such a local on, and the loop variable
+    of `for _, v in ipairs({ a, b })` over widgets of one type. Taken file-wide."""
+    lines = bare_code(read(rel))
+    held = {}
+    for _, code in lines:
+        m = WIDGET_CREATE_RE.match(code)
+        if m and m.group(2) in types:
+            held[m.group(1)] = m.group(2)
+    for _, code in lines:
+        m = WIDGET_HANDOVER_RE.match(code)
+        if m and m.group(2) in held:
+            held[m.group(1)] = held[m.group(2)]
+    for _, code in lines:
+        for var, items in WIDGET_LOOP_RE.findall(code):
+            kinds = {held.get(item.strip()) for item in items.split(",")}
+            if len(kinds) == 1 and None not in kinds:
+                held[var] = kinds.pop()
+    uses = []
+    for n, code in lines:
+        code = blank_strings(code)
+        for expr, kind in held.items():
+            for name in re.findall(r"(?<![\w.:])" + re.escape(expr) + r"\s*:\s*(\w+)\s*\(", code):
+                uses.append((kind, name, n))
+    return uses
+
+
+def resolved_widget_calls():
+    """(calls, problems) for the widgets, which are AceGUI method tables and not modules.
+    Every name a widget's Public writes with its arguments (`FitWidth()`, the widget's own;
+    the stock methods it passes through are listed bare) is one its file defines. Every
+    method a file calls on an SSF widget it created is either one the widget's file defines
+    and its Public names, or one AceGUI itself defines. No widget defines a method AceGUI's
+    core already gives every widget (a copy hides a rename: the call falls through to
+    AceGUI's and passes). calls: caller file -> {widget type:
+    the widget's own methods it calls}. A widget AceConfigDialog drives through
+    `dialogControl` has no caller in SSF's code and is checked one way only."""
+    types = widget_registry()
+    stock = {rel: stock_names(rel) for rel in set(types.values())}
+    core = core_names()
+    defined = {rel: widget_defined(rel) for rel in set(types.values())}
+    calls, problems = {}, []
+    for rel in sorted(defined):
+        for missing in sorted(public_names(rel, None) - defined[rel]):
+            problems.append(f"{rel}: Public lists {missing}(), the file does not define it")
+        # no copy of what AceGUI already gives: a widget's method may share a name only with
+        # the stock widget it builds on, where it replaces that method on purpose (SetLabel,
+        # OnAcquire: the names AceConfigDialog and AceGUI call)
+        for name in sorted(defined[rel] & core):
+            problems.append(f"{rel}: defines {name}, which AceGUI's core already gives every widget; use AceGUI's, or pick a name of its own")
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        for kind, name, n in widget_uses(rel, types):
+            home = types[kind]
+            if name in defined[home]:
+                if re.search(r"\b" + re.escape(name) + r"\b", header_fields(home).get("Public", "")):
+                    calls.setdefault(rel, {}).setdefault(kind, set()).add(name)
+                else:
+                    problems.append(f"{rel}:{n}: calls {kind}:{name}, which {home} does not list under Public")
+            elif name not in stock[home]:
+                problems.append(f"{rel}:{n}: calls {kind}:{name}, which neither {home} nor AceGUI defines")
+    return calls, problems
+
+
+def check_public_truth():
+    """Public is the truth: every use of another module (and of the addon object) names
+    something that module's file defines and its header lists under Public; every name a
+    Public lists is defined; a test's stand-in for a module only fakes that module's Public.
+    So a renamed or removed public method fails here, not in game. The widgets are held to
+    the same through resolved_widget_calls."""
+    print("== public truth")
+    calls, problems = resolved_calls()
+    for p in problems:
+        print("   " + p)
+    count = sum(len(names) for mods in calls.values() for names in mods.values())
+    print(f"   {count} uses of another file's Public, " + ("ok" if not problems else "FAILED"))
+    return not problems
 
 
 # ---------------------------------------------------------------- rules luacheck cannot see
@@ -678,14 +1293,6 @@ SEND_RE = re.compile(r'SendMessage\(\s*"(SSF_\w+)"\s*(?:,\s*(.*?))?\)')
 LISTEN_RE = re.compile(r'RegisterMessage\(\s*"(SSF_\w+)"')
 EVENT_RE = re.compile(r'RegisterEvent\(\s*"(\w+)"')
 BUCKET_RE = re.compile(r'RegisterBucketEvent\(\s*(\{[^}]*\}|"\w+")\s*,\s*([\d.]+)')
-
-STATIC_TAIL = """## Shared state and exceptions
-
-See CLAUDE.md: the AceDB profile is the one shared state (any module may read it, only
-its owner derives a rule from it), and the documented exceptions (a raw named frame, a
-raw FontString, a raw title strip) and the library-internals rule are listed there with
-their reasons. NS is the addon-private table Core and the locale registrar share.
-"""
 
 
 def toc_files():
@@ -789,8 +1396,34 @@ def build_map():
         if name in events:
             out.append(f"| {name} | {'; '.join(events[name])} |")
 
+    out.append("\n## What acts on the game\n")
+    out.append("Every file that does something to the game beyond its own frames and the profile, from")
+    out.append("its code (the ACTS list in tools/check.py). Each file's header says the same under")
+    out.append("\"Acts on\", with the why; the check fails when the two differ.\n")
+    out.append("| File | What it does |")
+    out.append("|---|---|")
+    for rel in widgets + core_mods:
+        code = "\n".join(c for _, c in bare_code(read(rel)))
+        acts = [what for _, pattern, what in ACTS if re.search(pattern, code)]
+        if acts:
+            out.append(f"| {module_name(rel)} | {'; '.join(acts)} |")
+
+    out.append("\n## Calls between files (Public)\n")
+    out.append("Who uses what of whom: every use of another module's Public, of an SSF widget's own")
+    out.append("methods by the file that created it, and of the addon object's")
+    out.append(f"({ADDON}, Core.lua; its {SHARED_STATE}, the shared profile, is left out). Rename or remove a name")
+    out.append("on the right and the file on the left breaks; the check fails first.\n")
+    out.append("| Caller | Uses |")
+    out.append("|---|---|")
+    calls, _ = resolved_calls()
+    for rel in widgets + core_mods:
+        mods = {m: sorted(n - {SHARED_STATE}) for m, n in calls.get(rel, {}).items()}
+        parts = [f"{m}: {', '.join(names)}" for m, names in sorted(mods.items()) if names]
+        if parts:
+            out.append(f"| {module_name(rel)} | {'; '.join(parts)} |")
+
     out.append("")
-    out.append(STATIC_TAIL)
+    out.append(exceptions_tail())
     return "\n".join(out)
 
 
@@ -808,8 +1441,8 @@ def check_map():
 
 
 def main():
-    results = [check_luacheck(), check_tests(), check_locales(), check_code_keys(), check_colors(), check_headers(),
-               check_header_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
+    results = [check_luacheck(), check_tests(), check_window(), check_locales(), check_code_keys(), check_colors(), check_headers(),
+               check_header_truth(), check_exceptions(), check_acts_on(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1
