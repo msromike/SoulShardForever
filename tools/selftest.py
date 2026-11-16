@@ -83,7 +83,7 @@ def restore(rel):
 
 PUBLIC, HEADERS, ACTS, EXCEPTIONS = (check.check_public_truth, check.check_header_truth,
                                      check.check_acts_on, check.check_exceptions)
-WINDOW, TESTS, TOC = check.check_window, check.check_tests, check.check_toc
+WINDOW, TESTS, TOC, BIND = check.check_window, check.check_tests, check.check_toc, check.check_bindings
 
 CASES = [
     # Public is the truth: modules and the addon object
@@ -149,6 +149,25 @@ CASES = [
          "Modules\\LowGlow.lua", "Modules\\LowGlow.lua\nModules\\Ghost.lua", "the toc names Modules\\Ghost.lua"),
     Case("toc: a library path in embeds.xml spelled with the wrong case", TOC, "embeds.xml",
          "Libs\\LibStub\\LibStub.lua", "Libs\\Libstub\\LibStub.lua", "embeds.xml names Libs\\Libstub\\LibStub.lua"),
+    # Bindings.xml, held to the code it calls
+    Case("bindings: the button's global name changed in the code only", BIND, "Modules/DeleteButton.lua",
+         'CreateFrame("Button", "SSFDelete", UIParent)', 'CreateFrame("Button", "SSFTrim", UIParent)',
+         "uses the global SSFDelete"),
+    Case("bindings: the same rename leaves the README's /click pointing at nothing", BIND, "Modules/DeleteButton.lua",
+         'CreateFrame("Button", "SSFDelete", UIParent)', 'CreateFrame("Button", "SSFTrim", UIParent)',
+         "tells the player to /click SSFDelete"),
+    Case("bindings: the method the pause key calls renamed where it is defined", BIND, "Modules/Options.lua",
+         "function Options:TogglePause(", "function Options:FlipPause(", "calls Options:TogglePause"),
+    Case("bindings: Bindings.xml calls a method the module does not have", BIND, "Bindings.xml",
+         '):TogglePause()', '):Toggle()', "calls Options:Toggle"),
+    Case("bindings: a row's label is no longer set", BIND, "Modules/KeyBindings.lua",
+         "BINDING_NAME_SSF_PAUSE = L", "BINDING_NAME_SSF_HOLD = L", "nothing sets BINDING_NAME_SSF_PAUSE"),
+    Case("bindings: the category differs from the section the Keybindings button opens", BIND, "Modules/KeyBindings.lua",
+         'local SECTION = "Soul Shards Forever"', 'local SECTION = "Soul Shards"', "would open the wrong place"),
+    Case("tests: the delete key's own code in Bindings.xml no longer clicks the button", TESTS, "Bindings.xml",
+         "SSFDelete:Click()", "SSFDelete:Hide()", "one delete asked for"),
+    Case("tests: the pause key's own code in Bindings.xml broken", TESTS, "Bindings.xml",
+         "if s and s:IsEnabled() then", "if s and not s:IsEnabled() then", "the pause key turns pause on"),
     # the exceptions and Lib internals, counted against CLAUDE.md
     Case("exceptions: a new one appears in a header", EXCEPTIONS, "Modules/LowGlow.lua",
          "-- Touches nothing else.", "-- Exceptions: a raw frame, because.\n-- Touches nothing else.", "lists 0 for LowGlow"),
@@ -313,7 +332,7 @@ def main(argv):
 
     # the check must pass on the tree as it is, or a caught break proves nothing
     clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("exceptions", EXCEPTIONS),
-             ("toc and files", TOC), ("window controls", WINDOW), ("tests", TESTS)]
+             ("toc and files", TOC), ("bindings", BIND), ("window controls", WINDOW), ("tests", TESTS)]
     for label, step in clean:
         ok, out = run_step(step)
         if not ok:

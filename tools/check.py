@@ -12,6 +12,7 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), open
         the template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
         Hooks, the modules called, the profile keys touched and Saves) against the code,
         compare the toc with the files on disk both ways, spelling and case included,
+        hold Bindings.xml to the frames, methods and labels it uses,
         count the documented exceptions and the Lib internals fields in the headers against
         the two lists in CLAUDE.md, both ways,
         check that every header's "Acts on" names what the file does to the game (the ACTS
@@ -774,6 +775,89 @@ def check_toc():
     return not problems
 
 
+# ---------------------------------------------------------------- Bindings.xml
+
+BINDINGS = "Bindings.xml"
+BINDING_RE = re.compile(r'<Binding\s+name="(\w+)"\s+category="([^"]*)"\s*>(.*?)</Binding>', re.S)
+NAMED_FRAME_RE = re.compile(r'\bCreateFrame\(\s*"\w+"\s*,\s*"(\w+)"')
+SECTION_RE = re.compile(r'^local\s+SECTION\s*=\s*"([^"]*)"', re.M)
+CLICK_RE = re.compile(r"/click\s+(\w+)")
+SSF_GLOBAL_RE = re.compile(r"(?<![\w.:\"])(SSF\w*)\b(?!\s*[\"(])")
+
+
+def named_frames():
+    """Every global frame name the code creates (CreateFrame with a quoted name): name -> file."""
+    out = {}
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        for name in NAMED_FRAME_RE.findall("\n".join(code for _, code in bare_code(read(rel)))):
+            out[name] = rel
+    return out
+
+
+def bindings():
+    """[(binding name, category, body)] from Bindings.xml, comments left out."""
+    text = re.sub(r"<!--.*?-->", "", read(BINDINGS), flags=re.S)
+    return BINDING_RE.findall(text)
+
+
+def bindings_uses():
+    """Every use Bindings.xml makes of a module's Public: [(module, name)]. The file is
+    Lua inside XML, read by the game and by nothing else until this check."""
+    out = []
+    for _, _, body in bindings():
+        out += [(mod, name) for mod, _, name in DIRECT_CALL_RE.findall(body)]
+    return out
+
+
+def check_bindings():
+    """Bindings.xml is held to the code it calls, since the game loads it by name and no
+    other check reads it: every SSF global it uses is a frame the code creates under that
+    name; every module method it calls is defined and listed under that module's Public;
+    every binding has its label global (BINDING_NAME_<name>) set in the code; its category
+    is the one KeyBindings opens the Key Bindings screen on (SECTION, typed in both files
+    because XML cannot read Lua); and every `/click <name>` the README, the shipped docs
+    or a locale tells a player to type names a frame the code creates. So a rename cannot
+    quietly kill a key binding or every player's macro."""
+    print("== bindings")
+    problems = []
+    if not exact_path(BINDINGS):
+        print(f"   FAILED: {BINDINGS} not found (the game loads it by that exact name)")
+        return False
+    rows = bindings()
+    frames = named_frames()
+    reg = module_registry()
+    code = "\n".join("\n".join(c for _, c in bare_code(read(rel))) for rel in lua_files() if not rel.startswith("tests/"))
+    section = SECTION_RE.search(read("Modules/KeyBindings.lua"))
+    for name, category, body in rows:
+        for glob_name in sorted(set(SSF_GLOBAL_RE.findall(body))):
+            if glob_name not in frames:
+                problems.append(f"{BINDINGS}: {name} uses the global {glob_name}, and no file creates a frame of that name")
+        if not re.search(r"\bBINDING_NAME_" + re.escape(name) + r"\s*=(?!=)", code):
+            problems.append(f"{BINDINGS}: {name} has no label: nothing sets BINDING_NAME_{name}")
+        if not section or section.group(1) != category:
+            problems.append(f"{BINDINGS}: {name} is in category \"{category}\", KeyBindings' SECTION is "
+                            f"\"{section.group(1) if section else 'not found'}\": the Keybindings button would open the wrong place")
+    for mod, name in bindings_uses():
+        if mod not in reg:
+            problems.append(f"{BINDINGS}: GetModule(\"{mod}\"): no file makes that module")
+        else:
+            rel, var, _ = reg[mod]
+            if name not in defined_names(rel, var):
+                problems.append(f"{BINDINGS}: calls {mod}:{name}, which {rel} does not define")
+            elif name not in public_names(rel, var):
+                problems.append(f"{BINDINGS}: calls {mod}:{name}, which {rel} does not list under Public")
+    docs = [fn for fn in ("README.md",) if os.path.exists(os.path.join(ROOT, fn))]
+    docs += [f"media/{fn}" for fn in sorted(os.listdir(os.path.join(ROOT, "media"))) if fn.endswith(".md")]
+    for rel in docs + locale_files() + news_files():
+        for target in sorted(set(CLICK_RE.findall(read(rel)))):
+            if target not in frames:
+                problems.append(f"{rel}: tells the player to /click {target}, and no file creates a frame of that name")
+    for p in problems:
+        print("   " + p)
+    print(f"   {len(rows)} bindings, {len(bindings_uses())} module calls, " + ("ok" if not problems else "FAILED"))
+    return not problems
+
+
 # ---------------------------------------------------------------- exceptions and lib internals
 
 STANDARD = "CLAUDE.md"
@@ -1504,7 +1588,9 @@ def build_map():
     out.append("| Caller | Uses |")
     out.append("|---|---|")
     calls, _ = resolved_calls()
-    for rel in widgets + core_mods:
+    for mod, name in bindings_uses():  # the key bindings file calls modules too
+        calls.setdefault(BINDINGS, {}).setdefault(mod, set()).add(name)
+    for rel in widgets + core_mods + [BINDINGS]:
         mods = {m: sorted(n - {SHARED_STATE}) for m, n in calls.get(rel, {}).items()}
         parts = [f"{m}: {', '.join(names)}" for m, names in sorted(mods.items()) if names]
         if parts:
@@ -1530,7 +1616,7 @@ def check_map():
 
 def main():
     results = [check_luacheck(), check_tests(), check_window(), check_locales(), check_code_keys(), check_colors(), check_headers(),
-               check_header_truth(), check_toc(), check_exceptions(), check_acts_on(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
+               check_header_truth(), check_toc(), check_bindings(), check_exceptions(), check_acts_on(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1

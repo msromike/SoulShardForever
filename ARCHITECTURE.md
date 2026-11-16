@@ -150,6 +150,7 @@ on the right and the file on the left breaks; the check fails first.
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
 | LowGlow | Cap: State; Colors: RED; Counter: Refresh |
+| Bindings | Options: TogglePause |
 
 ## Shared state and exceptions
 

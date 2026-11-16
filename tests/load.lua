@@ -16,7 +16,8 @@
 --          the addon's files: the bags, a global the scene needs); afterInit(SSF) (runs
 --          between OnInitialize and the modules' OnEnable); login (true: send the events
 --          a login sends and run the timers they start).
---          Also sets WoW.NS, the addon-private table every file is handed.
+--          Also sets WoW.NS, the addon-private table every file is handed, and WoW.root,
+--          the addon's root folder (a test that reads one of the addon's own files).
 -- Touches nothing else.
 
 local ROOT = ...
@@ -48,6 +49,7 @@ end
 return function(opts)
     opts = opts or {}
     loadLua("tests/wow_stub.lua")
+    WoW.root = ROOT
 
     for _, rel in ipairs(XmlFiles("embeds.xml", {})) do
         if rel:find("LibCustomGlow", 1, true) then
