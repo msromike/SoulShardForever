@@ -145,10 +145,10 @@ test("/ssf debug: naked reports, on and off set, anything else is the usage line
     eq(Debug:IsOn(), false, "off, capitals forgiven")
     ok(any(lines, "Debug: OFF"), "and says so")
     for _, bad in ipairs({ "debug sideways", "debug on now", "debug mark", "debug report now", "debug clear all" }) do
-        -- the line as SSF hands it to the chat frame (what the game then draws is not
-        -- something this can see)
+        -- the line as SSF hands it to the chat frame, each bar doubled: the game draws a
+        -- doubled bar as one, and ate the "|r" of a single-barred "|report" (Test Card 21)
         local _, raw = slash(bad)
-        ok(any(raw, "Use: /ssf debug on|off|mark <name>|report|clear"), bad .. ": the usage line")
+        ok(any(raw, "Use: /ssf debug on||off||mark <name>||report||clear"), bad .. ": the usage line")
     end
     eq(Debug:IsOn(), false, "none of them turned it on")
 end)

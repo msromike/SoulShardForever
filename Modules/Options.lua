@@ -178,7 +178,9 @@ local function DebugCommand(input)
         SSF:Print("Debug record cleared.")
         return
     elseif word ~= "" then
-        SSF:Print("Use: /ssf debug on|off|mark <name>|report|clear")
+        -- each bar doubled: in chat a single bar starts an escape code, and "|r" (in
+        -- "|report") is the end-color code, which the game ate (Test Card 21)
+        SSF:Print("Use: /ssf debug on||off||mark <name>||report||clear")
         return
     end
     SSF:Printf("Debug: %s", Colors():OnOff(Debug:IsOn()))
