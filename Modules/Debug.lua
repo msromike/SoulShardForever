@@ -9,11 +9,13 @@
 -- permanent: it grows until Clear() empties it, with no cap. It only listens: Trimmer and
 -- Sorter send their messages whether or not it is on, and nothing here changes what a
 -- press does. Off means off: no message and no game event is registered until it is turned
--- on. It prints nothing; its text is English only, on purpose: the report is read by the
--- author, whatever the player's language. It also writes down every line SSF prints to
--- chat and every sound SSF itself plays, so "did the line print, did the sound play" is
--- read from the record, not asked of the player. The chat lines are caught by a hook on
--- the addon object's Print and Printf, so no code that prints is changed. A sound the
+-- on, and its two print hooks (see Hooks) do nothing. It prints nothing; its text is English only, on purpose: the report is read by the
+-- author, whatever the player's language. It also writes down every line SSF prints
+-- through its own Print and Printf, and every sound SSF itself plays, so "did the line
+-- print, did the sound play" is read from the record, not asked of the player. The lines
+-- are caught by a hook on the addon object's Print and Printf, so no code that prints is
+-- changed; the command list and usage lines AceConfigCmd writes straight to the chat frame
+-- do not pass through those and are not caught. A sound the
 -- game makes by itself (an item's pickup tink) cannot be caught: the mute events say
 -- whether SSF had those sounds muted at the time.
 --
@@ -30,14 +32,16 @@
 --   press      a delete press, before anything is deleted (decision: "delete" or
 --              Trimmer:WhyNot's answer; channel: the spell being channeled; circle: a
 --              targeting circle was up; at)
---   deleted    a delete was sent (slot)
+--   deleted    a delete was sent (slot); its counts are from before the bags settle,
+--              the bags event after it has the new ones
 --   failed     a press decided to delete and did not (why, Trimmer's word)
 --   sorted     a Sorter pass moved shards (moves, as "bag:slot>bag:slot")
---   sortskip   a Sorter pass was asked for in a fight and was noted
+--   sortnote   a Sorter pass was asked for in a fight and was noted
 --   sortrun    the fight ended and the noted pass is about to run
 --   mute       SSF muted the item move sounds (what: "sort" or "delete")
 --   unmute     and turned them back on (what)
---   chat       SSF printed a line to chat (text, color codes stripped)
+--   chat       SSF printed a line to chat (text; color, texture and link codes
+--              stripped)
 --   sound      SSF played one of its own sounds (name)
 --   bags       the bags changed and the shards sit differently (at)
 --   combat     a fight started or ended (state, at)
@@ -51,12 +55,15 @@
 --          events as text, one line each under two heading lines: every event since the
 --          record was first turned on after the last login or reload.
 -- Listens: only while on. SSF_DELETE_PRESSED, SSF_SHARD_DELETED, SSF_DELETE_FAILED,
---          SSF_SORTED, SSF_SORT_SKIPPED, SSF_SORT_RESUMED, SSF_SOUNDS_MUTED,
+--          SSF_SORTED, SSF_SORT_NOTED, SSF_SORT_RESUMED, SSF_SOUNDS_MUTED,
 --          SSF_SOUNDS_UNMUTED, SSF_SOUND_PLAYED, SSF_BAGS_CHANGED; PLAYER_ENTERING_WORLD,
 --          PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_CHANNEL_START,
 --          UNIT_SPELLCAST_CHANNEL_STOP.
--- Hooks:   only while on, through AceHook (secure hooks, after the original): the addon
---          object's Print and Printf, AceConsole's, to note each line SSF prints.
+-- Hooks:   through AceHook (secure hooks, after the original): the addon object's Print
+--          and Printf, AceConsole's, to note each line SSF prints. They attach the first
+--          time the record is turned on and stay for the session, doing nothing while it
+--          is off: a secure hook cannot be taken off again, and hooking afresh at every
+--          "on" would stack one more wrapper each time.
 -- Reads:   Bags:Count/ForEachShard, Cap:Get; SSF.VERSION; profile.debugLog.
 -- Saves:   profile.debugLog (every event; Clear).
 -- Touches nothing else.
@@ -144,8 +151,8 @@ function Debug:OnSorted(_, _, moves)
     Record("sorted", { moves = table.concat(list, " ") })
 end
 
-function Debug:OnSortSkipped()
-    Record("sortskip")
+function Debug:OnSortNoted()
+    Record("sortnote")
 end
 
 function Debug:OnSortResumed()
@@ -173,22 +180,32 @@ local function Printed(...)
         if type(v) == "string" or type(v) == "number" then parts[#parts + 1] = tostring(v) end
     end
     local text = table.concat(parts, " ")
-    return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""))
+    text = text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|cn.-:", ""):gsub("|r", "")
+    text = text:gsub("|T.-|t", ""):gsub("|A.-|a", ""):gsub("|H.-|h", ""):gsub("|h", "")
+    return text
+end
+
+-- The two print hooks. They stay attached while the record is off, so they check the
+-- switch; and they run inside whatever printed (the delete press among them), so nothing
+-- they do may raise an error into it.
+local function NotePrinted(...)
+    Record("chat", { text = Printed(...) })
 end
 
 function Debug:OnPrint(_, ...)
-    Record("chat", { text = Printed(...) })
+    if on then pcall(NotePrinted, ...) end
 end
 
 -- Printf's arguments are a format and its values, or a chat frame first
 function Debug:OnPrintf(_, first, ...)
+    if not on then return end
     local okay, text
     if type(first) == "string" then
         okay, text = pcall(string.format, first, ...)
     else
         okay, text = pcall(string.format, ...)
     end
-    Record("chat", { text = Printed(okay and text or first) })
+    pcall(NotePrinted, okay and text or first)
 end
 
 -- Bags sends its signal for any item in any bag; an event is kept only when the shards sit
@@ -229,21 +246,23 @@ end
 function Debug:Set(want)
     want = want and true or false
     if want == on then return end
-    on = want
-    if on then
+    if want then
+        on = true
         sessionStart = sessionStart or (#self:Log() + 1)
         lastCount, lastAt = nil, nil
         self:RegisterMessage("SSF_DELETE_PRESSED", "OnPressed")
         self:RegisterMessage("SSF_SHARD_DELETED", "OnDeleted")
         self:RegisterMessage("SSF_DELETE_FAILED", "OnDeleteFailed")
         self:RegisterMessage("SSF_SORTED", "OnSorted")
-        self:RegisterMessage("SSF_SORT_SKIPPED", "OnSortSkipped")
+        self:RegisterMessage("SSF_SORT_NOTED", "OnSortNoted")
         self:RegisterMessage("SSF_SORT_RESUMED", "OnSortResumed")
         self:RegisterMessage("SSF_SOUNDS_MUTED", "OnSoundsMuted")
         self:RegisterMessage("SSF_SOUNDS_UNMUTED", "OnSoundsUnmuted")
         self:RegisterMessage("SSF_SOUND_PLAYED", "OnSoundPlayed")
-        self:SecureHook(SSF, "Print", "OnPrint")
-        self:SecureHook(SSF, "Printf", "OnPrintf")
+        if not self:IsHooked(SSF, "Print") then
+            self:SecureHook(SSF, "Print", "OnPrint")
+            self:SecureHook(SSF, "Printf", "OnPrintf")
+        end
         self:RegisterMessage("SSF_BAGS_CHANGED", "OnBagsChanged")
         self:RegisterEvent("PLAYER_ENTERING_WORLD", "OnEnteringWorld")
         self:RegisterEvent("PLAYER_REGEN_DISABLED", "OnCombatStart")
@@ -252,11 +271,18 @@ function Debug:Set(want)
         self:RegisterEvent("UNIT_SPELLCAST_CHANNEL_STOP", "OnChannel")
         Record("on", { day = date("%Y-%m-%d") }, true)
     else
-        Record("off")
+        -- stop listening first and flip the switch, then note it: whatever the note
+        -- does, the record is off and nothing of it is left registered
         self:UnregisterAllMessages()
         self:UnregisterAllEvents()
-        self:UnhookAll()
+        on = false
+        Record("off")
     end
+end
+
+-- AceAddon switched the module off (it never does for a warlock): the switch follows
+function Debug:OnDisable()
+    on = false
 end
 
 function Debug:Mark(name)
@@ -287,7 +313,7 @@ local function What(e)
     if kind == "deleted" then return "deleted " .. tostring(e.slot) end
     if kind == "failed" then return "delete failed: " .. tostring(e.why) end
     if kind == "sorted" then return "sorted: " .. tostring(e.moves) end
-    if kind == "sortskip" then return "sort noted: in a fight" end
+    if kind == "sortnote" then return "sort noted: in a fight" end
     if kind == "sortrun" then return "noted sort runs: the fight is over" end
     if kind == "mute" then return "move sounds muted for " .. tostring(e.what) end
     if kind == "unmute" then return "move sounds back on after " .. tostring(e.what) end

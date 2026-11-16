@@ -14,7 +14,7 @@
 -- combat plays the pause sound, if profile.pauseSound is on, and prints the paused-press
 -- line (Status), if profile.pauseLog is on, whatever the count. In combat a paused press
 -- is silent.
--- The delete is silent unless the announce option is on.
+-- The delete prints no chat line unless the announce option is on.
 --
 -- Public:  Delete(); WhyNot(count) -> why a press would not delete, or nil if it would:
 --          "paused" (a mode: the only answer while paused, whatever the count), "quiet"

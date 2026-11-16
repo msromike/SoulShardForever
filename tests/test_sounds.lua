@@ -31,6 +31,8 @@ end)
 
 test("a delete is heard out of combat and not in combat", function()
     eq(mutedDuring("delete"), 0, "out of combat: nothing muted, the tink plays")
+    eq(select("#", Sounds:Moving("delete", function() return 1, 2 end)), 0, "heard: returns nothing")
+    eq(select("#", Sounds:Moving("sort", function() return 1, 2 end)), 0, "muted: returns nothing")
     WoW.combat = true
     eq(mutedDuring("delete"), 72, "in combat: muted")
     eq(mutedNow(), 0, "and all back on")
@@ -42,7 +44,7 @@ test("a move that throws still leaves every sound back on", function()
         error("the move broke", 0)
     end)
     eq(okay, false, "the error is not swallowed")
-    eq(err, "the move broke", "and it is the move's own error")
+    ok(tostring(err):find("the move broke", 1, true) == 1, "and it is the move's own error, first")
     eq(mutedNow(), 0, "every sound is back on")
 end)
 

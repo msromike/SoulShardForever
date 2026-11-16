@@ -33,7 +33,7 @@ read_globals = {
     -- functions
     "InCombatLockdown", "UnitAffectingCombat", "UnitClassBase", "GetLocale", "GetCVarBool",
     "GetRealmName",
-    "GetTime", "date", "UnitChannelInfo", "SpellIsTargeting", "issecretvalue",
+    "GetTime", "date", "debugstack", "UnitChannelInfo", "SpellIsTargeting", "issecretvalue",
     "ClearCursor", "GetCursorInfo", "DeleteCursorItem",
     "GetMacroIndexByName", "GetNumMacros", "CreateMacro",
     "PlaySound", "PlaySoundFile", "MuteSoundFile", "UnmuteSoundFile",

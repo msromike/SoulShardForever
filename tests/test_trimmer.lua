@@ -68,13 +68,24 @@ local function PressCountingDeletes()
 end
 
 test("in combat, over the cap: one press deletes one shard and moves nothing", function()
-    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }) })
+    -- a soul bag with free slots and loose shards: out of combat this press would sort
+    local function bags()
+        WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }), [1] = WoW.SoulBag(4) })
+    end
+    bags()
     profile.paused = false
     profile.maxShards = 1
     profile.autoMax = false
     WoW.combat = true
     eq(PressCountingDeletes(), 1, "3 shards, cap 1, in combat: one delete")
     eq(#WoW.picks, 1, "one pickup, the delete's: no sorting in a fight")
+    SSF:GetModule("Sorter").noted = nil
+    WoW.combat = false
+    WoW.picks = {}
+    bags()
+    PressCountingDeletes()
+    ok(#WoW.picks > 1, "the same press out of combat does sort, so the line above proves the gate")
+    SSF:GetModule("Sorter").reruns = nil
     profile.maxShards = 8
 end)
 

@@ -121,7 +121,7 @@ test("on, in a fight: the press, the delete, and the sort that was skipped", fun
         profile.maxShards = 1
         WoW.combat = true
         eq(press(true), 1, "one delete in a fight")
-        eq(kinds(), "on press mute unmute deleted sortskip", "muted for the delete, and the sort noted")
+        eq(kinds(), "on press mute unmute deleted sortnote", "muted for the delete, and the sort noted")
         eq(last("mute").what, "delete", "what the sounds were muted for")
         eq(last("press").lock, true, "the lockdown flag")
         eq(last("press").combat, true, "the in-combat flag")
@@ -178,6 +178,38 @@ test("on: what SSF prints and the sound it plays are recorded; off, the hooks ar
     eq(#Debug:Log(), n, "off: a printed line is not recorded")
 end)
 
+test("on and off several times: one printed line is still one event", function()
+    recording(function()
+        Debug:Set(false)
+        Debug:Set(true)
+        Debug:Set(false)
+        Debug:Set(true)
+        local n = #Debug:Log()
+        SSF:Print("once")
+        eq(#Debug:Log(), n + 1, "the hooks did not stack")
+        eq(last("chat").text, "once", "and it is the line")
+        SSF:Print(SSF:GetModule("Colors"):Gold("green") .. " |TInterface\\Icons\\x:0|t |Hitem:1|h[Thing]|h")
+        eq(last("chat").text, "green  [Thing]", "color, texture and link codes stripped")
+    end)
+end)
+
+test("off is off even if noting it fails", function()
+    Debug:Set(false)
+    Debug:Clear()
+    Debug:Set(true)
+    local cap = SSF:GetModule("Cap")
+    local get = cap.Get
+    cap.Get = function() error("broken", 0) end
+    local okay = pcall(Debug.Set, Debug, false)
+    cap.Get = get
+    eq(okay, false, "the note threw")
+    eq(Debug:IsOn(), false, "but the record is off")
+    local n = #Debug:Log()
+    WoW.FireEvent("PLAYER_REGEN_DISABLED")
+    SSF:Print("after")
+    eq(#Debug:Log(), n, "and nothing is still listening")
+end)
+
 test("a press does the same thing with the record on and off", function()
     profile.paused, profile.autoMax, profile.maxShards = false, false, 1
     WoW.SetBags({ [0] = plain(16, { [2] = SHARD, [9] = SHARD }), [1] = soul(4, { [4] = SHARD }) })
@@ -211,7 +243,7 @@ test("on: a sort noted in a fight and run when the fight ends is recorded", func
         Sorter:Pass()
         WoW.combat = false
         Sorter:OnCombatEnd()
-        eq(kinds(), "on sortskip sortrun mute unmute sorted", "noted, then run, muted, sorted")
+        eq(kinds(), "on sortnote sortrun mute unmute sorted", "noted, then run, muted, sorted")
         ok(Debug:Text():find("noted sort runs: the fight is over", 1, true), "and in the text")
     end)
 end)

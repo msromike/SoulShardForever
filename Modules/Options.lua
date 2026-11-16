@@ -163,16 +163,16 @@ local function DebugCommand(input)
     input = strtrim(input or "")
     local word, rest = input:match("^(%S*)%s*(.*)$")
     word = word:lower()
-    if word == "on" or word == "off" then
+    if (word == "on" or word == "off") and rest == "" then
         Debug:Set(word == "on")
     elseif word == "mark" and rest ~= "" then
         local wasOn = Debug:IsOn()
         Debug:Mark(rest)
         if wasOn then return end
-    elseif word == "report" then
+    elseif word == "report" and rest == "" then
         SSF:GetModule("DebugReport"):Open()
         return
-    elseif word == "clear" then
+    elseif word == "clear" and rest == "" then
         Debug:Clear()
         SSF:Print("Debug record cleared.")
         return

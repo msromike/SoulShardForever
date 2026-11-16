@@ -109,6 +109,20 @@ test("a noted pass is dropped when SSF is paused at the end of the fight", funct
     profile.paused = false
 end)
 
+test("a leftover follow-up that lands in combat is forgotten, with no note", function()
+    profile.soulsortLegacy = false
+    WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(4) })
+    Sorter.reruns, Sorter.noted = 2, nil
+    WoW.combat = true
+    Sorter:OnBagsChanged()
+    eq(Sorter.reruns, nil, "the leftovers are forgotten")
+    eq(Sorter.noted, nil, "and nothing is noted: no press asked for it in this fight")
+    eq(#WoW.picks, 0, "no pickup")
+    WoW.combat = false
+    Sorter:OnCombatEnd()
+    eq(#WoW.picks, 0, "so nothing runs when the fight ends")
+end)
+
 test("a pass out of combat clears a note", function()
     profile.soulsortLegacy = false
     WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(1, { [1] = SHARD }) })

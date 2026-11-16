@@ -72,8 +72,8 @@ News:
 | SSF_SHARD_DELETED | Trimmer | Broker, Counter, Debug, Window | count - 1, cap, bag, slot |
 | SSF_SHOW_WELCOME | Window | Welcome |  |
 | SSF_SORTED | Sorter | Debug | moved, moves |
+| SSF_SORT_NOTED | Sorter | Debug |  |
 | SSF_SORT_RESUMED | Sorter | Debug |  |
-| SSF_SORT_SKIPPED | Sorter | Debug |  |
 | SSF_SOUNDS_MUTED | Sounds | Debug | kind |
 | SSF_SOUNDS_UNMUTED | Sounds | Debug | kind |
 | SSF_SOUND_PLAYED | Sounds | Debug | name |

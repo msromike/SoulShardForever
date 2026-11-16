@@ -5,7 +5,8 @@
 -- that slot, cursor cleared. Only into free soul bag slots; other items are never touched;
 -- with no soul bag, or no free slot in one, nothing moves. Shards the server still has
 -- locked are skipped. Nothing moves in combat: a pass asked for in combat forgets any
--- leftovers and notes that it was asked; when combat ends, a noted pass runs once and the
+-- leftovers and notes that it was asked (a follow-up for leftovers that lands in combat
+-- is forgotten without a note); when combat ends, a noted pass runs once and the
 -- note clears (not while paused: Trimmer:WhyNot is asked, and the note is dropped). No
 -- note, nothing runs: SSF only ever moves shards because of a press. A pass out of combat
 -- clears the note too. Every move is silent: the moves go through Sounds:Moving.
@@ -27,7 +28,7 @@
 -- Listens: SSF_BAGS_CHANGED (re-run a pass with leftovers); PLAYER_REGEN_ENABLED (combat
 --          ended: run a noted pass).
 -- Sends:   SSF_SORTED (the number of moves, then the moves as a list of { from bag, from
---          slot, to bag, to slot }) when a pass moved something; SSF_SORT_SKIPPED when a
+--          slot, to bag, to slot }) when a pass moved something; SSF_SORT_NOTED when a
 --          pass was asked for in combat and was noted; SSF_SORT_RESUMED when combat ended
 --          and the noted pass is about to run (Debug records the last two; no other
 --          listener).
@@ -50,7 +51,7 @@ function Sorter:Pass()
     if InCombatLockdown() then
         self.reruns = nil
         self.noted = true
-        self:SendMessage("SSF_SORT_SKIPPED")
+        self:SendMessage("SSF_SORT_NOTED")
         return 0
     end
     self.noted = nil
@@ -108,8 +109,15 @@ function Sorter:Pass()
     return moved
 end
 
+-- A follow-up for leftovers. In combat it is forgotten, with no note: only a pass asked
+-- for by a press during the fight runs when the fight ends.
 function Sorter:OnBagsChanged()
-    if self.reruns then self:Pass() end
+    if not self.reruns then return end
+    if InCombatLockdown() then
+        self.reruns = nil
+        return
+    end
+    self:Pass()
 end
 
 -- Combat ended: a pass that was asked for during the fight runs now, once.

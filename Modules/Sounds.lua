@@ -31,13 +31,15 @@
 -- sounds. A later "no SSF sounds at all" option is one profile key read in Heard. Not
 -- heard = the game's MuteSoundFile on every one of those files, fn, then UnmuteSoundFile on
 -- every one: fn runs protected, so the sounds come back on even when a move throws (the
--- error is raised again afterwards). A mute left on would silence item sounds for every
--- addon, with nothing to tell the player why. On a client without the two functions fn
--- just runs.
+-- error is raised again afterwards, with where it happened added to its text). A mute
+-- left on would silence item sounds for every addon, with nothing to tell the player why.
+-- No call that asks whether a file is muted is known (neither function is in the client's
+-- UI source or API docs), so if another addon keeps one of these files muted on purpose, the unmute here turns it back on (Baganator's sort does
+-- the same). On a client without the two functions fn just runs.
 --
 -- Public:  Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or
 --            "delete" (Sorter and Trimmer hand their moves over and know nothing of the
---            rule).
+--            rule). Returns nothing, heard or not.
 --          Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
 --            LSM no longer knows (a sound pack removed) falls back to the default; a nil
 --            name plays nothing (LSM:IsValid is true for nil).
@@ -136,10 +138,15 @@ local function Heard(kind)
 end
 
 function Sounds:Moving(kind, fn)
-    if Heard(kind) or not (MuteSoundFile and UnmuteSoundFile) then return fn() end
+    if Heard(kind) or not (MuteSoundFile and UnmuteSoundFile) then
+        fn()
+        return
+    end
     EachMoveSound(MuteSoundFile)
     self:SendMessage("SSF_SOUNDS_MUTED", kind)
-    local okay, err = pcall(fn)
+    -- the handler adds where the error happened: raising it again from here would
+    -- otherwise show only this line
+    local okay, err = xpcall(fn, function(e) return tostring(e) .. "\n" .. debugstack(2) end)
     EachMoveSound(UnmuteSoundFile)
     self:SendMessage("SSF_SOUNDS_UNMUTED", kind)
     if not okay then error(err, 0) end
