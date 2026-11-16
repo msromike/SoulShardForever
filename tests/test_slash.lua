@@ -115,6 +115,24 @@ test("/ssf setmax sets the cap by hand; naked reports it; out of range is the us
     eq(SSF:GetModule("Cap"):Get(), 5, "and the cap is still 5")
 end)
 
+test("/ssf and a number sets the cap as setmax does; out of range answers in the short form", function()
+    profile.autoMax, profile.maxShards = true, 20
+    local lines = slash("25")
+    eq(SSF:GetModule("Cap"):Get(), 25, "/ssf 25 sets the cap to 25")
+    eq(profile.autoMax, false, "and turns Match soul bag size off, as setmax does")
+    ok(any(lines, "Shards to keep: 25"), "and echoes it as setmax does")
+    lines = slash("500")
+    ok(any(lines, "Use: /ssf 1-100"), "/ssf 500: the usage line in the short form")
+    ok(not any(lines, "setmax"), "which does not name setmax")
+    eq(SSF:GetModule("Cap"):Get(), 25, "and the cap is still 25")
+    lines = slash("setmax 500")
+    ok(any(lines, "Use: /ssf setmax 1-100"), "/ssf setmax 500 keeps its own long usage line")
+    lines = slash("3.5")
+    ok(any(lines, 'Unknown command "3.5".'), "only a whole number counts")
+    lines = slash("25 more")
+    ok(any(lines, 'Unknown command "25".'), "and only on its own")
+end)
+
 test("/ssf log, and its old word announce, set the same thing", function()
     profile.announce = false
     slash("log on")
