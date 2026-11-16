@@ -47,7 +47,7 @@
 -- Public:  TogglePause() (the pause key binding), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Listens: SSF_HELP_CHANGED (Rebuild: the table captured its tooltip style when built).
--- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
+-- Sends:   SSF_OPTIONS_CHANGED (key, "window") from every GUI-only setter; SSF_OPTIONS_REBUILT.
 -- Reads:   Help:Apply, Settings:Define/ValueWords,
 --          Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute/LowMark/SetLowMark,
 --          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
@@ -100,7 +100,7 @@ function Options:TogglePause()
 end
 
 local function changed(key)
-    Options:SendMessage("SSF_OPTIONS_CHANGED", key)
+    Options:SendMessage("SSF_OPTIONS_CHANGED", key, "window") -- every caller is a window control's set
 end
 
 -- a full-width, GUI-only checkbox, indented 10px inside its group unless
@@ -295,7 +295,9 @@ local function BuildTable()
             end,
             arg = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
-                return Status():CountText(), why and BLOCKER_TEXT[why](), AllBlockers()
+                -- an answer with no text of its own (a new one WhyNot learns) shows "cap is N"
+                -- rather than erroring on every redraw; tests/test_options.lua fails on it first
+                return Status():CountText(), why and (BLOCKER_TEXT[why] or CapIs)(), AllBlockers()
             end,
             disabled = function() return SSF:GetModule("Trimmer"):WhyNot() ~= nil end,
             func = function() SSF:GetModule("Trimmer"):Delete() end,

@@ -105,7 +105,7 @@ test("the echo: extra is added after the value, echo replaces the whole line", f
     ok(not has("Probe:"), "in place of name: value")
 end)
 
-test("a change in the window applies and sends, with no chat line and no chat mark", function()
+test("a change in the window applies and sends, with no chat line, marked as the window's", function()
     local gui = Toggle()
     flag = false
     Hear()
@@ -115,7 +115,7 @@ test("a change in the window applies and sends, with no chat line and no chat ma
     eq(gui.get(), true, "and read back")
     eq(#WoW.chat, before, "no chat line")
     eq(#heard, 1, "one message")
-    eq(heard[1].source, nil, "not marked as from chat")
+    eq(heard[1].source, "window", "marked as from the window")
 end)
 
 test("ValueWords: a toggle's two words, nothing for a range or an unknown key", function()

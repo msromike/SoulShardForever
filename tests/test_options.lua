@@ -99,9 +99,35 @@ local function WhyNotAnswers()
     return answers
 end
 
+test("an answer WhyNot gives with no text of its own shows the cap, not an error", function()
+    local button = Table().args.deletebutton
+    local real = Trimmer.WhyNot
+    function Trimmer:WhyNot() return "brandnew" end
+    local okay, _, reason = pcall(button.arg)
+    Trimmer.WhyNot = real
+    eq(okay, true, "no error")
+    ok(type(reason) == "string" and reason:find("cap is", 1, true) ~= nil, "the button says the cap")
+end)
+
+-- the answers Options has a text of its own for: the keys of its BLOCKER_TEXT, from its
+-- source (the button falls back to "cap is N" for any other, so only the source can tell)
+local function BlockerKeys()
+    local file = assert(io.open(WoW.root .. "/Modules/Options.lua"))
+    local source = file:read("*a")
+    file:close()
+    local body = assert(source:match("local BLOCKER_TEXT = (%b{})"), "BLOCKER_TEXT not found")
+    local keys = {}
+    for key in body:gmatch("(%w+)%s*=") do keys[key] = true end
+    return keys
+end
+
 test("the Delete Shard button has a text for every answer WhyNot can give", function()
     local answers = WhyNotAnswers()
     ok(#answers >= 2, "answers were found in Trimmer's file")
+    local keys = BlockerKeys()
+    for _, answer in ipairs(answers) do
+        ok(keys[answer], answer .. ": has its own line in Options' BLOCKER_TEXT")
+    end
     local button = Table().args.deletebutton
     local real = Trimmer.WhyNot
     local okay, err = pcall(function()

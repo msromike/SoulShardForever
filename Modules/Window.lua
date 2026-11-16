@@ -16,7 +16,8 @@
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
 --          nothing in a fight, Combat:InFight), Toggle() (the minimap icon and broker click),
---          Refresh(), Feed() (also by name through a timer), DressWindow(),
+--          Refresh() (redraws only a window showing; also by name through a timer),
+--          DressWindow(),
 --          ShowNote(title, body, note, opts, auto) (open with a note on the right: Welcome's;
 --          opts as SSFSideNote:Show), ShowLeftNote(title, opts, auto) (open with a note on
 --          the left: NewsShow's); auto: SSF is opening the window by itself, so it goes to
@@ -26,7 +27,7 @@
 --          OpenKeyBindings() (the bottom-right button).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
---          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED,
+--          SSF_OPTIONS_CHANGED (redraw after any change not made in the window), SSF_SHARD_DELETED,
 --          SSF_BAGS_CHANGED and SSF_QUIET_ENDED (refresh the count row), PLAYER_REGEN_DISABLED (a fight
 --          starts: the window closes, and nothing opens it until the fight is over; it
 --          does not reopen by itself).
@@ -213,7 +214,9 @@ end
 -- on one line, SSFFrame:FitWidth; the layout depends on the width, so a changed width is
 -- fed again), then the height (SSFFrame:FitToContent). The Tooltip module re-anchors
 -- AceConfigDialog's option tooltips while they are shown inside this window's frame.
-function Window:Feed()
+-- Private: AceConfigDialog:Open shows the window, so a Feed is an open. Only Open feeds a
+-- shut window; everything else goes through Refresh, which feeds only a window showing.
+local function Feed(self)
     HookDialogOpen()
     SSF:GetModule("Tooltip"):Attach(self.window.frame)
     AceConfigDialog:Open(APP, self.window)
@@ -232,13 +235,15 @@ end
 -- container, which AceConfigDialog does not track, so it is re-fed here while shown.
 function Window:Refresh()
     AceConfigRegistry:NotifyChange(APP)
-    if IsShown(self) then self:Feed() end
+    if IsShown(self) then Feed(self) end
 end
 
--- A chat command changed a setting: redraw so an open window shows it. Only for "chat":
--- a GUI change sends the same message on every slider drag tick (see Refresh).
+-- A setting changed: redraw so an open window shows it, whatever changed it (a chat
+-- command, the pause key, any later source), except the window itself: AceConfigDialog
+-- already redraws after a change made in it, and a slider sends one on every drag tick
+-- (see Refresh).
 function Window:OnOptionsChanged(_, _, source)
-    if source == "chat" then self:Refresh() end
+    if source ~= "window" then self:Refresh() end
 end
 
 -- The window's own strings or buttons may have changed: Options built and re-registered
@@ -264,6 +269,7 @@ end
 
 function Window:Open()
     if InFight() then return end -- the window stays shut for the whole fight
+    if self.opening then return end -- an open from inside this open's message (see below)
     -- the saved position goes into AceConfigDialog's status table, which Feed hands to the
     -- window; a drag saves it back (OnMoved below)
     local saved, status = SSF.db.profile.window, AceConfigDialog:GetStatusTable(APP)
@@ -296,11 +302,17 @@ function Window:Open()
         -- The first open of a session measures before every text size is settled (the
         -- window has not been drawn yet), which leaves a gap above the buttons. Feed again
         -- a tick later (a zero timer, AceTimer's 0.01 s floor), after the first draw, so the
-        -- fit is measured on settled sizes.
-        self:ScheduleTimer("Feed", 0)
+        -- fit is measured on settled sizes. Through Refresh: closed in that tick (a fight
+        -- started), it stays closed.
+        self:ScheduleTimer("Refresh", 0)
     end
-    self:Feed()
-    self:SendMessage("SSF_WINDOW_OPENED") -- Welcome and NewsShow bring back a note still owed
+    Feed(self)
+    -- Welcome and NewsShow answer this by bringing back a note still owed, and their note
+    -- opens the window again: inside this open, that second Open only returns (the window
+    -- is already fed and showing), so an open can never start another round of itself.
+    self.opening = true
+    self:SendMessage("SSF_WINDOW_OPENED")
+    self.opening = nil
 end
 
 -- A position reset: the saved spot is forgotten, so Open puts the window in the center of

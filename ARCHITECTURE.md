@@ -67,7 +67,7 @@ News:
 | SSF_HELP_CHANGED | Help | Options | self.on |
 | SSF_MACROS_CHANGED | Macros | Window |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
-| SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
+| SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, "window" |
 | SSF_OPTIONS_REBUILT | Options | NewsShow, Welcome, Window |  |
 | SSF_QUIET_ENDED | Cap | Broker, Counter, Welcome, Window | learned == true |
 | SSF_SHARD_DELETED | Trimmer | Broker, Counter, Debug, Window | count - 1, cap, bag, slot |

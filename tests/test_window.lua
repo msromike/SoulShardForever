@@ -207,6 +207,54 @@ test("an open SSF makes by itself forgets the spot; the player's own open keeps 
     ok(top == nil and left == nil, "and the window opens centered")
 end)
 
+-- the window's text for the pause setting: what a redraw would change
+local function pauseTicked()
+    local Registry = LibStub("AceConfigRegistry-3.0")
+    return Registry:GetOptionsTable("SSF", "dialog", "AceConfigDialog-3.0").args.pausegroup.args.pauseGui.get()
+end
+
+test("a change from anywhere but the window redraws an open window", function()
+    shut()
+    profile.welcomed = 99999
+    Window:Open()
+    local feeds = 0
+    local real = Window.Refresh
+    function Window:Refresh() feeds = feeds + 1 return real(self) end
+    local okay, err = pcall(function()
+        Window:SendMessage("SSF_OPTIONS_CHANGED", "pause", "chat")
+        eq(feeds, 1, "a chat command: redrawn")
+        Window:SendMessage("SSF_OPTIONS_CHANGED", "pause", "window")
+        eq(feeds, 1, "the window's own control: not redrawn (AceConfigDialog does it)")
+        Window:SendMessage("SSF_OPTIONS_CHANGED", "pause")
+        eq(feeds, 2, "a source not named: redrawn")
+    end)
+    Window.Refresh = real
+    assert(okay, err)
+    ok(pauseTicked() ~= nil, "the pause setting is readable")
+end)
+
+test("an open does not start a second open of itself", function()
+    shut()
+    profile.welcomed = false -- the welcome is owed: its note opens the window inside this open
+    local opened = 0
+    local ear = LibStub("AceEvent-3.0"):Embed({})
+    ear:RegisterMessage("SSF_WINDOW_OPENED", function() opened = opened + 1 end)
+    Window:Open()
+    ear:UnregisterAllMessages()
+    eq(opened, 1, "one open, one message, with the note brought back inside it")
+    ok(showing("Welcome to SSF"), "the note is showing")
+end)
+
+test("the first open's second fit does not reopen a window closed in that tick", function()
+    shut()
+    profile.welcomed = 99999
+    Window.window = nil -- the session's first open: it schedules the second fit
+    Window:Open()
+    Window.window:Hide()
+    WoW.RunTimers()
+    ok(not open(), "still closed")
+end)
+
 test("dragging the window saves the spot with the screen size", function()
     shut()
     profile.welcomed = 99999

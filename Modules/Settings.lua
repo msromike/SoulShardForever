@@ -25,8 +25,9 @@
 --          Settings:ValueWords(key) -> the words a toggle's chat command takes ("off",
 --            "on"), nil for a range or an unknown key: Options' tab completion offers them
 --            after the key.
--- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, plus "chat" when the chat
---          command applied it (Window redraws an open window only then).
+-- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, and its source: "chat" when
+--          the chat command applied it, "window" when the window's control did (Window
+--          redraws an open window for every source but "window").
 -- Reads:   Colors:OnOff/Value for the echo. Prints through AceConsole only.
 -- Owns no state beyond which keys are toggles, no events, no frames. Touches nothing else.
 
@@ -83,7 +84,7 @@ function Settings:Define(key, def)
         name = def.name,
         desc = def.desc,
         get = function() return def.get() end,
-        set = function(_, value) set(value) end,
+        set = function(_, value) set(value, "window") end,
         disabled = def.disabled,
     }
     if def.kind == "range" then
