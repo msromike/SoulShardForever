@@ -10,7 +10,8 @@
 --     lua51 tests/window.lua <scene>
 -- Scenes: "settled" (a character that has seen the welcome and the announcement: the
 -- window alone), "first" (a new character's first login: the window opens by itself with
--- the welcome on its right and the announcement on its left).
+-- the welcome on its right, and the announcement on its left while the shipped one is
+-- switched on; switched off since 1.15.1, so the list has no left panel).
 --
 -- What it cannot say: where anything sits, its size, its color, whether a text is cut
 -- short. The stub gives every frame no size and no place.
