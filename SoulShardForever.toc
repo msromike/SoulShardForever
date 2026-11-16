@@ -43,6 +43,8 @@ Modules\Sorter.lua
 Modules\Sounds.lua
 Modules\Trimmer.lua
 Modules\DeleteButton.lua
+Modules\Debug.lua
+Modules\DebugReport.lua
 Modules\Settings.lua
 Modules\Help.lua
 Modules\Options.lua

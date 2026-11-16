@@ -4,8 +4,10 @@
 -- stub's record of PickupContainerItem calls (pairs: source, then target).
 -- Saves:   profile.soulsortLegacy, soulsortReverse, for the test at hand.
 -- Exceptions: reads, seeds and resets Sorter.reruns, the module's private leftover counter,
---          to prove a rerun is pending or forgotten; nothing public exposes it, and a test
---          is the one place allowed to look.
+--          and Sorter.noted, its note that a pass was asked for in combat, to prove a rerun
+--          or a noted pass is pending or forgotten; nothing public exposes them, and a
+--          test is the one place allowed to look. Calls Sorter:OnCombatEnd, the handler
+--          for the end of combat, since the runner enables no module.
 -- Touches nothing else.
 
 local SHARD = SSF.SHARD_ITEM_ID
@@ -66,6 +68,53 @@ test("in combat a pass does nothing and forgets leftovers", function()
     eq(Sorter:Pass(), 0, "nothing in combat")
     eq(Sorter.reruns, nil, "leftovers forgotten")
     eq(#WoW.picks, 0, "no pickup")
+    Sorter.noted = nil
+end)
+
+test("a pass asked for in combat runs once when combat ends", function()
+    profile.soulsortLegacy = false
+    profile.paused = false
+    WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(4) })
+    WoW.combat = true
+    eq(Sorter:Pass(), 0, "nothing in combat")
+    eq(Sorter.noted, true, "but it is noted")
+    WoW.combat = false
+    Sorter:OnCombatEnd()
+    eq(moves(), "0:2>1:4", "the noted pass ran")
+    eq(Sorter.noted, nil, "and the note is gone")
+    WoW.picks = {}
+    Sorter.reruns = nil
+    Sorter:OnCombatEnd()
+    eq(#WoW.picks, 0, "a second combat end runs nothing")
+end)
+
+test("combat ending with no pass asked for moves nothing", function()
+    profile.soulsortLegacy = false
+    WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(4) })
+    Sorter.noted = nil
+    Sorter:OnCombatEnd()
+    eq(#WoW.picks, 0, "no press, no move")
+end)
+
+test("a noted pass is dropped when SSF is paused at the end of the fight", function()
+    profile.soulsortLegacy = false
+    WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(4) })
+    WoW.combat = true
+    Sorter:Pass()
+    WoW.combat = false
+    profile.paused = true
+    Sorter:OnCombatEnd()
+    eq(#WoW.picks, 0, "paused: nothing moves")
+    eq(Sorter.noted, nil, "and the note is dropped, not kept for later")
+    profile.paused = false
+end)
+
+test("a pass out of combat clears a note", function()
+    profile.soulsortLegacy = false
+    WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(1, { [1] = SHARD }) })
+    Sorter.noted = true
+    eq(Sorter:Pass(), 0, "soul bag full: nothing to move")
+    eq(Sorter.noted, nil, "the note is cleared all the same")
 end)
 
 test("SoulSort legacy Normal: a shard moves to an earlier slot, swapping with an item", function()

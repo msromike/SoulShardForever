@@ -14,7 +14,13 @@
 --          WoW.FireEvent(name, ...)    deliver a game event to every frame registered for it
 --          WoW.frames                  every frame CreateFrame made
 --          WoW.combat = false          what InCombatLockdown / UnitAffectingCombat answer
+--          WoW.channel = nil           the spell name UnitChannelInfo answers
+--          WoW.targeting = nil         true: SpellIsTargeting answers true
+--          WoW.itemCount = nil         a number: what C_Item.GetItemCount answers, in place
+--                                      of counting the fake bags
 --          WoW.chat                    every line printed through DEFAULT_CHAT_FRAME
+--          WoW.muted                   the sound file IDs muted right now (MuteSoundFile
+--                                      adds, UnmuteSoundFile removes)
 -- Touches nothing else.
 
 local WoW = { bags = {}, combat = false, chat = {}, frames = {} }
@@ -72,6 +78,7 @@ end
 geterrorhandler = function() return function(err) error(err, 2) end end
 seterrorhandler = function() end
 GetTime = os.clock
+date = os.date
 debugstack = function() return "" end
 issecurevariable = function() return false end
 securecall = function(f, ...) return f(...) end
@@ -142,6 +149,10 @@ C_Timer = { After = function() end }
 C_UIFileAsset = { IsKnownFile = function() return true end } -- LibSharedMedia checks its media files
 C_Sound = { PlaySound = function() end }
 PlaySoundFile = function() end
+-- muted sound files: WoW.muted holds every file ID muted and not yet unmuted
+WoW.muted = {}
+MuteSoundFile = function(id) WoW.muted[id] = true end
+UnmuteSoundFile = function(id) WoW.muted[id] = nil end
 
 -- Player, class, locale
 function UnitClassBase() return "WARLOCK" end
@@ -171,6 +182,8 @@ debugprofilestop = function() return os.clock() * 1000 end
 GetAddOnMetadata = function(...) return C_AddOns.GetAddOnMetadata(...) end
 function InCombatLockdown() return WoW.combat end
 function UnitAffectingCombat() return WoW.combat end
+function UnitChannelInfo() return WoW.channel end
+function SpellIsTargeting() return WoW.targeting == true end
 RAID_CLASS_COLORS = { WARLOCK = { r = 0.53, g = 0.53, b = 0.93 } }
 C_AddOns = { GetAddOnMetadata = function(_, field) return field == "Version" and "test" or nil end }
 
@@ -203,6 +216,18 @@ C_Item = {
     DoesItemExist = function(loc) local b = bagOf(loc.bag) return b and b.items and b.items[loc.slot] ~= nil or false end,
     IsLocked = function(loc) local b = bagOf(loc.bag) return b and b.locked and b.locked[loc.slot] == true or false end,
     GetItemFamily = function(itemId) return itemId == SHARD and SOUL_FAMILY or 0 end,
+    -- the game's own count of an item across the bags; a test sets WoW.itemCount to make
+    -- it disagree with the slots
+    GetItemCount = function(itemId)
+        if WoW.itemCount then return WoW.itemCount end
+        local n = 0
+        for _, b in pairs(WoW.bags) do
+            for _, id in pairs(b.items or {}) do
+                if id == itemId then n = n + 1 end
+            end
+        end
+        return n
+    end,
 }
 -- Cursor: PickupContainerItem is recorded in WoW.picks as { bag, slot } pairs, so a test can
 -- read the moves a Sorter pass fired; nothing is actually moved in the fake bags.

@@ -72,6 +72,7 @@ local function Defaults()
             newsSeen = false,           -- the id of the announcement this character ticked "Don't show this again" on (NewsShow)
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
             window = {},                -- options window position: top, left and the screen size (set after a drag)
+            -- debugLog: absent until the debug record is first turned on; its events, kept until cleared (Debug)
             -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         },
     }

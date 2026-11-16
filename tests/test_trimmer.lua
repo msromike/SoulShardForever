@@ -1,7 +1,8 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share.
--- Saves:   profile.paused, maxShards, autoMax, for the test at hand.
+-- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share; and the
+-- press in combat (it deletes, moves nothing, and a paused press stays silent).
+-- Saves:   profile.paused, maxShards, autoMax, pauseLog, for the test at hand.
 -- Touches nothing else.
 
 local SHARD = SSF.SHARD_ITEM_ID
@@ -49,5 +50,48 @@ test("WhyNot with no count reads the bags", function()
     eq(Trimmer:WhyNot(), nil, "2 shards, cap 1: over")
     profile.maxShards = 2
     eq(Trimmer:WhyNot(), "atcap", "2 shards, cap 2")
+    profile.maxShards = 8
+end)
+
+-- The stub's cursor never holds anything; here a pickup puts a shard on it and a delete
+-- takes it off, counted. The stub's own functions go back whatever the press does.
+local function PressCountingDeletes()
+    local held, deletes = false, 0
+    local pickup, info, delete = C_Container.PickupContainerItem, GetCursorInfo, DeleteCursorItem
+    C_Container.PickupContainerItem = function(bag, slot) pickup(bag, slot) held = true end
+    GetCursorInfo = function() if held then return "item", SHARD end end
+    DeleteCursorItem = function() if held then deletes, held = deletes + 1, false end end
+    local okay, err = pcall(Trimmer.Delete, Trimmer)
+    C_Container.PickupContainerItem, GetCursorInfo, DeleteCursorItem = pickup, info, delete
+    assert(okay, err)
+    return deletes
+end
+
+test("in combat, over the cap: one press deletes one shard and moves nothing", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }) })
+    profile.paused = false
+    profile.maxShards = 1
+    profile.autoMax = false
+    WoW.combat = true
+    eq(PressCountingDeletes(), 1, "3 shards, cap 1, in combat: one delete")
+    eq(#WoW.picks, 1, "one pickup, the delete's: no sorting in a fight")
+    profile.maxShards = 8
+end)
+
+test("paused in combat: the press is silent; out of combat it prints", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD }) })
+    local pauseLog = profile.pauseLog
+    profile.paused = true
+    profile.pauseLog = true
+    profile.maxShards = 1
+    WoW.combat = true
+    local before = #WoW.chat
+    eq(PressCountingDeletes(), 0, "paused: no delete")
+    eq(#WoW.chat, before, "in combat: no chat line")
+    WoW.combat = false
+    PressCountingDeletes()
+    eq(#WoW.chat, before + 1, "out of combat: the paused-press line")
+    profile.paused = false
+    profile.pauseLog = pauseLog
     profile.maxShards = 8
 end)

@@ -27,6 +27,8 @@ Core and modules:
 - Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
 - Modules\Trimmer.lua: the delete press.
 - Modules\DeleteButton.lua: the global button "SSFDelete".
+- Modules\Debug.lua: the debug record.
+- Modules\DebugReport.lua: the window a player copies the debug record from.
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
 - Modules\Help.lua: help mode.
 - Modules\Options.lua: the one settings table and the /ssf command.
@@ -56,18 +58,25 @@ News:
 
 | Message | Sender | Listeners | Payload |
 |---|---|---|---|
-| SSF_BAGS_CHANGED | Bags | Broker, Cap, Counter, Sorter, Window |  |
+| SSF_BAGS_CHANGED | Bags | Broker, Cap, Counter, Debug, Sorter, Window |  |
 | SSF_CAP_CHANGED | Cap | Broker, Counter | now |
 | SSF_COUNTER_UPDATED | Counter | LowGlow | parent, count |
+| SSF_DELETE_FAILED | Trimmer | Debug | failed |
+| SSF_DELETE_PRESSED | Trimmer | Debug | why or "delete", count, cap |
 | SSF_HELP_CHANGED | Help | Options | self.on |
 | SSF_MACROS_CHANGED | Macros | Window |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, source |
 | SSF_OPTIONS_REBUILT | Options | NewsShow, Welcome, Window |  |
 | SSF_QUIET_ENDED | Cap | Broker, Counter, Welcome, Window | learned == true |
-| SSF_SHARD_DELETED | Trimmer | Broker, Counter, Window | count - 1, cap |
+| SSF_SHARD_DELETED | Trimmer | Broker, Counter, Debug, Window | count - 1, cap, bag, slot |
 | SSF_SHOW_WELCOME | Window | Welcome |  |
-| SSF_SORTED | Sorter | none | moved |
+| SSF_SORTED | Sorter | Debug | moved, moves |
+| SSF_SORT_RESUMED | Sorter | Debug |  |
+| SSF_SORT_SKIPPED | Sorter | Debug |  |
+| SSF_SOUNDS_MUTED | Sounds | Debug | kind |
+| SSF_SOUNDS_UNMUTED | Sounds | Debug | kind |
+| SSF_SOUND_PLAYED | Sounds | Debug | name |
 | SSF_WINDOW_OPENED | Window | NewsShow, Welcome |  |
 
 ## Game events, by module
@@ -76,6 +85,8 @@ News:
 |---|---|
 | Bags | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
 | Cap | PLAYER_ENTERING_WORLD; LEARNED_SPELL_IN_SKILL_LINE; SPELLS_CHANGED |
+| Sorter | PLAYER_REGEN_ENABLED |
+| Debug | PLAYER_ENTERING_WORLD; PLAYER_REGEN_DISABLED; PLAYER_REGEN_ENABLED; UNIT_SPELLCAST_CHANNEL_START; UNIT_SPELLCAST_CHANNEL_STOP |
 | Status | PLAYER_ENTERING_WORLD; BAG_UPDATE_DELAYED |
 | Macros | LOADING_SCREEN_DISABLED; bucket UPDATE_MACROS (0.5s) |
 | MacroGlow | ACTIONBAR_SLOT_CHANGED |

@@ -37,6 +37,7 @@ for _, rel in ipairs({
     "Libs/CallbackHandler-1.0/CallbackHandler-1.0.lua",
     "Libs/AceAddon-3.0/AceAddon-3.0.lua",
     "Libs/AceEvent-3.0/AceEvent-3.0.lua",
+    "Libs/AceHook-3.0/AceHook-3.0.lua",
     "Libs/AceTimer-3.0/AceTimer-3.0.lua",
     "Libs/AceBucket-3.0/AceBucket-3.0.lua",
     "Libs/AceDB-3.0/AceDB-3.0.lua",
@@ -58,6 +59,7 @@ for _, rel in ipairs({
     "Modules/Sorter.lua",
     "Modules/Sounds.lua",
     "Modules/Trimmer.lua",
+    "Modules/Debug.lua",
     "Modules/Status.lua",
     "Modules/NewsShow.lua",
 }) do loadLua(rel, ADDON, NS) end

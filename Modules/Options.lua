@@ -37,6 +37,10 @@
 -- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
 -- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
 -- "log", is a second, hidden chat command, so old macros keep working; it is not listed anywhere.
+-- "debug" is hidden the same way (HIDDEN_WORDS): "/ssf debug" reports the debug record's
+-- switch, "on" and "off" set it, "mark <name>" writes a marker, "report" opens the copy
+-- window, "clear" empties the record (DebugCommand; the record is Debug's, the window DebugReport's). Its lines are
+-- English only, like the record. A player is handed these words when a problem needs them.
 -- A whole number on its own ("/ssf 32") goes straight to setmax's own command, marked as
 -- typed in short form (why not through AceConfigCmd: the note in HandleCommand).
 --
@@ -47,6 +51,7 @@
 -- Reads:   Help:Apply, Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
 --          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
+--          Debug:IsOn/Set/Mark/Clear, DebugReport:Open,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
 --          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
 --          pauseLog, autoMax, lowMark, counter, lowGlow, counterColorize, counterSoulBag,
@@ -144,6 +149,39 @@ end
 
 -- The old word for "/ssf log": a hidden chat command, so old macros keep working.
 local OLD_LOG_WORD = "announce"
+-- The debug record's command: hidden too, handed to a player who needs it.
+local DEBUG_WORD = "debug"
+-- the chat words the handler lets through although the help list and Tab never show them
+local HIDDEN_WORDS = { [OLD_LOG_WORD] = true, [DEBUG_WORD] = true }
+
+-- "/ssf debug": naked reports the switch; "on" / "off" set it and report; "mark <name>"
+-- writes a marker into the record, turning the record on first when it is off (and saying
+-- so); "report" opens the copy window; "clear" empties the saved record and says so. It
+-- prints to confirm on, off and clear, and nothing else but the usage line. English only.
+local function DebugCommand(input)
+    local Debug = SSF:GetModule("Debug")
+    input = strtrim(input or "")
+    local word, rest = input:match("^(%S*)%s*(.*)$")
+    word = word:lower()
+    if word == "on" or word == "off" then
+        Debug:Set(word == "on")
+    elseif word == "mark" and rest ~= "" then
+        local wasOn = Debug:IsOn()
+        Debug:Mark(rest)
+        if wasOn then return end
+    elseif word == "report" then
+        SSF:GetModule("DebugReport"):Open()
+        return
+    elseif word == "clear" then
+        Debug:Clear()
+        SSF:Print("Debug record cleared.")
+        return
+    elseif word ~= "" then
+        SSF:Print("Use: /ssf debug on|off|mark <name>|report|clear")
+        return
+    end
+    SSF:Printf("Debug: %s", Colors():OnOff(Debug:IsOn()))
+end
 
 -- The reason on a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
 -- Language change shows at once.
@@ -456,6 +494,16 @@ local function BuildTable()
         setmax = setmaxCmd,
         log = logCmd,
         [OLD_LOG_WORD] = announceOld,
+        [DEBUG_WORD] = {
+            type = "input",
+            order = 90,
+            dialogHidden = true,
+            cmdHidden = true,
+            name = "Debug",
+            desc = "The debug record: on, off, mark <name>, report, clear.",
+            get = function() return "" end,
+            set = function(_, input) DebugCommand(input) end,
+        },
         pause = pauseCmd,
         delete = {
             type = "execute",
@@ -620,7 +668,7 @@ local function HandleCommand(input)
         Options.table.args.setmax.set(nil, input, true)
         return
     end
-    if not IsChatWord(first) and first ~= OLD_LOG_WORD then
+    if not IsChatWord(first) and not HIDDEN_WORDS[first] then
         SSF:Print(L['Unknown command "%s".']:format(first))
         AceConfigCmd:HandleCommand("ssf", APP, "")
         return

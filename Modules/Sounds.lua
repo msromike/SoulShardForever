@@ -20,7 +20,25 @@
 -- Channel: an LSM file plays on SFX; an own sound kit plays with C_Sound's default
 -- sub-type, as tested in game.
 --
--- Public:  Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
+-- Moving shards: the game plays an item's pickup and put-down sound on every move, and SSF
+-- moves shards from code. Moving(kind, fn) is the one place that decides whether those
+-- sounds are heard, and the one place that knows their file IDs (MOVE_FIRST to MOVE_LAST
+-- and MOVE_MORE: every item pickup and put-down sound, the list Baganator's sort mutes;
+-- all of them, since a SoulSort legacy move swaps another item). The rule (Heard): a sort
+-- is never heard, at a press or when combat ends, or a sort at the end of a fight would
+-- clink seconds after the last press with no clue it was SSF; a delete is heard out of
+-- combat (the tink that says a shard went) and not in combat, so a fight never plays SSF
+-- sounds. A later "no SSF sounds at all" option is one profile key read in Heard. Not
+-- heard = the game's MuteSoundFile on every one of those files, fn, then UnmuteSoundFile on
+-- every one: fn runs protected, so the sounds come back on even when a move throws (the
+-- error is raised again afterwards). A mute left on would silence item sounds for every
+-- addon, with nothing to tell the player why. On a client without the two functions fn
+-- just runs.
+--
+-- Public:  Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or
+--            "delete" (Sorter and Trimmer hand their moves over and know nothing of the
+--            rule).
+--          Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
 --            LSM no longer knows (a sound pack removed) falls back to the default; a nil
 --            name plays nothing (LSM:IsValid is true for nil).
 --          PlayPause() -- the pause sound at the saved level (profile.pauseSoundName,
@@ -29,11 +47,14 @@
 --          LevelKeys() -> the keys in dropdown order; LevelVolume(key) -> volume ("full"
 --            for an unknown key); LevelKey(volume) -> key ("full" for an unknown volume);
 --            IsLevel(volume) -> bool.
--- Reads:   profile.pauseSoundName, pauseSoundVolume. Owns no state, no events, no frames.
+-- Sends:   SSF_SOUNDS_MUTED (kind) and SSF_SOUNDS_UNMUTED (kind), around an fn that is not
+--          heard; SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records all
+--          three; no other listener).
+-- Reads:   profile.pauseSoundName, pauseSoundVolume. Owns no state, no frames.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Sounds = SSF:NewModule("Sounds")
+local Sounds = SSF:NewModule("Sounds", "AceEvent-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 local DEFAULT = "SSF: Bag thunk"
@@ -89,6 +110,7 @@ end
 
 function Sounds:Play(name, volume)
     if not LSM:IsValid("sound", name) then name = DEFAULT end
+    self:SendMessage("SSF_SOUND_PLAYED", name)
     local own = OWN[name]
     if own then
         -- the sub-type left nil (its default), exactly as tested in game
@@ -97,6 +119,30 @@ function Sounds:Play(name, volume)
     end
     local file = LSM:Fetch("sound", name, true)
     if file then PlaySoundFile(file, "SFX") end
+end
+
+-- every item pickup and put-down sound, by file ID: one run of IDs, then the rest
+local MOVE_FIRST, MOVE_LAST = 567542, 567577
+local MOVE_MORE = { 2308876, 2308881, 2308889, 2308894, 2308901, 2308907, 2308914, 2308920, 2308925, 2308930, 2308935, 2308942, 2308948, 2308956, 2308962, 2308968, 2308974, 2308985, 2308992, 2309001, 2309006, 2309013, 2309025, 2309036, 2309051, 2309057, 2309070, 2309078, 2309089, 2309100, 2309109, 2309120, 2309126, 2309132, 2309137, 2309141 }
+
+local function EachMoveSound(fn)
+    for id = MOVE_FIRST, MOVE_LAST do fn(id) end
+    for _, id in ipairs(MOVE_MORE) do fn(id) end
+end
+
+-- The rule: is a move of this kind heard? See the header.
+local function Heard(kind)
+    return kind == "delete" and not InCombatLockdown()
+end
+
+function Sounds:Moving(kind, fn)
+    if Heard(kind) or not (MuteSoundFile and UnmuteSoundFile) then return fn() end
+    EachMoveSound(MuteSoundFile)
+    self:SendMessage("SSF_SOUNDS_MUTED", kind)
+    local okay, err = pcall(fn)
+    EachMoveSound(UnmuteSoundFile)
+    self:SendMessage("SSF_SOUNDS_UNMUTED", kind)
+    if not okay then error(err, 0) end
 end
 
 function Sounds:PlayPause()
