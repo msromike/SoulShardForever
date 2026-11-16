@@ -119,6 +119,7 @@ NS_CALL_RE = re.compile(r"\b(C_\w+)\.(\w+)\s*\(")
 LUACHECKRC_GLOBALS_RE = re.compile(r"read_globals\s*=\s*\{(.*?)\n\}", re.S)
 LUA_STRING_RE = re.compile(r'"(\w+)"')
 NOT_BLIZZARD = {"LibStub"}
+OFFLINE = "--offline"  # pass the Blizzard API step when there is no UI source to check against
 
 
 def wowui_build():
@@ -165,8 +166,14 @@ def check_blizzard_api():
     print("== blizzard api")
     build, note = wowui_build()
     if build is None:
-        print(f"   SKIPPED: no UI source ({note})")
-        return True
+        # no copy of the UI source at all: nothing was checked. That passes only when asked
+        # for by name; a check that silently skips is a check nobody runs.
+        if OFFLINE in sys.argv:
+            print(f"   SKIPPED on {OFFLINE}: no UI source ({note})")
+            return True
+        print(f"   FAILED: no UI source ({note}), so no Blizzard name was checked. Offline with no\n"
+              f"   copy on disk? Run again with {OFFLINE} to pass without this step.")
+        return False
     print(f"   {WOWUI_BRANCH} build {build} ({note})")
     globs, namespaced = blizzard_names()
     ok = True
@@ -207,10 +214,10 @@ def check_blizzard_api():
 def check_tests():
     runner = os.path.join(ROOT, "tests", "run.lua")
     if not os.path.exists(runner):
-        print("== tests\n   none yet (tests/run.lua absent)")
-        return True
+        print("== tests\n   FAILED: tests/run.lua is missing, so nothing was tested")
+        return False
     exe = os.environ.get("LUA") or shutil.which("lua51") or FALLBACK_LUA
-    return run([exe, "tests/run.lua"], "tests")
+    return run([exe, "tests/run.lua"], "tests")  # the runner itself fails when it finds no test file
 
 
 # ---------------------------------------------------------------- the window's controls
@@ -1083,6 +1090,18 @@ def resolved_calls():
             fake |= set(re.findall(r"(?<![\w.:])" + re.escape(var) + r"\.(\w+)\s*=(?!=)", text))
             for name in sorted(fake - (public[mod] & defined[mod])):
                 problems.append(f"{rel}: its stand-in {mod} defines {name}, which is not a Public method of {reg[mod][0]}")
+        # the same for a test that replaces methods on the real module for its own run:
+        # `local Window = SSF:GetModule("Window")` then `function Window:InFight()`
+        for line in text.splitlines():
+            m = VALUE_ALIAS_RE.match(line)
+            am = m and "," not in m.group(1) and ALIAS_RHS_RE.match(m.group(2).strip())
+            if not am or am.group(1) not in reg:
+                continue
+            var, mod = m.group(1).strip(), am.group(1)
+            swapped = set(re.findall(r"\bfunction\s+" + re.escape(var) + r"[:.](\w+)\s*\(", text))
+            swapped |= set(re.findall(r"(?<![\w.:])" + re.escape(var) + r"\.(\w+)\s*=\s*function\b", text))
+            for name in sorted(swapped - (public[mod] & defined[mod])):
+                problems.append(f"{rel}: replaces {mod}:{name} for its tests, which is not a Public method of {reg[mod][0]}")
     widget_calls, widget_problems = resolved_widget_calls()
     for rel, types in widget_calls.items():
         calls.setdefault(rel, {}).update(types)

@@ -1,9 +1,11 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- test_newsshow: when the announcement is owed, and when and how NewsShow shows it. The
--- window is a stand-in module that records what NewsShow asks of it and answers an open the
--- way the real one does (the window-opened message comes back before the note shows), and
--- counts the opens NewsShow marks as its own (auto: the real window centers those). The
+-- window is the real module with the three methods NewsShow asks of it replaced for this
+-- file (put back at its end): each records what was asked and answers an open the way the
+-- real one does (the window-opened message comes back before the note shows), and counts
+-- the opens NewsShow marks as its own (auto: the real window centers those). The check
+-- holds the replaced names to Window's Public, so a rename there fails here too. The
 -- announcement is one the tests swap in (WoW.NS.news), its lines added the way a
 -- News\News_<code>.lua adds them, so nothing here depends on the announcement that ships.
 -- Reads:   NewsShow; NS.AddLocaleStrings (Locales\Register.lua); Colors (the expected gold).
@@ -11,6 +13,7 @@
 -- Touches nothing else.
 
 local NS = WoW.NS
+local shipped = NS.news -- the announcement that ships, put back at the end of this file
 local NewsShow = SSF:GetModule("NewsShow")
 local profile = SSF.db.profile
 local ID = 11400
@@ -19,7 +22,8 @@ NS.AddLocaleStrings("enUS", { ["A test title"] = true, ["First line."] = true, [
 
 -- what NewsShow asked of the window since the last fresh()
 local asked
-local Window = SSF:NewModule("Window")
+local Window = SSF:GetModule("Window")
+local real = { InFight = Window.InFight, ShowLeftNote = Window.ShowLeftNote, RefreshLeftNote = Window.RefreshLeftNote }
 function Window:InFight() return WoW.combat end
 function Window:ShowLeftNote(title, opts, auto)
     if auto then asked.centered = asked.centered + 1 end
@@ -160,5 +164,9 @@ test("no announcement, or one switched off: nothing at a load and nothing with t
         NewsShow:OnWindowOpened()
         eq(#asked.shown, 0, label)
     end
-    fresh(nil) -- leave no announcement behind for the other test files
 end)
+
+-- the announcement that ships and the real Window's own methods again, for the test files
+-- after this one
+NS.news = shipped
+Window.InFight, Window.ShowLeftNote, Window.RefreshLeftNote = real.InFight, real.ShowLeftNote, real.RefreshLeftNote

@@ -138,7 +138,6 @@ test("State says quiet before Drain Soul, whatever the count; paused still wins"
     eq(Cap:State(0), "low", "known: the scale again")
 end)
 
--- the login test first: the learn test leaves Cap's learn flag set
 test("quiet ending without a learn (spells arriving at login) sends learned = false, once", function()
     local got = {}
     local listener = {}
@@ -165,10 +164,10 @@ test("learning Drain Soul ends quiet with learned = true, once", function()
     WoW.unknownSpells[Cap.QUIET_UNTIL] = true
     Cap:OnEnable()
     WoW.unknownSpells[Cap.QUIET_UNTIL] = nil
-    Cap:LEARNED_SPELL_IN_SKILL_LINE()
+    WoW.FireEvent("LEARNED_SPELL_IN_SKILL_LINE") -- the game's own event, as the trainer sends it
     eq(#got, 1, "one message")
     eq(got[1], true, "a learn")
-    Cap:LEARNED_SPELL_IN_SKILL_LINE()
+    WoW.FireEvent("LEARNED_SPELL_IN_SKILL_LINE")
     eq(#got, 1, "never again")
     listener:UnregisterAllMessages()
 end)

@@ -48,20 +48,17 @@ local function recording(fn)
     assert(okay, err)
 end
 
--- One delete press. The stub's cursor never holds anything; with `works`, a pickup puts a
--- shard on it and a delete takes it off, counted. Returns the deletes.
+-- One delete press, and how many shards it deleted (the stub's cursor really takes the
+-- shard and really deletes it). Without `works`, the pickup takes nothing, as when the
+-- game refuses it: the cursor stays empty and the delete cannot go through.
 local function press(works)
-    local held, deletes = false, 0
-    local pickup, info, delete = C_Container.PickupContainerItem, GetCursorInfo, DeleteCursorItem
-    if works then
-        C_Container.PickupContainerItem = function(bag, slot) pickup(bag, slot) held = true end
-        GetCursorInfo = function() if held then return "item", SHARD end end
-        DeleteCursorItem = function() if held then deletes, held = deletes + 1, false end end
-    end
+    local pickup = C_Container.PickupContainerItem
+    if not works then C_Container.PickupContainerItem = function() end end
+    local before = #WoW.deleted
     local okay, err = pcall(Trimmer.Delete, Trimmer)
-    C_Container.PickupContainerItem, GetCursorInfo, DeleteCursorItem = pickup, info, delete
+    C_Container.PickupContainerItem = pickup
     assert(okay, err)
-    return deletes
+    return #WoW.deleted - before
 end
 
 local function threeLoose()

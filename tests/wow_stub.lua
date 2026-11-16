@@ -1,29 +1,63 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- wow_stub: the smallest WoW environment that lets Ace3 and SSF's logic modules load in
--- plain Lua, outside the game. Frames are inert tables that accept any method. The
--- container API reads from WoW.bags, a table the tests fill. Nothing here is a faithful
--- copy of the game: it is what the loaded files call, plus the common WoW globals a new
--- module is likely to touch, so adding one to the runner rarely needs a stub edit.
+-- wow_stub: the game, for every test. Enough of WoW's Lua environment that the Ace
+-- libraries and the whole of SSF load and run in plain Lua 5.1: frames with parents and
+-- children that are shown or hidden, enabled or greyed, and carry a text; events; timers
+-- that wait until a test runs them; the bags, with a cursor that really moves and deletes
+-- items once the server confirms (WoW.Settle); the player. Nothing has a size or a place that means anything, so nothing here
+-- can say how SSF looks, only what it does and what is in its window.
+--
+-- Strict on purpose: a frame method this file does not know raises an error that names
+-- it. A method is known one of three ways: it is written out below (it keeps state a test
+-- reads), it is on a short list of answers (GET, MANY), or its name starts with a word on
+-- SETTERS (it changes how a frame is drawn, which nothing here tracks). An error the game
+-- would show in red (Ace hands those to the error handler and carries on) is kept in
+-- WoW.errors, so a runner fails on it instead of never seeing it.
 --
 -- Public:  WoW.bags[bagId] = { slots = n, family = bits, items = { [slot] = itemId },
 --                              locked = { [slot] = true } }
 --          WoW.SoulBag(slots, items, locked), WoW.PlainBag(...) -- one bag table each
---          WoW.SetBags(table)          replace every bag at once (nil = all empty)
+--          WoW.SetBags(table)          replace every bag at once (nil = all empty); the
+--                                      cursor is emptied and nothing asked for is waiting
+--          WoW.Forget()                drop every move and delete asked for and not yet
+--                                      confirmed (SetBags calls it)
+--          WoW.cursor                  { bag, slot, item } while an item is held, else nil
 --          WoW.picks                   every PickupContainerItem call as { bag, slot }
+--          WoW.deleted                 every item a delete was asked for, as { bag, slot, item }
+--          WoW.Settle()                the server confirms: every move and delete asked for
+--                                      since the last one now shows in the bags, the bag
+--                                      events go out and their timers run. Until then the
+--                                      bags still show each item where it was, as in the game
 --          WoW.FireEvent(name, ...)    deliver a game event to every frame registered for it
---          WoW.frames                  every frame CreateFrame made
+--          WoW.RunTimers()             run every C_Timer callback waiting, and any those
+--                                      queue, until none is left
+--          WoW.ClearTimers()           forget every callback waiting (a runner, between tests)
+--          WoW.errors                  every error the game's error handler was handed,
+--                                      each with where it came from
+--          WoW.frames                  every frame CreateFrame made; each has __parent,
+--                                      __children, __shown, __enabled, __text
+--          WoW.Controls(root, rank) -> a list of { kind, text, shown, enabled, depth, place }
+--                                      for root and everything under it that carries a
+--                                      text, and for every button with a click and no text
+--                                      ({ template, art } in place of text). rank(frame)
+--                                      -> a number or nil, optional: a frame takes the
+--                                      rank of the nearest frame up the tree that has
+--                                      one, and the list is in rank order, then the order
+--                                      frames were made
 --          WoW.combat = false          what InCombatLockdown / UnitAffectingCombat answer
 --          WoW.channel = nil           the spell name UnitChannelInfo answers
 --          WoW.targeting = nil         true: SpellIsTargeting answers true
 --          WoW.itemCount = nil         a number: what C_Item.GetItemCount answers, in place
 --                                      of counting the fake bags
+--          WoW.unknownSpells[id]       true: C_SpellBook.IsSpellKnown(id) answers false
+--          WoW.macros                  name -> true for each macro that exists
+--                                      (GetMacroIndexByName); SSF's two exist by default
 --          WoW.chat                    every line printed through DEFAULT_CHAT_FRAME
 --          WoW.muted                   the sound file IDs muted right now (MuteSoundFile
 --                                      adds, UnmuteSoundFile removes)
 -- Touches nothing else.
 
-local WoW = { bags = {}, combat = false, chat = {}, frames = {} }
+local WoW = { bags = {}, combat = false, chat = {}, frames = {}, errors = {} }
 _G.WoW = WoW
 
 -- The tests run on Lua 5.1, the game's own. The game gives every addon a global `bit`
@@ -75,7 +109,6 @@ tostringall = function(...)
     for i = 1, select("#", ...) do t[i] = tostring(t[i]) end
     return unpack(t)
 end
-geterrorhandler = function() return function(err) error(err, 2) end end
 seterrorhandler = function() end
 GetTime = os.clock
 date = os.date
@@ -88,43 +121,272 @@ hooksecurefunc = function(tbl, name, fn)
     tbl[name] = function(...) local r = { orig(...) } fn(...) return unpack(r) end
 end
 
--- Frames: any method call is accepted and returns nothing, except the few below.
-local frameMethods = {}
-local frameMeta = { __index = function(_, k) return frameMethods[k] or function() end end }
-function frameMethods:RegisterEvent(ev) self.__events[ev] = true end
-function frameMethods:UnregisterEvent(ev) self.__events[ev] = nil end
-function frameMethods:UnregisterAllEvents() wipe(self.__events) end
-function frameMethods:IsEventRegistered(ev) return self.__events[ev] == true end
-function frameMethods:SetScript(name, fn) self.__scripts[name] = fn end
-function frameMethods:GetScript(name) return self.__scripts[name] end
-function frameMethods:HookScript(name, fn)
+-- Errors: Ace runs OnEnable, events, timers and callbacks through the game's error handler,
+-- which shows the red error and carries on. Here each one is kept, so the caller can fail
+-- on them: an error the game would have shown is never swallowed.
+geterrorhandler = function()
+    return function(err) WoW.errors[#WoW.errors + 1] = tostring(err) .. "\n" .. debug.traceback("", 2) end
+end
+
+-- Lua and string helpers the libraries capture at load
+table.wipe = wipe
+max, min, floor, ceil, abs = math.max, math.min, math.floor, math.ceil, math.abs
+tContains = function(t, v) for _, x in ipairs(t) do if x == v then return true end end return false end
+CopyTable = function(t)
+    local out = {}
+    for k, v in pairs(t) do out[k] = type(v) == "table" and CopyTable(v) or v end
+    return out
+end
+
+-- Timers: queued, run when a test says time passes
+local timers = {}
+C_Timer = {
+    After = function(_, fn) timers[#timers + 1] = fn end,
+    NewTimer = function(_, fn) timers[#timers + 1] = fn return { Cancel = function() end } end,
+    NewTicker = function() return { Cancel = function() end } end,
+}
+function WoW.ClearTimers() timers = {} end
+function WoW.RunTimers()
+    local rounds = 0
+    while #timers > 0 do
+        rounds = rounds + 1
+        assert(rounds < 100, "timers keep queueing timers")
+        local run = timers
+        timers = {}
+        for _, fn in ipairs(run) do fn() end
+    end
+end
+
+-- ---------------------------------------------------------------- frames
+
+local M = {}
+
+-- a part of a frame the game makes on demand (a button's textures, its text): one per name
+local function Part(self, key, kind)
+    local parts = rawget(self, "__parts")
+    if not parts then parts = {} rawset(self, "__parts", parts) end
+    if not parts[key] then parts[key] = CreateFrame(kind, nil, self) end
+    return parts[key]
+end
+
+-- events and scripts
+function M:RegisterEvent(ev) self.__events[ev] = true end
+function M:RegisterUnitEvent(ev) self.__events[ev] = true end
+function M:UnregisterEvent(ev) self.__events[ev] = nil end
+function M:UnregisterAllEvents() wipe(self.__events) end
+function M:IsEventRegistered(ev) return self.__events[ev] == true end
+function M:SetScript(name, fn) self.__scripts[name] = fn end
+function M:GetScript(name) return self.__scripts[name] end
+function M:HasScript() return true end
+function M:HookScript(name, fn)
     local orig = self.__scripts[name]
     self.__scripts[name] = function(...) if orig then orig(...) end fn(...) end
 end
-function frameMethods:Show() self.__shown = true end
-function frameMethods:Hide() self.__shown = false end
-function frameMethods:IsShown() return self.__shown == true end
-function frameMethods:IsVisible() return self.__shown == true end
-function frameMethods:GetWidth() return self.__w or 0 end
-function frameMethods:GetHeight() return self.__h or 0 end
-function frameMethods:SetWidth(w) self.__w = w end
-function frameMethods:SetHeight(h) self.__h = h end
-function frameMethods:SetSize(w, h) self.__w, self.__h = w, h end
-function frameMethods:GetName() return self.__name end
-function frameMethods:GetParent() return self.__parent end
-function frameMethods:SetText(t) self.__text = t end
-function frameMethods:GetText() return self.__text end
-function frameMethods:GetObjectType() return self.__type end
-function frameMethods:CreateFontString() return CreateFrame("FontString", nil, self) end
-function frameMethods:CreateTexture() return CreateFrame("Texture", nil, self) end
-function frameMethods:GetChildren() return end
-function frameMethods:GetRegions() return end
-function frameMethods:GetStringWidth() return 0 end
+local function Run(self, name, ...)
+    local fn = self.__scripts[name]
+    if fn then fn(self, ...) end
+end
+function M:Click(button)
+    if self.__enabled == false then return end
+    Run(self, "PreClick", button or "LeftButton")
+    Run(self, "OnClick", button or "LeftButton")
+    Run(self, "PostClick", button or "LeftButton")
+end
 
-function CreateFrame(ftype, name, parent)
-    local f = setmetatable({ __type = ftype, __name = name, __parent = parent, __events = {}, __scripts = {}, __shown = true }, frameMeta)
+-- shown and hidden: the script fires when the frame's own state changes
+function M:Show()
+    if self.__shown then return end
+    self.__shown = true
+    Run(self, "OnShow")
+end
+function M:Hide()
+    if not self.__shown then return end
+    self.__shown = false
+    Run(self, "OnHide")
+end
+function M:SetShown(on) if on then self:Show() else self:Hide() end end
+function M:IsShown() return self.__shown == true end
+function M:IsVisible()
+    local f = self
+    while f do
+        if not f.__shown then return false end
+        f = f.__parent
+    end
+    return true
+end
+
+-- enabled and greyed
+function M:Enable() self.__enabled = true end
+function M:Disable() self.__enabled = false end
+function M:SetEnabled(on) self.__enabled = on and true or false end
+function M:IsEnabled() return self.__enabled ~= false end
+
+-- the tree
+local function Unlink(self)
+    local parent = self.__parent
+    if not parent then return end
+    for i, child in ipairs(parent.__children) do
+        if child == self then table.remove(parent.__children, i) break end
+    end
+end
+function M:SetParent(parent)
+    Unlink(self)
+    self.__parent = parent
+    if parent then parent.__children[#parent.__children + 1] = self end
+end
+function M:GetParent() return self.__parent end
+local REGIONS = { FontString = true, Texture = true, MaskTexture = true, Line = true }
+local function Kids(self, regions)
+    local out = {}
+    for _, child in ipairs(self.__children) do
+        if (REGIONS[child.__type] or false) == regions then out[#out + 1] = child end
+    end
+    return unpack(out)
+end
+function M:GetChildren() return Kids(self, false) end
+function M:GetRegions() return Kids(self, true) end
+function M:GetNumChildren() return select("#", Kids(self, false)) end
+function M:GetName() return self.__name end
+function M:GetObjectType() return self.__type end
+function M:IsObjectType(kind) return self.__type == kind end
+function M:GetDebugName() return self.__name or self.__type end
+
+-- text
+function M:SetText(text) self.__text = text end
+function M:GetText() return self.__text end
+function M:SetFormattedText(fmt, ...) self.__text = fmt:format(...) end
+function M:GetNumber() return tonumber(self.__text) or 0 end
+function M:SetNumber(n) self.__text = tostring(n) end
+
+-- values a control holds
+function M:SetChecked(on) self.__checked = on and true or false end
+function M:GetChecked() return self.__checked == true end
+function M:SetValue(v) self.__value = v end
+function M:GetValue() return self.__value or 0 end
+function M:SetMinMaxValues(lo, hi) self.__min, self.__max = lo, hi end
+function M:GetMinMaxValues() return self.__min or 0, self.__max or 0 end
+function M:SetAttribute(key, value) self.__attributes = self.__attributes or {} self.__attributes[key] = value end
+function M:GetAttribute(key) return self.__attributes and self.__attributes[key] end
+function M:SetTexture(texture) self.__texture = texture end
+function M:GetTexture() return self.__texture end
+function M:SetAlpha(a) self.__alpha = a end
+function M:GetAlpha() return self.__alpha or 1 end
+function M:SetFrameLevel(n) self.__level = n end
+function M:GetFrameLevel() return self.__level or 1 end
+function M:SetScrollChild(child) self.__scrollChild = child end
+function M:GetScrollChild() return self.__scrollChild end
+function M:SetID(id) self.__id = id end
+function M:GetID() return self.__id or 0 end
+
+-- sizes: kept, never meaningful
+function M:SetWidth(w) self.__w = w end
+function M:SetHeight(h) self.__h = h end
+function M:SetSize(w, h) self.__w, self.__h = w, h end
+function M:GetWidth() return self.__w or 0 end
+function M:GetHeight() return self.__h or 0 end
+function M:GetSize() return self.__w or 0, self.__h or 0 end
+
+-- parts
+function M:CreateFontString() return CreateFrame("FontString", nil, self) end
+function M:CreateTexture() return CreateFrame("Texture", nil, self) end
+function M:CreateMaskTexture() return CreateFrame("MaskTexture", nil, self) end
+function M:CreateLine() return CreateFrame("Line", nil, self) end
+function M:CreateAnimationGroup() return CreateFrame("AnimationGroup", nil, self) end
+function M:CreateAnimation() return CreateFrame("Animation", nil, self) end
+function M:GetFontString() return Part(self, "FontString", "FontString") end
+for _, name in ipairs({ "Normal", "Pushed", "Highlight", "Disabled", "Checked", "DisabledChecked", "Thumb" }) do
+    M["Get" .. name .. "Texture"] = function(self) return Part(self, name, "Texture") end
+    M["Set" .. name .. "Texture"] = function(self, texture) Part(self, name, "Texture").__texture = texture end
+end
+
+-- GameTooltip
+function M:SetOwner(owner) self.__owner = owner end
+function M:GetOwner() return self.__owner end
+function M:IsOwned(owner) return self.__owner == owner end
+function M:AddLine() end
+function M:AddDoubleLine() end
+function M:NumLines() return 0 end
+
+-- Answers with no state behind them. Each is what a frame of no size at no place says.
+local GET = {
+    GetLeft = 0, GetRight = 0, GetTop = 0, GetBottom = 0, GetStringHeight = 12, GetLineHeight = 12,
+    GetNumLines = 1, GetNumPoints = 1, GetEffectiveScale = 1, GetScale = 1, GetFrameStrata = "MEDIUM",
+    GetCursorPosition = 0, GetVerticalScroll = 0, GetHorizontalScroll = 0, GetVerticalScrollRange = 0,
+    GetJustifyH = "LEFT", GetJustifyV = "MIDDLE", GetValueStep = 1,
+    IsMouseOver = false, IsDragging = false, IsMovable = false, IsResizable = false, IsUserPlaced = false,
+    IsMouseEnabled = true, IsForbidden = false, IsProtected = false, IsTruncated = false,
+    IsKeyboardEnabled = false, HasFocus = false, IsMouseMotionFocus = false, IsClampedToScreen = true,
+    CanChangeAttribute = true, IsPlaying = false, IsDone = true,
+}
+-- four of one number: a rectangle of no size, or a color nobody reads (r, g, b, a). Built,
+-- not typed, so no color is written outside Colors (the check's rule holds for tests too)
+local function Four(n) return function() return n, n, n, n end end
+local MANY = {
+    GetCenter = function() return 0, 0 end,
+    GetRect = Four(0),
+    GetPoint = function() return "CENTER", UIParent, "CENTER", 0, 0 end,
+    GetFont = function() return "font", 12, "" end,
+    GetTextColor = Four(1),
+    GetVertexColor = Four(1),
+    GetBackdropColor = Four(1),
+    GetBackdropBorderColor = Four(1),
+    GetHitRectInsets = Four(0),
+    GetClampRectInsets = Four(0),
+    GetStringWidth = function(self) return #tostring(self.__text or "") * 7 end,
+    GetUnboundedStringWidth = function(self) return #tostring(self.__text or "") * 7 end,
+    GetWrappedWidth = function(self) return #tostring(self.__text or "") * 7 end,
+    GetFontObject = function(self) return Part(self, "FontObject", "Font") end,
+    GetNormalFontObject = function(self) return Part(self, "FontObject", "Font") end,
+}
+
+-- A method whose name starts with one of these changes how or when a frame is drawn or
+-- takes input. Nothing here tracks that, so it is accepted and does nothing.
+local SETTERS = { "Set", "Clear", "Enable", "Disable", "Register", "Unregister", "Raise", "Lower", "Start", "Stop",
+    "Play", "Pause", "Finish", "Highlight", "Insert", "Lock", "Unlock", "Add", "Remove", "Apply", "Update", "Toggle" }
+local function Nothing() end
+local function IsSetter(k)
+    for _, word in ipairs(SETTERS) do
+        if k:find("^" .. word .. "%u") or k == word then return true end
+    end
+end
+
+local meta = {}
+meta.__index = function(_, k)
+    if type(k) ~= "string" or not k:find("^%u") then return nil end -- a field (frame.obj), not a method
+    if M[k] then return M[k] end
+    if MANY[k] then return MANY[k] end
+    if GET[k] ~= nil then local v = GET[k] return function() return v end end
+    if IsSetter(k) then return Nothing end
+    error("wow_stub: no frame method " .. k .. " (add it to tests/wow_stub.lua on purpose)", 2)
+end
+
+-- Blizzard templates that come with named children the libraries reach by name
+local TEMPLATE_CHILDREN = {
+    UIDropDownMenuTemplate = { Left = "Texture", Middle = "Texture", Right = "Texture", Button = "Button",
+                               Text = "FontString", Icon = "Texture" },
+    UIPanelScrollBarTemplate = { ScrollUpButton = "Button", ScrollDownButton = "Button", ThumbTexture = "Texture" },
+    OptionsSliderTemplate = { Text = "FontString", Low = "FontString", High = "FontString" },
+}
+
+local frames = WoW.frames
+local made = 0
+function CreateFrame(kind, name, parent, template)
+    made = made + 1
+    local f = setmetatable({ __type = kind, __name = name, __events = {}, __scripts = {}, __children = {},
+                             __shown = true, __order = made, __template = template,
+                             [0] = newproxy() }, meta) -- [0]: the game's own handle, a userdata; AceTab tests for it
+    if parent then
+        f.__parent = parent
+        parent.__children[#parent.__children + 1] = f
+    end
     if name then _G[name] = f end
-    WoW.frames[#WoW.frames + 1] = f
+    frames[#frames + 1] = f
+    for word in tostring(template or ""):gmatch("[^,%s]+") do
+        for suffix, childKind in pairs(TEMPLATE_CHILDREN[word] or {}) do
+            local child = CreateFrame(childKind, name and (name .. suffix) or nil, f)
+            f[suffix] = child
+        end
+    end
     return f
 end
 
@@ -135,6 +397,8 @@ function WoW.FireEvent(name, ...)
     end
 end
 
+-- ---------------------------------------------------------------- the game's own frames and globals
+
 UIParent = CreateFrame("Frame", "UIParent")
 UIParent.__w, UIParent.__h = 1920, 1080
 GameTooltip = CreateFrame("GameTooltip", "GameTooltip")
@@ -144,8 +408,6 @@ ChatFrame1 = DEFAULT_CHAT_FRAME
 SELECTED_CHAT_FRAME = DEFAULT_CHAT_FRAME
 SlashCmdList, hash_SlashCmdList = {}, {}
 UISpecialFrames = {}
-GameFontNormal, GameFontNormalLarge = {}, {}
-C_Timer = { After = function() end }
 C_UIFileAsset = { IsKnownFile = function() return true end } -- LibSharedMedia checks its media files
 C_Sound = { PlaySound = function() end }
 PlaySoundFile = function() end
@@ -153,6 +415,51 @@ PlaySoundFile = function() end
 WoW.muted = {}
 MuteSoundFile = function(id) WoW.muted[id] = true end
 UnmuteSoundFile = function(id) WoW.muted[id] = nil end
+
+-- Globals the libraries and SSF's window read. Each is here because a file read it.
+Minimap = CreateFrame("Minimap", "Minimap", UIParent)
+WorldFrame = CreateFrame("Frame", "WorldFrame")
+ChatFrame1EditBox = CreateFrame("EditBox", "ChatFrame1EditBox", UIParent)
+NUM_CHAT_WINDOWS = 1
+ChatEdit_GetActiveWindow = function() return nil end
+for _, name in ipairs({ "GameFontNormal", "GameFontNormalLarge", "GameFontNormalSmall", "GameFontHighlight",
+    "GameFontHighlightSmall", "GameFontHighlightLarge", "GameFontDisable", "GameFontDisableSmall",
+    "GameFontWhite", "ChatFontNormal" }) do
+    _G[name] = CreateFrame("Font", name)
+end
+-- the bag bar's buttons, each with the game's own stack number on it (the ItemButton's Count)
+local function BagButton(name)
+    local button = CreateFrame("Button", name, UIParent)
+    button.Count = CreateFrame("FontString", name .. "Count", button)
+    button.icon = CreateFrame("Texture", name .. "IconTexture", button)
+end
+for i = 0, 3 do BagButton("CharacterBag" .. i .. "Slot") end
+BagButton("CharacterReagentBag0Slot")
+ACCEPT, CANCEL, CLOSE, OKAY, NOT_BOUND = "Accept", "Cancel", "Close", "Okay", "Not Bound"
+IsShiftKeyDown = function() return false end
+IsControlKeyDown = function() return false end
+IsAltKeyDown = function() return false end
+GetCursorPosition = function() return 0, 0 end
+GetScreenWidth = function() return 1920 end
+GetScreenHeight = function() return 1080 end
+PlaySound = function() end
+SOUNDKIT = setmetatable({}, { __index = function() return 1 end })
+GetCVarBool = function() return false end
+CloseSpecialWindows = function() end
+-- macros: WoW.macros names the ones that exist. Both of SSF's do by default, so the window
+-- offers no "Create macros" button; a test empties the table for a new character.
+WoW.macros = { SSF_LT = true, SSF_BoA = true }
+GetMacroIndexByName = function(name) return WoW.macros[name] and 1 or 0 end
+GetNumMacros = function() return 2, 2 end
+MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = 120, 18
+C_Spell = { GetSpellName = function(id) return "Spell " .. id end }
+-- Blizzard's settings panel: AceConfigDialog registers SSF's page in it at enable
+Settings = {
+    GetCategory = function() end,
+    RegisterCanvasLayoutCategory = function(_, name) return { ID = name } end,
+    RegisterCanvasLayoutSubcategory = function(_, _, name) return { ID = name } end,
+    RegisterAddOnCategory = function() end,
+}
 
 -- Player, class, locale
 function UnitClassBase() return "WARLOCK" end
@@ -187,6 +494,8 @@ function SpellIsTargeting() return WoW.targeting == true end
 RAID_CLASS_COLORS = { WARLOCK = { r = 0.53, g = 0.53, b = 0.93 } }
 C_AddOns = { GetAddOnMetadata = function(_, field) return field == "Version" and "test" or nil end }
 
+-- ---------------------------------------------------------------- the bags
+
 -- Bags
 NUM_BAG_SLOTS = 4
 Enum.BagIndex = { Backpack = 0, ReagentBag = 5 }
@@ -196,7 +505,7 @@ local SOUL_FAMILY = 1   -- the soul bag family bit; GetItemFamily(SHARD) answers
 
 local function bagOf(id) return WoW.bags[id] end
 
-function WoW.SetBags(t) WoW.bags = t or {} end
+function WoW.SetBags(t) WoW.bags = t or {} WoW.cursor = nil WoW.Forget() end
 function WoW.SoulBag(slots, items, locked) return { slots = slots, family = SOUL_FAMILY, items = items or {}, locked = locked } end
 function WoW.PlainBag(slots, items, locked) return { slots = slots, family = 0, items = items or {}, locked = locked } end
 
@@ -229,12 +538,108 @@ C_Item = {
         return n
     end,
 }
--- Cursor: PickupContainerItem is recorded in WoW.picks as { bag, slot } pairs, so a test can
--- read the moves a Sorter pass fired; nothing is actually moved in the fake bags.
+-- The cursor, and the server. A pickup with an empty cursor takes hold of the item in
+-- that slot; a pickup while holding asks for the held item to go into that slot (whatever
+-- is there goes back where the held item came from); DeleteCursorItem asks for the held
+-- item to be deleted. As in the game, asking empties the cursor at once but the bags do
+-- not change yet: they still show the item where it was until the server confirms, which
+-- here is WoW.Settle(). Settle applies everything asked for, in order, then sends the bag
+-- events the game sends and runs the timers they start (the bag bucket). Every pickup is
+-- also recorded in WoW.picks, so a test can read what SSF asked for without settling. A
+-- locked slot gives nothing and takes nothing.
 WoW.picks = {}
-C_Container.PickupContainerItem = function(bag, slot) WoW.picks[#WoW.picks + 1] = { bag, slot } end
-ClearCursor = function() end
-GetCursorInfo = function() return nil end
-DeleteCursorItem = function() end
+WoW.deleted = {}
+local pending = {}
+function WoW.Forget() pending = {} end -- nothing asked for is still waiting
+C_Container.PickupContainerItem = function(bag, slot)
+    WoW.picks[#WoW.picks + 1] = { bag, slot }
+    local b = bagOf(bag)
+    if not b or (b.locked and b.locked[slot]) then return end
+    b.items = b.items or {}
+    local held = WoW.cursor
+    if not held then
+        if b.items[slot] then WoW.cursor = { bag = bag, slot = slot, item = b.items[slot] } end
+        return
+    end
+    pending[#pending + 1] = { held = held, bag = bag, slot = slot }
+    WoW.cursor = nil
+end
+ClearCursor = function() WoW.cursor = nil end
+GetCursorInfo = function()
+    if WoW.cursor then return "item", WoW.cursor.item end
+    return nil
+end
+DeleteCursorItem = function()
+    local held = WoW.cursor
+    if not held then return end
+    pending[#pending + 1] = { held = held, delete = true }
+    WoW.deleted[#WoW.deleted + 1] = held
+    WoW.cursor = nil
+end
+function WoW.Settle()
+    local asked = pending
+    pending = {}
+    local touched = {}
+    for _, ask in ipairs(asked) do
+        local from = bagOf(ask.held.bag)
+        touched[ask.held.bag] = true
+        if ask.delete then
+            from.items[ask.held.slot] = nil
+        else
+            local to = bagOf(ask.bag)
+            touched[ask.bag] = true
+            from.items[ask.held.slot], to.items[ask.slot] = to.items[ask.slot], from.items[ask.held.slot]
+        end
+    end
+    for bag in pairs(touched) do WoW.FireEvent("BAG_UPDATE", bag) end
+    if next(touched) then WoW.FireEvent("BAG_UPDATE_DELAYED") end
+    WoW.RunTimers()
+end
+
+-- ---------------------------------------------------------------- the list of controls
+
+local function Clean(text)
+    text = tostring(text):gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", ""):gsub("|T.-|t", ""):gsub("\n", " / ")
+    return (text:gsub("^%s+", ""):gsub("%s+$", ""))
+end
+
+-- greyed: the nearest frame up the tree that was disabled (a text has no state of its own)
+local function Enabled(f)
+    while f do
+        if f.__enabled == false then return false end
+        f = f.__parent
+    end
+    return true
+end
+
+function WoW.Controls(root, rank)
+    local out = {}
+    local function walk(f, depth, place)
+        place = rank and rank(f) or place
+        local text = f.__text
+        if text ~= nil and Clean(text) ~= "" then
+            -- a button's label is the button, not the text inside it
+            local owner = f.__type == "FontString" and f.__parent and f.__parent.__parts
+                and f.__parent.__parts.FontString == f and f.__parent or f
+            out[#out + 1] = { kind = owner.__type, text = Clean(text), shown = f:IsVisible(),
+                              enabled = Enabled(f), depth = depth, order = f.__order, place = place }
+        elseif f.__type == "Button" and f.__scripts.OnClick
+            and not (f.__parts and f.__parts.FontString and f.__parts.FontString.__text) then
+            -- a button with a click and no text (a close X, an icon): named by its template
+            -- or its art, which is all it has
+            local normal = f.__parts and f.__parts.Normal
+            out[#out + 1] = { kind = "Button", shown = f:IsVisible(), enabled = Enabled(f), depth = depth,
+                              order = f.__order, place = place, template = f.__template,
+                              art = normal and normal.__texture }
+        end
+        for _, child in ipairs(f.__children) do walk(child, depth + 1, place) end
+    end
+    walk(root, 0, 0)
+    table.sort(out, function(a, b)
+        if a.place ~= b.place then return a.place < b.place end
+        return a.order < b.order
+    end)
+    return out
+end
 
 return WoW

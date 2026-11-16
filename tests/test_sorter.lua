@@ -1,13 +1,15 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_sorter: TopFirst and the moves one pass plans from a snapshot, read back from the
--- stub's record of PickupContainerItem calls (pairs: source, then target).
--- Saves:   profile.soulsortLegacy, soulsortReverse, for the test at hand.
--- Exceptions: reads, seeds and resets Sorter.reruns, the module's private leftover counter,
---          and Sorter.noted, its note that a pass was asked for in combat, to prove a rerun
---          or a noted pass is pending or forgotten; nothing public exposes them, and a
---          test is the one place allowed to look. Calls Sorter:OnCombatEnd, the handler
---          for the end of combat, since the runner enables no module.
+-- test_sorter: TopFirst, the moves one pass plans from a snapshot (read back from the
+-- stub's record of PickupContainerItem calls, pairs: source, then target), and where the
+-- shards are once the server confirms those moves (WoW.Settle). The end of a fight is the
+-- game's own event (PLAYER_REGEN_ENABLED), which reaches Sorter the way it does in game.
+-- Saves:   profile.soulsortLegacy, soulsortReverse, paused, for the test at hand.
+-- Exceptions: reads and seeds Sorter.reruns, the module's private leftover counter, and
+--          Sorter.noted, its note that a pass was asked for in combat, to prove a rerun or
+--          a noted pass is pending or forgotten; nothing public exposes them, and a test
+--          is the one place allowed to look. Calls Sorter:OnBagsChanged, its handler for
+--          SSF_BAGS_CHANGED, to land one bag change in a fight without the other listeners.
 -- Touches nothing else.
 
 local SHARD = SSF.SHARD_ITEM_ID
@@ -21,6 +23,21 @@ local function moves()
         out[#out + 1] = s[1] .. ":" .. s[2] .. ">" .. t[1] .. ":" .. t[2]
     end
     return table.concat(out, " ")
+end
+-- where every shard sits, as "bag:slot" in bag then slot order
+local function shards()
+    local out = {}
+    for bag = 0, 5 do
+        local b = WoW.bags[bag]
+        for slot = 1, b and b.slots or 0 do
+            if b.items[slot] == SHARD then out[#out + 1] = bag .. ":" .. slot end
+        end
+    end
+    return table.concat(out, " ")
+end
+local function endFight()
+    WoW.combat = false
+    WoW.FireEvent("PLAYER_REGEN_ENABLED")
 end
 
 test("TopFirst only under SoulSort legacy Normal", function()
@@ -40,6 +57,10 @@ test("SSF Mode: shards in regular bags move into free soul bag slots, last shard
     eq(n, 2, "two moves")
     -- walk order: soul bag 1 bottom first (free 3, 2, 1), then backpack bottom first (9, 2)
     eq(moves(), "0:2>1:3 0:9>1:2", "backpack shards into the soul bag's free slots")
+    eq(shards(), "0:2 0:9 1:4", "asked for, not yet moved: the bags still show them where they were")
+    WoW.Settle()
+    eq(shards(), "1:2 1:3 1:4", "once the server confirms, every shard is in the soul bag")
+    eq(Sorter:Pass(), 0, "and a second pass has nothing left to move")
 end)
 
 test("SSF Mode: nothing moves with no soul bag, or no free soul bag slot", function()
@@ -57,7 +78,10 @@ test("a locked shard is skipped and the pass asks for a rerun", function()
     eq(Sorter:Pass(), 1, "only the unlocked one moves")
     eq(moves(), "0:2>1:4", "slot 9 left alone")
     ok(Sorter.reruns ~= nil, "a rerun is pending")
-    Sorter.reruns = nil
+    WoW.bags[0].locked = nil -- the lock clears, as it does once the game is done with the item
+    WoW.Settle()
+    WoW.Settle()
+    eq(shards(), "1:3 1:4", "the bag change that follows reruns the pass: the leftover shard goes in too")
 end)
 
 test("in combat a pass does nothing and forgets leftovers", function()
@@ -78,21 +102,20 @@ test("a pass asked for in combat runs once when combat ends", function()
     WoW.combat = true
     eq(Sorter:Pass(), 0, "nothing in combat")
     eq(Sorter.noted, true, "but it is noted")
-    WoW.combat = false
-    Sorter:OnCombatEnd()
+    endFight()
     eq(moves(), "0:2>1:4", "the noted pass ran")
     eq(Sorter.noted, nil, "and the note is gone")
+    WoW.Settle()
+    eq(shards(), "1:4", "and the shard is in the soul bag")
     WoW.picks = {}
-    Sorter.reruns = nil
-    Sorter:OnCombatEnd()
+    endFight()
     eq(#WoW.picks, 0, "a second combat end runs nothing")
 end)
 
 test("combat ending with no pass asked for moves nothing", function()
     profile.soulsortLegacy = false
     WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(4) })
-    Sorter.noted = nil
-    Sorter:OnCombatEnd()
+    endFight()
     eq(#WoW.picks, 0, "no press, no move")
 end)
 
@@ -101,9 +124,8 @@ test("a noted pass is dropped when SSF is paused at the end of the fight", funct
     WoW.SetBags({ [0] = plain(16, { [2] = SHARD }), [1] = soul(4) })
     WoW.combat = true
     Sorter:Pass()
-    WoW.combat = false
     profile.paused = true
-    Sorter:OnCombatEnd()
+    endFight()
     eq(#WoW.picks, 0, "paused: nothing moves")
     eq(Sorter.noted, nil, "and the note is dropped, not kept for later")
     profile.paused = false
@@ -118,8 +140,7 @@ test("a leftover follow-up that lands in combat is forgotten, with no note", fun
     eq(Sorter.reruns, nil, "the leftovers are forgotten")
     eq(Sorter.noted, nil, "and nothing is noted: no press asked for it in this fight")
     eq(#WoW.picks, 0, "no pickup")
-    WoW.combat = false
-    Sorter:OnCombatEnd()
+    endFight()
     eq(#WoW.picks, 0, "so nothing runs when the fight ends")
 end)
 
@@ -137,5 +158,8 @@ test("SoulSort legacy Normal: a shard moves to an earlier slot, swapping with an
     WoW.SetBags({ [0] = plain(4, { [1] = 1234, [3] = SHARD }) })
     eq(Sorter:Pass(), 1, "one swap")
     eq(moves(), "0:3>0:1", "shard goes to the top slot, the item takes its place")
+    WoW.Settle()
+    eq(shards(), "0:1", "the shard is at the top")
+    eq(WoW.bags[0].items[3], 1234, "and the item it swapped with is where the shard was")
     profile.soulsortLegacy, profile.soulsortReverse = false, false
 end)

@@ -1,7 +1,8 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share; and the
--- press in combat (it deletes, moves nothing, and a paused press stays silent).
+-- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share; the press
+-- in combat (it deletes, moves nothing, and a paused press stays silent); and what the
+-- bags hold once the server confirms a press (WoW.Settle).
 -- Saves:   profile.paused, maxShards, autoMax, pauseLog, for the test at hand.
 -- Touches nothing else.
 
@@ -53,18 +54,12 @@ test("WhyNot with no count reads the bags", function()
     profile.maxShards = 8
 end)
 
--- The stub's cursor never holds anything; here a pickup puts a shard on it and a delete
--- takes it off, counted. The stub's own functions go back whatever the press does.
+-- One delete press, and how many shards it deleted: the stub's cursor really takes the
+-- shard and really deletes it, and WoW.deleted holds every one that went.
 local function PressCountingDeletes()
-    local held, deletes = false, 0
-    local pickup, info, delete = C_Container.PickupContainerItem, GetCursorInfo, DeleteCursorItem
-    C_Container.PickupContainerItem = function(bag, slot) pickup(bag, slot) held = true end
-    GetCursorInfo = function() if held then return "item", SHARD end end
-    DeleteCursorItem = function() if held then deletes, held = deletes + 1, false end end
-    local okay, err = pcall(Trimmer.Delete, Trimmer)
-    C_Container.PickupContainerItem, GetCursorInfo, DeleteCursorItem = pickup, info, delete
-    assert(okay, err)
-    return deletes
+    local before = #WoW.deleted
+    Trimmer:Delete()
+    return #WoW.deleted - before
 end
 
 test("in combat, over the cap: one press deletes one shard and moves nothing", function()
@@ -87,6 +82,25 @@ test("in combat, over the cap: one press deletes one shard and moves nothing", f
     ok(#WoW.picks > 1, "the same press out of combat does sort, so the line above proves the gate")
     SSF:GetModule("Sorter").reruns = nil
     profile.maxShards = 8
+end)
+
+test("a press over the cap: one shard gone once the server confirms, and the rest sorted", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }), [1] = WoW.SoulBag(4) })
+    profile.paused = false
+    profile.maxShards = 2
+    profile.autoMax = false
+    local Bags = SSF:GetModule("Bags")
+    eq(PressCountingDeletes(), 1, "3 shards, cap 2: one delete")
+    eq(Bags:Count(), 3, "asked for, not yet gone: the bags still show three, as in the game")
+    WoW.Settle()
+    WoW.Settle()
+    eq(Bags:Count(), 2, "the server confirms: two left")
+    local inSoulBag = 0
+    for slot = 1, 4 do
+        if WoW.bags[1].items[slot] == SHARD then inSoulBag = inSoulBag + 1 end
+    end
+    eq(inSoulBag, 2, "and both are in the soul bag: the press sorted what it kept")
+    eq(PressCountingDeletes(), 0, "at the cap now: the next press deletes nothing")
 end)
 
 test("paused in combat: the press is silent; out of combat it prints", function()
