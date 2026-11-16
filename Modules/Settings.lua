@@ -16,7 +16,12 @@
 --          optional echo() -> the whole echo line in place of "name: value" (pause),
 --          optional disabled, and for range: min, max, step }.
 --          Returns gui, cmd -- two entries for Options to place in its args table; a
---          GUI-only setting places gui and drops cmd.
+--          GUI-only setting places gui and drops cmd. cmd.set(info, input, short):
+--          short = true when the player typed a range's number with no key ("/ssf 25",
+--          Options' handler): the range check is still this module's, and a bad value's
+--          usage line comes back in that short form ("Use: /ssf <min>-<max>"). AceConfig's
+--          own set takes (info, value) only: short is SSF's, and only a caller that runs
+--          the command from code passes it.
 --          Settings:ValueWords(key) -> the words a toggle's chat command takes ("off",
 --            "on"), nil for a range or an unknown key: Options' tab completion offers them
 --            after the key.
@@ -42,8 +47,9 @@ local valueWords = {}
 function Settings:ValueWords(key) return valueWords[key] end
 
 -- Reads "on"/"off" (toggle) or a number in range (range) from chat input.
--- Returns the value, or nil and a usage line.
-local function Parse(key, def, input)
+-- Returns the value, or nil and a usage line. short: the player typed the number with no
+-- key ("/ssf 25"), so a range's usage line is in that short form too.
+local function Parse(key, def, input, short)
     if def.kind == "toggle" then
         if input == ON or input == "true" then return true end
         if input == OFF or input == "false" then return false end
@@ -51,6 +57,7 @@ local function Parse(key, def, input)
     end
     local value = tonumber(input)
     if not value or value < def.min or value > def.max then
+        if short then return nil, L["Use: /ssf %d-%d"]:format(def.min, def.max) end
         return nil, L["Use: /ssf %s %d-%d"]:format(key, def.min, def.max)
     end
     return value
@@ -94,10 +101,10 @@ function Settings:Define(key, def)
         name = def.name,
         desc = def.desc,
         get = function() return "" end,
-        set = function(_, input)
+        set = function(_, input, short)
             input = strtrim(input or ""):lower()
             if input == "" then echo() return end
-            local value, usage = Parse(key, def, input)
+            local value, usage = Parse(key, def, input, short)
             if value == nil then SSF:Print(usage) return end
             set(value, "chat")
             echo()

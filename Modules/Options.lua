@@ -37,7 +37,8 @@
 -- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
 -- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
 -- "log", is a second, hidden chat command, so old macros keep working; it is not listed anywhere.
--- A whole number on its own ("/ssf 32") is handed on as "setmax 32".
+-- A whole number on its own ("/ssf 32") goes straight to setmax's own command, marked as
+-- typed in short form (why not through AceConfigCmd: the note in HandleCommand).
 --
 -- Public:  TogglePause() (the pause key binding), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
@@ -607,14 +608,16 @@ local function HandleCommand(input)
         return
     end
     -- a whole number on its own is the cap: "/ssf 32" is "/ssf setmax 32" (a player's ask,
-    -- 2026-11-16). Out of range, the usage line is in the short form the player typed.
+    -- 2026-11-16). It goes to setmax's own command, marked short: Settings checks the range
+    -- and answers a bad value in the short form the player typed.
+    -- ON PURPOSE, not a bypass of AceConfigCmd (a release review flagged it as "Ace first"
+    -- and the owner kept it, 2026-11-16): AceConfigCmd can only dispatch "setmax 32", and
+    -- then has no way to say the player typed the short form, so the usage line would name
+    -- setmax. Calling the setting's own `set` is this file's existing way to run a chat
+    -- command from code (TogglePause does the same for the key binding). Nothing Ace does
+    -- is redone here; the third argument, short, is Settings' documented extension.
     if input:match("^%d+$") then
-        local n = tonumber(input)
-        if n < Cap().MIN or n > Cap().MAX then
-            SSF:Print(L["Use: /ssf %d-%d"]:format(Cap().MIN, Cap().MAX))
-            return
-        end
-        AceConfigCmd:HandleCommand("ssf", APP, "setmax " .. input)
+        Options.table.args.setmax.set(nil, input, true)
         return
     end
     if not IsChatWord(first) and first ~= OLD_LOG_WORD then

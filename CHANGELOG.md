@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.0 (2026-11-16)
+
+- Set your cap with just a number: /ssf 25 does the same as /ssf setmax 25. A number
+  outside 1 to 100 tells you the range and changes nothing.
+
 ## 1.14.0 (2026-11-15)
 
 - SSF can now show an occasional announcement on the left of its window. Tick "Don't

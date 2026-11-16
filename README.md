@@ -2,6 +2,7 @@
 
 ## Features
 
+- Set your cap from chat with just a number: /ssf 25. (1.15.0)
 - News on the left of the window: what's coming next, gone for good once you tick Don't show this again. (1.14.0)
 - Pick where the shard counter sits: Far-left bag or Soul bag. (1.13.0)
 - Help tooltips work on greyed options too: hover anything, available or not, and read what it does. (1.12.0)
@@ -88,6 +89,7 @@ The minimap icon opens and closes the window. Its tooltip always shows the count
 | `/ssf delete` | Delete one shard if over the cap, then move shards |
 | `/ssf pause on/off` | Pause all SSF actions. Naked shows status |
 | `/ssf setmax N` | Set the cap, and turn off Match soul bag size. Naked shows cap |
+| `/ssf N` | Same as `/ssf setmax N` |
 | `/ssf log on/off` | Chat line per deletion. Naked shows status |
 | `/ssf options` | Opens the GUI window (`/ssf settings` does as well) |
 
