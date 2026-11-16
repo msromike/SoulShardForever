@@ -16,6 +16,10 @@
 -- ear (tested by ear against evenly spaced levels). The key is what the dropdown stores;
 -- the volume goes into profile.pauseSoundVolume. (A fifth level, 0.06, was too faint to
 -- be useful and was dropped in 1.8.1.)
+-- A level's number is what players have saved, and Core snaps a saved number that is no
+-- level back to full on every load (Core's Migrate). So changing a level's number sends
+-- every player who picked it to full volume. To retune one, first make Core carry the old
+-- number over to the new one; tests/test_sounds.lua pins the numbers and says the same.
 --
 -- Channel: an LSM file plays on SFX; an own sound kit plays with C_Sound's default
 -- sub-type, as tested in game.
