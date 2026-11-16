@@ -1,8 +1,11 @@
-# Runs the same check as tools/check.py does locally: luacheck, the headless tests, the
-# locale completeness check, the header lint, the architecture map, and the library drift
-# report (information only; it reaches the upstreams over the network). A map that comes
-# out different from the committed one fails the run, because the committed map must
-# always match the code.
+# Runs the same check as tools/check.py does locally (lint, the headless tests on the whole
+# addon, the options window's controls, locales, headers, the house rules, Blizzard's names,
+# the architecture map, and the library drift report, which is information only), then the
+# check's own self-test: tools/selftest.py breaks one thing at a time on purpose and fails
+# unless the check catches each break for the expected reason. A map that comes out
+# different from the committed one fails the run, because the committed map must always
+# match the code. Runs on every push and every pull request, so a contribution is held to
+# the same gate as the owner's own work.
 name: check
 
 on:
@@ -28,3 +31,12 @@ jobs:
 
       - name: The committed ARCHITECTURE.md must match the code
         run: git diff --exit-code -- ARCHITECTURE.md
+
+      - name: The check catches what it is there to catch (self-test)
+        env:
+          LUA: lua5.1
+          LUACHECK: luacheck
+        run: python3 tools/selftest.py
+
+      - name: The self-test left every file as it was
+        run: git diff --exit-code

@@ -109,6 +109,11 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
   Keybindings button "closebutton", and a test card sent the owner looking for Close. When a change to the window is meant, accept the new list with
   `python tools/check.py --accept-window` and read its diff. The list cannot say where a
   control sits or how it looks; that takes the owner's eyes or a screenshot.
+- The check is itself checked. tools/selftest.py breaks one thing at a time on purpose and
+  fails unless the check catches it for the expected reason. Run it after any change to
+  tools/check.py or tests/ (about ten seconds; GitHub runs it on every push). A new step in
+  the check gets a case there in the same commit: a step nobody has seen fail proves
+  nothing.
 - One chunk of work per commit. The owner tests in game after any commit that changes
   behavior; say which tests, each command in its own paste block, and wait.
 - Never tag, bump or publish without the owner's explicit yes.
