@@ -27,6 +27,26 @@ test("a special bag that is not a soul bag is left out", function()
     eq(table.concat(Bags:SortOrder(), ","), "0", "herb bag skipped")
 end)
 
+-- The count and the delete walk the same bags. A shard the game would never put in a herb
+-- bag or a regular-family bag in the reagent slot is placed there anyway, to prove that
+-- neither walk sees what the other does not.
+test("the count, the sort and the delete walk the same bags", function()
+    WoW.SetBags({
+        [0] = plain(16, { [1] = SHARD }),
+        [1] = { slots = 20, family = 8, items = { [1] = SHARD } }, -- a herb bag
+        [2] = soul(20, { [1] = SHARD }),
+        [5] = plain(12, { [1] = SHARD }),                          -- the reagent slot, not a soul pouch
+    })
+    eq(Bags:Count(), 2, "only the backpack's and the soul bag's shards count")
+    local walked = {}
+    Bags:ForEachSlot(function(bag, slot) if Bags:IsShardAt(bag, slot) then walked[#walked + 1] = bag .. ":" .. slot end end)
+    local counted = {}
+    Bags:ForEachShard(function(bag, slot) counted[#counted + 1] = bag .. ":" .. slot end)
+    table.sort(walked)
+    table.sort(counted)
+    eq(table.concat(counted, " "), table.concat(walked, " "), "the shards counted are the shards the sort and the delete can reach")
+end)
+
 test("SoulBags lists equipped soul bags ascending; HasSoulBag follows", function()
     WoW.SetBags({ [0] = plain(16), [1] = soul(20), [3] = plain(8), [5] = soul(24) })
     eq(table.concat(Bags:SoulBags(), ","), "1,5", "ids ascending")

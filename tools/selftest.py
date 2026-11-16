@@ -216,6 +216,8 @@ CASES = [
          '    local AceAddon = LibStub("AceAddon-3.0")\n    AceAddon:InitializeAddon(SSF)\n'
          '    if opts.afterInit then opts.afterInit(SSF) end\n    WoW.loggedIn = true\n    AceAddon:EnableAddon(SSF)',
          "on again"),
+    Case("tests: the count walks bags the delete never reaches again", TESTS, "Modules/Bags.lua",
+         "if shardBags[bag] and WalkSlots(", "if WalkSlots(", "only the backpack's and the soul bag's shards count"),
     Case("tests: an unknown state painted white again", TESTS, "Modules/Colors.lua",
          'return BY_STATE[state] or error("Colors: no color for the state " .. tostring(state), 3)',
          "return BY_STATE[state] or Colors.WHITE", "ForState: an error, not a quiet white"),

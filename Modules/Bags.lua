@@ -3,7 +3,15 @@
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
 -- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
 -- moves or deletes anything. Every other module reads the bags through these methods and
--- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE.
+-- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE. One
+-- exception, once per session: Status waits for the game's BAG_UPDATE_DELAYED at a fresh
+-- login before its login line, because the bags are not filled in until then.
+--
+-- The bags a shard can be in, one definition (SortOrder's list): every soul bag, in any
+-- slot (the reagent slot holds a soul pouch or a reagent bag on Forever, and a shard goes
+-- in it only when it is a soul pouch), and the regular bags 0 to 4. A herb or enchanting
+-- bag, or a reagent bag, takes no shard. The count (ForEachShard, Count), the sort and the
+-- delete all walk exactly these bags, so they can never disagree about a shard.
 --
 -- Sort order (the one order everything uses): every soul bag, then every regular bag from
 -- bag 4 down to the backpack; inside a bag, the bottom slot (highest number) first. With
@@ -132,11 +140,14 @@ function Bags:ForEachSlot(fn, topFirst)
     end
 end
 
--- Walks every shard in every bag, in bag and slot order; fn(bag, slot) returning true stops.
+-- Walks every shard in the bags a shard can be in (SortOrder's bags: the one definition),
+-- in bag and slot order; fn(bag, slot) returning true stops.
 function Bags:ForEachShard(fn)
     local function onSlot(bag, slot) return self:IsShardAt(bag, slot) and fn(bag, slot) end
+    local shardBags = {}
+    for _, bag in ipairs(self:SortOrder()) do shardBags[bag] = true end
     for bag = FIRST_BAG, LAST_BAG do
-        if WalkSlots(bag, 1, self:NumSlots(bag), 1, onSlot) then return end
+        if shardBags[bag] and WalkSlots(bag, 1, self:NumSlots(bag), 1, onSlot) then return end
     end
 end
 
