@@ -47,19 +47,22 @@ function Broker:Refresh()
     self.object.value = count
 end
 
--- OnEnable runs once: SSF never disables and re-enables a module (Core's warlock gate only
--- switches them off at load).
+-- The data object and the icon are made once: LibDataBroker hands out a name only once
+-- and LibDBIcon registers it once, so an OnEnable that runs again (the module switched off
+-- and on) keeps them and only listens again.
 function Broker:OnEnable()
-    self.object = LDB:NewDataObject(NAME, {
-        type = "data source",
-        label = L["SSF"],
-        icon = SSF.ICON,
-        text = "",
-        value = 0,
-        OnClick = function() SSF:GetModule("Window"):Toggle() end, -- open, or close if open
-        OnTooltipShow = ShowTooltip,
-    })
-    DBIcon:Register(NAME, self.object, SSF.db.profile.minimap)
+    if not self.object then
+        self.object = LDB:NewDataObject(NAME, {
+            type = "data source",
+            label = L["SSF"],
+            icon = SSF.ICON,
+            text = "",
+            value = 0,
+            OnClick = function() SSF:GetModule("Window"):Toggle() end, -- open, or close if open
+            OnTooltipShow = ShowTooltip,
+        })
+        DBIcon:Register(NAME, self.object, SSF.db.profile.minimap)
+    end
     self:RegisterMessage("SSF_BAGS_CHANGED", "Refresh")
     self:RegisterMessage("SSF_CAP_CHANGED", "Refresh")
     self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")

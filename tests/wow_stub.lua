@@ -484,7 +484,7 @@ function GetLocale() return "enUS" end
 function GetCurrentRegion() return 1 end
 function GetBuildInfo() return "1.15.0", "70124", "2026-10-01", 16001 end
 function GetCurrentRegionName() return "US" end
-function IsLoggedIn() return true end
+function IsLoggedIn() return WoW.loggedIn == true end -- true from PLAYER_LOGIN on (tests/load.lua)
 GAME_LOCALE = nil
 C_GameRules = { IsGameRuleActive = function() return false end }
 Enum = { GameRule = { HardcoreRuleset = 1, RPRuleset = 2, PvPRuleset = 3 } }

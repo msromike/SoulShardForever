@@ -68,11 +68,14 @@ return function(opts)
     end
     WoW.NS = NS
 
-    local AceAddon = LibStub("AceAddon-3.0")
-    local SSF = AceAddon:GetAddon("SSF")
-    AceAddon:InitializeAddon(SSF)
+    -- AceAddon's own start-up, driven as the game drives it: ADDON_LOADED runs every
+    -- OnInitialize and queues the enables, PLAYER_LOGIN runs them. Both queues end empty,
+    -- so a module's Enable() later in a test really runs its OnEnable, as in the game.
+    local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
+    WoW.FireEvent("ADDON_LOADED", ADDON)
     if opts.afterInit then opts.afterInit(SSF) end
-    AceAddon:EnableAddon(SSF)
+    WoW.loggedIn = true
+    WoW.FireEvent("PLAYER_LOGIN")
     if opts.login then
         for _, event in ipairs(LOGIN_EVENTS) do WoW.FireEvent(event) end
         WoW.RunTimers()

@@ -280,7 +280,8 @@ function Debug:Set(want)
     end
 end
 
--- AceAddon switched the module off (it never does for a warlock): the switch follows
+-- AceAddon switched the module off: the switch follows (AceEvent has already dropped every
+-- registration, and the hooks stay, doing nothing while off; a later Set(true) listens again)
 function Debug:OnDisable()
     on = false
 end

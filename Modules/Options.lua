@@ -686,7 +686,13 @@ function Options:OnEnable()
     self.table = BuildTable()
     AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
     SSF:RegisterChatCommand("ssf", HandleCommand)
-    AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
+    -- once: AceConfigDialog refuses a second entry under the same name, so an OnEnable that
+    -- runs again (the module switched off and on) keeps the first (AceTab keeps its first
+    -- registration by itself)
+    if not self.inBlizOptions then
+        AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
+        self.inBlizOptions = true
+    end
     AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, TabUsage)
     self:RegisterMessage("SSF_HELP_CHANGED", "Rebuild")
 end

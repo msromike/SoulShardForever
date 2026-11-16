@@ -17,8 +17,10 @@
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local DeleteButton = SSF:NewModule("DeleteButton")
 
--- OnEnable runs once: SSF never disables and re-enables a module.
+-- Made once: an OnEnable that runs again (the module switched off and on) keeps the same
+-- named button, so /click SSFDelete never finds a second one.
 function DeleteButton:OnEnable()
+    if self.button then return end
     self.button = CreateFrame("Button", "SSFDelete", UIParent)
     self.button:SetScript("OnClick", function()
         SSF:GetModule("Trimmer"):Delete()

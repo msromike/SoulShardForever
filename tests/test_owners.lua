@@ -127,6 +127,27 @@ test("paused when the fight ends, the noted sort does not run", function()
     eq(#WoW.picks, 0, "and the note is gone: a later fight's end moves nothing either")
 end)
 
+-- Nothing in SSF switches a module off today, but nothing may rely on that: every module
+-- can be switched off and on again with no error and no second frame.
+test("every module can be switched off and on again", function()
+    local button = _G.SSFDelete
+    local names = {}
+    for name in pairs(SSF.modules) do names[#names + 1] = name end
+    table.sort(names)
+    for _, name in ipairs(names) do
+        local module = SSF.modules[name]
+        local frames, errors = #WoW.frames, #WoW.errors
+        module:Disable()
+        module:Enable()
+        WoW.RunTimers()
+        -- IsEnabled only says it was asked to be on; AceAddon's own status says OnEnable ran
+        eq(LibStub("AceAddon-3.0").statuses[module.name], true, name .. ": on again, its OnEnable run")
+        eq(#WoW.frames, frames, name .. ": no frame made a second time")
+        eq(#WoW.errors, errors, name .. ": no error")
+    end
+    ok(_G.SSFDelete == button, "/click SSFDelete still finds the first button")
+end)
+
 test("Colors refuses a state that is not on its scale", function()
     local okay, err = pcall(Colors.ForState, Colors, "starving")
     eq(okay, false, "ForState: an error, not a quiet white")

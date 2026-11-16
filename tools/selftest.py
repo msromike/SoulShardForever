@@ -206,6 +206,16 @@ CASES = [
     Case("tests: the low mark read above the cap before Recompute", TESTS, "Modules/Cap.lua",
          "return math.min(SSF.db.profile.lowMark, self:Get())", "return SSF.db.profile.lowMark",
          "never read above the cap, even before Recompute"),
+    Case("tests: the delete button made again when its module is switched on again", TESTS,
+         "Modules/DeleteButton.lua", "    if self.button then return end\n", "",
+         "DeleteButton: no frame made a second time"),
+    Case("tests: the fake game skips AceAddon's start-up queue again (the loader before A8)", TESTS,
+         "tests/load.lua",
+         '    WoW.FireEvent("ADDON_LOADED", ADDON)\n    if opts.afterInit then opts.afterInit(SSF) end\n'
+         '    WoW.loggedIn = true\n    WoW.FireEvent("PLAYER_LOGIN")',
+         '    local AceAddon = LibStub("AceAddon-3.0")\n    AceAddon:InitializeAddon(SSF)\n'
+         '    if opts.afterInit then opts.afterInit(SSF) end\n    WoW.loggedIn = true\n    AceAddon:EnableAddon(SSF)',
+         "on again"),
     Case("tests: an unknown state painted white again", TESTS, "Modules/Colors.lua",
          'return BY_STATE[state] or error("Colors: no color for the state " .. tostring(state), 3)',
          "return BY_STATE[state] or Colors.WHITE", "ForState: an error, not a quiet white"),
