@@ -59,11 +59,11 @@
 --          SSF_SOUNDS_UNMUTED, SSF_SOUND_PLAYED, SSF_BAGS_CHANGED; PLAYER_ENTERING_WORLD,
 --          PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_CHANNEL_START,
 --          UNIT_SPELLCAST_CHANNEL_STOP.
--- Hooks:   through AceHook (secure hooks, after the original): the addon object's Print
---          and Printf, AceConsole's, to note each line SSF prints. They attach the first
---          time the record is turned on and stay for the session, doing nothing while it
---          is off: a secure hook cannot be taken off again, and hooking afresh at every
---          "on" would stack one more wrapper each time.
+-- Hooks:   through AceHook (secure hooks, after the original): SSF.Print and SSF.Printf
+--          (the addon object's, from AceConsole), to note each line SSF prints. They
+--          attach the first time the record is turned on and stay for the session, doing
+--          nothing while it is off: a secure hook cannot be taken off again, and hooking
+--          afresh at every "on" would stack one more wrapper each time.
 -- Reads:   Bags:Count/ForEachShard, Cap:Get; SSF.VERSION; profile.debugLog.
 -- Saves:   profile.debugLog (every event; Clear).
 -- Touches nothing else.

@@ -32,6 +32,9 @@
 --          "inline" and "tooltip"); AceConfigDialog treats anything but "tooltip" as no
 --          tooltip, and AceConfigRegistry only checks for a string. A registry that
 --          validates the value as an enum rejects the whole table: no window, no /ssf.
+-- Acts on: SetScript on a frame Help did not create: the wrapper a widget hands KeepHover
+--          (the widget's own frame, made in its constructor). Its OnEnter and OnLeave are
+--          replaced with ones that fire the widget's callbacks.
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")

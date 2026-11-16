@@ -72,7 +72,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
       <Name>: what this file does, as the first paragraph (ARCHITECTURE.md reads it)
       Public:     methods other files may call, with their arguments and returns
       Listens:    events and SSF_* messages it handles
-      Hooks:      what it hooks, through AceHook, and when the hook attaches
+      Hooks:      what it hooks, through AceHook, and when the hook attaches. Each hook is
+                  written Owner.Method or Owner's OnScript; the check reads those two
+                  forms and holds them to the code both ways
       Sends:      SSF_* messages it sends and their payload
       Lib internals: library fields it reads past the public API, and what breaks
       Game internals: what it reads off Blizzard's own frames past the documented API
@@ -81,7 +83,8 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
       Saves:      which profile keys it writes
       Acts on:    what it does to the game beyond its own frames and the profile: items
                   moved or deleted, macros made, sounds muted or played, a Blizzard frame
-                  opened or drawn on, a global name set, a table handed to a library
+                  opened or drawn on, a global name set, a table handed to a library, a
+                  script set (SetScript) on a frame the file did not create
       Exceptions: anything that breaks Rule 1 or 2 on purpose, and why
       Then the line "Touches nothing else."
 

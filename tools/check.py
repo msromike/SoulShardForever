@@ -10,7 +10,9 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), open
         docs read it by name), lint every file header that carries the
         contract (Core, the modules, the widgets, the locale registrar, the tests) against
         the template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
-        Hooks, the modules called, the profile keys touched and Saves) against the code,
+        the modules called, the profile keys touched and Saves) against the code,
+        hold Hooks to the hooks the code makes, both ways, allow a raw hook only one at a
+        time under Exceptions, and flag a script set on a frame the file did not create,
         compare the toc with the files on disk both ways, spelling and case included,
         hold Bindings.xml to the frames, methods and labels it uses,
         count the documented exceptions and the Lib internals fields in the headers against
@@ -20,7 +22,7 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), open
         check that Public is the truth (every use of another module names something that
         module defines and lists under Public, every name under Public is defined, the
         tests' stand-in modules included),
-        apply the rules luacheck cannot see (no raw hooks, every widget type used, the
+        apply the rules luacheck cannot see (every widget type used, the
         shard id only in Core, every message listened for is sent, no constant typed in
         two files), check every Blizzard name the code uses against the client's own UI
         source (no deprecated shim, every C_ call in the API docs), regenerate
@@ -717,7 +719,6 @@ GAME_EVENT_RE = re.compile(r"\b(?!SSF_)[A-Z]+(?:_[A-Z]+)+\b")
 GETMODULE_RE = re.compile(r'GetModule\(\s*"(\w+)"\s*\)')
 PROFILE_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\s*(?:--.*)?$", re.M)
 PROFILE_SUB_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\.(\w+)\s*(?:--.*)?$", re.M)
-HOOK_RE = re.compile(r':(?:Secure|Raw)?Hook(?:Script)?\(\s*[^,()]+,\s*"(\w+)"')
 PROFILE_KEY_IN_HEADER_RE = re.compile(r"\bprofile\.(\w+)")
 
 
@@ -761,8 +762,8 @@ def profile_refs(text):
 
 def check_header_truth():
     """Every claim a header makes that code can verify: Listens names exactly the messages
-    and events the file registers; Sends names exactly the messages it sends; every method
-    hooked on an object (HOOK_RE: a target, then the quoted name) is named under Hooks; every
+    and events the file registers; Sends names exactly the messages it sends (Hooks has its
+    own step, check_hooks); every
     module it calls is named under Reads, and every profile key it touches under Reads or
     Saves (a mention elsewhere in the header's prose is not a claim), and no module Reads
     names is one the code never calls; every
@@ -807,12 +808,6 @@ def check_header_truth():
             problems.append(f"Sends names {m}, the code never sends it")
         for m in sorted(code_sends - hdr_sends):
             problems.append(f"the code sends {m}, Sends does not name it")
-
-        # Hooks: every method hooked on an object, named under Hooks
-        hooks = fields.get("Hooks", "")
-        for name in sorted(set(HOOK_RE.findall(text))):
-            if not word_in(name, hooks):
-                problems.append(f"the code hooks {name}, Hooks does not name it")
 
         # modules it calls: named under Reads (a mention in the header's prose is not a claim)
         reads_field = fields.get("Reads", "")
@@ -1175,6 +1170,142 @@ def check_acts_on():
                 print(f"   {rel}: Acts on names {word}, the code never does it")
                 ok = False
     print(f"   {count} acts named, " + ("ok" if ok else "FAILED"))
+    return ok
+
+
+# ---------------------------------------------------------------- hooks and scripts
+
+HOOK_START_RE = re.compile(r"(?:(?<![\w.:])(hooksecurefunc)|:((?:Secure|Raw)?Hook(?:Script)?))\(")
+HOOK_ARG1_RE = re.compile(r"\s*([^,()]+?)\s*[,)]")
+HOOK_ARG2_RE = re.compile(r'\s*"(\w+)"')
+# how a Hooks field names a hook: Owner.Method (AceConfigDialog.Open) or Owner's Script
+# (MacroFrame's OnHide). `AceConfigDialog.tooltip's OnShow` names OnShow, not tooltip.
+HOOK_CLAIM_RE = re.compile(r"\.(\w+)\b(?!'s)|\w's\s+(\w+)")
+SETSCRIPT_RE = re.compile(r"((?:\w+\.)*(\w+)):SetScript\(\s*(\"(\w+)\")?")
+
+
+def code_text(rel):
+    """A file's code with every comment blanked and every line kept, so a place in it is a
+    line number in the file."""
+    return "\n".join("" if l.lstrip().startswith("--") else strip_comment(l) for l in read(rel).splitlines())
+
+
+def hooks_made(code):
+    """[(line, the hooked name or None when it cannot be read, the raw call's word or None)]
+    for every hook the code makes. AceHook's forms: Hook(object, "Method", ...),
+    Hook("GlobalFunction", ...), HookScript(frame, "OnScript", ...). Raw: hooksecurefunc in
+    either form, and a frame's own HookScript("OnScript", ...)."""
+    out = []
+    for m in HOOK_START_RE.finditer(code):
+        line = code[: m.start()].count("\n") + 1
+        word = m.group(1) or m.group(2)
+        a1 = HOOK_ARG1_RE.match(code, m.end())
+        if not a1:
+            out.append((line, None, None))
+            continue
+        first = a1.group(1)
+        quoted = re.fullmatch(r'"(\w+)"', first)
+        a2 = HOOK_ARG2_RE.match(code, a1.end()) if code[a1.end() - 1] == "," else None
+        if quoted:
+            raw = word if word in ("hooksecurefunc", "HookScript") else None
+            out.append((line, quoted.group(1), raw))
+        elif a2:
+            out.append((line, a2.group(1), word if word == "hooksecurefunc" else None))
+        else:
+            out.append((line, None, None))
+    return out
+
+
+def frames_made(code):
+    """The names this file gives frames it creates: `name = CreateFrame(`, and `name =
+    Maker(` where Maker is a local function of the file that calls CreateFrame."""
+    lines = code.splitlines()
+    makers = set()
+    for i, line in enumerate(lines):
+        m = re.match(r"(\s*)local function (\w+)\(", line)
+        if not m:
+            continue
+        if re.search(r"\bend\s*$", line):  # a one-line function
+            body = [line]
+        else:
+            body = []
+            for nxt in lines[i + 1:]:
+                e = re.match(r"(\s*)end\b", nxt)
+                if e and e.group(1) == m.group(1):
+                    break
+                body.append(nxt)
+        if any("CreateFrame(" in b for b in body):
+            makers.add(m.group(2))
+    calls = "|".join(["CreateFrame"] + sorted(re.escape(n) for n in makers))
+    return set(re.findall(r"\b(\w+)\s*=\s*(?:" + calls + r")\(", code))
+
+
+def check_hooks():
+    """Hooks is the truth, both ways: every hook the code makes is named under Hooks as
+    Owner.Method or Owner's Script, and every hook written there that way is one the code
+    makes. A raw hook (hooksecurefunc, a frame's own HookScript) is allowed one at a time:
+    Exceptions names the raw call once per hook, and what each one is on. And a script set
+    on a frame the file did not create (SetScript replaces whatever was there) is named
+    under Acts on, with the word SetScript and the script; an Acts on that says SetScript
+    with no such call in the code fails too. "Created" goes by name within the file, not by
+    scope: a second variable of the same name as a created frame passes."""
+    print("== hooks")
+    ok = True
+    count = 0
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        code = code_text(rel)
+        fields = header_fields(rel)
+        problems = []
+
+        def named(word, where):
+            return re.search(r"(?<![A-Za-z])" + re.escape(word) + r"(?![A-Za-z])", where) is not None
+
+        made = hooks_made(code)
+        count += len(made)
+        claims = {a or b for a, b in HOOK_CLAIM_RE.findall(fields.get("Hooks", ""))}
+        claims = {c for c in claims if c[0].isupper()}  # a method or a script, never a field (.tooltip)
+        for line, name, _ in made:
+            if name is None:
+                problems.append(f"{rel}:{line}: cannot read what this hook is on; write its name as a quoted string")
+            elif name not in claims:
+                problems.append(f"{rel}:{line}: the code hooks {name}, Hooks does not name it "
+                                f"(write it as Owner.{name} or Owner's {name})")
+        for name in sorted(claims - {name for _, name, _ in made}):
+            problems.append(f"{rel}: Hooks names {name}, the code never hooks it")
+
+        # raw hooks, one at a time
+        exceptions = fields.get("Exceptions", "")
+        seen = {}
+        for line, name, raw in made:
+            if not raw:
+                continue
+            seen[raw] = seen.get(raw, 0) + 1
+            if len(re.findall(r"\b" + raw + r"\b", exceptions)) < seen[raw] or not named(name, exceptions):
+                problems.append(f"{rel}:{line}: raw hook {raw} on {name}: use AceHook, or name it under "
+                                f"Exceptions ({raw} once per raw hook, and {name})")
+
+        # a script set on a frame this file did not create
+        mine = frames_made(code)
+        acts = fields.get("Acts on", "")
+        foreign = False
+        for m in SETSCRIPT_RE.finditer(code):
+            line = code[: m.start()].count("\n") + 1
+            if m.group(2) in mine:
+                continue
+            foreign = True
+            script = m.group(4)
+            if script is None:
+                problems.append(f"{rel}:{line}: cannot read which script is set on {m.group(1)}; write it as a quoted string")
+            elif not (named("SetScript", acts) and named(script, acts)):
+                problems.append(f"{rel}:{line}: sets {script} on a frame this file did not create ({m.group(1)}); "
+                                f"Acts on does not say SetScript and {script}")
+        if named("SetScript", acts) and not foreign:
+            problems.append(f"{rel}: Acts on names SetScript, the code sets no script on a frame it did not create")
+
+        for p in problems:
+            print(f"   {p}")
+            ok = False
+    print(f"   {count} hooks named, " + ("ok" if ok else "FAILED"))
     return ok
 
 
@@ -1547,8 +1678,7 @@ CONST_RE = re.compile(r'^local\s+([A-Z][A-Z0-9_]*)\s*=\s*(-?\d[\d.]*|"[^"]*"|\{[
 
 
 def check_rules():
-    """No raw hooks (AceHook, or named under Exceptions); every widget type registered is
-    used; the shard id is typed in Core only (the locale files' comments included); every
+    """Every widget type registered is used; the shard id is typed in Core only (the locale files' comments included); every
     message a module listens for is sent by some module; and the same ALL_CAPS local with
     the same literal in two files is one value with two homes (or two things that need two
     names)."""
@@ -1556,14 +1686,6 @@ def check_rules():
     ok = True
     code_files = [f for f in lua_files() if not f.startswith("tests/")]
     texts = {rel: read(rel) for rel in code_files}
-    # raw hooks: AceHook or nothing, unless the header names the raw call (anywhere in it)
-    for rel, text in texts.items():
-        header = "\n".join(header_lines(rel))
-        for m in re.finditer(r"hooksecurefunc\(|:HookScript\(", text):
-            if m.group(0)[:-1] not in header:
-                line = text[: m.start()].count("\n") + 1
-                print(f"   {rel}:{line}: raw hook {m.group(0)[:-1]} (use AceHook, or name it under Exceptions)")
-                ok = False
     # every widget type registered is used somewhere
     used = "\n".join(texts.values())
     for rel, text in texts.items():
@@ -1753,7 +1875,7 @@ def check_map():
 
 def main():
     results = [check_luacheck(), check_tests(), check_window(), check_locales(), check_code_keys(), check_colors(), check_headers(),
-               check_header_truth(), check_toc(), check_bindings(), check_exceptions(), check_acts_on(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
+               check_header_truth(), check_toc(), check_bindings(), check_exceptions(), check_acts_on(), check_hooks(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1

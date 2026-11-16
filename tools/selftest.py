@@ -85,6 +85,7 @@ PUBLIC, HEADERS, ACTS, EXCEPTIONS = (check.check_public_truth, check.check_heade
                                      check.check_acts_on, check.check_exceptions)
 WINDOW, TESTS, TOC, BIND = check.check_window, check.check_tests, check.check_toc, check.check_bindings
 API = check.check_blizzard_api
+HOOKS = check.check_hooks
 
 CASES = [
     # Public is the truth: modules and the addon object
@@ -141,6 +142,36 @@ CASES = [
          "Acts on names CreateMacro, the code never does it"),
     Case("acts: a header loses the library it hands a table to", ACTS, "Modules/Broker.lua",
          "-- Acts on: LibDBIcon: its Register", "-- Acts on: the minimap icon: Register", 'does not say "LibDBIcon"'),
+    # hooks, both ways; raw hooks one at a time; scripts set on a frame the file did not create
+    Case("hooks: a hook the header still names, gone from the code", HOOKS, "Modules/Debug.lua",
+         '            self:SecureHook(SSF, "Printf", "OnPrintf")', "            -- removed",
+         "Hooks names Printf, the code never hooks it"),
+    Case("hooks: a new hook, header silent", HOOKS, "Modules/Bags.lua",
+         APPEND, '\nlocal function Probe() Bags:SecureHook(SSF, "Print", "OnPrint") end\n', "the code hooks Print, Hooks does not name it"),
+    Case("hooks: a global function hooked, read as the function and not its handler", HOOKS, "Modules/Cap.lua",
+         APPEND, '\nlocal function Probe() Cap:SecureHook("UseContainerItem", "OnUse") end\n',
+         "the code hooks UseContainerItem, Hooks does not name it"),
+    Case("hooks: a hook whose name is not written out", HOOKS, "Modules/Cap.lua",
+         APPEND, "\nlocal function Probe(name) Cap:SecureHook(SSF, name, print) end\n", "cannot read what this hook is on"),
+    Case("hooks: a raw hooksecurefunc with no exception", HOOKS, "Modules/Sorter.lua",
+         APPEND, '\nhooksecurefunc("UseContainerItem", print)\n', "raw hook hooksecurefunc on UseContainerItem"),
+    Case("hooks: a frame's own HookScript with no exception", HOOKS, "Modules/Counter.lua",
+         APPEND, '\nlocal function Probe(f) f:HookScript("OnShow", print) end\n', "raw hook HookScript on OnShow"),
+    Case("hooks: a second raw hook behind one excused in the header", HOOKS, "Modules/LowGlow.lua",
+         "-- Touches nothing else.\n",
+         "-- Hooks: _G.UseContainerItem and _G.PickupContainerItem.\n"
+         "-- Exceptions: hooksecurefunc on UseContainerItem, raw because.\n"
+         "-- Touches nothing else.\n\n"
+         'hooksecurefunc("UseContainerItem", print)\nhooksecurefunc("PickupContainerItem", print)\n',
+         "raw hook hooksecurefunc on PickupContainerItem"),
+    Case("hooks: a script set on a frame the file was handed", HOOKS, "Modules/Bags.lua",
+         APPEND, '\nlocal function Probe(frame) frame:SetScript("OnShow", print) end\n',
+         "sets OnShow on a frame this file did not create"),
+    Case("hooks: Help's Acts on no longer owns up to its SetScript", HOOKS, "Modules/Help.lua",
+         "-- Acts on: SetScript on a frame Help", "--          SetScript on a frame Help",
+         "sets OnEnter on a frame this file did not create"),
+    Case("hooks: an Acts on that says SetScript, the calls gone", HOOKS, "Modules/Help.lua",
+         "wrapper:SetScript(", "wrapper:HasScript(", "Acts on names SetScript, the code sets no script", EVERY),
     # the toc and the files on disk
     Case("toc: a file's line dropped from the toc", TOC, "SoulShardForever.toc",
          "Modules\\Counter.lua\n", "", "Modules/Counter.lua is on disk and not in the toc"),
@@ -350,7 +381,7 @@ def main(argv):
     wanted = lambda name: not words or any(w in name.lower() for w in words)
 
     # the check must pass on the tree as it is, or a caught break proves nothing
-    clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("exceptions", EXCEPTIONS),
+    clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("hooks", HOOKS), ("exceptions", EXCEPTIONS),
              ("toc and files", TOC), ("bindings", BIND), ("blizzard api", API), ("window controls", WINDOW),
              ("tests", TESTS)]
     for label, step in clean:
