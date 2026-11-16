@@ -37,6 +37,7 @@
 -- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
 -- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
 -- "log", is a second, hidden chat command, so old macros keep working; it is not listed anywhere.
+-- A whole number on its own ("/ssf 32") is handed on as "setmax 32".
 --
 -- Public:  TogglePause() (the pause key binding), Rebuild();
 --          Options.APP, the AceConfig app name (Window opens the window by it).
@@ -583,7 +584,8 @@ end
 
 -- /ssf: naked opens the window (open only, never a toggle) and prints the pause line, the
 -- status line and a pointer to help. "/ssf help" or "/ssf ?" prints AceConfigCmd's command
--- list. An unknown first word prints one error line, then the list. Anything else goes
+-- list. A whole number on its own sets the cap, as setmax. An unknown first word prints
+-- one error line, then the list. Anything else goes
 -- straight to AceConfigCmd, which parses and dispatches to the table.
 local function HandleCommand(input)
     input = strtrim(input or "")
@@ -602,6 +604,17 @@ local function HandleCommand(input)
     end
     if first == "help" or first == "?" then
         AceConfigCmd:HandleCommand("ssf", APP, "")
+        return
+    end
+    -- a whole number on its own is the cap: "/ssf 32" is "/ssf setmax 32" (a player's ask,
+    -- 2026-11-16). Out of range, the usage line is in the short form the player typed.
+    if input:match("^%d+$") then
+        local n = tonumber(input)
+        if n < Cap().MIN or n > Cap().MAX then
+            SSF:Print(L["Use: /ssf %d-%d"]:format(Cap().MIN, Cap().MAX))
+            return
+        end
+        AceConfigCmd:HandleCommand("ssf", APP, "setmax " .. input)
         return
     end
     if not IsChatWord(first) and first ~= OLD_LOG_WORD then

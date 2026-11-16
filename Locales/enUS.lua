@@ -13,6 +13,7 @@ L["ON"] = true
 L["OFF"] = true
 L["Use: /ssf %s on|off"] = true
 L["Use: /ssf %s %d-%d"] = true
+L["Use: /ssf %d-%d"] = true
 L["Soul Shards: %s"] = true
 L["(in bags: %s)"] = true
 L["%s (cap %s)"] = true
