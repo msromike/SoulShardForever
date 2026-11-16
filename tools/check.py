@@ -1732,6 +1732,9 @@ def constants(code):
     return out
 
 
+COMBAT_HOMES = {"Modules/Combat.lua", "Modules/Debug.lua"}  # who may call the game's two combat functions
+
+
 def check_rules():
     """Every widget type registered is used; the shard id is typed in Core only (the locale files' comments included); every
     message a module listens for is sent by some module; and the same ALL_CAPS local with
@@ -1754,6 +1757,16 @@ def check_rules():
         if rel != "Core.lua" and re.search(r"\b6265\b", text):
             print(f"   {rel}: the shard id is typed here; read SSF.SHARD_ITEM_ID")
             ok = False
+    # "in combat" is asked of Combat: the game's two calls are typed there and nowhere else
+    # (Debug writes both raw answers into its record and decides nothing by them)
+    for rel in code_files:
+        if rel in COMBAT_HOMES:
+            continue
+        for n, code in bare_code(texts[rel]):
+            m = re.search(r"\b(InCombatLockdown|UnitAffectingCombat)\b", blank_strings(code))
+            if m:
+                print(f"   {rel}:{n}: {m.group(1)} is typed here; ask Combat (Locked or InFight)")
+                ok = False
     # a message a module listens for is sent by some module: a misspelt name never arrives
     sent = {m for text in texts.values() for m, _ in SEND_RE.findall(code_lines(text))}
     for rel, text in texts.items():

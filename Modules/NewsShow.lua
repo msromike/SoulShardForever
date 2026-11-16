@@ -19,7 +19,7 @@
 --          toggle: the open panel is filled again), LOADING_SCREEN_DISABLED (once at load,
 --          only while an announcement is owed).
 -- Reads:   NS.news from News\News.lua (the announcement: id, on, title, text);
---          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote/InFight;
+--          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote; Combat:InFight;
 --          Colors:Gold (a paragraph's lead).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
 -- Touches nothing else.
@@ -81,7 +81,7 @@ end
 function NewsShow:Show(auto)
     local news = Current()
     local Window = SSF:GetModule("Window")
-    if not news or self.noteOpen or Window:InFight() then return end
+    if not news or self.noteOpen or SSF:GetModule("Combat"):InFight() then return end
     self.noteOpen = true
     local title, opts = Note(self, news)
     Window:ShowLeftNote(title, opts, auto)

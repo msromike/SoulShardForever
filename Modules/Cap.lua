@@ -24,6 +24,7 @@
 --     arriving late at login), Cap sends SSF_QUIET_ENDED, with learned = true only when a
 --     learn event came first, so a login never counts as learning it.
 --     Deleting is not gated here: Trimmer:WhyNot answers "paused" before it asks State.
+--     IsOver(count): over the cap, the delete gate (Trimmer:WhyNot).
 --     IsFull(count): at or over the cap (Trimmer:WhyNot's "atcap"). The
 --     threshold tests live here and nowhere else; Counter's color, the glow, the chat,
 --     tooltip and broker count and the Delete Shard gate all ask.
@@ -32,7 +33,9 @@
 -- delete.
 --
 -- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark,
---          State(count) -> "paused" | "quiet" | "low" | "ok" | "over", IsFull(count) -> bool,
+--          State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow;
+--          nothing is decided by comparing these words), IsOver(count) -> bool (over the
+--          cap: a press would delete), IsFull(count) -> bool,
 --          IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax
 --          off is the caller's job), Recompute().
 -- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED; LEARNED_SPELL_IN_SKILL_LINE and
@@ -87,9 +90,15 @@ end
 function Cap:State(count)
     if SSF.db.profile.paused then return "paused" end
     if self:IsQuiet() then return "quiet" end
-    if count > self:Get() then return "over" end
+    if self:IsOver(count) then return "over" end
     if count < self:LowMark() then return "low" end
     return "ok"
+end
+
+-- Over the cap: the one test for "a press would delete" (Trimmer:WhyNot asks it, after
+-- pause and quiet). State's "over" is this same test, for the color.
+function Cap:IsOver(count)
+    return count > self:Get()
 end
 
 function Cap:IsFull(count)

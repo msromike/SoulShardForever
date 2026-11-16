@@ -62,7 +62,7 @@
 --          panel's border and the macro boxes').
 -- Reads:   Colors.CODE (macro text), SLATE (a macro box's edge), WHITE (the dividers) and
 --          BLACK (a macro box's fill, the shade); the ActionButtonUseKeyDown CVar (whether the
---          button acts on the press or the release) and InCombatLockdown (in a fight the
+--          button acts on the press or the release) and Combat:Locked (in a fight the
 --          button's command can't be set). Owns no state beyond the shown texts, the
 --          onClick, the onClose, the onTick and its owner frame (AttachTo).
 -- Acts on: its own button's secure action: the slash command onClick returns is set as
@@ -74,6 +74,7 @@ local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's colors (the addon is loaded by the time a widget is made)
 local function Colors() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Colors") end
+local function Combat() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Combat") end
 
 local SIDE_PAD = 14                   -- the panel's inset from its border, top and bottom; the title's and divider's sides too
 local SIDE_TEXT_PAD = 24              -- the text inset from its sides
@@ -442,7 +443,7 @@ local function Constructor()
     -- onClick runs first; out of a fight the command is set fresh on every click (in one it
     -- can't be set, and the note is closed anyway)
     button:SetScript("PreClick", function()
-        if InCombatLockdown() then return end -- attributes are locked in a fight
+        if Combat():Locked() then return end -- attributes are locked in a fight
         local command = widget.onClick and widget.onClick()
         button:SetAttribute("*macrotext1", command or "")
     end)

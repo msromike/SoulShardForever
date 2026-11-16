@@ -36,6 +36,7 @@ Widgets\SSFFrame.lua
 Widgets\SSFCentered.lua
 Core.lua
 Modules\Colors.lua
+Modules\Combat.lua
 Modules\KeyBindings.lua
 Modules\Bags.lua
 Modules\Cap.lua

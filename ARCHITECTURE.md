@@ -20,6 +20,7 @@ Core and modules:
 
 - Core.lua: the addon object, the warlock gate, the saved settings (the AceDB profile, its defaults and the migrations of old values), the Language switch (ApplyLanguage) and the shared constants on the addon object.
 - Modules\Colors.lua: every color SSF uses, and the helpers that paint text with them.
+- Modules\Combat.lua: the two questions SSF asks about a fight, each answered here and nowhere else.
 - Modules\KeyBindings.lua: SSF's two rows in Blizzard's Key Bindings screen (Bindings.xml: SSF_DELETE and SSF_PAUSE), unbound until the player picks keys.
 - Modules\Bags.lua: read-only queries over the player's bags, backpack through the reagent slot (bag 5, where a soul pouch equips on Forever), and the one signal that the bags changed.
 - Modules\Cap.lua: the thresholds, and whether Drain Soul is known (the quiet state).
@@ -127,26 +128,28 @@ on the right and the file on the left breaks; the check fails first.
 | Caller | Uses |
 |---|---|
 | SSFStepperSlider | Colors: BLACK, GOLD; Help: Greyed, KeepHover |
-| SSFSideNote | Colors: BLACK, CODE, SLATE, WHITE |
+| SSFSideNote | Colors: BLACK, CODE, SLATE, WHITE; Combat: Locked |
 | SSFFrame | Colors: BLACK, BLUE, WHITE; SSFSideNote: AttachTo, Close, Layout, Show; Tooltip: Hide, IsShownFor, Show |
 | SSFCentered | Help: Greyed, KeepHover |
 | Core | KeyBindings: ApplyLabels; Sounds: DefaultName, LevelKey, LevelVolume |
 | Bags | SSF: SHARD_ITEM_ID |
 | Cap | Bags: HasSoulBag, SoulBagSlots |
-| Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Sounds: Moving; Trimmer: WhyNot |
-| Trimmer | Bags: Count, LastShard; Cap: Get, IsFull, IsQuiet, State; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: Moving, PlayPause; Status: DeletedText, PausedPressText |
+| Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Combat: Locked; Sounds: Moving; Trimmer: Paused |
+| Sounds | Combat: Locked |
+| Trimmer | Bags: Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: Moving, PlayPause; Status: DeletedText, PausedPressText |
 | DeleteButton | Trimmer: Delete |
 | Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
 | Settings | Colors: OnOff, Value |
 | Options | Bags: HasSoulBag; Cap: Get, IsAuto, MAX, MIN, Recompute, SetManual; Colors: Echo, Gold, OnOff, PaintState, State; Counter: OnSoulBag; Debug: Clear, IsOn, Mark, Set; DebugReport: Open; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define, ValueWords; Sounds: LevelKey, LevelKeys, LevelVolume, PlayPause; Status: CountText, InBagsText, PauseText, PrintStatus; Trimmer: Delete, WhyNot; Window: Open |
 | Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION |
+| Macros | Combat: Locked |
 | MacroGlow | Macros: Names |
 | DeleteHelp | Macros: Body, SpellName |
 | Tooltip | Colors: GOLD, WHITE |
-| Window | Colors: BLACK, Class, Gold; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
-| Welcome | Cap: IsQuiet; Colors: GREEN, Paint; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: InFight, RefreshNote, ShowNote |
-| NewsShow | Colors: Gold; Window: InFight, RefreshLeftNote, ShowLeftNote |
+| Window | Colors: BLACK, Class, Gold; Combat: InFight; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
+| Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: RefreshNote, ShowNote |
+| NewsShow | Colors: Gold; Combat: InFight; Window: RefreshLeftNote, ShowLeftNote |
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
 | LowGlow | Cap: State; Colors: RED; Counter: Refresh |

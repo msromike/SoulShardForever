@@ -1,0 +1,112 @@
+-- Soul Shards Forever (SSF). MIT, see LICENSE.
+--
+-- test_owners: the rules several modules share, each asked of its one owner. Combat's two
+-- questions told apart (the lockdown; in a fight, which starts a moment sooner).
+-- Cap:IsOver, the delete gate. Trimmer:Paused, the pause gate, which Sorter:Pass asks
+-- itself: paused, no pass moves a shard, whoever calls it, and leftovers waiting from
+-- before the pause are dropped. Colors refuses a state that is not on its scale.
+-- Reads:   Combat, Cap, Trimmer, Sorter, Bags, Colors, Window; WoW.combat, WoW.flagged,
+--          WoW.picks, WoW.Settle.
+-- Saves:   profile.paused, autoMax, maxShards, lowMark, for the test at hand.
+-- Touches nothing else.
+
+local SHARD = SSF.SHARD_ITEM_ID
+local Combat = SSF:GetModule("Combat")
+local Cap = SSF:GetModule("Cap")
+local Trimmer = SSF:GetModule("Trimmer")
+local Sorter = SSF:GetModule("Sorter")
+local Colors = SSF:GetModule("Colors")
+local Window = SSF:GetModule("Window")
+local profile = SSF.db.profile
+
+test("Combat: the lockdown and the fight are two questions", function()
+    eq(Combat:Locked(), false, "peace: not locked")
+    eq(Combat:InFight(), false, "peace: not in a fight")
+    WoW.flagged = true
+    eq(Combat:Locked(), false, "the fight just started: the lockdown is not on yet")
+    eq(Combat:InFight(), true, "but it is a fight already")
+    WoW.flagged, WoW.combat = nil, true
+    eq(Combat:Locked(), true, "locked")
+    eq(Combat:InFight(), true, "and in a fight")
+end)
+
+test("the window stays shut from the first moment of a fight", function()
+    if Window.window then Window.window:Hide() end
+    WoW.flagged = true
+    Window:Open()
+    ok(not (Window.window and Window.window.frame:IsShown()), "flagged, not yet locked: no window")
+end)
+
+test("Cap:IsOver is the delete gate, and State's over is the same test", function()
+    profile.paused, profile.autoMax, profile.maxShards, profile.lowMark = false, false, 5, 2
+    eq(Cap:IsOver(5), false, "at the cap: not over")
+    eq(Cap:IsOver(6), true, "one more: over")
+    eq(Cap:State(6), "over", "State agrees")
+    eq(Trimmer:WhyNot(6), nil, "a press would delete")
+    eq(Trimmer:WhyNot(5), "atcap", "at the cap it would not")
+    profile.paused = true
+    eq(Cap:IsOver(6), true, "paused: still over the cap, as a count")
+    eq(Trimmer:WhyNot(6), "paused", "but a press would not delete")
+end)
+
+test("Trimmer:Paused is the pause gate", function()
+    profile.paused = false
+    eq(Trimmer:Paused(), false, "not paused")
+    profile.paused = true
+    eq(Trimmer:Paused(), true, "paused")
+end)
+
+-- a loose shard in the backpack and a free slot in the soul bag: one move waiting
+local function LooseShard()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [3] = SHARD }), [4] = WoW.SoulBag(4) })
+end
+
+test("paused, Sorter:Pass moves nothing, whoever calls it", function()
+    LooseShard()
+    profile.paused = true
+    eq(Sorter:Pass(), 0, "no move fired")
+    eq(#WoW.picks, 0, "nothing was picked up")
+    profile.paused = false
+    eq(Sorter:Pass(), 1, "unpaused, the same call moves the shard")
+end)
+
+test("a pause in the middle of a sort drops the leftovers", function()
+    -- two loose shards, the second still locked by the server: the pass moves one and
+    -- waits for a bag change to move the other
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [3] = SHARD, [5] = SHARD }, { [5] = true }), [4] = WoW.SoulBag(4) })
+    profile.paused = false
+    eq(Sorter:Pass(), 1, "one moved, one left for the follow-up")
+    profile.paused = true
+    WoW.bags[0].locked = {}
+    local before = #WoW.picks
+    WoW.Settle() -- the bags change: the follow-up would run now
+    eq(#WoW.picks, before, "paused in between: the follow-up moves nothing")
+    profile.paused = false
+    before = #WoW.picks
+    WoW.Settle()
+    eq(#WoW.picks, before, "and nothing is left waiting to run after the unpause")
+end)
+
+test("paused when the fight ends, the noted sort does not run", function()
+    LooseShard()
+    profile.paused = false
+    WoW.combat = true
+    eq(Sorter:Pass(), 0, "in combat: noted, nothing moves")
+    profile.paused = true
+    WoW.combat = false
+    WoW.FireEvent("PLAYER_REGEN_ENABLED")
+    eq(#WoW.picks, 0, "the fight ended while paused: nothing moves")
+    profile.paused = false
+    WoW.FireEvent("PLAYER_REGEN_ENABLED")
+    eq(#WoW.picks, 0, "and the note is gone: a later fight's end moves nothing either")
+end)
+
+test("Colors refuses a state that is not on its scale", function()
+    local okay, err = pcall(Colors.ForState, Colors, "starving")
+    eq(okay, false, "ForState: an error, not a quiet white")
+    ok(tostring(err):find("starving", 1, true) ~= nil, "that names the state")
+    eq(pcall(Colors.PaintState, Colors, "starving", "x"), false, "PaintState: the same")
+    for _, state in ipairs({ "paused", "quiet", "over", "low", "ok" }) do
+        ok(pcall(Colors.ForState, Colors, state), state .. " is on the scale")
+    end
+end)

@@ -16,7 +16,8 @@
 -- is silent.
 -- The delete prints no chat line unless the announce option is on.
 --
--- Public:  Delete(); WhyNot(count) -> why a press would not delete, or nil if it would:
+-- Public:  Delete(); Paused() -> bool, the one pause gate (Sorter:Pass asks it too);
+--          WhyNot(count) -> why a press would not delete, or nil if it would:
 --          "paused" (a mode: the only answer while paused, whatever the count), "quiet"
 --          (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap". The window's Delete
 --          Shard button greys on it with the reason under it. No combat reason: a press
@@ -29,8 +30,9 @@
 --          "held", the shard was still on the cursor after the delete) when a press that
 --          decided to delete did not. Debug records all three; the first and last have no
 --          other listener.
--- Reads:   Bags:LastShard/Count, Cap:Get/State/IsFull/IsQuiet, Sorter:TopFirst/Pass,
---          Sounds:PlayPause/Moving, Status:DeletedText/PausedPressText; profile.paused,
+-- Reads:   Bags:LastShard/Count, Cap:Get/IsOver/IsFull/IsQuiet, Sorter:TopFirst/Pass,
+--          Sounds:PlayPause/Moving, Status:DeletedText/PausedPressText, Combat:Locked (a
+--          paused press is silent in combat); profile.paused,
 --          pauseSound, pauseLog, announce.
 -- Acts on: the bags: deletes one shard (ClearCursor, PickupContainerItem puts the shard on
 --          the cursor, DeleteCursorItem deletes it only if the cursor holds a shard, then
@@ -79,20 +81,26 @@ local function TrimOne(count, cap)
     end
 end
 
+-- The one pause gate: while it answers true SSF neither moves nor deletes. Delete and
+-- WhyNot ask it here, and Sorter:Pass asks it itself, so no caller can sort while paused.
+function Trimmer:Paused()
+    return SSF.db.profile.paused and true or false
+end
+
 function Trimmer:WhyNot(count)
-    if SSF.db.profile.paused then return "paused" end
+    if self:Paused() then return "paused" end
     local Cap = SSF:GetModule("Cap")
     if Cap:IsQuiet() then return "quiet" end
     count = count or SSF:GetModule("Bags"):Count()
-    if Cap:State(count) == "over" then return nil end
+    if Cap:IsOver(count) then return nil end
     return Cap:IsFull(count) and "atcap" or "undercap"
 end
 
 function Trimmer:Delete()
     local p = SSF.db.profile
-    if p.paused then -- every paused press out of combat: the sound and the chat line, each if switched on
+    if self:Paused() then -- every paused press out of combat: the sound and the chat line, each if switched on
         self:SendMessage("SSF_DELETE_PRESSED", "paused")
-        if not InCombatLockdown() then
+        if not SSF:GetModule("Combat"):Locked() then
             if p.pauseSound then SSF:GetModule("Sounds"):PlayPause() end
             if p.pauseLog then SSF:Print(SSF:GetModule("Status"):PausedPressText()) end
         end

@@ -26,7 +26,7 @@
 -- Public:  Colors.RED, GREEN, YELLOW, GOLD, WHITE, DIM, ECHO, BLUE, CODE, SLATE, BLACK
 --            -> { r, g, b, hex }
 --          Colors:ForState(state) -> r, g, b, hex for "low" / "ok" / "over" / "paused" /
---            "quiet"
+--            "quiet"; any other state is an error (as in PaintState)
 --          Colors:Paint(color, text) -> text wrapped in the color's escape codes
 --          Colors:PaintState(state, text) -> text in the state's color
 --          Colors:Value(v) -> v in white (a setting's value)
@@ -69,8 +69,14 @@ local WARLOCK = Color(0.53, 0.53, 0.93)
 local BY_STATE = { low = Colors.RED, ok = Colors.GREEN, over = Colors.YELLOW, paused = Colors.WHITE,
     quiet = Colors.WHITE }
 
+-- A state that is not on the scale is a mistake in the code (a new state in Cap with no
+-- color here), so it is an error, never a quiet white: white already means paused or quiet.
+local function OfState(state)
+    return BY_STATE[state] or error("Colors: no color for the state " .. tostring(state), 3)
+end
+
 function Colors:ForState(state)
-    local c = BY_STATE[state] or Colors.WHITE
+    local c = OfState(state)
     return c[1], c[2], c[3], c[4]
 end
 
@@ -79,7 +85,7 @@ function Colors:Paint(color, text)
 end
 
 function Colors:PaintState(state, text)
-    return self:Paint(BY_STATE[state] or Colors.WHITE, text)
+    return self:Paint(OfState(state), text)
 end
 
 function Colors:Value(v) return self:Paint(Colors.WHITE, v) end

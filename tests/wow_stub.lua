@@ -45,6 +45,9 @@
 --                                      one, and the list is in rank order, then the order
 --                                      frames were made
 --          WoW.combat = false          what InCombatLockdown / UnitAffectingCombat answer
+--          WoW.flagged = nil           true: UnitAffectingCombat answers true while
+--                                      InCombatLockdown still answers false (the moment a
+--                                      fight starts, before the lockdown is on)
 --          WoW.channel = nil           the spell name UnitChannelInfo answers
 --          WoW.targeting = nil         true: SpellIsTargeting answers true
 --          WoW.itemCount = nil         a number: what C_Item.GetItemCount answers, in place
@@ -490,7 +493,7 @@ strlenutf8 = function(s) local _, n = s:gsub("[^\128-\193]", "") return n end
 debugprofilestop = function() return os.clock() * 1000 end
 GetAddOnMetadata = function(...) return C_AddOns.GetAddOnMetadata(...) end
 function InCombatLockdown() return WoW.combat end
-function UnitAffectingCombat() return WoW.combat end
+function UnitAffectingCombat() return WoW.combat or WoW.flagged end
 function UnitChannelInfo() return WoW.channel end
 function SpellIsTargeting() return WoW.targeting == true end
 RAID_CLASS_COLORS = { WARLOCK = { r = 0.53, g = 0.53, b = 0.93 } }

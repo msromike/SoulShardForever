@@ -79,7 +79,7 @@ local function CleanStart()
         for k, v in pairs(startFields[name]) do module[k] = v end
     end
     WoW.SetBags(nil)
-    WoW.combat, WoW.channel, WoW.targeting, WoW.itemCount = false, nil, nil, nil
+    WoW.combat, WoW.flagged, WoW.channel, WoW.targeting, WoW.itemCount = false, nil, nil, nil, nil
     WoW.picks, WoW.deleted = {}, {}
     WoW.unknownSpells = {}
     WoW.ClearTimers()

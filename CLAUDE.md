@@ -95,7 +95,8 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   shared state and any module may read it; re-deriving another module's rule from it is
   a violation (ask that module).
 - Before writing any helper, grep the addon for the thing it does. Most helpers already
-  exist: bag queries are in Bags, thresholds in Cap, colors in Colors, chat and tooltip
+  exist: bag queries are in Bags, thresholds in Cap (IsOver is the delete gate), the two
+  combat questions in Combat, the pause gate in Trimmer (Paused), colors in Colors, chat and tooltip
   wording in Status, tooltips in Tooltip, the volume levels in Sounds. ARCHITECTURE.md lists
   the rest.
 - A new job gets a new file, named for the job, with its header written before its code,

@@ -24,7 +24,8 @@
 --          (Blizzard_MacroUI loads on demand), MacroFrame's ChangeTab and SelectMacro pick the tab
 --          and the macro; UIErrorsFrame's AddExternalErrorMessage prints the red line. A Blizzard
 --          rename breaks the "show them" step or the no-free-slot message.
--- Reads:   profile.macroWindowAfterReload; Blizzard's macro API and MacroFrame.
+-- Reads:   Combat:Locked (Create does nothing in combat); profile.macroWindowAfterReload;
+--          Blizzard's macro API and MacroFrame.
 -- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
 -- Acts on: the player's macros (CreateMacro: makes the missing ones, in the character's
 --          slots when they fit, else the account's); Blizzard's macro window
@@ -105,7 +106,7 @@ function Macros:Names()
 end
 
 function Macros:Create()
-    if InCombatLockdown() then return end
+    if SSF:GetModule("Combat"):Locked() then return end
     local missing = Missing()
 
     if #missing == 0 then -- nothing to make (the note's button is greyed out then): show them

@@ -7,9 +7,12 @@
 -- locked are skipped. Nothing moves in combat: a pass asked for in combat forgets any
 -- leftovers and notes that it was asked (a follow-up for leftovers that lands in combat
 -- is forgotten without a note); when combat ends, a noted pass runs once and the
--- note clears (not while paused: Trimmer:WhyNot is asked, and the note is dropped). No
+-- note clears (not while paused: the note is dropped). No
 -- note, nothing runs: SSF only ever moves shards because of a press. A pass out of combat
 -- clears the note too. Every move is silent: the moves go through Sounds:Moving.
+-- Paused, a pass moves nothing, whoever asks for it: Pass asks Trimmer:Paused itself, and
+-- drops any note and any leftovers waiting, so a follow-up never moves a shard after the
+-- player paused.
 --
 -- SoulSort legacy (soulsortLegacy on): SoulSort's sort instead. A shard goes to any earlier
 -- slot in the order, in its own bag too, and the slot may hold another item: that item
@@ -24,7 +27,7 @@
 -- re-running the pass on the next SSF_BAGS_CHANGED, until a pass finds nothing to do or
 -- MAX_RERUNS follow-ups have run.
 --
--- Public:  Pass() -> moves fired; TopFirst() -> true under SoulSort legacy Normal.
+-- Public:  Pass() -> moves fired (0 while paused or in combat); TopFirst() -> true under SoulSort legacy Normal.
 -- Listens: SSF_BAGS_CHANGED (re-run a pass with leftovers); PLAYER_REGEN_ENABLED (combat
 --          ended: run a noted pass).
 -- Sends:   SSF_SORTED (the number of moves, then the moves as a list of { from bag, from
@@ -32,7 +35,8 @@
 --          pass was asked for in combat and was noted; SSF_SORT_RESUMED when combat ended
 --          and the noted pass is about to run (Debug records the last two; no other
 --          listener).
--- Reads:   Bags; Sounds:Moving; Trimmer:WhyNot (paused, when combat ends);
+-- Reads:   Bags; Sounds:Moving; Trimmer:Paused (the pause gate, at every pass and when
+--          combat ends); Combat:Locked (nothing moves in combat);
 --          profile.soulsortLegacy, soulsortReverse.
 -- Acts on: the bags: moves shards (PickupContainerItem on the shard, then on the free soul
 --          bag slot), with ClearCursor before and after each move.
@@ -50,7 +54,11 @@ end
 
 -- Runs one pass. Returns the number of moves fired.
 function Sorter:Pass()
-    if InCombatLockdown() then
+    if SSF:GetModule("Trimmer"):Paused() then -- paused: nothing moves, whoever asks; leftovers are dropped
+        self.reruns, self.noted = nil, nil
+        return 0
+    end
+    if SSF:GetModule("Combat"):Locked() then
         self.reruns = nil
         self.noted = true
         self:SendMessage("SSF_SORT_NOTED")
@@ -115,7 +123,7 @@ end
 -- for by a press during the fight runs when the fight ends.
 function Sorter:OnBagsChanged()
     if not self.reruns then return end
-    if InCombatLockdown() then
+    if SSF:GetModule("Combat"):Locked() then
         self.reruns = nil
         return
     end
@@ -126,7 +134,7 @@ end
 function Sorter:OnCombatEnd()
     if not self.noted then return end
     self.noted = nil
-    if SSF:GetModule("Trimmer"):WhyNot() == "paused" then return end
+    if SSF:GetModule("Trimmer"):Paused() then return end -- Pass would refuse too; this keeps SSF_SORT_RESUMED unsent
     self:SendMessage("SSF_SORT_RESUMED")
     self:Pass()
 end

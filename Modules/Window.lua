@@ -15,7 +15,7 @@
 -- feed lays out at AceConfigDialog's own default and the fit sets both.
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
---          nothing in a fight, see InFight), Toggle() (the minimap icon and broker click),
+--          nothing in a fight, Combat:InFight), Toggle() (the minimap icon and broker click),
 --          Refresh(), Feed() (also by name through a timer), DressWindow(),
 --          ShowNote(title, body, note, opts, auto) (open with a note on the right: Welcome's;
 --          opts as SSFSideNote:Show), ShowLeftNote(title, opts, auto) (open with a note on
@@ -23,8 +23,7 @@
 --          the center of the screen first (a position reset, see Center below), RefreshNote(...) and RefreshLeftNote(...) (the same arguments:
 --          fill that note again while the window is showing, without an open: the note
 --          after a Language change),
---          InFight() (the one combat test the window and the modules that
---          open it share), OpenKeyBindings() (the bottom-right button).
+--          OpenKeyBindings() (the bottom-right button).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after a chat change), SSF_SHARD_DELETED,
@@ -47,7 +46,7 @@
 --          a different shape.
 -- Game internals: the frame template BackdropTemplate, which the title strip behind each
 --          group title is made from.
--- Reads:   Macros:AnyMissing() for the "Create macros" button, Options.APP,
+-- Reads:   Combat:InFight (nothing opens in a fight), Macros:AnyMissing() for the "Create macros" button, Options.APP,
 --          Help:IsOn/Toggle, KeyBindings:Open, Colors:Class/Gold and
 --          Colors.BLACK, Tooltip:Attach, SSF.VERSION, the BINDING_NAME_* labels KeyBindings
 --          sets; profile.window (the saved spot, at Open).
@@ -75,9 +74,8 @@ local function IsShown(self) return self.window ~= nil and self.window.frame:IsS
 local function ClassColor() return SSF:GetModule("Colors"):Class() end
 local function Gold(text) return SSF:GetModule("Colors"):Gold(text) end
 
--- In a fight: the combat lockdown, or already flagged in combat (PLAYER_REGEN_DISABLED fires
--- as the fight starts, before the lockdown itself is on). Welcome asks this too.
-function Window:InFight() return InCombatLockdown() or UnitAffectingCombat("player") end
+-- In a fight (Combat's question for the window): nothing here opens until it is over.
+local function InFight() return SSF:GetModule("Combat"):InFight() end
 
 -- A faint dark strip behind every title (each group title, and the window title in its
 -- header), so the class color reads on any scenery behind the window. One darkness for all.
@@ -116,7 +114,7 @@ function Window:DressWindow()
     -- Welcome, so nothing loops.
     local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
     self.window:SetActionButton(createText, function()
-        if not Window:InFight() then Window:SendMessage("SSF_SHOW_WELCOME") end
+        if not InFight() then Window:SendMessage("SSF_SHOW_WELCOME") end
     end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
     -- SSF's own label, so it follows the Language setting like everything else in the
@@ -265,7 +263,7 @@ function Window:Toggle()
 end
 
 function Window:Open()
-    if self:InFight() then return end -- the window stays shut for the whole fight
+    if InFight() then return end -- the window stays shut for the whole fight
     -- the saved position goes into AceConfigDialog's status table, which Feed hands to the
     -- window; a drag saves it back (OnMoved below)
     local saved, status = SSF.db.profile.window, AceConfigDialog:GetStatusTable(APP)
@@ -316,7 +314,7 @@ end
 
 -- Open the window with a note beside it (SSFFrame:ShowSidePanel). Welcome fills it.
 function Window:ShowNote(titleText, bodyText, noteText, opts, auto)
-    if self:InFight() then return end -- no window in a fight, so no note either
+    if InFight() then return end -- no window in a fight, so no note either
     if auto then Center() end
     self:Open()
     self.window:ShowSidePanel(titleText, bodyText, noteText, opts)
@@ -324,7 +322,7 @@ end
 
 -- Open the window with a note on its left (SSFFrame:ShowLeftPanel). NewsShow fills it.
 function Window:ShowLeftNote(titleText, opts, auto)
-    if self:InFight() then return end -- no window in a fight, so no note either
+    if InFight() then return end -- no window in a fight, so no note either
     if auto then Center() end
     self:Open()
     self.window:ShowLeftPanel(titleText, opts)

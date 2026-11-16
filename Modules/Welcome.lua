@@ -35,7 +35,7 @@
 -- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
 --          button note's "reloads your UI");
 --          Help:IsOn/Toggle,
---          Window:ShowNote/RefreshNote/InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
+--          Window:ShowNote/RefreshNote, Combat:InFight, DeleteHelp:Blocks, Macros:AnyMissing/Create (the note's
 --          button; Create's return is the click's command).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
 --          Soul is learned), and WELCOME_VERSION once the player closes it outside a fight.
@@ -53,8 +53,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 -- changed the note, and it is the last release (Mike, 2026-10-22).
 local WELCOME_VERSION = 11000
 
--- in a fight: Window's one test (the window and the note close together)
-local function InFight() return SSF:GetModule("Window"):InFight() end
+-- in a fight: Combat's question for the window (the window and the note close together)
+local function InFight() return SSF:GetModule("Combat"):InFight() end
 
 -- the note is owed: this version's welcome not yet closed by the player (1.7 saved true;
 -- true, false or nothing all count as older than any version number)

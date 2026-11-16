@@ -52,7 +52,8 @@
 -- Sends:   SSF_SOUNDS_MUTED (kind) and SSF_SOUNDS_UNMUTED (kind), around an fn that is not
 --          heard; SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records all
 --          three; no other listener).
--- Reads:   profile.pauseSoundName, pauseSoundVolume. Owns no state, no frames.
+-- Reads:   Combat:Locked (a delete in combat is not heard); profile.pauseSoundName,
+--          pauseSoundVolume. Owns no state, no frames.
 -- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given;
 --          PlaySoundFile for any other LSM sound), and around a move that is not heard
 --          mutes every item pick-up and put-down sound, then unmutes them (MuteSoundFile,
@@ -139,7 +140,7 @@ end
 
 -- The rule: is a move of this kind heard? See the header.
 local function Heard(kind)
-    return kind == "delete" and not InCombatLockdown()
+    return kind == "delete" and not SSF:GetModule("Combat"):Locked()
 end
 
 function Sounds:Moving(kind, fn)
