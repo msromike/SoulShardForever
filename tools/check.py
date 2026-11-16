@@ -163,10 +163,10 @@ def blizzard_names():
 # functions built into the client that Blizzard's own Lua does not happen to use and its
 # API docs leave out. Each needs a proof from the game, since no file can give one.
 KNOWN_GLOBALS = {
-    "GetMacroIndexByName": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
-    "PlaySoundFile": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
-    "MuteSoundFile": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
-    "UnmuteSoundFile": "in use and working in game; type() asked for on Test Card 19, 2026-11-16",
+    "GetMacroIndexByName": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
+    "PlaySoundFile": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
+    "MuteSoundFile": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
+    "UnmuteSoundFile": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
 }
 REACHES = "tools/blizzard_reaches.txt"
 WOWUI_FOUND = os.path.join(ROOT, "tools", ".wowui_found.txt")
