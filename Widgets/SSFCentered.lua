@@ -84,14 +84,14 @@ end
 -------------------------------------------------------------------------------
 do
     local Type, Version = "SSFCountButton", 6
-    local GAP = 12     -- px between the text and the button
+    local PAIR_GAP = 12 -- px between the text and the button
     local HEIGHT = 36  -- the button: two lines of text
     local ROOM = 400   -- the button's width while measuring, so no line wraps
     local BELOW = 6    -- air under the button, before the first group
 
     -- the text and the button side by side, on one line
     local function PairWidth(self)
-        return (self.label:GetUnboundedStringWidth() or 0) + GAP + (self.inner.frame:GetWidth() or 0)
+        return (self.label:GetUnboundedStringWidth() or 0) + PAIR_GAP + (self.inner.frame:GetWidth() or 0)
     end
 
     -- the text, then the button right after it, the pair centered in the row
@@ -103,7 +103,7 @@ do
         self.label:SetPoint("TOPLEFT", self.frame, "TOPLEFT", math.max(0, (width - PairWidth(self)) / 2),
             -(height - (self.label:GetStringHeight() or 0)) / 2)
         button.frame:ClearAllPoints()
-        button.frame:SetPoint("LEFT", self.label, "RIGHT", GAP, 0)
+        button.frame:SetPoint("LEFT", self.label, "RIGHT", PAIR_GAP, 0)
         self:SetHeight(height + BELOW)
     end
 

@@ -598,6 +598,27 @@ COLOR_CALL_RE = re.compile(rf"(?:Color|ColorTexture|VertexColor|TextColor|Backdr
 COLOR_TABLE_RE = re.compile(rf"\{{\s*{NUM}\s*,\s*{NUM}\s*,\s*{NUM}\s*(?:,\s*{NUM}\s*)?\}}")
 
 
+FAKE_GAME = "tests/wow_stub.lua"
+# a color typed as a keyed table, on one line or over several: { r = 1, g = 0.5, b = 0 }
+COLOR_KEYED_RE = re.compile(rf"\{{[^{{}}]*\br\s*=\s*{NUM}[^{{}}]*\bg\s*=\s*{NUM}[^{{}}]*\bb\s*=\s*{NUM}")
+# a color call whose r, g, b are names or numbers (which names are numbers: number_names)
+COLOR_NAMES_RE = re.compile(r"(?:Color|ColorTexture|VertexColor|TextColor|BackdropColor|BackdropBorderColor)"
+                            r"\(\s*([\w.]+)\s*,\s*([\w.]+)\s*,\s*([\w.]+)")
+
+
+def number_names(code):
+    """The names a file sets to a typed number: `local R = 0.2`, `R = 0.2`, and each name of
+    `local r, g, b = 1, 0.5, 0` whose own value is a number."""
+    names = set()
+    for m in re.finditer(r"^\s*(?:local\s+)?(\w+(?:\s*,\s*\w+)*)\s*=(?!=)\s*(.+?)\s*$", code, re.M):
+        left = [s.strip() for s in m.group(1).split(",")]
+        right = [s.strip() for s in m.group(2).split(",")]
+        for name, value in zip(left, right):
+            if re.fullmatch(NUM, value):
+                names.add(name)
+    return names
+
+
 def known_colors():
     """The colors Colors.lua defines, as (r, g, b) tuples and as the hex Colors derives."""
     triples = {tuple(float(x) for x in m) for m in COLOR_DEF_RE.findall(read(COLORS))}
@@ -620,7 +641,9 @@ def check_colors():
     tests and the shipped docs: no |cRRGGBBAA escape code (Colors:Paint makes them), no hex
     of a color Colors defines; in code lines, no r, g, b that equals one Colors defines, no
     color-setting call with its r, g, b typed as numbers, and no bare table of three or
-    four numbers (a color's shape). An alpha stays the caller's own."""
+    four numbers (a color's shape); nor the same in other clothes: a table with r, g and b
+    keys typed as numbers, or a color call fed names the file itself sets to numbers. An
+    alpha stays the caller's own."""
     print("== colors")
     if not os.path.exists(os.path.join(ROOT, COLORS)):
         print(f"   FAILED: {COLORS} not found")
@@ -653,6 +676,19 @@ def check_colors():
                 report(rel, n, "a color is typed as numbers in a color call; read it from Colors")
             if COLOR_TABLE_RE.search(line):
                 report(rel, n, "a table of three or four numbers: a color belongs in Colors")
+        if not lua:
+            continue
+        # the same color in other clothes, looked for over the whole file's code
+        code = code_text(rel)
+        # (not in the fake game: it states Blizzard's own RAID_CLASS_COLORS, which is keyed so)
+        for m in COLOR_KEYED_RE.finditer(code if rel != FAKE_GAME else ""):
+            report(rel, code[: m.start()].count("\n") + 1, "a table with r, g and b typed as numbers: a color belongs in Colors")
+        numbers = number_names(code)
+        for m in COLOR_NAMES_RE.finditer(code):
+            parts = [m.group(1), m.group(2), m.group(3)]
+            if any(p in numbers for p in parts) and all(p in numbers or re.fullmatch(NUM, p) for p in parts):
+                report(rel, code[: m.start()].count("\n") + 1,
+                       f"a color call takes {', '.join(parts)}, names this file sets to numbers: a color belongs in Colors")
     print("   ok" if ok else "   FAILED")
     return ok
 
@@ -1673,8 +1709,27 @@ def check_public_truth():
 
 # ---------------------------------------------------------------- rules luacheck cannot see
 
-# `local NAME = <literal>`: a number, a string or a table on one line
-CONST_RE = re.compile(r'^local\s+([A-Z][A-Z0-9_]*)\s*=\s*(-?\d[\d.]*|"[^"]*"|\{[^}]*\})\s*(?:--.*)?$', re.M)
+def constants(code):
+    """[(name, value)] for every `local NAME = <literal>` in a file's code (comments already
+    blanked): a number, a string or a table, at any depth of indentation, a table over as
+    many lines as it takes. The value comes back with its whitespace removed, so the same
+    table laid out two ways is one value. An empty table is not a value (it is state to be
+    filled) and is left out."""
+    out = []
+    lines = code.splitlines()
+    i = 0
+    while i < len(lines):
+        m = re.match(r"\s*local\s+([A-Z][A-Z0-9_]*)\s*=\s*(.*?)\s*$", lines[i])
+        if m:
+            name, value = m.groups()
+            while value.startswith("{") and value.count("{") > value.count("}") and i + 1 < len(lines):
+                i += 1
+                value += lines[i].strip()
+            value = re.sub(r"\s+", "", value)
+            if re.fullmatch(r'-?\d[\d.]*|"[^"]*"|\{.+\}', value):
+                out.append((name, value))
+        i += 1
+    return out
 
 
 def check_rules():
@@ -1708,8 +1763,8 @@ def check_rules():
     # one value, one home: the same ALL_CAPS local with the same literal in two files
     homes = {}
     for rel, text in texts.items():
-        for name, value in CONST_RE.findall(code_lines(text)):
-            homes.setdefault((name, re.sub(r"\s+", "", value)), []).append(rel)
+        for name, value in constants(code_text(rel)):
+            homes.setdefault((name, value), []).append(rel)
     for (name, _), files in sorted(homes.items()):
         if len(files) > 1:
             print(f"   {name} is typed in {' and '.join(files)}: one home, or two names if they are two things")

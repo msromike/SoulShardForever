@@ -86,6 +86,7 @@ PUBLIC, HEADERS, ACTS, EXCEPTIONS = (check.check_public_truth, check.check_heade
 WINDOW, TESTS, TOC, BIND = check.check_window, check.check_tests, check.check_toc, check.check_bindings
 API = check.check_blizzard_api
 HOOKS = check.check_hooks
+COLORS, RULES = check.check_colors, check.check_rules
 
 CASES = [
     # Public is the truth: modules and the addon object
@@ -172,6 +173,25 @@ CASES = [
          "sets OnEnter on a frame this file did not create"),
     Case("hooks: an Acts on that says SetScript, the calls gone", HOOKS, "Modules/Help.lua",
          "wrapper:SetScript(", "wrapper:HasScript(", "Acts on names SetScript, the code sets no script", EVERY),
+    # a color in other clothes
+    Case("colors: a color typed as a table with r, g, b keys", COLORS, "Modules/Bags.lua",
+         APPEND, "\nlocal PROBE = { r = 0.2, g = 0.3, b = 0.4 }\n", "a table with r, g and b typed as numbers"),
+    Case("colors: the same table over several lines", COLORS, "Modules/Bags.lua",
+         APPEND, "\nlocal PROBE = {\n    r = 0.2,\n    g = 0.3,\n    b = 0.4,\n}\n", "a table with r, g and b typed as numbers"),
+    Case("colors: a color typed as three locals on one line, then used", COLORS, "Modules/Bags.lua",
+         APPEND, "\nlocal R, G, B = 0.2, 0.3, 0.4\nlocal function Probe(t) t:SetVertexColor(R, G, B) end\n",
+         "names this file sets to numbers"),
+    Case("colors: a color typed as three locals on three lines, then used", COLORS, "Modules/Bags.lua",
+         APPEND, "\nlocal R = 0.2\nlocal G = 0.3\nlocal B = 0.4\nlocal function Probe(t) t:SetTextColor(R, G, B, 1) end\n",
+         "names this file sets to numbers"),
+    # one value, one home
+    Case("rules: a constant another file has, typed again inside a block", RULES, "Modules/Bags.lua",
+         APPEND, "\ndo\n    local VALUE_GAP = 5\nend\n", "VALUE_GAP is typed in"),
+    Case("rules: the same table constant twice, once over several lines", RULES, "Modules/Bags.lua",
+         APPEND, "\ndo\n    local PROBE_SET = {\n        1,\n        2\n    }\nend\ndo\n    local PROBE_SET = { 1, 2 }\nend\n",
+         "PROBE_SET is typed in"),
+    Case("rules: two things with one name and one number in one file", RULES, "Widgets/SSFCentered.lua",
+         "local PAIR_GAP = 12 --", "local GAP = 12 --", "GAP is typed in Widgets/SSFCentered.lua"),
     # the toc and the files on disk
     Case("toc: a file's line dropped from the toc", TOC, "SoulShardForever.toc",
          "Modules\\Counter.lua\n", "", "Modules/Counter.lua is on disk and not in the toc"),
@@ -381,7 +401,7 @@ def main(argv):
     wanted = lambda name: not words or any(w in name.lower() for w in words)
 
     # the check must pass on the tree as it is, or a caught break proves nothing
-    clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("hooks", HOOKS), ("exceptions", EXCEPTIONS),
+    clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("hooks", HOOKS), ("colors", COLORS), ("rules", RULES), ("exceptions", EXCEPTIONS),
              ("toc and files", TOC), ("bindings", BIND), ("blizzard api", API), ("window controls", WINDOW),
              ("tests", TESTS)]
     for label, step in clean:
