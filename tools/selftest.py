@@ -20,7 +20,9 @@ Exit:   0 when every case was caught for the expected reason and every file is a
         counts as a failure: the code moved, and the case must follow it.
 When:   on GitHub on every push and pull request (.github/workflows/check.yml), and
         locally after any change to tools/check.py or tests/. Not part of check.py: it
-        takes longer, and it changes files while it runs.
+        takes longer, and it changes files while it runs. This folder is the one the
+        game loads, so do not /reload in game during the ten seconds it takes: a file
+        is broken on disk for a moment at a time.
 Touches nothing else.
 """
 import contextlib
@@ -81,7 +83,7 @@ def restore(rel):
 
 PUBLIC, HEADERS, ACTS, EXCEPTIONS = (check.check_public_truth, check.check_header_truth,
                                      check.check_acts_on, check.check_exceptions)
-WINDOW, TESTS = check.check_window, check.check_tests
+WINDOW, TESTS, TOC = check.check_window, check.check_tests, check.check_toc
 
 CASES = [
     # Public is the truth: modules and the addon object
@@ -138,6 +140,15 @@ CASES = [
          "Acts on names CreateMacro, the code never does it"),
     Case("acts: a header loses the library it hands a table to", ACTS, "Modules/Broker.lua",
          "-- Acts on: LibDBIcon: its Register", "-- Acts on: the minimap icon: Register", 'does not say "LibDBIcon"'),
+    # the toc and the files on disk
+    Case("toc: a file's line dropped from the toc", TOC, "SoulShardForever.toc",
+         "Modules\\Counter.lua\n", "", "Modules/Counter.lua is on disk and not in the toc"),
+    Case("toc: a line spelled with the wrong case", TOC, "SoulShardForever.toc",
+         "Modules\\Options.lua", "Modules\\options.lua", "no file is spelled exactly that"),
+    Case("toc: a line for a file that does not exist", TOC, "SoulShardForever.toc",
+         "Modules\\LowGlow.lua", "Modules\\LowGlow.lua\nModules\\Ghost.lua", "the toc names Modules\\Ghost.lua"),
+    Case("toc: a library path in embeds.xml spelled with the wrong case", TOC, "embeds.xml",
+         "Libs\\LibStub\\LibStub.lua", "Libs\\Libstub\\LibStub.lua", "embeds.xml names Libs\\Libstub\\LibStub.lua"),
     # the exceptions and Lib internals, counted against CLAUDE.md
     Case("exceptions: a new one appears in a header", EXCEPTIONS, "Modules/LowGlow.lua",
          "-- Touches nothing else.", "-- Exceptions: a raw frame, because.\n-- Touches nothing else.", "lists 0 for LowGlow"),
@@ -280,13 +291,29 @@ def missing_cases():
     return out
 
 
+def new_folder_case():
+    """A Lua file in a folder nothing reads: made, checked, removed. (name, caught, why not)"""
+    folder = os.path.join(check.ROOT, "Extras")
+    path = os.path.join(folder, "Thing.lua")
+    os.makedirs(folder)
+    try:
+        with open(path, "w", encoding="utf-8") as f:
+            f.write("-- a file in a new folder\n")
+        ok, text = run_step(check.check_toc)
+    finally:
+        os.remove(path)
+        os.rmdir(folder)
+    return ("toc: a Lua file in a new folder nothing reads",
+            not ok and "in a place the checks do not read" in text, "the step passed, or not for this reason")
+
+
 def main(argv):
     words = [w.lower() for w in argv]
     wanted = lambda name: not words or any(w in name.lower() for w in words)
 
     # the check must pass on the tree as it is, or a caught break proves nothing
     clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("exceptions", EXCEPTIONS),
-             ("window controls", WINDOW), ("tests", TESTS)]
+             ("toc and files", TOC), ("window controls", WINDOW), ("tests", TESTS)]
     for label, step in clean:
         ok, out = run_step(step)
         if not ok:
@@ -298,7 +325,8 @@ def main(argv):
         if wanted(case.name):
             caught, why = run_case(case)
             results.append((case.name, caught, why))
-    for name, caught, why in (missing_cases() if wanted("missing") else []):
+    extra = (missing_cases() if wanted("missing") else []) + ([new_folder_case()] if wanted("toc: a Lua file in a new folder") else [])
+    for name, caught, why in extra:
         results.append((name, caught, None if caught else why))
 
     bad = 0

@@ -95,6 +95,31 @@ The minimap icon opens and closes the window. Its tooltip always shows the count
 
 Tab autocompletes the SSF commands in chat (try it, I hate typing). `/click SSFDelete` does the same as `/ssf delete` (for keybind addons that can't run slash commands).
 
+## Contributing
+
+Pull requests are welcome. Every push and pull request is checked automatically on
+GitHub, and you can run the same check yourself before you send one.
+
+You need Python 3, Lua 5.1 and luacheck. Then, from the addon's folder:
+
+    python tools/check.py
+
+It takes a few seconds and ends with ALL PASS or CHECK FAILED and the reasons. It lints
+the Lua, runs the tests against the whole addon, opens the settings window outside the
+game and compares it with tests/window_controls.txt, and checks the translations and
+each file's header against its code.
+
+If you change anything under tools/ or tests/, also run:
+
+    python tools/selftest.py
+
+It breaks one thing at a time on purpose and fails unless the check notices.
+
+CLAUDE.md is the coding standard (it is written for the AI sessions that maintain SSF,
+and applies to everyone). ARCHITECTURE.md is a generated map of which file does what.
+A change that alters what players see needs an in-game test by the maintainer before
+it is merged.
+
 ## License
 
 MIT, see [LICENSE](https://github.com/msromike/SoulShardForever/blob/main/LICENSE).

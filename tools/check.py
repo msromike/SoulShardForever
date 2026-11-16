@@ -11,6 +11,7 @@ Job:    run luacheck, run the headless tests (tests/run.lua, when present), open
         contract (Core, the modules, the widgets, the locale registrar, the tests) against
         the template in CLAUDE.md, check every header claim code can verify (Listens, Sends,
         Hooks, the modules called, the profile keys touched and Saves) against the code,
+        compare the toc with the files on disk both ways, spelling and case included,
         count the documented exceptions and the Lib internals fields in the headers against
         the two lists in CLAUDE.md, both ways,
         check that every header's "Acts on" names what the file does to the game (the ACTS
@@ -703,6 +704,74 @@ def check_header_truth():
             ok = False
     print("   ok" if ok else "   FAILED")
     return ok
+
+
+# ---------------------------------------------------------------- the toc and the files on disk
+
+NOT_ADDON_CODE = {"Libs", "tests", "tools", "media", "_ref"}  # folders whose Lua the game never loads from the toc
+
+
+def exact_path(rel):
+    """True when rel exists under the addon with exactly this spelling, case included. The
+    game on Windows forgives case; the packager, Linux and macOS do not."""
+    folder = ROOT
+    for part in rel.split("/"):
+        if not os.path.isdir(folder) or part not in os.listdir(folder):
+            return False
+        folder = os.path.join(folder, part)
+    return True
+
+
+def addon_lua_on_disk():
+    """Every .lua file under the addon that is not a library, a test or a tool, as paths
+    from the root: what the game should be loading."""
+    out = []
+    for folder, dirs, files in os.walk(ROOT):
+        rel_folder = os.path.relpath(folder, ROOT).replace(os.sep, "/")
+        top = rel_folder.split("/")[0]
+        dirs[:] = [d for d in dirs if not d.startswith(".")]
+        if top in NOT_ADDON_CODE:
+            dirs[:] = []
+            continue
+        for fn in files:
+            if fn.endswith(".lua"):
+                out.append(fn if rel_folder == "." else f"{rel_folder}/{fn}")
+    return sorted(out)
+
+
+def check_toc():
+    """The toc and the files on disk say the same, both ways, and the checks see every file
+    the game loads. A toc line names a file that exists, spelled exactly (case included);
+    every Lua file of the addon on disk is on a toc line (one that is not would pass every
+    check and never load); and every one of them is a file the header checks or the locale
+    checks read (a file in a new folder would otherwise load unchecked). embeds.xml's own
+    lines are held to the same spelling rule."""
+    print("== toc and files")
+    problems = []
+    listed = toc_files()
+    for rel in listed:
+        if not exact_path(rel):
+            problems.append(f"the toc names {rel.replace('/', chr(92))}, and no file is spelled exactly that")
+    on_disk = addon_lua_on_disk()
+    listed_lua = {f for f in listed if f.endswith(".lua")}
+    for rel in on_disk:
+        if rel not in listed_lua:
+            problems.append(f"{rel} is on disk and not in the toc: the game never loads it")
+    checked = set(lua_files()) | set(locale_files()) | set(news_files())
+    for rel in on_disk:
+        if rel not in checked:
+            problems.append(f"{rel} is in a place the checks do not read (see lua_files, locale_files, news_files)")
+    for xml in [f for f in listed if f.endswith(".xml")]:
+        if not exact_path(xml):
+            continue
+        for inc in re.findall(r'<(?:Include|Script)\s+file\s*=\s*["\']([^"\']+)["\']', read(xml)):
+            inc = inc.replace("\\", "/")
+            if not exact_path(inc):
+                problems.append(f"{xml} names {inc.replace('/', chr(92))}, and no file is spelled exactly that")
+    for p in problems:
+        print("   " + p)
+    print(f"   {len(listed)} toc lines, {len(on_disk)} Lua files of the addon on disk, " + ("ok" if not problems else "FAILED"))
+    return not problems
 
 
 # ---------------------------------------------------------------- exceptions and lib internals
@@ -1461,7 +1530,7 @@ def check_map():
 
 def main():
     results = [check_luacheck(), check_tests(), check_window(), check_locales(), check_code_keys(), check_colors(), check_headers(),
-               check_header_truth(), check_exceptions(), check_acts_on(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
+               check_header_truth(), check_toc(), check_exceptions(), check_acts_on(), check_public_truth(), check_rules(), check_blizzard_api(), check_map(), check_libs()]
     ok = all(results)
     print("\nALL PASS" if ok else "\nCHECK FAILED")
     return 0 if ok else 1
