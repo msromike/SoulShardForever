@@ -7,9 +7,11 @@
 --            number is written into the saved cap as it changes, so turning AutoMax off
 --            leaves the cap where the player last saw it (no hidden value jumping back:
 --            Mike, 2026-10-20); otherwise the saved cap, clamped to MIN-MAX and whole.
---   The low mark: the saved Low shard mark, read as saved (LowMark) and held under the cap
---     by Recompute. The slider cannot set it higher (SSFStepperSlider's bound, fed the cap
---     by Options), and when the cap drops under it (Match soul bag size, a lower cap)
+--   The low mark: the saved Low shard mark, never above the cap. SetLowMark is its one
+--     setter (Options' slider) and holds it there; LowMark reads it no higher than the
+--     cap, so a module that hears a bag change before Cap does still reads it right. The
+--     slider cannot set it higher either (SSFStepperSlider's bound, fed the cap by
+--     Options), and when the cap drops under it (Match soul bag size, a lower cap)
 --     Recompute writes it down to the cap,
 --     once, where the player sees it move. What the slider shows is what is saved: no
 --     hidden value, nothing comes back by itself when the cap rises (Mike, 2026-10-20).
@@ -32,7 +34,8 @@
 -- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
 -- delete.
 --
--- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark,
+-- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark
+--          (never above the cap), SetLowMark(n) (Options' slider: held between MIN and the cap),
 --          State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow;
 --          nothing is decided by comparing these words), IsOver(count) -> bool (over the
 --          cap: a press would delete), IsFull(count) -> bool,
@@ -44,7 +47,8 @@
 -- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark,
 --          paused.
 -- Saves:   profile.maxShards (SetManual, and Recompute while AutoMax follows a soul bag);
---          profile.lowMark, written down to the cap when the cap drops under it (Recompute).
+--          profile.lowMark (SetLowMark, and written down to the cap when the cap drops under
+--          it, Recompute).
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -79,8 +83,17 @@ function Cap:Get()
     return clamp(SSF.db.profile.maxShards)
 end
 
+-- The low mark is never above the cap. Read through math.min, so a module that hears a
+-- bag change before Recompute has written the saved mark down still reads it right: no
+-- listener depends on the toc putting Cap first. After every Recompute the read and the
+-- saved mark are the same number, so the slider never shows a value other than this.
 function Cap:LowMark()
-    return SSF.db.profile.lowMark
+    return math.min(SSF.db.profile.lowMark, self:Get())
+end
+
+-- The one setter: the mark held between MIN and the cap (Options' slider calls it).
+function Cap:SetLowMark(n)
+    SSF.db.profile.lowMark = math.min(clamp(n), self:Get())
 end
 
 function Cap:IsQuiet()
@@ -114,7 +127,7 @@ function Cap:Recompute()
     local now = self:Get()
     local p = SSF.db.profile
     if self:IsAuto() then p.maxShards = now end -- what the slider shows is what is saved
-    if p.lowMark > now then p.lowMark = now end -- the one invariant, kept here: the mark is written down to the cap
+    p.lowMark = self:LowMark() -- the one invariant, kept here: the mark is written down to the cap
     if now ~= last then
         last = now
         self:SendMessage("SSF_CAP_CHANGED", now)

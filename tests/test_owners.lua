@@ -2,7 +2,8 @@
 --
 -- test_owners: the rules several modules share, each asked of its one owner. Combat's two
 -- questions told apart (the lockdown; in a fight, which starts a moment sooner).
--- Cap:IsOver, the delete gate. Trimmer:Paused, the pause gate, which Sorter:Pass asks
+-- Cap:IsOver, the delete gate. Cap:SetLowMark, the low mark's one setter, and LowMark,
+-- never read above the cap. Trimmer:Paused, the pause gate, which Sorter:Pass asks
 -- itself: paused, no pass moves a shard, whoever calls it, and leftovers waiting from
 -- before the pause are dropped. Colors refuses a state that is not on its scale.
 -- Reads:   Combat, Cap, Trimmer, Sorter, Bags, Colors, Window; WoW.combat, WoW.flagged,
@@ -47,6 +48,31 @@ test("Cap:IsOver is the delete gate, and State's over is the same test", functio
     profile.paused = true
     eq(Cap:IsOver(6), true, "paused: still over the cap, as a count")
     eq(Trimmer:WhyNot(6), "paused", "but a press would not delete")
+end)
+
+test("the low mark has one setter, and is never above the cap", function()
+    profile.paused, profile.autoMax, profile.maxShards = false, false, 10
+    Cap:SetLowMark(15)
+    eq(profile.lowMark, 10, "set above the cap: held at the cap")
+    Cap:SetLowMark(0)
+    eq(profile.lowMark, Cap.MIN, "set under the floor: held at MIN")
+    Cap:SetLowMark(4)
+    eq(profile.lowMark, 4, "in range: as set")
+    -- the cap drops before Cap has heard about it: whoever reads first reads it right
+    profile.lowMark, profile.maxShards = 8, 5
+    eq(Cap:LowMark(), 5, "never read above the cap, even before Recompute")
+    eq(Cap:State(4), "low", "so a count under the cap reads against the right mark")
+    Cap:Recompute()
+    eq(profile.lowMark, 5, "Recompute writes the saved mark down to the same number")
+end)
+
+test("the window's low mark slider goes through Cap", function()
+    profile.autoMax, profile.maxShards, profile.lowMark = false, 10, 4
+    local Registry = LibStub("AceConfigRegistry-3.0")
+    local slider = Registry:GetOptionsTable("SSF", "dialog", "AceConfigDialog-3.0").args.cap.args.lowmark
+    slider.set(nil, 50)
+    eq(profile.lowMark, 10, "a value past the cap is held at the cap")
+    eq(slider.get(), 10, "and read back as saved")
 end)
 
 test("Trimmer:Paused is the pause gate", function()

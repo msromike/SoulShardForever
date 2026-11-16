@@ -141,7 +141,7 @@ on the right and the file on the left breaks; the check fails first.
 | Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
 | Settings | Colors: OnOff, Value |
-| Options | Bags: HasSoulBag; Cap: Get, IsAuto, MAX, MIN, Recompute, SetManual; Colors: Echo, Gold, OnOff, PaintState, State; Counter: OnSoulBag; Debug: Clear, IsOn, Mark, Set; DebugReport: Open; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define, ValueWords; Sounds: LevelKey, LevelKeys, LevelVolume, PlayPause; Status: CountText, InBagsText, PauseText, PrintStatus; Trimmer: Delete, WhyNot; Window: Open |
+| Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Echo, Gold, OnOff, PaintState, State; Counter: OnSoulBag; Debug: Clear, IsOn, Mark, Set; DebugReport: Open; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define, ValueWords; Sounds: LevelKey, LevelKeys, LevelVolume, PlayPause; Status: CountText, InBagsText, PauseText, PrintStatus; Trimmer: Delete, WhyNot; Window: Open |
 | Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION |
 | Macros | Combat: Locked |
 | MacroGlow | Macros: Names |

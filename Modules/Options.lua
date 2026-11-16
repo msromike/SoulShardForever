@@ -48,19 +48,20 @@
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Listens: SSF_HELP_CHANGED (Rebuild: the table captured its tooltip style when built).
 -- Sends:   SSF_OPTIONS_CHANGED (key) from every GUI-only setter; SSF_OPTIONS_REBUILT.
--- Reads:   Help:Apply, Settings:Define/ValueWords, Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute,
+-- Reads:   Help:Apply, Settings:Define/ValueWords,
+--          Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute/LowMark/SetLowMark,
 --          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
 --          Debug:IsOn/Set/Mark/Clear, DebugReport:Open,
 --          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
 --          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
---          pauseLog, autoMax, lowMark, counter, lowGlow, counterColorize, counterSoulBag,
+--          pauseLog, autoMax, counter, lowGlow, counterColorize, counterSoulBag,
 --          counterFont, minimap, announce, soulsortLegacy, soulsortReverse, language.
 -- Saves:   the same keys, each through its own setter: profile.paused, pauseSound,
---          pauseSoundVolume, pauseLog, autoMax (SetManual's apply turns it off), lowMark,
+--          pauseSoundVolume, pauseLog, autoMax (SetManual's apply turns it off),
 --          counter, lowGlow, counterColorize, counterSoulBag, counterFont, minimap (.hide),
---          announce, soulsortLegacy, soulsortReverse, language. The cap itself goes
---          through Cap:SetManual.
+--          announce, soulsortLegacy, soulsortReverse, language. The cap and the low mark
+--          are Cap's: they go through Cap:SetManual and Cap:SetLowMark.
 -- Acts on: the slash command /ssf (AceConsole's RegisterChatCommand).
 -- Touches nothing else.
 
@@ -255,8 +256,8 @@ local function BuildTable()
         order = 3, kind = "range",
         name = L["Low shard mark"],
         min = Cap().MIN, max = Cap().MAX, step = 1,
-        get = function() return SSF.db.profile.lowMark end,
-        apply = function(value) SSF.db.profile.lowMark = value end,
+        get = function() return Cap():LowMark() end,
+        apply = function(value) Cap():SetLowMark(value) end, -- Cap holds it at or under the cap
     })
     lowmarkGui.arg = function() return Cap():Get() end
 
