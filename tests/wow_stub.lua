@@ -101,6 +101,7 @@ strsplit = function(sep, s, n)
     for piece in (s .. sep):gmatch("(.-)" .. sep:gsub("%p", "%%%0")) do out[#out + 1] = piece end
     return unpack(out)
 end
+string.split = strsplit -- the game puts it on every string: ("a\001b"):split("\001") (AceGUI's TreeGroup)
 strjoin = function(sep, ...) return table.concat({ ... }, sep) end
 strmatch, strfind, strsub, strlen = string.match, string.find, string.sub, string.len
 strupper, strlower, format, gsub = string.upper, string.lower, string.format, string.gsub
@@ -366,6 +367,7 @@ local TEMPLATE_CHILDREN = {
                                Text = "FontString", Icon = "Texture" },
     UIPanelScrollBarTemplate = { ScrollUpButton = "Button", ScrollDownButton = "Button", ThumbTexture = "Texture" },
     OptionsSliderTemplate = { Text = "FontString", Low = "FontString", High = "FontString" },
+    UIPanelScrollFrameTemplate = { ScrollBar = "Slider" }, -- AceGUI's MultiLineEditBox (the debug report window)
 }
 
 local frames = WoW.frames

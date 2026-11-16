@@ -2,8 +2,9 @@
 --
 -- test_colors: a color is typed once as r, g, b and the hex its escape code takes is
 -- derived from it, channel by channel; the over-cap yellow is its own color, not the
--- label gold; a state paints in the color the scale names.
--- Reads:   Colors.
+-- label gold; a state paints in the color the scale names, and every state Cap can name
+-- is on the scale.
+-- Reads:   Colors; Modules/Cap.lua and Modules/Colors.lua as text (WoW.root).
 -- Touches nothing else.
 
 local Colors = SSF:GetModule("Colors")
@@ -26,6 +27,28 @@ test("the over-cap yellow is not the label gold", function()
     ok(Colors.YELLOW[4] ~= Colors.GOLD[4], "two colors")
     eq(Colors:Gold("x"), Colors:Paint(Colors.GOLD, "x"), "Gold paints in the label gold")
     eq(Colors:PaintState("over", "x"), Colors:Paint(Colors.YELLOW, "x"), "over paints in the yellow")
+end)
+
+local function Source(rel)
+    local file = assert(io.open(WoW.root .. "/" .. rel))
+    local text = file:read("*a")
+    file:close()
+    return text
+end
+
+-- Colors paints a state it does not know in white, without a word, and white is also what
+-- paused and quiet mean. So a new state in Cap with no line in Colors' scale would look
+-- like "no opinion" for ever. The states are read from Cap's own file, the scale from
+-- Colors' own.
+test("every state Cap:State can return has its line in Colors' scale", function()
+    local body = assert(Source("Modules/Cap.lua"):match("function Cap:State%(.-\nend"), "Cap:State not found")
+    local scale = assert(Source("Modules/Colors.lua"):match("local BY_STATE = (%b{})"), "Colors' scale not found")
+    local states = 0
+    for state in body:gmatch('return%s+"(%w+)"') do
+        states = states + 1
+        ok(scale:find("%f[%w]" .. state .. "%s*=") ~= nil, '"' .. state .. '" has a color')
+    end
+    ok(states >= 2, "states were found in Cap's file")
 end)
 
 test("the state scale", function()

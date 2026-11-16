@@ -287,6 +287,34 @@ CASES = [
          '"BAG_UPDATE"', '"BAG_UPDATED"', "the bag change that follows reruns the pass"),
     Case("tests: SSF calls a frame method the game does not have", TESTS, "Modules/Counter.lua",
          "function Counter:OnEnable()", "function Counter:OnEnable()\n    UIParent:NoSuchMethod()", "no frame method NoSuchMethod"),
+    # the tests of Settings, the options table, /ssf, Tab, Help, Welcome, the window's spot
+    Case("tests: a chat setting's usage line names the wrong thing", TESTS, "Modules/Settings.lua",
+         'L["Use: /ssf %s on|off"]:format(key)', 'L["Use: /ssf %s on|off"]:format(def.name)', "the usage line names the key"),
+    Case("tests: a toggle no longer tells Tab its value words", TESTS, "Modules/Settings.lua",
+         "        valueWords[key] = VALUE_WORDS", "        -- removed", "the usage line offers off and on"),
+    # (the window's own title styling errors on the tree AceConfigDialog then builds, as the
+    # addon starts, before test_options can say "cap is inline")
+    Case("tests: an options group that is not inline", TESTS, "Modules/Options.lua",
+         'type = "group", inline = true, order = 10,', 'type = "group", inline = false, order = 10,',
+         "in function 'StyleGroupTitles'"),
+    Case("tests: a fifth answer from WhyNot with no text on the button", TESTS, "Modules/Trimmer.lua",
+         'and "atcap" or "undercap"', 'and "atcap" or "nearcap"', "the Delete Shard button has a text for every answer"),
+    Case("tests: the old word announce shows up in the command list", TESTS, "Modules/Options.lua",
+         "announceOld.cmdHidden = true", "announceOld.cmdHidden = false", "announce is not listed"),
+    Case("tests: /ssf debug takes words after on", TESTS, "Modules/Options.lua",
+         'if (word == "on" or word == "off") and rest == "" then', 'if (word == "on" or word == "off") then',
+         "debug on now: the usage line"),
+    Case("tests: help mode gives a tooltip to an option with no help line", TESTS, "Modules/Help.lua",
+         'entry.descStyle = entry.desc and style or "hidden"', "entry.descStyle = style", "no help line: still hidden"),
+    Case("tests: a fight that closes the welcome settles it", TESTS, "Modules/Welcome.lua",
+         "                if InFight() then return end -- a fight closed it: still owed", "", "and the note is still owed"),
+    Case("tests: the saved spot is used on another screen size", TESTS, "Modules/Window.lua",
+         "math.abs(saved.width - w) < 1 and", "math.abs(saved.width - w) < 10000 and", "another screen size: centered"),
+    Case("tests: a new state in Cap with no color", TESTS, "Modules/Cap.lua",
+         'if count < self:LowMark() then return "low" end', 'if count < self:LowMark() then return "starving" end',
+         '"starving" has a color'),
+    Case("tests: a volume level retuned under players' saved numbers", TESTS, "Modules/Sounds.lua",
+         '{ key = "quiet", volume = 0.12 }', '{ key = "quiet", volume = 0.1 }', "quiet is the number saved for it"),
 ]
 
 

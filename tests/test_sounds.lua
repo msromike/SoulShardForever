@@ -2,7 +2,8 @@
 --
 -- test_sounds: Moving, the one rule for whether a shard move is heard. A sort is never
 -- heard; a delete is heard out of combat and not in it; and whatever the moves do, every
--- sound muted for them is back on afterwards, even when a move throws.
+-- sound muted for them is back on afterwards, even when a move throws. And the volume
+-- levels' numbers, pinned, because players' saved volumes are those numbers.
 -- Touches nothing else.
 
 local Sounds = SSF:GetModule("Sounds")
@@ -46,6 +47,24 @@ test("a move that throws still leaves every sound back on", function()
     eq(okay, false, "the error is not swallowed")
     ok(tostring(err):find("the move broke", 1, true) == 1, "and it is the move's own error, first")
     eq(mutedNow(), 0, "every sound is back on")
+end)
+
+-- WHY THIS IS PINNED: the profile saves the pause volume as the level's number, not its
+-- key (profile.pauseSoundVolume), and Core snaps a saved number that is no level back to
+-- full on every load. So changing a level's number below sends every player who picked
+-- that level to full volume at their next login. To retune a level: first make Core
+-- carry the old saved number over to the new one, then change the number here.
+test("the volume levels are pinned to the numbers players have saved", function()
+    local saved = { full = 1, loud = 0.5, medium = 0.25, quiet = 0.12 }
+    local keys = Sounds:LevelKeys()
+    eq(table.concat(keys, " "), "full loud medium quiet", "the levels, loudest first")
+    for _, key in ipairs(keys) do
+        eq(Sounds:LevelVolume(key), saved[key], key .. " is the number saved for it (see the note above this test)")
+        eq(Sounds:LevelKey(saved[key]), key, key .. " is found again from its saved number")
+        eq(Sounds:IsLevel(saved[key]), true, key .. "'s number is a level")
+    end
+    eq(Sounds:IsLevel(0.06), false, "a number that is no level (the dropped Faint)")
+    eq(Sounds:LevelVolume(Sounds:LevelKey(0.06)), 1, "goes to full, which is what Core does to it at load")
 end)
 
 test("on a client without the mute functions the moves just run", function()
