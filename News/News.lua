@@ -23,11 +23,11 @@
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The first announcement: a short roadmap, in Mike's words (2026-11-15). It ships switched
--- on and does not wait for either beta.
+-- The first announcement: a short roadmap, in Mike's words (2026-11-15). Shipped switched
+-- on in 1.14.0 and 1.15.0; switched off in 1.15.1 (Mike, 2026-11-16).
 NS.news = {
     id = 11400,
-    on = true,
+    on = false,
     title = L["Coming soon to SSF"],
     text = {
         { lead = L["Two things you've asked for are on the way."], blank = true },

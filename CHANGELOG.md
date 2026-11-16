@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.1 (2026-11-16)
+
+- The "Coming soon to SSF" announcement is switched off. It no longer opens the window
+  when you log in.
+
 ## 1.15.0 (2026-11-16)
 
 - Set your cap with just a number: /ssf 25 does the same as /ssf setmax 25. A number
