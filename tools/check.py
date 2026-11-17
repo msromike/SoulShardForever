@@ -1617,7 +1617,6 @@ ACTS = [
     ("UnmuteSoundFile", r"\bUnmuteSoundFile\b", "unmutes a game sound"),
     ("PlaySoundFile", r"\bPlaySoundFile\b", "plays a sound file"),
     ("PlaySound", r"\bPlaySound\b", "plays a sound"),
-    ("StopSound", r"\bStopSound\b", "stops a sound"),
     ("ShowMacroFrame", r"\bShowMacroFrame\b", "opens Blizzard's macro window"),
     ("MacroFrame", r"\bMacroFrame\s*[.:]", "reaches into Blizzard's macro window"),
     ("UIErrorsFrame", r"\bUIErrorsFrame\s*:", "puts a line in the game's red error text"),

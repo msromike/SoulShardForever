@@ -13,9 +13,6 @@
 -- Volume: SSF's own sounds play through their sound kit with C_Sound.PlaySound, which
 -- takes a per-play volume (Forever's volumeOverride, tested in game). A sound another
 -- addon registered is a file only; PlaySoundFile has no volume, so it plays at full.
--- Quick presses: the game does not start a sound kit again while it is still playing, so
--- Play stops its own sound started last (StopSound on the handle PlaySound returned)
--- before starting the next; every press is heard, the slider's "-" and "+" included.
 -- Notches: the pause sound's loudness is one saved number, profile.pauseSoundLevel, the
 -- place on the window's slider: 0, 0.25, 0.5, 0.75 or 1 (shown as 0 to 100%). 0 is off.
 -- VOLUMES is the one curve from a notch to the volume played: each notch about half the
@@ -71,9 +68,8 @@
 --          heard; SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records all
 --          three; no other listener).
 -- Reads:   Combat:Locked (a delete in combat is not heard); profile.pauseSoundName,
---          pauseSoundLevel. Owns the handle of its own sound started last; no frames.
--- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given,
---          after StopSound on its own sound still playing;
+--          pauseSoundLevel. Owns no state, no frames.
+-- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given;
 --          PlaySoundFile for any other LSM sound), and around a move that is not heard
 --          mutes every item pick-up and put-down sound, then unmutes them (MuteSoundFile,
 --          UnmuteSoundFile). LibSharedMedia's "sound" list, which every addon shares:
@@ -118,19 +114,13 @@ function Sounds:OnEnable()
     end
 end
 
-local playing -- the handle of SSF's own sound started last, or nil
-
 function Sounds:Play(name, volume)
     if not LSM:IsValid("sound", name) then name = DEFAULT end
     self:SendMessage("SSF_SOUND_PLAYED", name)
     local own = OWN[name]
     if own then
-        -- the one still playing is cut off first: the game does not start a sound kit
-        -- again while it plays, so a quick second press would be silent
-        if playing then StopSound(playing) end
         -- the sub-type left nil (its default), exactly as tested in game
-        local _, handle = C_Sound.PlaySound(own.kit, nil, false, false, nil, volume or 1)
-        playing = handle
+        C_Sound.PlaySound(own.kit, nil, false, false, nil, volume or 1)
         return
     end
     local file = LSM:Fetch("sound", name, true)

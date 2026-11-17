@@ -102,26 +102,6 @@ test("the pause sound plays at its notch and not at all at notch 0", function()
     assert(okay, err)
 end)
 
--- The game does not start a sound kit again while it is still playing, so a quick second
--- press was silent. Play stops the one it started last before starting the next.
-test("a second play cuts off the first, so a quick press is heard", function()
-    local stopped, next = {}, 100
-    local realPlay, realStop = C_Sound.PlaySound, StopSound
-    C_Sound.PlaySound = function() next = next + 1 return true, next end
-    StopSound = function(handle) stopped[#stopped + 1] = handle end
-    local okay, err = pcall(function()
-        Sounds:Play(Sounds:DefaultName(), 1)
-        local before = #stopped
-        Sounds:Play(Sounds:DefaultName(), 1)
-        eq(#stopped, before + 1, "the second play stops one sound")
-        eq(stopped[#stopped], 101, "the one the first play started")
-        Sounds:Play(Sounds:DefaultName(), 1)
-        eq(stopped[#stopped], 102, "and the third stops the second")
-    end)
-    C_Sound.PlaySound, StopSound = realPlay, realStop
-    assert(okay, err)
-end)
-
 test("on a client without the mute functions the moves just run", function()
     local mute, unmute = MuteSoundFile, UnmuteSoundFile
     MuteSoundFile, UnmuteSoundFile = nil, nil

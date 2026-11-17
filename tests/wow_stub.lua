@@ -507,7 +507,6 @@ UISpecialFrames = {}
 C_UIFileAsset = { IsKnownFile = function() return true end } -- LibSharedMedia checks its media files
 C_Sound = { PlaySound = function() end }
 PlaySoundFile = function() end
-StopSound = function() end
 -- muted sound files: WoW.muted holds every file ID muted and not yet unmuted
 WoW.muted = {}
 MuteSoundFile = function(id) WoW.muted[id] = true end

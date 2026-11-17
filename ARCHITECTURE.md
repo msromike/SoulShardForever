@@ -142,7 +142,7 @@ its code (the ACTS list in tools/check.py). Each file's header says the same und
 | SSFFrame | adds a frame to the list Escape closes; sets a global name |
 | KeyBindings | opens Blizzard's settings panel; sets a key binding's label (a global) |
 | Sorter | picks an item up or drops it (moves items); clears the cursor |
-| Sounds | mutes a game sound; unmutes a game sound; plays a sound file; plays a sound; stops a sound; adds media to the list every addon shares |
+| Sounds | mutes a game sound; unmutes a game sound; plays a sound file; plays a sound; adds media to the list every addon shares |
 | Trimmer | picks an item up or drops it (moves items); clears the cursor; deletes the item on the cursor |
 | DeleteButton | sets a global name |
 | SlashCommand | registers a slash command |
