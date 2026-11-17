@@ -17,7 +17,7 @@
 -- short. The stub gives every frame no size and no place.
 --
 -- Reads:   tests/load.lua (the addon, brought up); WoW.Controls, WoW.RunTimers, WoW.errors
---          and WoW.macros (tests/wow_stub.lua); Window:Open.
+--          and WoW.SetMacros (tests/wow_stub.lua); Window:Open.
 -- Touches nothing else.
 
 local ROOT = arg and arg[0] and arg[0]:match("^(.*)[/\\]tests[/\\]window%.lua$") or "."
@@ -42,7 +42,7 @@ local SSF = Load({
     before = function()
         -- the bags: a backpack and a 20-slot soul bag holding 5 shards
         WoW.SetBags({ [0] = WoW.PlainBag(16), [4] = WoW.SoulBag(20, { SHARD, SHARD, SHARD, SHARD, SHARD }) })
-        if SCENE == "first" then WoW.macros = {} end -- a new character has neither of SSF's macros
+        if SCENE == "first" then WoW.SetMacros({}, {}) end -- a new character has neither of SSF's macros
     end,
 })
 

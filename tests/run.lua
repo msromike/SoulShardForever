@@ -12,7 +12,7 @@
 -- Every test starts from the same place, whatever ran before it: the profile as it was
 -- right after the modules enabled, each module's own plain fields as they were then, empty
 -- bags, an empty cursor, no combat, no channel, no timers waiting, an empty record of
--- picks and deletes. So no test depends on another, and the order they run in is free.
+-- picks and deletes, SSF's two macros and no other, no macro window, nothing refused. So no test depends on another, and the order they run in is free.
 -- A test fails on a failed check, on an error, and on any error the game would have shown
 -- in red while it ran (WoW.errors).
 --
@@ -82,6 +82,7 @@ local function CleanStart()
     WoW.combat, WoW.flagged, WoW.channel, WoW.targeting, WoW.itemCount = false, nil, nil, nil, nil
     WoW.picks, WoW.deleted = {}, {}
     WoW.unknownSpells = {}
+    WoW.ResetMacros()
     WoW.ClearTimers()
 end
 

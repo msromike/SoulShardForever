@@ -57,8 +57,20 @@
 --          WoW.itemCount = nil         a number: what C_Item.GetItemCount answers, in place
 --                                      of counting the fake bags
 --          WoW.unknownSpells[id]       true: C_SpellBook.IsSpellKnown(id) answers false
---          WoW.macros                  name -> true for each macro that exists
---                                      (GetMacroIndexByName); SSF's two exist by default
+--          WoW.SetMacros(account, character)  the macros that exist, as two lists of names
+--                                      (account slots 1-120, character slots from 121, as
+--                                      the game numbers them); SSF's two are account
+--                                      macros by default
+--          WoW.macroList               { account = {...}, character = {...} }, each macro
+--                                      { name, icon, body }; CreateMacro adds to it
+--          WoW.macroWindow             Blizzard's macro window once ShowMacroFrame opened
+--                                      it: { shown, tab, selected }
+--          WoW.redErrors               every line put in the game's red error text
+--          WoW.actionText[slot]        the macro name an action slot shows (C_ActionBar)
+--          WoW.blocked                 every protected call refused under combat lockdown
+--                                      (CreateMacro, a secure button's SetAttribute); each
+--                                      is also an error, so the test that let it through
+--                                      fails
 --          WoW.chat                    every line printed through DEFAULT_CHAT_FRAME
 --          WoW.muted                   the sound file IDs muted right now (MuteSoundFile
 --                                      adds, UnmuteSoundFile removes)
@@ -274,7 +286,12 @@ function M:SetValue(v) self.__value = v end
 function M:GetValue() return self.__value or 0 end
 function M:SetMinMaxValues(lo, hi) self.__min, self.__max = lo, hi end
 function M:GetMinMaxValues() return self.__min or 0, self.__max or 0 end
-function M:SetAttribute(key, value) self.__attributes = self.__attributes or {} self.__attributes[key] = value end
+function M:SetAttribute(key, value)
+    -- a secure frame's attributes are locked in combat (Refused is defined below, before any call)
+    if tostring(self.__template or ""):find("Secure", 1, true) and WoW.Refused("SetAttribute on a secure frame") then return end
+    self.__attributes = self.__attributes or {}
+    self.__attributes[key] = value
+end
 function M:GetAttribute(key) return self.__attributes and self.__attributes[key] end
 function M:SetTexture(texture) self.__texture = texture end
 function M:GetTexture() return self.__texture end
@@ -481,12 +498,74 @@ PlaySound = function() end
 SOUNDKIT = setmetatable({}, { __index = function() return 1 end })
 GetCVarBool = function() return false end
 CloseSpecialWindows = function() end
--- macros: WoW.macros names the ones that exist. Both of SSF's do by default, so the window
--- offers no "Create macros" button; a test empties the table for a new character.
-WoW.macros = { SSF_LT = true, SSF_BoA = true }
-GetMacroIndexByName = function(name) return WoW.macros[name] and 1 or 0 end
-GetNumMacros = function() return 2, 2 end
-MAX_ACCOUNT_MACROS, MAX_CHARACTER_MACROS = 120, 18
+-- A call the game refuses from addon code under combat lockdown (a protected call: the game
+-- blocks it and shows "Interface action failed because of an AddOn"). Recorded in
+-- WoW.blocked and as an error, so a test that lets one through fails.
+WoW.blocked = {}
+local function Refused(call)
+    if not WoW.combat then return false end
+    WoW.blocked[#WoW.blocked + 1] = call
+    WoW.errors[#WoW.errors + 1] = "ADDON_ACTION_BLOCKED: " .. call .. " under combat lockdown, refused by the game"
+    return true
+end
+WoW.Refused = Refused
+
+-- macros, numbered as the game numbers them: the account's in slots 1 to 120, the
+-- character's from 121 (Constants.MacroConsts holds the two limits)
+Constants = { MacroConsts = { MAX_ACCOUNT_MACROS = 120, MAX_CHARACTER_MACROS = 30 } }
+-- the action bars: WoW.actionText[slot] is the name of the macro in that slot
+WoW.actionText = {}
+C_ActionBar = { GetActionText = function(slot) return WoW.actionText[slot] end }
+function WoW.SetMacros(account, character)
+    WoW.macroList = { account = {}, character = {} }
+    for _, name in ipairs(account or {}) do WoW.macroList.account[#WoW.macroList.account + 1] = { name = name } end
+    for _, name in ipairs(character or {}) do WoW.macroList.character[#WoW.macroList.character + 1] = { name = name } end
+end
+-- the macro side of a clean start: both of SSF's macros exist (so the window offers no
+-- "Create macros"), nothing on a bar, no macro window, no red line, nothing refused
+function WoW.ResetMacros()
+    WoW.SetMacros({ "SSF_LT", "SSF_BoA" }, {})
+    WoW.macroWindow, WoW.redErrors, WoW.blocked = nil, {}, {}
+    for k in pairs(WoW.actionText or {}) do WoW.actionText[k] = nil end
+end
+GetMacroIndexByName = function(name)
+    for i, m in ipairs(WoW.macroList.account) do if m.name == name then return i end end
+    for i, m in ipairs(WoW.macroList.character) do
+        if m.name == name then return Constants.MacroConsts.MAX_ACCOUNT_MACROS + i end
+    end
+    return 0
+end
+GetNumMacros = function() return #WoW.macroList.account, #WoW.macroList.character end
+GetMacroBody = function(index)
+    local max = Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    local m = index > max and WoW.macroList.character[index - max] or WoW.macroList.account[index]
+    return m and m.body
+end
+CreateMacro = function(name, icon, body, perCharacter)
+    if Refused("CreateMacro") then return nil end
+    local list = perCharacter and WoW.macroList.character or WoW.macroList.account
+    list[#list + 1] = { name = name, icon = icon, body = body }
+    WoW.FireEvent("UPDATE_MACROS")
+    return GetMacroIndexByName(name)
+end
+-- Blizzard's macro window, loaded on demand by ShowMacroFrame: WoW.macroWindow holds the
+-- tab and the macro it shows; its selector lists one button per macro, by name
+function ShowMacroFrame()
+    if not MacroFrame then
+        MacroFrame = CreateFrame("Frame", "MacroFrame", UIParent)
+        MacroFrame.ChangeTab = function(_, tab) WoW.macroWindow.tab = tab end
+        MacroFrame.SelectMacro = function(_, index) WoW.macroWindow.selected = index end
+        local selector = CreateFrame("Frame", nil, MacroFrame)
+        selector.RunSetup = function() end
+        selector.EnumerateButtons = function() return function() end end
+        MacroFrame.MacroSelector = selector
+    end
+    WoW.macroWindow = { shown = true }
+    MacroFrame:Show()
+end
+UIErrorsFrame = CreateFrame("MessageFrame", "UIErrorsFrame", UIParent)
+UIErrorsFrame.AddExternalErrorMessage = function(_, text) WoW.redErrors[#WoW.redErrors + 1] = text end
+WoW.ResetMacros()
 C_Spell = { GetSpellName = function(id) return "Spell " .. id end }
 -- Blizzard's settings panel: AceConfigDialog registers SSF's page in it at enable
 Settings = {
@@ -534,7 +613,7 @@ C_AddOns = { GetAddOnMetadata = function(_, field) return field == "Version" and
 -- Bags
 NUM_BAG_SLOTS = 4
 Enum.BagIndex = { Backpack = 0, ReagentBag = 5 }
-Constants = { InventoryConstants = { NumBagSlots = 4 } }
+Constants.InventoryConstants = { NumBagSlots = 4 }
 local SHARD = 6265      -- the shard item (Core's SSF.SHARD_ITEM_ID; the stub loads before Core)
 local SOUL_FAMILY = 1   -- the soul bag family bit; GetItemFamily(SHARD) answers the same
 
