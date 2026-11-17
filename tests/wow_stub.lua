@@ -48,6 +48,10 @@
 --                                      rank of the nearest frame up the tree that has
 --                                      one, and the list is in rank order, then the order
 --                                      frames were made
+--          WoW.Drag(handle, top, left) a player's drag on handle: the mouse goes down on
+--                                      it, whatever frame its OnMouseDown starts moving
+--                                      ends at top, left (GetTop, GetLeft), the mouse
+--                                      comes up
 --          WoW.combat = false          what InCombatLockdown / UnitAffectingCombat answer
 --          WoW.flagged = nil           true: UnitAffectingCombat answers true while
 --                                      InCombatLockdown still answers false (the moment a
@@ -207,6 +211,17 @@ local function Run(self, name, ...)
     local fn = self.__scripts[name]
     if fn then fn(self, ...) end
 end
+-- moving: StartMoving makes the frame follow the mouse until StopMovingOrSizing; where it
+-- ends is its top and left, which a drag sets
+function M:StartMoving() WoW.moving = self end
+function M:StopMovingOrSizing() if WoW.moving == self then WoW.moving = nil end end
+function M:GetTop() return self.__top or 0 end
+function M:GetLeft() return self.__left or 0 end
+function WoW.Drag(handle, top, left)
+    Run(handle, "OnMouseDown", "LeftButton")
+    if WoW.moving then WoW.moving.__top, WoW.moving.__left = top, left end
+    Run(handle, "OnMouseUp", "LeftButton")
+end
 function M:Click(button)
     if self.__enabled == false then return end
     Run(self, "PreClick", button or "LeftButton")
@@ -335,7 +350,7 @@ function M:NumLines() return 0 end
 
 -- Answers with no state behind them. Each is what a frame of no size at no place says.
 local GET = {
-    GetLeft = 0, GetRight = 0, GetTop = 0, GetBottom = 0, GetStringHeight = 12, GetLineHeight = 12,
+    GetRight = 0, GetBottom = 0, GetStringHeight = 12, GetLineHeight = 12,
     GetNumLines = 1, GetNumPoints = 1, GetEffectiveScale = 1, GetScale = 1, GetFrameStrata = "MEDIUM",
     GetCursorPosition = 0, GetVerticalScroll = 0, GetHorizontalScroll = 0, GetVerticalScrollRange = 0,
     GetJustifyH = "LEFT", GetJustifyV = "MIDDLE", GetValueStep = 1,

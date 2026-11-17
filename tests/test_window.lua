@@ -362,7 +362,8 @@ test("dragging the window saves the spot with the screen size", function()
     profile.welcomed = 99999
     profile.window = {}
     Window:Open()
-    Window.window:Fire("OnMoved", 512, 256)
+    -- the player's drag on the title, through AceGUI's own mouse handlers and SSFFrame's hook
+    WoW.Drag(Window.window.titletext:GetParent(), 512, 256)
     eq(profile.window.top, 512, "top")
     eq(profile.window.left, 256, "left")
     eq(profile.window.width, UIParent:GetWidth(), "the screen's width")
