@@ -102,6 +102,39 @@ test("the pause sound plays at its notch and not at all at notch 0", function()
     assert(okay, err)
 end)
 
+-- The game refuses to start a sound kit again while it plays (it answers nothing), so a
+-- press then is silent. Busy is what the window greys the slider's "-" and "+" on.
+test("an own sound is busy from its start until the game says it ended", function()
+    local said = {}
+    local listener = {}
+    LibStub("AceEvent-3.0"):Embed(listener)
+    listener:RegisterMessage("SSF_SOUND_BUSY", function(_, busy) said[#said + 1] = busy end)
+    local real = C_Sound.PlaySound
+    local answer = function() return true, 7 end
+    C_Sound.PlaySound = function(...) return answer(...) end
+    local okay, err = pcall(function()
+        eq(Sounds:Busy(), false, "nothing playing to begin with")
+        Sounds:Play(Sounds:DefaultName(), 1)
+        eq(Sounds:Busy(), true, "started: busy")
+        eq(#said, 1, "and said so once")
+        eq(said[1], true, "as busy")
+        answer = function() end -- the game refuses a play while the kit is still playing
+        Sounds:Play(Sounds:DefaultName(), 1)
+        eq(#said, 1, "a refused play says nothing")
+        WoW.FireEvent("SOUNDKIT_FINISHED", 99)
+        eq(Sounds:Busy(), true, "another sound ending changes nothing")
+        WoW.FireEvent("SOUNDKIT_FINISHED", 7)
+        eq(Sounds:Busy(), false, "its own sound ended: free")
+        eq(said[2], false, "and said so")
+        Sounds:Play(Sounds:DefaultName(), 1)
+        eq(Sounds:Busy(), false, "a play the game refuses outright never makes it busy")
+    end)
+    C_Sound.PlaySound = real
+    listener:UnregisterAllMessages()
+    WoW.FireEvent("SOUNDKIT_FINISHED", 7)
+    assert(okay, err)
+end)
+
 test("on a client without the mute functions the moves just run", function()
     local mute, unmute = MuteSoundFile, UnmuteSoundFile
     MuteSoundFile, UnmuteSoundFile = nil, nil

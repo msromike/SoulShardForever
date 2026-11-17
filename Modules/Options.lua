@@ -232,7 +232,9 @@ local function BuildTable()
     -- shown as a percentage. Never greyed, so it can be set before SSF is paused. The
     -- preview plays once at the let-go, not on every drag tick (the slider's `released`,
     -- SSFStepperSlider, fed through `arg`); at 0% it is silent, which is Sounds' call.
-    -- A gold tick marks each notch on the bar (the slider's `notches`).
+    -- A gold tick marks each notch on the bar (the slider's `notches`). While the sound
+    -- plays the game refuses to start it again, so the "-" and "+" are greyed until it
+    -- ends (the slider's `busy`, Sounds:Busy): every click that can be made is heard.
     local pausesoundGui = Settings:Define("pausesound", {
         order = 2, kind = "range",
         name = L["Pause sound"],
@@ -241,7 +243,11 @@ local function BuildTable()
         apply = function(value) SSF.db.profile.pauseSoundLevel = value end,
     })
     pausesoundGui.isPercent = true
-    pausesoundGui.arg = { released = function() Sounds():PlayPause() end, notches = true }
+    pausesoundGui.arg = {
+        released = function() Sounds():PlayPause() end,
+        notches = true,
+        busy = function() return Sounds():Busy() end,
+    }
 
     local args = {
         -- the top row: the count, with Delete Shard right after it, so a click and the number

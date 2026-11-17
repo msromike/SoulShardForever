@@ -399,6 +399,31 @@ test("a slider with notches shows one tick at each step, and none otherwise", fu
     AceGUI:Release(slider)
 end)
 
+-- While the pause sound plays the game refuses to start it again, so a press of "-" or "+"
+-- would go unheard: both grey until the owner says the sound is over.
+test("a busy slider greys its - and +, and frees them when it is no longer busy", function()
+    local AceGUI = LibStub("AceGUI-3.0")
+    local slider = AceGUI:Create("SSFStepperSlider")
+    local busy = true
+    slider:SetSliderValues(0, 1, 0.25)
+    slider:SetValue(0.5)
+    eq(slider.left:IsEnabled(), true, "no busy asked for: - usable")
+    slider:SetCustomData({ busy = function() return busy end })
+    eq(slider.left:IsEnabled(), false, "busy: - greyed")
+    eq(slider.right:IsEnabled(), false, "busy: + greyed")
+    busy = false
+    slider:SetValue(0.5) -- any redraw sets the value again
+    eq(slider.left:IsEnabled(), true, "over: - usable")
+    eq(slider.right:IsEnabled(), true, "over: + usable")
+    slider:SetValue(1)
+    eq(slider.right:IsEnabled(), false, "at the top + is greyed as before")
+    busy = true
+    AceGUI:Release(slider)
+    slider = AceGUI:Create("SSFStepperSlider")
+    eq(slider.left:IsEnabled(), true, "handed to another row: not busy")
+    AceGUI:Release(slider)
+end)
+
 test("dragging the window saves the spot with the screen size", function()
     shut()
     profile.welcomed = 99999

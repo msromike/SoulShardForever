@@ -30,7 +30,8 @@
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after any change not made in the window),
 --          SSF_SHARD_DELETED, SSF_BAGS_CHANGED and SSF_QUIET_ENDED (redraw: the whole window
---          is fed again, not only the count row). Every redraw a message asks for runs a
+--          is fed again, not only the count row), SSF_SOUND_BUSY (redraw: the pause sound
+--          slider's "-" and "+" grey while its sound plays). Every redraw a message asks for runs a
 --          tick later (RefreshSoon), never inside the message: a message can arrive while
 --          AceConfigDialog is still inside a control's set or func, and rebuilding then
 --          breaks it (see RefreshSoon). PLAYER_REGEN_DISABLED (a fight
@@ -402,6 +403,7 @@ function Window:OnEnable()
     self:RegisterMessage("SSF_MACROS_CHANGED", "Redress")
     self:RegisterMessage("SSF_BAGS_CHANGED", "RefreshSoon")
     self:RegisterMessage("SSF_QUIET_ENDED", "RefreshSoon")
+    self:RegisterMessage("SSF_SOUND_BUSY", "RefreshSoon")
     -- a fight closes the window (and Open refuses until it's over)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
 end

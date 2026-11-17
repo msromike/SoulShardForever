@@ -28,11 +28,15 @@
 -- has five): one gold tick at every step from min to max, so the player sees where the
 -- thumb can rest. As wide as the bound's tick, but centered under the thumb and kept
 -- inside the rail's height.
+-- Busy (the option's `arg` as a table with a `busy` function; the pause sound slider's
+-- says whether its sound is still playing): while it returns true the "-" and "+" are
+-- greyed, read whenever the buttons are set, so at every redraw; the owner redraws when
+-- the answer changes. The handle and the value box stay usable.
 --
 -- Public:  the Slider's: SetLabel, SetSliderValues, SetIsPercent, SetValue, GetValue,
 --          SetDisabled; SetCustomData(arg) (AceConfigDialog hands the option's `arg` to
 --          it): a number or a function is the bound; a table is { bound = the same,
---          released = function(value), notches = true }, each optional;
+--          released = function(value), notches = true, busy = function() }, each optional;
 --          MinWidth() -> the narrowest it stays usable, its label on one line or the
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
 -- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
@@ -53,7 +57,7 @@
 --          tooltip on a greyed slider).
 -- Touches nothing else.
 
-local Type, Version = "SSFStepperSlider", 11
+local Type, Version = "SSFStepperSlider", 12
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's modules (the addon is loaded by the time a widget is made)
@@ -90,7 +94,9 @@ local function UpdateButtons(self)
     local top = inner.max or 100
     local bound = Bound(self)
     if bound and bound < top then top = bound end
-    self.right:SetEnabled((inner:GetValue() or 0) < top)
+    local busy = self.busy and self.busy() or false -- a press now would go unheard
+    self.left:SetEnabled(not busy)
+    self.right:SetEnabled(not busy and (inner:GetValue() or 0) < top)
 end
 
 -- The dim region: from the bound's place on the rail to its right end, with the gold tick
@@ -187,7 +193,7 @@ local methods = {
     ["OnAcquire"] = function(self)
         self.inner:OnAcquire() -- the stock reset: size, enabled, 0-100 by 1, value 0, wheel off
         self.bound, self.released = nil, nil -- pooled widgets: nothing must leak to another row
-        self.notches = nil
+        self.notches, self.busy = nil, nil
         self:SetWidth(200)
         self:SetHeight(44 + VALUE_GAP)
         self.inner.label:SetJustifyH("LEFT")
@@ -227,10 +233,10 @@ local methods = {
     ["SetCustomData"] = function(self, arg)
         if type(arg) == "table" then
             self.bound, self.released = arg.bound, arg.released
-            self.notches = arg.notches
+            self.notches, self.busy = arg.notches, arg.busy
         else
             self.bound, self.released = arg, nil
-            self.notches = nil
+            self.notches, self.busy = nil, nil
         end
         local b, inner = Bound(self), self.inner
         if b and (inner:GetValue() or 0) > b then inner:SetValue(b) end
