@@ -21,7 +21,7 @@ Exit:   0 when every case was caught for the expected reason and every file is a
         1 otherwise. "SETUP WRONG" (the text a case replaces is no longer in the file)
         counts as a failure: the code moved, and the case must follow it.
 When:   on GitHub on every push and pull request (.github/workflows/check.yml), and
-        locally after any change to tools/check.py or tests/. Not part of check.py: it
+        locally after any change (a code edit can move the text a case changes). Not part of check.py: it
         takes longer, and it changes files while it runs. This folder is the one the
         game loads, so do not /reload in game during the ten seconds it takes: a file
         is broken on disk for a moment at a time.
@@ -277,7 +277,7 @@ CASES = [
          '    WoW.loggedIn = true\n    WoW.FireEvent("PLAYER_LOGIN")',
          '    local AceAddon = LibStub("AceAddon-3.0")\n    AceAddon:InitializeAddon(SSF)\n'
          '    if opts.afterInit then opts.afterInit(SSF) end\n    WoW.loggedIn = true\n    AceAddon:EnableAddon(SSF)',
-         "on again"),
+         "Bags: on again, its OnEnable run  got false, want true"),
     Case("tests: the count walks bags the delete never reaches again", TESTS, "Modules/Bags.lua",
          "if shardBags[bag] and WalkSlots(", "if WalkSlots(", "only the backpack's and the soul bag's shards count"),
     Case("tests: the first open's second fit feeds a window closed in that tick", TESTS, "Modules/Window.lua",
@@ -288,7 +288,8 @@ CASES = [
          'if source ~= "window" then self:RefreshSoon() end', 'if source == "chat" then self:RefreshSoon() end',
          "a source not named: redrawn"),
     Case("tests: an unknown WhyNot answer errors on every redraw", TESTS, "Modules/Options.lua",
-         "(BLOCKER_TEXT[why] or CapIs)()", "BLOCKER_TEXT[why]()", "no error"),
+         "(BLOCKER_TEXT[why] or CapIs)()", "BLOCKER_TEXT[why]()",
+         "shows the cap, not an error: no error  got false, want true"),
     Case("tests: the Volume dropdown cut short again (sized as given)", TESTS, "Widgets/SSFCentered.lua",
          "            if width < need then", "            if false then",
          "widened to its longest value"),
