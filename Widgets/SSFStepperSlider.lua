@@ -26,8 +26,8 @@
 -- (Release below), which calls `released(value)` once, after AceConfigDialog has saved.
 -- The notches (the option's `arg` as a table with `notches = true`; the pause sound slider
 -- has five): one gold tick at every step from min to max, so the player sees where the
--- thumb can rest. As wide as the bound's tick, but centered under the thumb and kept
--- inside the rail's height.
+-- thumb can rest. As wide as the bound's tick, but centered under the thumb and
+-- NOTCH_INSET pixels short of the rail's top and bottom.
 -- Busy (the option's `arg` as a table with a `busy` function; the pause sound slider's
 -- says whether its sound is still playing): while it returns true the "-" and "+" are
 -- greyed, read whenever the buttons are set, so at every redraw; the owner redraws when
@@ -72,6 +72,7 @@ local DIM = 0.5        -- alpha of the black over the rail beyond the bound (pic
 local RAIL_INSET = 3   -- the stock Slider anchors its rail this far in from each side
 local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint)
 local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above
+local NOTCH_INSET = 2  -- px a notch tick stops short of the rail's top and bottom (picked by eye)
 
 -- the bound as a number right now, or nil for none
 local function Bound(self)
@@ -125,12 +126,12 @@ local function NewTick(slider)
     return tick
 end
 
--- a tick shown with its left edge x pixels along the rail: full rail height, and `below`
--- pixels under it
-local function PlaceTick(self, tick, x, below)
+-- a tick shown with its left edge x pixels along the rail: from `top` pixels under the
+-- rail's top edge to `below` pixels under its bottom edge (negative = short of it)
+local function PlaceTick(self, tick, x, top, below)
     local slider = self.inner.slider
     tick:ClearAllPoints()
-    tick:SetPoint("TOPLEFT", slider, "TOPLEFT", x, 0)
+    tick:SetPoint("TOPLEFT", slider, "TOPLEFT", x, -top)
     tick:SetPoint("BOTTOMLEFT", slider, "BOTTOMLEFT", x, -below)
     tick:Show()
 end
@@ -144,13 +145,13 @@ local function UpdateDim(self)
     dim:SetPoint("TOPLEFT", inner.slider, "TOPLEFT", x, 0)
     dim:SetPoint("BOTTOMRIGHT", inner.slider, "BOTTOMRIGHT", 0, 0)
     dim:Show()
-    PlaceTick(self, tick, x, TICK_BELOW)
+    PlaceTick(self, tick, x, 0, TICK_BELOW)
 end
 
 -- The notch ticks: with `notches` on, one gold tick at every step from min to max, so the
 -- player sees where the thumb can rest; none otherwise. Quieter than the bound's tick:
--- centered on the thumb's resting place and no taller than the rail. Ticks are made as
--- needed and kept.
+-- centered on the thumb's resting place and NOTCH_INSET short of the rail's top and
+-- bottom. Ticks are made as needed and kept.
 local function UpdateNotches(self)
     local inner, ticks = self.inner, self.notchTicks
     local lo, hi, step = inner.min or 0, inner.max or 100, inner.step
@@ -160,7 +161,7 @@ local function UpdateNotches(self)
     end
     for i = 1, count do
         if not ticks[i] then ticks[i] = NewTick(inner.slider) end
-        PlaceTick(self, ticks[i], RailX(self, lo + (i - 1) * step) - TICK / 2, 0)
+        PlaceTick(self, ticks[i], RailX(self, lo + (i - 1) * step) - TICK / 2, NOTCH_INSET, -NOTCH_INSET)
     end
     for i = count + 1, #ticks do ticks[i]:Hide() end
 end
