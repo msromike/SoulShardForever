@@ -128,6 +128,20 @@ CASES = [
     Case("headers: a stale Reads claim (the call is gone, the header still says it)", HEADERS, "Modules/LowGlow.lua",
          'SSF:GetModule("Counter"):Refresh()', "-- call removed", "Reads names Counter"),
     # Acts on
+    Case("headers: a profile key written in brackets, not under Saves", HEADERS, "Modules/Macros.lua",
+         "SSF.db.profile.macroWindowAfterReload = true", 'SSF.db.profile["macroWindowAfterReloadX"] = true',
+         "the code writes profile.macroWindowAfterReloadX, Saves does not name it"),
+    Case("headers: a profile key named at run time", HEADERS, "Modules/Macros.lua",
+         "SSF.db.profile.macroWindowAfterReload = true", "SSF.db.profile[KEY] = true",
+         "names a profile key at run time"),
+    Case("headers: a helper writes the profile it is handed second", HEADERS, "Modules/Cap.lua",
+         APPEND, "\nlocal function Fix(n, p) p.madeUpKey = n end\nlocal function Probe() Fix(1, SSF.db.profile) end\n",
+         "the code writes profile.madeUpKey, Saves does not name it"),
+    Case("headers: a key's table held in a multi-name local and written", HEADERS, "Modules/Cap.lua",
+         APPEND, "\nlocal function Probe()\n    local w, x = SSF.db.profile.window, 1\n    w.top = x\nend\n",
+         "the code writes profile.window, Saves does not name it"),
+    Case("headers: the whole profile handed to another file", HEADERS, "Modules/Cap.lua",
+         APPEND, "\nlocal function Probe() Other.Fix(SSF.db.profile) end\n", "hands the whole profile to Other.Fix"),
     Case("acts: a file sorts the bags, header silent", ACTS, "Modules/Cap.lua",
          APPEND, "\nlocal function Probe() C_Container.SortBags() end\n", 'does not say "SortBags"'),
     Case("acts: a file splits a stack, header silent", ACTS, "Modules/Cap.lua",
@@ -458,7 +472,7 @@ def prose_only_cases():
     keys = set()
     code = [f for f in check.lua_files() if not f.startswith("tests/")]
     for rel in code:
-        reads, writes = check.profile_refs(check.code_lines(check.read(rel)))
+        reads, writes, _ = check.profile_refs(check.code_lines(check.read(rel)))
         keys |= reads | writes
 
     def named(word, where):

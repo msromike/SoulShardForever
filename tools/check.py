@@ -1044,7 +1044,6 @@ GM_CALL = r'GetModule\(\s*"(\w+)"\s*(?:,\s*true\s*)?\)'
 GM_ANY = GM_CALL.replace(r'"(\w+)"', r'"\w+"')
 GETMODULE_RE = re.compile(GM_CALL)
 PROFILE_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\s*(?:--.*)?$", re.M)
-PROFILE_SUB_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\.(\w+)\s*(?:--.*)?$", re.M)
 PROFILE_KEY_IN_HEADER_RE = re.compile(r"\bprofile\.(\w+)")
 
 
@@ -1065,25 +1064,57 @@ def header_fields(rel):
     return fields
 
 
+PROFILE_RE = r"(?:SSF|self)\.db\.profile"
+PROFILE_KEY = r"(?:\.(\w+)|\[\s*[\"'](\w+)[\"']\s*\])"  # .key or ["key"]
+
+
 def profile_refs(text):
-    """(reads, writes): the profile keys the code touches, through SSF.db.profile or a
-    local alias of it. A write is `<profile>.<key>... =` (not ==)."""
+    """(reads, writes, problems): the profile keys the code touches, through SSF.db.profile,
+    a local alias of it, or the parameter of a local function the profile is handed to.
+    A key is written .key or ["key"]; a write is `<profile><key>... =` (not ==), and a
+    line that assigns through a local holding one key's table (`local window =
+    SSF.db.profile.window`, also in a multi-name local) writes that key. A key the check
+    cannot name (profile[name]) or the whole profile handed to a function outside the
+    file is a problem: nothing would hold those writes to Saves."""
     aliases = set(PROFILE_ALIAS_RE.findall(text)) | {"SSF.db.profile", "self.db.profile"}
-    # `Migrate(self.db.profile)` with `local function Migrate(p)`: the parameter is an alias
-    for fn in re.findall(r"\b(\w+)\(\s*(?:SSF|self)\.db\.profile\s*\)", text):
-        m = re.search(r"function\s+" + re.escape(fn) + r"\(\s*(\w+)\s*\)", text)
-        if m:
-            aliases.add(m.group(1))
+    problems = []
+    # `Migrate(self.db.profile)` with `local function Migrate(p)`: the parameter is an
+    # alias, whichever argument the profile is
+    for m in re.finditer(r"([\w.:]+)\(([^()\n]*)\)", text):
+        args = [a.strip() for a in m.group(2).split(",")]
+        for i, arg in enumerate(args):
+            if not re.fullmatch(PROFILE_RE, arg):
+                continue
+            fn = m.group(1)
+            fm = re.search(r"\bfunction\s+" + re.escape(fn) + r"\s*\(([^)]*)\)", text)
+            params = [p.strip() for p in fm.group(1).split(",")] if fm else []
+            if i < len(params) and params[i]:
+                aliases.add(params[i])
+            elif not fm:
+                problems.append(f"the code hands the whole profile to {fn}, outside this file; "
+                                f"what it writes there no header shows")
     base = "(?:" + "|".join(re.escape(a) for a in sorted(aliases, key=len, reverse=True)) + r")"
-    reads = set(re.findall(r"\b" + base + r"\.(\w+)", text))
-    writes = set(re.findall(r"\b" + base + r"\.(\w+)(?:\.\w+|\[[^\]]*\])*\s*=(?!=)", text))
-    # `local window = SSF.db.profile.window` then `window.top, window.left = ...`: a line that
-    # assigns through such a sub-table alias writes that key
-    for var, key in PROFILE_SUB_ALIAS_RE.findall(text):
+    start = r"(?<![\w.:])" + base
+    reads = {a or b for a, b in re.findall(start + PROFILE_KEY, text)}
+    writes = {a or b for a, b in re.findall(start + PROFILE_KEY + r"(?:\.\w+|\[[^\]]*\])*\s*=(?!=)", text)}
+    for expr in re.findall(start + r"\[\s*([^\]\"'][^\]]*)\]", text):
+        problems.append(f"the code names a profile key at run time (profile[{expr.strip()}]); "
+                        f"name each key so Reads and Saves can be checked")
+    # a local holding one key's table: `local window = SSF.db.profile.window`, or one name
+    # of several in `local saved, status = SSF.db.profile.window, ...`
+    held = {}
+    for m in re.finditer(r"^\s*local\s+(\w+(?:\s*,\s*\w+)*)\s*=\s*(.+)$", text, re.M):
+        names = [x.strip() for x in m.group(1).split(",")]
+        values = [x.strip() for x in re.split(r",(?![^()]*\))", strip_comment(m.group(2)))]
+        for name, value in zip(names, values):
+            vm = re.fullmatch(base + PROFILE_KEY, value)
+            if vm:
+                held[name] = vm.group(1) or vm.group(2)
+    for var, key in held.items():
         for line in text.splitlines():
-            if re.match(r"\s*" + re.escape(var) + r"\.", line) and re.search(r"=(?!=)", line):
+            if re.match(r"\s*" + re.escape(var) + r"\s*[.\[]", line) and re.search(r"(?<![=~<>])=(?!=)", line):
                 writes.add(key)
-    return reads, writes
+    return reads, writes, problems
 
 
 def check_header_truth():
@@ -1147,7 +1178,8 @@ def check_header_truth():
                 problems.append(f"Reads names {name}, the code never calls GetModule(\"{name}\")")
 
         # profile keys: touched -> named under Reads or Saves; written -> named under Saves; Saves -> written
-        reads, writes = profile_refs(text)
+        reads, writes, unseen = profile_refs(text)
+        problems += unseen
         saves = fields.get("Saves", "")
         for key in sorted(reads | writes):
             if not word_in(key, reads_field) and not word_in(key, saves):
