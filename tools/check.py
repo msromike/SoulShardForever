@@ -1581,9 +1581,16 @@ HOOK_START_RE = re.compile(r"(?:(?<![\w.:])(hooksecurefunc)|:((?:Secure|Raw)?Hoo
 HOOK_ARG1_RE = re.compile(r"\s*([^,()]+?)\s*[,)]")
 HOOK_ARG2_RE = re.compile(r'\s*"(\w+)"')
 # how a Hooks field names a hook: Owner.Method (AceConfigDialog.Open) or Owner's Script
-# (MacroFrame's OnHide). `AceConfigDialog.tooltip's OnShow` names OnShow, not tooltip.
-HOOK_CLAIM_RE = re.compile(r"\.(\w+)\b(?!'s)|\w's\s+(\w+)")
+# (MacroFrame's OnHide). `AceConfigDialog.tooltip's OnShow` names OnShow on tooltip. Each
+# match: (owner, method) or (owner, script).
+HOOK_CLAIM_RE = re.compile(r"([\w.]*\w)\.(\w+)\b(?!'s)|([\w.]*\w)'s\s+(\w+)")
 SETSCRIPT_RE = re.compile(r"((?:\w+\.)*(\w+)):SetScript\(\s*(\"(\w+)\")?")
+
+
+def owner_word(owner):
+    """The last word of an owner, the way the code and the header can both name it:
+    MacroFrame.MacroSelector -> macroselector, AceConfigDialog.tooltip -> tooltip."""
+    return re.split(r"[.:]", owner)[-1].lower()
 
 
 def code_text(rel):
@@ -1594,34 +1601,39 @@ def code_text(rel):
 
 
 def hooks_made(code):
-    """[(line, the hooked name or None when it cannot be read, the raw call's word or None)]
-    for every hook the code makes. AceHook's forms: Hook(object, "Method", ...),
-    Hook("GlobalFunction", ...), HookScript(frame, "OnScript", ...). Raw: hooksecurefunc in
-    either form, and a frame's own HookScript("OnScript", ...)."""
+    """[(line, the hooked name or None when it cannot be read, the raw call's word or None,
+    the owner as the code writes it or None for a global function)] for every hook the code
+    makes. AceHook's forms: Hook(object, "Method", ...), Hook("GlobalFunction", ...),
+    HookScript(frame, "OnScript", ...). Raw: hooksecurefunc in either form, and a frame's
+    own frame:HookScript("OnScript", ...)."""
     out = []
     for m in HOOK_START_RE.finditer(code):
         line = code[: m.start()].count("\n") + 1
         word = m.group(1) or m.group(2)
         a1 = HOOK_ARG1_RE.match(code, m.end())
         if not a1:
-            out.append((line, None, None))
+            out.append((line, None, None, None))
             continue
         first = a1.group(1)
         quoted = re.fullmatch(r'"(\w+)"', first)
         a2 = HOOK_ARG2_RE.match(code, a1.end()) if code[a1.end() - 1] == "," else None
         if quoted:
             raw = word if word in ("hooksecurefunc", "HookScript") else None
-            out.append((line, quoted.group(1), raw))
+            # a frame's own HookScript: the owner is the frame before the colon
+            before = re.search(r"([\w.]+)$", code[: m.start()]) if word == "HookScript" else None
+            out.append((line, quoted.group(1), raw, before.group(1) if before else None))
         elif a2:
-            out.append((line, a2.group(1), word if word == "hooksecurefunc" else None))
+            out.append((line, a2.group(1), word if word == "hooksecurefunc" else None, first))
         else:
-            out.append((line, None, None))
+            out.append((line, None, None, None))
     return out
 
 
 def frames_made(code):
-    """The names this file gives frames it creates: `name = CreateFrame(`, and `name =
-    Maker(` where Maker is a local function of the file that calls CreateFrame."""
+    """The names this file gives frames it creates, written out in full (`self.button`,
+    `frame`): `name = CreateFrame(`, and `name = Maker(` where Maker is a local function of
+    the file that calls CreateFrame. In full, so a stock widget's `inner.frame` is not this
+    file's `frame`."""
     lines = code.splitlines()
     makers = set()
     for i, line in enumerate(lines):
@@ -1640,18 +1652,32 @@ def frames_made(code):
         if any("CreateFrame(" in b for b in body):
             makers.add(m.group(2))
     calls = "|".join(["CreateFrame"] + sorted(re.escape(n) for n in makers))
-    return set(re.findall(r"\b(\w+)\s*=\s*(?:" + calls + r")\(", code))
+    made = {own_frame(n) for n in re.findall(r"(?<![\w.:])((?:\w+\.)*\w+)\s*=\s*(?:" + calls + r")\(", code)}
+    # and kept under another name: `self.actionbutton = actionbutton`, `widget.button = button`
+    for _ in range(3):
+        for lhs, rhs in re.findall(r"(?m)^\s*(?:local\s+)?((?:\w+\.)*\w+)\s*=\s*((?:\w+\.)*\w+)\s*$", code):
+            if own_frame(rhs) in made:
+                made.add(own_frame(lhs))
+    return made
+
+
+def own_frame(expr):
+    """A frame's name as frames_made keeps it: in a widget file `self` (in its methods) and
+    `widget` (in its constructor) are the same table, so both read as self."""
+    return re.sub(r"^(?:self|widget)\.", "self.", expr)
 
 
 def check_hooks():
     """Hooks is the truth, both ways: every hook the code makes is named under Hooks as
     Owner.Method or Owner's Script, and every hook written there that way is one the code
-    makes. A raw hook (hooksecurefunc, a frame's own HookScript) is allowed one at a time:
+    makes, on the owner Hooks names (its last word, so MacroSelector.RunSetup is the code's
+    MacroFrame.MacroSelector). A raw hook (hooksecurefunc, a frame's own HookScript) is allowed one at a time:
     Exceptions names the raw call once per hook, and what each one is on. And a script set
     on a frame the file did not create (SetScript replaces whatever was there) is named
     under Acts on, with the word SetScript and the script; an Acts on that says SetScript
-    with no such call in the code fails too. "Created" goes by name within the file, not by
-    scope: a second variable of the same name as a created frame passes."""
+    with no such call in the code fails too. "Created" goes by the full name within the file
+    (frames_made), not by scope: a second local of the same full name as a created frame
+    passes, a stock widget's inner.frame does not."""
     print("== hooks")
     ok = True
     count = 0
@@ -1665,21 +1691,28 @@ def check_hooks():
 
         made = hooks_made(code)
         count += len(made)
-        claims = {a or b for a, b in HOOK_CLAIM_RE.findall(fields.get("Hooks", ""))}
-        claims = {c for c in claims if c[0].isupper()}  # a method or a script, never a field (.tooltip)
-        for line, name, _ in made:
+        owners = {}  # hooked name -> the owners the header names it on
+        for o1, n1, o2, n2 in HOOK_CLAIM_RE.findall(fields.get("Hooks", "")):
+            name, owner = n1 or n2, o1 or o2
+            if name[0].isupper():  # a method or a script, never a field (.tooltip)
+                owners.setdefault(name, set()).add(owner_word(owner))
+        claims = set(owners)
+        for line, name, _, owner in made:
             if name is None:
                 problems.append(f"{rel}:{line}: cannot read what this hook is on; write its name as a quoted string")
             elif name not in claims:
                 problems.append(f"{rel}:{line}: the code hooks {name}, Hooks does not name it "
                                 f"(write it as Owner.{name} or Owner's {name})")
-        for name in sorted(claims - {name for _, name, _ in made}):
+            elif owner and owner_word(owner) not in owners[name]:
+                problems.append(f"{rel}:{line}: the code hooks {name} on {owner}, Hooks names it on "
+                                f"{' or '.join(sorted(owners[name]))}: name the owner the code hooks")
+        for name in sorted(claims - {name for _, name, _, _ in made}):
             problems.append(f"{rel}: Hooks names {name}, the code never hooks it")
 
         # raw hooks, one at a time
         exceptions = fields.get("Exceptions", "")
         seen = {}
-        for line, name, raw in made:
+        for line, name, raw, _ in made:
             if not raw:
                 continue
             seen[raw] = seen.get(raw, 0) + 1
@@ -1693,7 +1726,7 @@ def check_hooks():
         foreign = False
         for m in SETSCRIPT_RE.finditer(code):
             line = code[: m.start()].count("\n") + 1
-            if m.group(2) in mine:
+            if own_frame(m.group(1)) in mine:
                 continue
             foreign = True
             script = m.group(4)
