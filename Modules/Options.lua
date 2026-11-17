@@ -1,11 +1,11 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Options: the one settings table and the /ssf command. AceConfigCmd turns it into the /ssf
--- commands, AceConfigDialog
--- turns the same table into the options window (fed by the Window module) and the Interface
--- Options entry, AceTab
--- completes the command words and a toggle's value word. Keys are the slash words; GUI-only entries carry cmdHidden.
--- Modules that show state (Counter, Broker, Window) listen for SSF_OPTIONS_CHANGED.
+-- Options: the one settings table. AceConfigCmd turns it into the /ssf commands (through
+-- SlashCommand, which owns /ssf itself), AceConfigDialog turns the same table into the
+-- options window (fed by the Window module) and the Interface Options entry, and
+-- TabComplete offers its words. Keys are the slash words; GUI-only entries carry
+-- cmdHidden. Modules that show state (Counter, Broker, Window) listen for
+-- SSF_OPTIONS_CHANGED.
 --
 -- The window's layout and life cycle are in Modules\Window.lua.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
@@ -32,28 +32,23 @@
 -- table and sends SSF_OPTIONS_REBUILT (Window re-dresses and re-feeds an open window).
 -- Everything else reads L live.
 --
--- The /ssf handler wraps AceConfigCmd instead of registering a slash command with it:
--- AceConfigCmd's dispatch ignores cmdHidden, has no "help" word, and would not open the
--- window on a bare /ssf. It echoes the typed command in grey (except "delete", which macros
--- run before every cast), then hands the rest to AceConfigCmd. "announce", the old word for
--- "log", is a second, hidden chat command, so old macros keep working; it is not listed anywhere.
--- "debug" is hidden the same way (HIDDEN_WORDS): "/ssf debug" reports the debug record's
--- switch, "on" and "off" set it, "mark <name>" writes a marker, "report" opens the copy
--- window, "clear" empties the record (DebugCommand; the record is Debug's, the window DebugReport's). Its lines are
--- English only, like the record. A player is handed these words when a problem needs them.
--- A whole number on its own ("/ssf 32") goes straight to setmax's own command, marked as
--- typed in short form (why not through AceConfigCmd: the note in HandleCommand).
+-- Chat words: "announce", the old word for "log", is a second, hidden chat command, so old
+-- macros keep working; it is not listed anywhere. "debug" is hidden the same way
+-- (HIDDEN_WORDS); what follows it is DebugCommand's. ChatWord answers which words are
+-- commands, listed or hidden, for SlashCommand and TabComplete alike.
 --
 -- Public:  TogglePause() (the pause key binding), Rebuild();
+--          ChatWord(word) -> "listed" | "hidden" | nil, ChatWords() -> every listed word,
+--          sorted (SlashCommand, TabComplete); SetCapShortForm(input) ("/ssf 25",
+--          SlashCommand);
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Listens: SSF_HELP_CHANGED (Rebuild: the table captured its tooltip style when built).
 -- Sends:   SSF_OPTIONS_CHANGED (key, "window") from every GUI-only setter; SSF_OPTIONS_REBUILT.
 -- Reads:   Help:Apply, Settings:Define/ValueWords,
 --          Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute/LowMark/SetLowMark,
 --          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
---          Status:CountText/InBagsText/PauseText/PrintStatus, Colors, DeleteHelp:Text,
---          Debug:IsOn/Set/Mark/Clear, DebugReport:Open,
---          Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
+--          Status:CountText/InBagsText/PauseText, Colors, DeleteHelp:Text,
+--          DebugCommand:Run, Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
 --          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
 --          pauseLog, autoMax, counter, lowGlow, counterColorize, counterSoulBag,
 --          counterFont, minimap, announce, soulsortLegacy, soulsortReverse, language.
@@ -62,7 +57,6 @@
 --          counter, lowGlow, counterColorize, counterSoulBag, counterFont, minimap (.hide),
 --          announce, soulsortLegacy, soulsortReverse, language. The cap and the low mark
 --          are Cap's: they go through Cap:SetManual and Cap:SetLowMark.
--- Acts on: the slash command /ssf (AceConsole's RegisterChatCommand).
 -- Touches nothing else.
 
 local ADDON, NS = ...            -- the folder: TOC metadata and the locale; NS.locales for the Language list
@@ -71,8 +65,6 @@ local Options = SSF:NewModule("Options", "AceEvent-3.0", "AceTimer-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 local AceConfig = LibStub("AceConfig-3.0")
 local AceConfigDialog = LibStub("AceConfigDialog-3.0")
-local AceConfigCmd = LibStub("AceConfigCmd-3.0")
-local AceTab = LibStub("AceTab-3.0")
 local LSM = LibStub("LibSharedMedia-3.0")
 
 Options.APP = "SSF" -- the AceConfig app: AceConfigCmd's help header names it
@@ -151,41 +143,10 @@ end
 
 -- The old word for "/ssf log": a hidden chat command, so old macros keep working.
 local OLD_LOG_WORD = "announce"
--- The debug record's command: hidden too, handed to a player who needs it.
+-- The debug record's command: hidden too, handed to a player who needs it (DebugCommand).
 local DEBUG_WORD = "debug"
--- the chat words the handler lets through although the help list and Tab never show them
+-- the chat words /ssf lets through although the help list and Tab never show them
 local HIDDEN_WORDS = { [OLD_LOG_WORD] = true, [DEBUG_WORD] = true }
-
--- "/ssf debug": naked reports the switch; "on" / "off" set it and report; "mark <name>"
--- writes a marker into the record, turning the record on first when it is off (and saying
--- so); "report" opens the copy window; "clear" empties the saved record and says so. It
--- prints to confirm on, off and clear, and nothing else but the usage line. English only.
-local function DebugCommand(input)
-    local Debug = SSF:GetModule("Debug")
-    input = strtrim(input or "")
-    local word, rest = input:match("^(%S*)%s*(.*)$")
-    word = word:lower()
-    if (word == "on" or word == "off") and rest == "" then
-        Debug:Set(word == "on")
-    elseif word == "mark" and rest ~= "" then
-        local wasOn = Debug:IsOn()
-        Debug:Mark(rest)
-        if wasOn then return end
-    elseif word == "report" and rest == "" then
-        SSF:GetModule("DebugReport"):Open()
-        return
-    elseif word == "clear" and rest == "" then
-        Debug:Clear()
-        SSF:Print("Debug record cleared.")
-        return
-    elseif word ~= "" then
-        -- each bar doubled: in chat a single bar starts an escape code, and "|r" (in
-        -- "|report") is the end-color code, which the game ate (Test Card 21)
-        SSF:Print("Use: /ssf debug on||off||mark <name>||report||clear")
-        return
-    end
-    SSF:Printf("Debug: %s", Colors():OnOff(Debug:IsOn()))
-end
 
 -- The reason on a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
 -- Language change shows at once.
@@ -508,7 +469,7 @@ local function BuildTable()
             name = "Debug",
             desc = "The debug record: on, off, mark <name>, report, clear.",
             get = function() return "" end,
-            set = function(_, input) DebugCommand(input) end,
+            set = function(_, input) SSF:GetModule("DebugCommand"):Run(input) end,
         },
         pause = pauseCmd,
         delete = {
@@ -587,115 +548,51 @@ local function BuildTable()
     return root
 end
 
--- A chat word: a root entry of the table that AceConfigCmd exposes (not cmdHidden), or
--- "help". The one test for tab completion and for the handler's unknown-word check.
-local function IsChatWord(word)
-    if word == "help" then return true end
-    local entry = Options.table.args[word]
-    return entry ~= nil and not entry.cmdHidden
+-- What a word typed after /ssf is: "listed" (a root entry AceConfigCmd shows, or "help",
+-- SlashCommand's own word, listed with them), "hidden" (a command that works but is never
+-- listed or offered: HIDDEN_WORDS), or nil (not a command). SlashCommand's unknown-word
+-- check and TabComplete's list both ask this, so the two can never disagree.
+function Options:ChatWord(word)
+    if word == "help" then return "listed" end
+    if HIDDEN_WORDS[word] then return "hidden" end
+    local entry = self.table.args[word]
+    if entry ~= nil and not entry.cmdHidden then return "listed" end
 end
 
--- Tab completion in the chat box: "/ssf del<Tab>" -> "/ssf delete", "/ssf pause o<Tab>" ->
--- "/ssf pause off" or "on". One completion set of whole phrases, never a second set on
--- "/ssf <key> ": a set nested inside another can move AceTab's insert point, and on
--- AceTab 11 a Tab then replaced from the wrong place (seen in game 2026-10-22). Sorted, so
--- a Tab cycles in the order the list prints (AceTab 12 keeps the order; 11 scrambles it).
-local function CommandWords(words)
-    local Settings = SSF:GetModule("Settings")
+-- Every listed chat word, "help" included, sorted.
+function Options:ChatWords()
     local list = { "help" }
-    for key in pairs(Options.table.args) do
-        if IsChatWord(key) then
-            local values = Settings:ValueWords(key)
-            if values then
-                for _, value in ipairs(values) do list[#list + 1] = key .. " " .. value end
-            else
-                list[#list + 1] = key
-            end
-        end
+    for key in pairs(self.table.args) do
+        if key ~= "help" and self:ChatWord(key) == "listed" then list[#list + 1] = key end
     end
     table.sort(list)
-    for _, word in ipairs(list) do words[#words + 1] = word end
+    return list
 end
 
--- AceTab usage, on an ambiguous Tab: the part being chosen, on one line. All matches under
--- one command word -> its value words; otherwise the command words.
-local function TabUsage(_, matches)
-    local firsts, seconds = {}, {}
-    for phrase in pairs(matches) do
-        local first, second = phrase:match("^(%S+) (%S+)$")
-        firsts[first or phrase] = true
-        if second then seconds[second] = true end
-    end
-    local function Sorted(set)
-        local list = {}
-        for word in pairs(set) do list[#list + 1] = word end
-        table.sort(list)
-        return list
-    end
-    local list = Sorted(firsts)
-    if #list == 1 and next(seconds) then list = Sorted(seconds) end
-    return table.concat(list, "  ")
-end
-
--- /ssf: naked opens the window (open only, never a toggle) and prints the pause line, the
--- status line and a pointer to help. "/ssf help" or "/ssf ?" prints AceConfigCmd's command
--- list. A whole number on its own sets the cap, as setmax. An unknown first word prints
--- one error line, then the list. Anything else goes
--- straight to AceConfigCmd, which parses and dispatches to the table.
-local function HandleCommand(input)
-    input = strtrim(input or "")
-    local first = (input:match("^(%S+)") or ""):lower()
-    -- WoW's chat never shows the slash command typed, so SSF echoes it in grey after a
-    -- "> " prompt, above its answer, the way a terminal does. Not for "delete": macros run
-    -- it before every cast, and an echo there would flood chat.
-    if first ~= "delete" then
-        SSF:Print(Colors():Echo("> /ssf" .. (input ~= "" and (" " .. input) or "")))
-    end
-    if input == "" then
-        SSF:GetModule("Window"):Open()
-        Status():PrintStatus()
-        SSF:Print(L["Type /ssf help for commands."])
-        return
-    end
-    if first == "help" or first == "?" then
-        AceConfigCmd:HandleCommand("ssf", APP, "")
-        return
-    end
-    -- a whole number on its own is the cap: "/ssf 32" is "/ssf setmax 32" (a player's ask,
-    -- 2026-11-16). It goes to setmax's own command, marked short: Settings checks the range
-    -- and answers a bad value in the short form the player typed.
-    -- ON PURPOSE, not a bypass of AceConfigCmd (a release review flagged it as "Ace first"
-    -- and the owner kept it, 2026-11-16): AceConfigCmd can only dispatch "setmax 32", and
-    -- then has no way to say the player typed the short form, so the usage line would name
-    -- setmax. Calling the setting's own `set` is this file's existing way to run a chat
-    -- command from code (TogglePause does the same for the key binding). Nothing Ace does
-    -- is redone here; the third argument, short, is Settings' documented extension.
-    if input:match("^%d+$") then
-        Options.table.args.setmax.set(nil, input, true)
-        return
-    end
-    if not IsChatWord(first) and not HIDDEN_WORDS[first] then
-        SSF:Print(L['Unknown command "%s".']:format(first))
-        AceConfigCmd:HandleCommand("ssf", APP, "")
-        return
-    end
-    AceConfigCmd:HandleCommand("ssf", APP, input)
+-- "/ssf 25": runs setmax's own chat command with the number typed alone, marked short, so
+-- Settings checks the range and a bad value answers in the short form ("Use: /ssf 1-100").
+-- ON PURPOSE, not a bypass of AceConfigCmd (a release review flagged it as "Ace first" and
+-- the owner kept it, 2026-11-16): AceConfigCmd can only dispatch "setmax 25", and then has
+-- no way to say the player typed the short form, so the usage line would name setmax.
+-- Calling a setting's own `set` is this file's way to run a chat command from code
+-- (TogglePause does the same for the key binding). Nothing Ace does is redone here; the
+-- third argument, short, is Settings' documented extension.
+function Options:SetCapShortForm(input)
+    self.table.args.setmax.set(nil, input, true)
 end
 
 -- Setup lives in OnEnable, not OnInitialize: Ace3 runs every module's OnInitialize even when
--- Core's warlock gate has switched the module off, so /ssf would register on other classes.
+-- Core's warlock gate has switched the module off. /ssf is SlashCommand's, Tab is
+-- TabComplete's; both read this table through ChatWord and ChatWords.
 function Options:OnEnable()
     self.table = BuildTable()
-    AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd here: /ssf is registered below
-    SSF:RegisterChatCommand("ssf", HandleCommand)
+    AceConfig:RegisterOptionsTable(APP, self.table) -- no slashcmd: SlashCommand registers /ssf
     -- once: AceConfigDialog refuses a second entry under the same name, so an OnEnable that
-    -- runs again (the module switched off and on) keeps the first (AceTab keeps its first
-    -- registration by itself)
+    -- runs again (the module switched off and on) keeps the first
     if not self.inBlizOptions then
         AceConfigDialog:AddToBlizOptions(APP, L["Soul Shards Forever"])
         self.inBlizOptions = true
     end
-    AceTab:RegisterTabCompletion("SSF", "/ssf ", CommandWords, TabUsage)
     self:RegisterMessage("SSF_HELP_CHANGED", "Rebuild")
 end
 

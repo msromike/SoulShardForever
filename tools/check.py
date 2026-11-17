@@ -1734,9 +1734,31 @@ def constants(code):
 
 COMBAT_HOMES = {"Modules/Combat.lua", "Modules/Debug.lua"}  # who may call the game's two combat functions
 
+# a function of a module: `function M:Name(...)` up to the `end` at the start of a line,
+# or all on one line
+MODULE_FUNC_RE = re.compile(r"^function \w+[:.](\w+)\([^)]*\)(.*?)^end\b|^function \w+[:.](\w+)\([^)]*\)(.*?)\bend\s*$",
+                            re.M | re.S)
+# one statement that only calls another module: `SSF:GetModule("X"):Y(...)` or a local alias
+# of one (`Cap():Get()`), returned or not
+FORWARD_RE = re.compile(r'^(?:return\s+)?(?:SSF:GetModule\(\s*"\w+"\s*\)|[A-Z]\w*\(\))\s*[:.]\s*\w+\(.*\)$', re.S)
+SETUP_FUNCS = {"OnInitialize", "OnEnable", "OnDisable"}
+
+
+def pass_through(code):
+    """True when every function of the module (its set-up ones aside) is a single statement
+    that only calls another module: a file that adds nothing but a hop."""
+    bodies = []
+    for m in MODULE_FUNC_RE.finditer(code):
+        name, body = (m.group(1), m.group(2)) if m.group(1) else (m.group(3), m.group(4))
+        if name in SETUP_FUNCS:
+            continue
+        bodies.append(" ".join(l.strip() for l in body.splitlines() if l.strip()))
+    return bool(bodies) and all(FORWARD_RE.match(b) for b in bodies)
+
 
 def check_rules():
-    """Every widget type registered is used; the shard id is typed in Core only (the locale files' comments included); every
+    """No module is only a pass-through (every function a single call into another module);
+    every widget type registered is used; the shard id is typed in Core only (the locale files' comments included); every
     message a module listens for is sent by some module; and the same ALL_CAPS local with
     the same literal in two files is one value with two homes (or two things that need two
     names)."""
@@ -1767,6 +1789,13 @@ def check_rules():
             if m:
                 print(f"   {rel}:{n}: {m.group(1)} is typed here; ask Combat (Locked or InFight)")
                 ok = False
+    # no pass-through module: a file whose every function only calls another module is a hop
+    # a cold reader has to follow for nothing; its callers should ask the other module
+    for rel in code_files:
+        if rel.startswith("Modules/") and pass_through(code_text(rel)):
+            print(f"   {rel}: every function only calls another module; a file that adds nothing "
+                  f"but a hop (its callers should ask that module, or it should own a rule)")
+            ok = False
     # a message a module listens for is sent by some module: a misspelt name never arrives
     sent = {m for text in texts.values() for m, _ in SEND_RE.findall(code_lines(text))}
     for rel, text in texts.items():

@@ -32,7 +32,10 @@ Core and modules:
 - Modules\DebugReport.lua: the window a player copies the debug record from.
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
 - Modules\Help.lua: help mode.
-- Modules\Options.lua: the one settings table and the /ssf command.
+- Modules\Options.lua: the one settings table.
+- Modules\DebugCommand.lua: the words after "/ssf debug".
+- Modules\SlashCommand.lua: /ssf itself.
+- Modules\TabComplete.lua: Tab in the chat box, through AceTab.
 - Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
 - Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
@@ -110,7 +113,7 @@ its code (the ACTS list in tools/check.py). Each file's header says the same und
 | Sounds | mutes a game sound; unmutes a game sound; plays a sound file; plays a sound; adds media to the list every addon shares |
 | Trimmer | picks an item up or drops it (moves items); clears the cursor; deletes the item on the cursor |
 | DeleteButton | sets a global name |
-| Options | registers a slash command |
+| SlashCommand | registers a slash command |
 | Macros | makes a macro; opens Blizzard's macro window; reaches into Blizzard's macro window; puts a line in the game's red error text |
 | MacroGlow | reaches into Blizzard's macro window; starts a glow on a button |
 | Tooltip | fills or hides the game tooltip |
@@ -141,7 +144,10 @@ on the right and the file on the left breaks; the check fails first.
 | Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
 | Settings | Colors: OnOff, Value |
-| Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Echo, Gold, OnOff, PaintState, State; Counter: OnSoulBag; Debug: Clear, IsOn, Mark, Set; DebugReport: Open; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define, ValueWords; Sounds: LevelKey, LevelKeys, LevelVolume, PlayPause; Status: CountText, InBagsText, PauseText, PrintStatus; Trimmer: Delete, WhyNot; Window: Open |
+| Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Gold, PaintState, State; Counter: OnSoulBag; DebugCommand: Run; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define; Sounds: LevelKey, LevelKeys, LevelVolume, PlayPause; Status: CountText, InBagsText, PauseText; Trimmer: Delete, WhyNot; Window: Open |
+| DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set; DebugReport: Open |
+| SlashCommand | Colors: Echo; Options: APP, ChatWord, SetCapShortForm; Status: PrintStatus; Window: Open |
+| TabComplete | Options: ChatWords; Settings: ValueWords |
 | Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION |
 | Macros | Combat: Locked |
 | MacroGlow | Macros: Names |

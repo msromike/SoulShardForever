@@ -99,6 +99,8 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   combat questions in Combat, the pause gate in Trimmer (Paused), colors in Colors, chat and tooltip
   wording in Status, tooltips in Tooltip, the volume levels in Sounds. ARCHITECTURE.md lists
   the rest.
+- No pass-through files: a module whose every function only calls another module adds a
+  hop and no job. The check fails on one; its callers ask the other module directly.
 - A new job gets a new file, named for the job, with its header written before its code,
   and a line in ARCHITECTURE.md in the same commit.
 

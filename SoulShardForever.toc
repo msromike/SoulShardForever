@@ -49,6 +49,9 @@ Modules\DebugReport.lua
 Modules\Settings.lua
 Modules\Help.lua
 Modules\Options.lua
+Modules\DebugCommand.lua
+Modules\SlashCommand.lua
+Modules\TabComplete.lua
 Modules\Status.lua
 Modules\Macros.lua
 Modules\MacroGlow.lua
