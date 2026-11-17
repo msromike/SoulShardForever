@@ -45,7 +45,8 @@
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
 -- The min and max labels and the "-", box, "+" row start UNDER_BAR below the bar (the
 -- stock Slider starts the labels inside it), so the thumb at either end, a notch tick and
--- the bound's tick never run into a label or a button.
+-- the bound's tick never run into a label or a button. Each label is centered under the
+-- place the thumb rests at that end, not at the bar's corner.
 -- Lib internals: the stock Slider's label, editbox, lowtext, hightext, slider (its thumb texture and its
 --          3 px side insets, for the dim region), frame (also handed to Help:KeepHover as
 --          the frame that gives up the mouse while greyed) and alignoffset fields, its min,
@@ -184,10 +185,25 @@ local function UpdateEnds(self)
     if ends.high then inner.hightext:SetText(ends.high) end
 end
 
--- everything drawn on the rail, redrawn whenever the width, the scale or the `arg` changes
+-- The min and max labels: each centered under the place the thumb rests at that end (the
+-- same place a notch tick is drawn), UNDER_BAR below the bar. The stock Slider puts them
+-- at the bar's two corners and 3 px up inside it, where the thumb at either end, a notch
+-- tick and the bound's tick all ran into them.
+local function UpdateLabels(self)
+    local inner = self.inner
+    local lo, hi = inner.min or 0, inner.max or 100
+    if hi <= lo then return end
+    inner.lowtext:ClearAllPoints()
+    inner.lowtext:SetPoint("TOP", inner.slider, "BOTTOMLEFT", RailX(self, lo), -UNDER_BAR)
+    inner.hightext:ClearAllPoints()
+    inner.hightext:SetPoint("TOP", inner.slider, "BOTTOMLEFT", RailX(self, hi), -UNDER_BAR)
+end
+
+-- everything placed along the rail, redone whenever the width, the scale or the `arg` changes
 local function UpdateRail(self)
     UpdateDim(self)
     UpdateNotches(self)
+    UpdateLabels(self)
 end
 
 -- The let-go, the one place OnMouseUp is fired: AceConfigDialog saves the value and
@@ -328,14 +344,6 @@ local function Constructor()
     inner.editbox:SetWidth(VALUE_BOX)
     inner.editbox:ClearAllPoints()
     inner.editbox:SetPoint("TOP", inner.slider, "BOTTOM", 0, -VALUE_GAP)
-
-    -- the min and max labels: the stock Slider starts them 3 px up inside the bar, where
-    -- the thumb at either end, a notch tick and the bound's tick all ran into them; here
-    -- they start UNDER_BAR below it, at the same sides
-    inner.lowtext:ClearAllPoints()
-    inner.lowtext:SetPoint("TOPLEFT", inner.slider, "BOTTOMLEFT", 2, -UNDER_BAR)
-    inner.hightext:ClearAllPoints()
-    inner.hightext:SetPoint("TOPRIGHT", inner.slider, "BOTTOMRIGHT", -2, -UNDER_BAR)
 
     -- "-" and "+" frame the value box: real bordered buttons, parented to the slider's frame
     -- and raised above it so the slider's own mouse handling cannot swallow the clicks
