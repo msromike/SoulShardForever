@@ -161,6 +161,7 @@ local BLOCKER_TEXT = {
     undercap = CapIs,
     paused = function() return L["SSF paused"] end,
     quiet = function() return L["no Drain Soul yet"] end,
+    locked = function() return L["shard locked"] end,
 }
 
 -- every reason the button can show: it sizes itself to the longest
@@ -256,6 +257,7 @@ local function BuildTable()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
                 if why == "paused" then return L["Nothing to delete, SSF is paused."] end
                 if why == "quiet" then return L["Nothing to delete, no Drain Soul yet."] end
+                if why == "locked" then return L["Can't delete yet, a shard is locked."] end
                 if why then return L["Nothing to delete, you are at or under the cap."] end
                 return SSF:GetModule("DeleteHelp"):Text(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."]:format(L["Delete Shard"]))
             end,

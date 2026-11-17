@@ -13,6 +13,9 @@ L["#showtooltip\n/ssf delete\n/cast %s"] = true
 L["Tip:"] = true
 L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"] = true
 L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"] = true
-L["Thank you for giving our beta a try. Tell us how it went in the CurseForge comments."] = true
+L["1.16.0-beta.2 notes:"] = true
+L["fixed race that could cause deletion below cap during rapid keypresses"] = true
+L["***"] = true
+L["Thank you for giving our beta a try. Close to release, would like to see a few CurseForge comments first."] = true
 
 NS.AddLocaleStrings("enUS", L)

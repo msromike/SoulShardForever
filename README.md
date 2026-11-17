@@ -62,7 +62,7 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
   and SSF_BoA, reloads your UI, and opens the macro window with them glowing until you
   drag them onto a bar.
 
-- **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason on the button: your cap (cap is 8), SSF paused or no Drain Soul yet. The window closes itself when a fight starts and opens again only after it.
+- **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason on the button: your cap (cap is 8), SSF paused, no Drain Soul yet or shard locked. The window closes itself when a fight starts and opens again only after it.
 
 Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless you pick one of the sort modes.
 

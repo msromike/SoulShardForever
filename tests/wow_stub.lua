@@ -672,9 +672,25 @@ C_Container = {
     end,
 }
 ItemLocation = { CreateFromBagAndSlot = function(_, bag, slot) return { bag = bag, slot = slot } end }
+-- every move and delete asked for and not yet confirmed (see the cursor, below)
+local pending = {}
+function WoW.Forget() pending = {} end -- nothing asked for is still waiting
+-- A slot is locked when a test set it so (the bag's own locked table) or when a move or a
+-- delete asked for still waits on the server: the slot the item was taken from, and the
+-- slot a move is going to. For a move that is how the game behaves; for a delete it is
+-- taken to be the same, and no test here depends on which.
+local function slotLocked(bag, slot)
+    local b = bagOf(bag)
+    if b and b.locked and b.locked[slot] == true then return true end
+    for _, ask in ipairs(pending) do
+        if ask.held.bag == bag and ask.held.slot == slot then return true end
+        if ask.bag == bag and ask.slot == slot then return true end
+    end
+    return false
+end
 C_Item = {
     DoesItemExist = function(loc) local b = bagOf(loc.bag) return b and b.items and b.items[loc.slot] ~= nil or false end,
-    IsLocked = function(loc) local b = bagOf(loc.bag) return b and b.locked and b.locked[loc.slot] == true or false end,
+    IsLocked = function(loc) return slotLocked(loc.bag, loc.slot) end,
     GetItemFamily = function(itemId) return itemId == SHARD and SOUL_FAMILY or 0 end,
     -- the game's own count of an item across the bags; a test sets WoW.itemCount to make
     -- it disagree with the slots
@@ -697,15 +713,14 @@ C_Item = {
 -- here is WoW.Settle(). Settle applies everything asked for, in order, then sends the bag
 -- events the game sends and runs the timers they start (the bag bucket). Every pickup is
 -- also recorded in WoW.picks, so a test can read what SSF asked for without settling. A
--- locked slot gives nothing and takes nothing.
+-- locked slot gives nothing and takes nothing, and a slot stays locked from the asking
+-- until Settle (slotLocked, above).
 WoW.picks = {}
 WoW.deleted = {}
-local pending = {}
-function WoW.Forget() pending = {} end -- nothing asked for is still waiting
 C_Container.PickupContainerItem = function(bag, slot)
     WoW.picks[#WoW.picks + 1] = { bag, slot }
     local b = bagOf(bag)
-    if not b or (b.locked and b.locked[slot]) then return end
+    if not b or slotLocked(bag, slot) then return end
     b.items = b.items or {}
     local held = WoW.cursor
     if not held then

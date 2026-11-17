@@ -28,20 +28,24 @@
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The third announcement, in the beta only: thanks for trying it, and how to use it. It
--- replaces the second, "*New* SSF Beta Available" (11502), which 1.15.2 ships to everyone.
+-- The fourth announcement, in the beta only: the third (11600, thanks for trying it, and
+-- how to use it) with the second beta's one-line note and a new thank-you line on top,
+-- above a line of stars. The third replaced the second, "*New* SSF Beta Available"
+-- (11502), which 1.15.2 ships to everyone.
 -- The first, "Coming soon to SSF" (11400), shipped in 1.14.0 and was switched off in 1.15.1.
 NS.news = {
-    id = 11600,
+    id = 11601,
     on = true,
     title = L["Thanks for Trying the SSF Beta"],
     text = {
+        { lead = L["1.16.0-beta.2 notes:"], text = L["fixed race that could cause deletion below cap during rapid keypresses"], blank = true },
+        { text = L["Thank you for giving our beta a try. Close to release, would like to see a few CurseForge comments first."], blank = true },
+        { text = L["***"], blank = true },
         { text = L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."], blank = true },
         { lead = L["How to use it:"], text = L["put /ssf delete on the line before the spells you cast most. Two little macros are all you need:"], blank = true },
         { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "LIFE_TAP", blank = true },
         { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "DRAIN_SOUL", blank = true },
         { lead = L["Tip:"], text = L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"], spell = "BANE_OF_AGONY", blank = true },
-        { text = L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"], spell = "BANE_OF_AGONY", blank = true },
-        L["Thank you for giving our beta a try. Tell us how it went in the CurseForge comments."],
+        { text = L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"], spell = "BANE_OF_AGONY" },
     },
 }

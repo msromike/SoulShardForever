@@ -26,6 +26,7 @@ L["Keybindings"] = "Назначение клавиш"
 L["Nothing to delete, SSF is paused."] = "Нечего удалять, SSF на паузе."
 L["Nothing to delete, you are at or under the cap."] = "Нечего удалять, вы на лимите или ниже."
 L["Nothing to delete, no Drain Soul yet."] = "Нечего удалять, пока нет «Похищения души»."
+L["Can't delete yet, a shard is locked."] = "Пока нельзя удалить, осколок заблокирован."
 L["Shards to keep"] = "Сколько осколков хранить"
 L["Match soul bag size"] = "По сумке душ"
 L["Show shard counter on bag bar"] = "Счетчик на панели сумок"
@@ -113,6 +114,7 @@ L["Opens the welcome screen to create the recommended macros."] = "Открыв�
 L["No free macro slots. Delete a macro and try again."] = "Нет свободных ячеек для макросов. Удалите макрос и попробуйте снова."
 L["You learned Drain Soul"] = "Вы изучили «Похищение души»"
 L["no Drain Soul yet"] = "пока нет «Похищения души»"
+L["shard locked"] = "осколок заблокирован"
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Пока можете осваивать аддон. Когда вы изучите «Похищение души» на 10-м уровне, мы покажем это окно снова."
 
 -- the announcement panel (NewsShow): the tick box and the button's two labels

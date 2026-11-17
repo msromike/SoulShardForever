@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.16.0-beta.2 (2026-11-17)
+
+- Fixed: pressing delete again before the game had finished removing a shard could
+  delete a second one and take you under your cap. SSF now waits for the first to go.
+- While it waits, the Delete Shard button is grey and says "shard locked".
+- The beta announcement has a note on this fix.
+
 ## 1.16.0-beta.1 (2026-11-17)
 
 - Delete in combat: your delete key and the /ssf delete line in your macros now delete a

@@ -10,7 +10,9 @@
 -- Right after a delete the bags still show the deleted shard until the server confirms:
 -- a listener to SSF_SHARD_DELETED that reads Bags:Count() gets the old number, and the
 -- right one with the SSF_BAGS_CHANGED that follows within half a second. The message
--- carries the count after the delete; use that when the moment matters.
+-- carries the count after the delete; use that when the moment matters. Until then the
+-- count is one too high, so the delete gate (Trimmer:WhyNot) asks AnyShardLocked before it
+-- trusts the count: no shard locked, no delete or move still in flight.
 --
 -- The bags a shard can be in, one definition (SortOrder's list): every soul bag, in any
 -- slot (the reagent slot holds a soul pouch or a reagent bag on Forever, and a shard goes
@@ -29,6 +31,7 @@
 --          IsRegularBag(bag), HasSoulBag() -> bool; SoulBags() -> ids ascending;
 --          SortOrder() -> ids in sort order; ForEachSlot(fn(bag, slot, position), topFirst);
 --          ForEachShard(fn(bag, slot)); Count() -> n; SoulBagSlots() -> n;
+--          AnyShardLocked() -> bool;
 --          LastShard(topFirst) -> bag, slot or nil. Every one is also the headless
 --          tests' handle on the bags.
 -- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s.
@@ -160,6 +163,18 @@ function Bags:Count()
     local n = 0
     self:ForEachShard(function() n = n + 1 end)
     return n
+end
+
+-- The server still holds some shard: a delete or a move asked for and not yet answered, or
+-- a shard on the cursor or in a trade. While this is true Count() may still include a
+-- shard that is on its way out. Only shards count: another item locked says nothing here.
+function Bags:AnyShardLocked()
+    local locked = false
+    self:ForEachShard(function(bag, slot)
+        locked = self:IsLocked(bag, slot)
+        return locked
+    end)
+    return locked
 end
 
 -- Total slots across every equipped soul bag; 0 when there is none.

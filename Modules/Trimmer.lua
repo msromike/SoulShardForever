@@ -7,6 +7,11 @@
 -- regular bag; otherwise the top-most.
 -- Then it runs one Sorter pass. Nothing else. The delete goes first: a pass's moves lock
 -- the shards they move, and those are the ones LastShard would pick.
+-- One delete in flight at most: while the server still holds any shard (Bags:AnyShardLocked:
+-- a delete or a move not yet answered) a press deletes nothing, because the count may still
+-- include a shard on its way out and a second delete would go under the cap. The game's
+-- lock is asked at the press; nothing is remembered and nothing is timed. Deliberate: the
+-- rule sits in WhyNot, the one gate, so every way to delete and the window's button get it.
 -- Runs only inside a hardware event (a slash command or a button click), because
 -- DeleteCursorItem is limited to one delete per hardware event on this engine.
 -- In combat the delete is the same as out of it (the live server keeps it), but silent
@@ -21,7 +26,8 @@
 -- Public:  Delete(); Paused() -> bool, the one pause gate (Sorter:Pass asks it too);
 --          WhyNot(count) -> why a press would not delete, or nil if it would:
 --          "paused" (a mode: the only answer while paused, whatever the count), "quiet"
---          (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap". The window's Delete
+--          (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap", "locked" (over the cap,
+--          but the server still holds a shard). The window's Delete
 --          Shard button greys on it with the reason under it. No combat reason: a press
 --          deletes in a fight too, and the window is shut in one.
 -- Sends:   SSF_DELETE_PRESSED (what the press decided: "delete" or WhyNot's answer; then
@@ -32,7 +38,7 @@
 --          "held", the shard was still on the cursor after the delete) when a press that
 --          decided to delete did not. Debug records all three; the first and last have no
 --          other listener.
--- Reads:   Bags:LastShard/Count, Cap:Get/IsOver/IsFull/IsQuiet, Sorter:TopFirst/Pass,
+-- Reads:   Bags:LastShard/Count/AnyShardLocked, Cap:Get/IsOver/IsFull/IsQuiet, Sorter:TopFirst/Pass,
 --          Sounds:PlayPause/Moving, Status:DeletedText/PausedPressText, Combat:Locked (a
 --          paused press is silent in combat); profile.paused,
 --          pauseSound, pauseLog, announce.
@@ -93,8 +99,13 @@ function Trimmer:WhyNot(count)
     if self:Paused() then return "paused" end
     local Cap = SSF:GetModule("Cap")
     if Cap:IsQuiet() then return "quiet" end
-    count = count or SSF:GetModule("Bags"):Count()
-    if Cap:IsOver(count) then return nil end
+    local Bags = SSF:GetModule("Bags")
+    count = count or Bags:Count()
+    if Cap:IsOver(count) then
+        -- over the cap by the count, but the count may include a shard on its way out
+        if Bags:AnyShardLocked() then return "locked" end
+        return nil
+    end
     return Cap:IsFull(count) and "atcap" or "undercap"
 end
 

@@ -13,6 +13,9 @@ L["#showtooltip\n/ssf delete\n/cast %s"] = "#showtooltip\n/ssf delete\n/cast %s"
 L["Tip:"] = "Совет:"
 L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"] = "/stopattack и /stopcasting заставляют мгновенные заклинания вроде «%s» срабатывать с первого нажатия, даже пока вы стреляете из жезла:"
 L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"] = "#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"
-L["Thank you for giving our beta a try. Tell us how it went in the CurseForge comments."] = "Спасибо, что попробовали нашу бету. Расскажите, как всё прошло, в комментариях на CurseForge."
+L["1.16.0-beta.2 notes:"] = "Заметки к 1.16.0-beta.2:"
+L["fixed race that could cause deletion below cap during rapid keypresses"] = "исправлена гонка, из-за которой при быстрых нажатиях удаление могло уйти ниже лимита"
+L["***"] = "***"
+L["Thank you for giving our beta a try. Close to release, would like to see a few CurseForge comments first."] = "Спасибо, что пробуете нашу бету. Релиз близко, но сначала хотелось бы увидеть несколько комментариев на CurseForge."
 
 NS.AddLocaleStrings("ruRU", L)

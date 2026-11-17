@@ -26,6 +26,7 @@ L["Keybindings"] = "Tastenbelegung"
 L["Nothing to delete, SSF is paused."] = "Nichts zu löschen, SSF ist pausiert."
 L["Nothing to delete, you are at or under the cap."] = "Nichts zu löschen, du bist am oder unter dem Limit."
 L["Nothing to delete, no Drain Soul yet."] = "Nichts zu löschen, noch kein Seelendieb."
+L["Can't delete yet, a shard is locked."] = "Noch nicht löschbar, ein Splitter ist gesperrt."
 L["Shards to keep"] = "Splitter behalten"
 L["Match soul bag size"] = "An Seelentasche anpassen"
 L["Show shard counter on bag bar"] = "Splitterzahl auf der Taschenleiste"
@@ -113,6 +114,7 @@ L["Opens the welcome screen to create the recommended macros."] = "Öffnet den W
 L["No free macro slots. Delete a macro and try again."] = "Keine freien Makroplätze. Lösche ein Makro und versuche es erneut."
 L["You learned Drain Soul"] = "Du hast Seelendieb gelernt"
 L["no Drain Soul yet"] = "noch kein Seelendieb"
+L["shard locked"] = "Splitter gesperrt"
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Bis dahin kannst du das Addon ausprobieren. Wenn du auf Stufe 10 Seelendieb lernst, zeigen wir dir dieses Fenster noch einmal."
 
 -- the announcement panel (NewsShow): the tick box and the button's two labels

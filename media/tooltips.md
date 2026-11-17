@@ -24,7 +24,8 @@ Help ON: Click to hide tooltip help.
 
 Greyed whenever a click could not delete (Options' Blocker), with one reason on the button,
 under its name. While paused it always says SSF paused, whatever the count. Unpaused:
-cap is N, or no Drain Soul yet. No combat reason: the window closes when a fight starts and can't be opened
+cap is N, no Drain Soul yet, or shard locked (over the cap while a shard is still being
+moved or deleted). No combat reason: the window closes when a fight starts and can't be opened
 until it's over. The help below still shows on the greyed button while help is on.
 
 SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, this button, a macro, or mix and match.

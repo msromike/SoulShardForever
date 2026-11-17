@@ -26,6 +26,7 @@ L["Keybindings"] = "Atajos de teclado"
 L["Nothing to delete, SSF is paused."] = "Nada que eliminar, SSF está en pausa."
 L["Nothing to delete, you are at or under the cap."] = "Nada que eliminar, estás en el límite o por debajo."
 L["Nothing to delete, no Drain Soul yet."] = "Nada que eliminar, aún sin Drenar alma."
+L["Can't delete yet, a shard is locked."] = "Aún no se puede eliminar, un fragmento está bloqueado."
 L["Shards to keep"] = "Fragmentos a conservar"
 L["Match soul bag size"] = "Según la bolsa de almas"
 L["Show shard counter on bag bar"] = "Contador en la barra de bolsas"
@@ -113,6 +114,7 @@ L["Opens the welcome screen to create the recommended macros."] = "Abre la panta
 L["No free macro slots. Delete a macro and try again."] = "No hay espacios de macro libres. Elimina un macro e inténtalo de nuevo."
 L["You learned Drain Soul"] = "Aprendiste Drenar alma"
 L["no Drain Soul yet"] = "aún sin Drenar alma"
+L["shard locked"] = "fragmento bloqueado"
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = "Por ahora puedes probar el addon. Cuando aprendas Drenar alma en el nivel 10, te mostraremos esta ventana otra vez."
 
 -- the announcement panel (NewsShow): the tick box and the button's two labels

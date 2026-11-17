@@ -1,8 +1,9 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share; the press
--- in combat (it deletes, moves nothing, and a paused press stays silent); and what the
--- bags hold once the server confirms a press (WoW.Settle).
+-- in combat (it deletes, moves nothing, and a paused press stays silent); what the
+-- bags hold once the server confirms a press (WoW.Settle); and that a press waits while
+-- the server still holds a shard, so presses faster than the server never go under the cap.
 -- Saves:   profile.paused, maxShards, autoMax, pauseLog, for the test at hand.
 -- Touches nothing else.
 
@@ -101,6 +102,52 @@ test("a press over the cap: one shard gone once the server confirms, and the res
     end
     eq(inSoulBag, 2, "and both are in the soul bag: the press sorted what it kept")
     eq(PressCountingDeletes(), 0, "at the cap now: the next press deletes nothing")
+end)
+
+test("WhyNot: locked when over the cap and the server still holds a shard; the cap answers come first", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }, { [2] = true }) })
+    profile.paused = false
+    profile.autoMax = false
+    profile.maxShards = 2
+    eq(Trimmer:WhyNot(), "locked", "3 shards, cap 2, one locked: a press waits")
+    profile.maxShards = 3
+    eq(Trimmer:WhyNot(), "atcap", "at the cap: the cap is the reason, locked or not")
+    profile.maxShards = 8
+    eq(Trimmer:WhyNot(), "undercap", "under the cap: the same")
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD, [4] = 1234 }, { [4] = true }) })
+    profile.maxShards = 2
+    eq(Trimmer:WhyNot(), nil, "another item locked says nothing: a press deletes")
+end)
+
+test("one over the cap, pressed again before the server confirms: one shard gone, not two", function()
+    -- no soul bag: nothing for the sort to move, so the only shard in flight is the delete's
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }) })
+    profile.paused = false
+    profile.autoMax = false
+    profile.maxShards = 2
+    local Bags = SSF:GetModule("Bags")
+    eq(PressCountingDeletes(), 1, "3 shards, cap 2: the first press deletes")
+    eq(Bags:Count(), 3, "not confirmed yet: the bags still show three")
+    eq(PressCountingDeletes(), 0, "the second press, before the server confirms: nothing")
+    eq(PressCountingDeletes(), 0, "and the third")
+    WoW.Settle()
+    eq(Bags:Count(), 2, "the server confirms: two left, the cap")
+    eq(PressCountingDeletes(), 0, "at the cap now: nothing")
+end)
+
+test("three over the cap, a press after each confirm: three gone, one at a time", function()
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD, [4] = SHARD, [5] = SHARD }) })
+    profile.paused = false
+    profile.autoMax = false
+    profile.maxShards = 2
+    local Bags = SSF:GetModule("Bags")
+    for left = 4, 2, -1 do
+        eq(PressCountingDeletes(), 1, "over the cap, nothing in flight: a delete")
+        eq(PressCountingDeletes(), 0, "pressed again at once: it waits")
+        WoW.Settle()
+        eq(Bags:Count(), left, "the server confirms: " .. left .. " left")
+    end
+    eq(PressCountingDeletes(), 0, "at the cap: nothing more")
 end)
 
 test("paused in combat: the press is silent; out of combat it prints", function()

@@ -25,6 +25,7 @@ L["Keybindings"] = true
 L["Nothing to delete, SSF is paused."] = true
 L["Nothing to delete, you are at or under the cap."] = true
 L["Nothing to delete, no Drain Soul yet."] = true
+L["Can't delete yet, a shard is locked."] = true
 L["Shards to keep"] = true
 L["Match soul bag size"] = true
 L["Show shard counter on bag bar"] = true
@@ -105,6 +106,7 @@ L["Click for in-game tooltip help."] = true
 L["You won't see this welcome screen again on this character unless you click %s in the UI."] = true
 L["You learned Drain Soul"] = true
 L["no Drain Soul yet"] = true
+L["shard locked"] = true
 L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."] = true
 -- %s: the "Delete Shard" label (the keybind's name, the button's text); the second line
 -- takes it twice, a translation as %1$s and %2$s
