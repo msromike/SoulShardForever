@@ -6,7 +6,7 @@
 -- with its own first paragraph.
 -- Not a spec: the warning's last sentence, "SSF cannot delete a shard while in combat", is
 -- player-facing text that is out of date on purpose. SSF does delete in combat (Trimmer);
--- the sentence changes with the full release of delete in combat, worded by the owner,
+-- the sentence changes with the full release of delete in combat, in vetted wording,
 -- in all six languages. Do not change it, or build on it, before then.
 --
 -- Public:  Blocks(first) -> the content as a list, for the welcome note's layout:

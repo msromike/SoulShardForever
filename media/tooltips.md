@@ -6,8 +6,8 @@ chat command's help text in /ssf help. Shown only while help is on (the "i"), ex
 "i" itself and the minimap tooltip. Plain sentences: the tooltip wraps them itself, no line
 breaks, except where a list needs them (How shards move, the Delete Shard macros).
 
-Rebuilt 2026-10-19 from the 1.8.0 code after the local .docs folder was lost; updated
-2026-10-20 for 1.8.1 (Delete Shard to the top row, the glow under the counter, the minimap
+Rebuilt from the 1.8.0 code after the local .docs folder was lost; updated for 1.8.1
+(Delete Shard to the top row, the glow under the counter, the minimap
 tooltip, the welcome layout).
 
 ## Help button ("i")
