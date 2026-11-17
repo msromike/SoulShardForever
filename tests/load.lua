@@ -9,8 +9,9 @@
 -- missing here too.
 --
 -- The glow library (LibCustomGlow) is the one stand-in: it draws with the game's texture
--- pools, which no stub has, so a table that takes every call and does nothing stands for
--- it. A glow is a look; nothing here can say anything about looks.
+-- pools, which no stub has, so a table with each function the real library defines, each
+-- doing nothing, stands for it; any other name is an error, as in the game. A glow is a
+-- look; nothing here can say anything about looks.
 --
 -- Public:  the chunk takes the addon's root folder and returns Load(opts) -> SSF, NS.
 --          opts, all optional: saved (the saved file, SoulShardForeverDB, as the game
@@ -25,6 +26,19 @@
 local ROOT = ...
 local ADDON, NS = "SoulShardForever", {}
 local LOGIN_EVENTS = { "PLAYER_ENTERING_WORLD", "SPELLS_CHANGED", "LOADING_SCREEN_DISABLED", "BAG_UPDATE_DELAYED" }
+
+-- The glow library's stand-in: a table with each function the real library defines
+-- (`function lib.Name(`, read from its own file) and nothing else, each doing nothing. A
+-- name the real library does not have is an error here, as it is in the game.
+local function GlowStandIn(rel)
+    local lib = LibStub:NewLibrary("LibCustomGlow-1.0", 1)
+    local file = assert(io.open(ROOT .. "/" .. rel))
+    for name in file:read("*a"):gmatch("\nfunction lib%.([%w_]+)%(") do lib[name] = function() end end
+    file:close()
+    return setmetatable(lib, { __index = function(_, k)
+        error("the glow library has no " .. tostring(k) .. " (tests/load.lua reads its functions from " .. rel .. ")", 2)
+    end })
+end
 
 local function loadLua(rel, ...)
     local chunk, err = loadfile(ROOT .. "/" .. rel)
@@ -74,7 +88,7 @@ return function(opts)
         if lower:match("%.xml$") then
             for _, lib in ipairs(XmlFiles(rel, {})) do
                 if lib:find("LibCustomGlow", 1, true) then
-                    setmetatable(LibStub:NewLibrary("LibCustomGlow-1.0", 1), { __index = function() return function() end end })
+                    GlowStandIn(lib)
                 else
                     loadLua(lib, ADDON, NS)
                 end
