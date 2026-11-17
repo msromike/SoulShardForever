@@ -27,10 +27,14 @@
 --          fill that note again while the window is showing, without an open: the note
 --          after a Language change),
 --          OpenKeyBindings() (the bottom-right button).
--- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and refresh),
+-- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and redraw),
 --          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
---          SSF_OPTIONS_CHANGED (redraw after any change not made in the window), SSF_SHARD_DELETED,
---          SSF_BAGS_CHANGED and SSF_QUIET_ENDED (refresh the count row), PLAYER_REGEN_DISABLED (a fight
+--          SSF_OPTIONS_CHANGED (redraw after any change not made in the window),
+--          SSF_SHARD_DELETED, SSF_BAGS_CHANGED and SSF_QUIET_ENDED (redraw: the whole window
+--          is fed again, not only the count row). Every redraw a message asks for runs a
+--          tick later (RefreshSoon), never inside the message: a message can arrive while
+--          AceConfigDialog is still inside a control's set or func, and rebuilding then
+--          breaks it (see RefreshSoon). PLAYER_REGEN_DISABLED (a fight
 --          starts: the window closes, and nothing opens it until the fight is over; it
 --          does not reopen by itself).
 -- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild;
@@ -240,12 +244,29 @@ function Window:Refresh()
     if IsShown(self) then Feed(self) end
 end
 
+-- Every redraw a message asks for runs a tick later (a zero timer, AceTimer's 0.01 s
+-- floor), never inside the message, and several in one tick make one redraw. A message
+-- can arrive while AceConfigDialog is still inside a control's set or func: Delete Shard's
+-- click deletes a shard, which sends SSF_SHARD_DELETED. Rebuilding the window right then
+-- releases the clicked button and empties the data AceConfigDialog reads back once the
+-- func returns; when the rebuild takes a different button from AceGUI's pool, that read
+-- errors ("rootframe", a nil value). The Language setting defers its rebuild for the same
+-- reason.
+function Window:RefreshSoon()
+    if self.refreshPending then return end
+    self.refreshPending = true
+    self:ScheduleTimer(function()
+        self.refreshPending = nil
+        self:Refresh()
+    end, 0)
+end
+
 -- A setting changed: redraw so an open window shows it, whatever changed it (a chat
 -- command, the pause key, any later source), except the window itself: AceConfigDialog
 -- already redraws after a change made in it, and a slider sends one on every drag tick
 -- (see Refresh).
 function Window:OnOptionsChanged(_, _, source)
-    if source ~= "window" then self:Refresh() end
+    if source ~= "window" then self:RefreshSoon() end
 end
 
 -- The window's own strings or buttons may have changed: Options built and re-registered
@@ -253,7 +274,7 @@ end
 -- macros" shows or hides). Re-dress an existing window, then redraw.
 function Window:Redress()
     if self.window then self:DressWindow() end
-    self:Refresh()
+    self:RefreshSoon()
 end
 
 -- The small standalone window: minimap click, /ssf, /ssf options, /ssf settings. Our own
@@ -362,11 +383,11 @@ end
 -- before OnEnable, so other classes never get the window.
 function Window:OnEnable()
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "Redress")
-    self:RegisterMessage("SSF_SHARD_DELETED", "Refresh")
+    self:RegisterMessage("SSF_SHARD_DELETED", "RefreshSoon")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
     self:RegisterMessage("SSF_MACROS_CHANGED", "Redress")
-    self:RegisterMessage("SSF_BAGS_CHANGED", "Refresh")
-    self:RegisterMessage("SSF_QUIET_ENDED", "Refresh")
+    self:RegisterMessage("SSF_BAGS_CHANGED", "RefreshSoon")
+    self:RegisterMessage("SSF_QUIET_ENDED", "RefreshSoon")
     -- a fight closes the window (and Open refuses until it's over)
     self:RegisterEvent("PLAYER_REGEN_DISABLED")
 end

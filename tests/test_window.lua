@@ -222,15 +222,62 @@ test("a change from anywhere but the window redraws an open window", function()
     function Window:Refresh() feeds = feeds + 1 return real(self) end
     local okay, err = pcall(function()
         Window:SendMessage("SSF_OPTIONS_CHANGED", "pause", "chat")
-        eq(feeds, 1, "a chat command: redrawn")
+        eq(feeds, 0, "not inside the message")
+        WoW.RunTimers()
+        eq(feeds, 1, "a chat command: redrawn, a tick later")
         Window:SendMessage("SSF_OPTIONS_CHANGED", "pause", "window")
+        WoW.RunTimers()
         eq(feeds, 1, "the window's own control: not redrawn (AceConfigDialog does it)")
         Window:SendMessage("SSF_OPTIONS_CHANGED", "pause")
-        eq(feeds, 2, "a source not named: redrawn")
+        Window:SendMessage("SSF_OPTIONS_CHANGED", "log")
+        WoW.RunTimers()
+        eq(feeds, 2, "a source not named: redrawn; two in one tick make one redraw")
+        -- a deleted shard (sent from inside Delete Shard's click) and a bag change: never
+        -- a rebuild inside the message
+        Window:SendMessage("SSF_SHARD_DELETED", 1, 2, 0, 1)
+        eq(feeds, 2, "a deleted shard: not redrawn inside the message")
+        WoW.RunTimers()
+        eq(feeds, 3, "a deleted shard: redrawn a tick later")
+        Window:SendMessage("SSF_BAGS_CHANGED")
+        eq(feeds, 3, "a bag change: not redrawn inside the message")
+        WoW.RunTimers()
+        eq(feeds, 4, "a bag change: redrawn a tick later")
     end)
     Window.Refresh = real
     assert(okay, err)
     ok(pauseTicked() ~= nil, "the pause setting is readable")
+end)
+
+-- The click on Delete Shard deletes a shard, which sends SSF_SHARD_DELETED while
+-- AceConfigDialog is still inside the button's func. Spare buttons in AceGUI's pool (in
+-- the game: after SSF's page in Blizzard's options was opened and closed) make a rebuild
+-- right then hand back a different button and break AceConfigDialog's read-back.
+test("clicking Delete Shard in the window raises no error, with spare buttons pooled", function()
+    shut()
+    profile.welcomed, profile.paused, profile.autoMax, profile.maxShards = 99999, false, false, 2
+    local items = {}
+    for i = 1, 8 do items[i] = SSF.SHARD_ITEM_ID end
+    WoW.SetBags({ [0] = WoW.PlainBag(16, items), [4] = WoW.SoulBag(20) })
+    local AceGUI, spares = LibStub("AceGUI-3.0"), {}
+    for i = 1, 5 do spares[i] = AceGUI:Create("SSFCountButton") end
+    for i = 1, 5 do AceGUI:Release(spares[i]) end
+    Window:Open()
+    WoW.RunTimers()
+    local function find(widget)
+        if widget.type == "SSFCountButton" then return widget end
+        for _, child in ipairs(widget.children or {}) do
+            local hit = find(child)
+            if hit then return hit end
+        end
+    end
+    local errors = #WoW.errors
+    for click = 1, 4 do
+        local button = find(Window.window)
+        button.inner.frame:GetScript("OnClick")(button.inner.frame, "LeftButton")
+        WoW.Settle()
+    end
+    eq(#WoW.deleted, 4, "four clicks, four deletes")
+    eq(#WoW.errors, errors, "and no error the game would show in red")
 end)
 
 test("an open does not start a second open of itself", function()
