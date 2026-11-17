@@ -41,6 +41,7 @@ Writes: ARCHITECTURE.md, only when its content changed. tests/window_controls.tx
         again only when the upstream's version changed.
 Touches nothing else.
 """
+import bisect
 import os
 import re
 import shutil
@@ -174,7 +175,59 @@ REACHES = "tools/blizzard_reaches.txt"
 WOWUI_FOUND = os.path.join(ROOT, "tools", ".wowui_found.txt")
 NOT_FRAMES = {"bit", "LibStub"}  # globals whose members are Lua's or a library's, not Blizzard's UI
 GAME_INTERNALS = "Game internals"
-TEMPLATE_ARG_RE = re.compile(r'\bCreateFrame\(\s*"\w+"\s*,[^,()]+,[^,()]+,\s*"([^"]+)"')
+DOC_ENTRY_RE = re.compile(r'\bName\s*=\s*"(\w+)",\s*\n\s*Type\s*=\s*"(\w+)"')
+DOC_GLOBAL_KINDS = {"Enum": "Enumeration", "Constants": "Constants"}  # their members, by doc entry kind
+CREATE_FRAME_RE = re.compile(r'(?<![\w.:])CreateFrame\s*\(')
+
+
+def call_args(text, start):
+    """The top-level arguments of the call whose "(" is at text[start - 1], as source
+    strings, and the index just past its ")"; None when the call is not closed."""
+    args, depth, quote, i, begin = [], 0, None, start, start
+    while i < len(text):
+        c = text[i]
+        if quote:
+            if c == "\\":
+                i += 1
+            elif c == quote:
+                quote = None
+        elif c in "\"'":
+            quote = c
+        elif c in "([{":
+            depth += 1
+        elif c in ")]}":
+            if depth == 0:
+                args.append(text[begin:i].strip())
+                return args, i + 1
+            depth -= 1
+        elif c == "," and depth == 0:
+            args.append(text[begin:i].strip())
+            begin = i + 1
+        i += 1
+    return None
+
+
+def frame_templates(lines):
+    """[(line, templates or None)] for every CreateFrame call in the code lines: the
+    template names of its fourth argument, [] with none, None when the fourth argument is
+    not a quoted string (a template the check cannot read)."""
+    text = "\n".join(code for _, code in lines)
+    starts = [0]
+    for _, code in lines:
+        starts.append(starts[-1] + len(code) + 1)
+    out = []
+    for m in CREATE_FRAME_RE.finditer(text):
+        parsed = call_args(text, m.end())
+        n = lines[bisect.bisect_right(starts, m.start()) - 1][0]
+        if not parsed:
+            continue
+        args = parsed[0]
+        if len(args) < 4 or args[3] in ("", "nil"):
+            out.append((n, []))
+        else:
+            s = re.fullmatch(r'"([^"]*)"|\'([^\']*)\'', args[3])
+            out.append((n, re.findall(r"\w+", s.group(1) or s.group(2) or "") if s else None))
+    return out
 
 
 def ui_source_has(words, build):
@@ -256,7 +309,7 @@ def read_reaches():
     return rows, problems
 
 
-def reach_truth(reaches, where, documented, globals_read):
+def reach_truth(reaches, where, documented, globals_read, documented_as):
     """Blizzard's frames are read past the documented API only where it is written down,
     the way library internals are. Every reach in tools/blizzard_reaches.txt is still in
     the client's UI source by its whole name: every part of it, together in one file
@@ -265,9 +318,12 @@ def reach_truth(reaches, where, documented, globals_read):
     part, and its first part too where that is a global the code reads), and is named in
     that file's header under "Game internals". And back:
     every member the code reads off a Blizzard global (MacroFrame.MacroSelector,
-    GameTooltip:SetOwner) is either in Blizzard's own API docs or a reach listed for that
-    file. A field read off a local (button.Count) cannot be found this way and is listed
-    by hand."""
+    GameTooltip:SetOwner), directly or through a local that is the global under another
+    name, is either in Blizzard's own API docs as an entry of its kind (a function; for
+    Enum an enumeration, for Constants a constants table) or a reach listed for that file.
+    Every CreateFrame names its templates as a quoted string, each listed for that file.
+    A field read off a local (button.Count) cannot be found this way and is listed by
+    hand."""
     problems = []
     by_file = {}
     for name, last, rel, built in reaches:
@@ -303,20 +359,29 @@ def reach_truth(reaches, where, documented, globals_read):
         for g in frames:
             if re.search(r"\blocal\s+(?:function\s+)?" + re.escape(g) + r"\b", text):
                 continue  # the file has a local of that name (SSF's own Settings module): not Blizzard's
+            # the global under another name: `local tip = GameTooltip` (or `tip = GameTooltip`)
+            names = [g] + re.findall(r"(?:^|\n)\s*(?:local\s+)?(\w+)\s*=\s*" + re.escape(g) + r"\s*(?:\n|$)", text)
+            known = documented_as.get(DOC_GLOBAL_KINDS[g], set()) if g in DOC_GLOBAL_KINDS else documented
             told = set()
             for n, code in lines:
-                for member in re.findall(r"(?<![\w.:])" + re.escape(g) + r"\s*[.:]\s*(\w+)", blank_strings(code)):
-                    if member not in documented and member not in by_file.get(rel, ()) and member not in told:
-                        told.add(member)
-                        problems.append(f"{rel}:{n}: reads {g}.{member}, which is not in Blizzard's API docs and "
-                                        f"not a reach listed for this file in {REACHES}")
+                code = blank_strings(code)
+                for name in names:
+                    for member in re.findall(r"(?<![\w.:])" + re.escape(name) + r"\s*[.:]\s*(\w+)", code):
+                        if member not in known and member not in by_file.get(rel, ()) and member not in told:
+                            told.add(member)
+                            seen = g if name == g else f"{g} (as {name})"
+                            problems.append(f"{rel}:{n}: reads {seen}.{member}, which is not in Blizzard's API docs "
+                                            f"and not a reach listed for this file in {REACHES}")
         # a frame made from a Blizzard template: CreateFrame(type, name, parent, "A, B")
-        for n, code in lines:
-            for templates in TEMPLATE_ARG_RE.findall(code):
-                for template in re.findall(r"\w+", templates):
-                    if template not in by_file.get(rel, ()):
-                        problems.append(f"{rel}:{n}: creates a frame from the template {template}, which is not a "
-                                        f"reach listed for this file in {REACHES}")
+        for n, templates in frame_templates(lines):
+            if templates is None:
+                problems.append(f"{rel}:{n}: CreateFrame's template is not a quoted string; write the "
+                                f"template names out so the check can hold them to {REACHES}")
+                continue
+            for template in templates:
+                if template not in by_file.get(rel, ()):
+                    problems.append(f"{rel}:{n}: creates a frame from the template {template}, which is not a "
+                                    f"reach listed for this file in {REACHES}")
     return problems
 
 
@@ -524,13 +589,19 @@ def check_blizzard_api():
     for name in sorted(shimmed):
         print(f"   {name} is a deprecated shim ({shimmed[name][0]}); move to its C_ replacement")
         ok = False
-    docs, documented = {}, set()
+    docs, documented, documented_as = {}, set(), {}
     for fn in os.listdir(WOWUI_DOCS):
         if not fn.endswith(".lua"):
             continue
         text = open(os.path.join(WOWUI_DOCS, fn), encoding="utf-8", errors="replace").read()
-        names = re.findall(r'Name\s*=\s*"(\w+)",', text)
+        # a member is documented by an entry of its own kind: a function for a frame or a
+        # namespace, an enumeration for Enum, a constants table for Constants. An argument,
+        # field or event that happens to share the name documents nothing.
+        names = [n for n, kind in DOC_ENTRY_RE.findall(text) if kind == "Function"]
         documented.update(names)
+        for n, kind in DOC_ENTRY_RE.findall(text):
+            if kind in DOC_GLOBAL_KINDS.values():
+                documented_as.setdefault(kind, set()).add(n)
         ns = re.search(r'Namespace\s*=\s*"(C_\w+)"', text)
         if ns:
             docs.setdefault(ns.group(1), set()).update(names)
@@ -559,7 +630,7 @@ def check_blizzard_api():
             ok = False
 
     # reaches into Blizzard's frames past the documented API
-    for p in reach_problems + reach_truth(reaches, where, documented, plain):
+    for p in reach_problems + reach_truth(reaches, where, documented, plain, documented_as):
         print("   " + p)
         ok = False
     ok = ok and ok_methods
