@@ -67,7 +67,7 @@ local function Defaults()
             pauseSoundName = Sounds:DefaultName(),     -- LibSharedMedia sound name (Sounds)
             pauseSoundVolume = Sounds:LevelVolume("full"), -- 0-1; SSF's own sounds only (Sounds)
             minimap = { hide = false }, -- LibDBIcon state
-            welcomed = false,           -- the welcome version this character last saw at load (Welcome)
+            welcomed = false,           -- the welcome version this character closed outside a fight; false while a note is owed (Welcome)
             welcomeAgain = false,       -- Drain Soul learned, note not yet closed: its second title (Welcome)
             newsSeen = false,           -- the id of the announcement this character ticked "Don't show this again" on (NewsShow)
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window

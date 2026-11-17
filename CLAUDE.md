@@ -125,7 +125,9 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
   the headers' claims against the code; the toc against the files on disk; Bindings.xml
   against what it calls; the exceptions and Lib internals counted against this file;
   Acts on; Hooks; Public; the rules (one value, one home; the shard id only in Core;
-  every message has a sender; combat asked only of Combat; no pass-through module; every
+  every message has a sender; combat asked only of Combat; "paused" asked only of
+  Trimmer:Paused (the saved key read only there and in the pause setting's own get and
+  apply); no pass-through module; every
   widget type used); Blizzard's names (no deprecated call, every global proven, every
   reach into Blizzard's frames listed); ARCHITECTURE.md regenerated; the libraries'
   drift from upstream (information, never a failure). A regenerated map that changed in

@@ -27,7 +27,7 @@
 --          PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
 -- Listens: PLAYER_ENTERING_WORLD (once), BAG_UPDATE_DELAYED (fresh login only: the bags
 --          are not readable yet when the world is entered; tested, it counted 0).
--- Reads:   Bags:Count(), Cap:Get/State, Colors; profile.lowMark, paused; SSF.VERSION,
+-- Reads:   Bags:Count(), Cap:Get/State, Trimmer:Paused, Colors; profile.lowMark; SSF.VERSION,
 --          SSF.AUTHOR.
 -- Touches nothing else.
 
@@ -73,7 +73,7 @@ end
 -- Paused or not, as a stop/go word: "Yes" in red while paused (nothing moves or deletes),
 -- "No" in green while presses work. SSF's own Yes/No, so they follow the Language setting.
 function Status:PausedValue()
-    local paused = SSF.db.profile.paused
+    local paused = SSF:GetModule("Trimmer"):Paused()
     return Colors():State(paused and L["Yes"] or L["No"], not paused)
 end
 

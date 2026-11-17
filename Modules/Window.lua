@@ -7,7 +7,8 @@
 --
 -- Layout: the count with Delete Shard beside it, then inline groups (Pause, Limits, Bag count)
 -- and Other, then the bottom row with a small version line. Toggles are full width
--- except Play pause sound, which shares its row with the volume dropdown; a label that
+-- except Play pause sound, which shares its row with the volume dropdown, and the two
+-- counter place radios, which share one row; a label that
 -- does not fit (the window is capped at the screen's width) wraps and grows its row
 -- (Widgets\SSFCentered.lua). The window sizes itself to the content after every feed,
 -- width then height (Feed -> SSFFrame:FitWidth, FitToContent), so no text is cut short
@@ -19,7 +20,6 @@
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
 --          nothing in a fight, Combat:InFight), Toggle() (the minimap icon and broker click),
 --          Refresh() (redraws only a window showing; also by name through a timer),
---          DressWindow(),
 --          ShowNote(title, body, note, opts, auto) (open with a note on the right: Welcome's;
 --          opts as SSFSideNote:Show), ShowLeftNote(title, opts, auto) (open with a note on
 --          the left: NewsShow's); auto: SSF is opening the window by itself, so it goes to
@@ -48,9 +48,11 @@
 --          window widget's frame (for IsShown and Tooltip:Attach), and the top and left
 --          keys of AceConfigDialog's status table (AceGUI Frame's position fields, written
 --          before an open). BAND_BACKDROP is a copy
---          of the InlineGroup's own PaneBackdrop, which AceGUI keeps local. An AceGUI bump
---          that changes those shows up as stock gold titles with no strip, or a strip of
---          a different shape.
+--          of the InlineGroup's own PaneBackdrop, which AceGUI keeps local. The group's
+--          OnRelease callback is SSF's (RestoreTitle): AceGUI keeps one callback per event,
+--          so an AceConfigDialog that set its own OnRelease on an InlineGroup would have it
+--          silently replaced. An AceGUI bump that changes those shows up as stock gold
+--          titles with no strip, or a strip of a different shape.
 -- Game internals: the frame template BackdropTemplate, which the title strip behind each
 --          group title is made from.
 -- Reads:   Combat:InFight (nothing opens in a fight), Macros:AnyMissing() for the "Create macros" button, Options.APP,
@@ -108,7 +110,7 @@ end
 -- The window's own strings, outside the options table: the two bottom buttons and the footer.
 -- Bottom right is the Keybindings button; the X and Escape close the window. Each bottom
 -- button gets its help line only while help is on, like every option.
-function Window:DressWindow()
+local function DressWindow(self)
     local Help = SSF:GetModule("Help")
     local on = Help:IsOn()
 
@@ -199,9 +201,18 @@ end
 -- ScrollFrame and lays out only that (tested: no styling at all).
 -- The container can be nil (an Open of AceConfigDialog's own frame passes none), and so
 -- can Window.window before its first open: without the guard, nil == nil would pass.
+-- True while Feed itself is opening the window, so the hook below can tell its own opens
+-- from AceConfigDialog's.
+local feeding = false
+
+-- After every AceConfigDialog:Open into this window: style the titles. An open SSF did not
+-- make is AceConfigDialog redrawing after a change made in the window (a click, a slider
+-- let go): it puts the saved size back and does not fit, so a row that grew or went away
+-- would be cut or leave a gap. A refit follows a tick later (RefreshSoon).
 local function AfterDialogOpen(_, app, container)
     if app ~= APP or not container or container ~= Window.window then return end
     StyleGroupTitles(container.children[1]) -- the ScrollFrame AceConfigDialog puts in
+    if not feeding then Window:RefreshSoon() end
 end
 
 -- Hooked again when Open has been replaced: a newer AceConfigDialog loaded later by
@@ -210,7 +221,9 @@ end
 -- the new hook lands on the new Open.
 local hookedOpen
 local function HookDialogOpen()
-    if AceConfigDialog.Open == hookedOpen then return end
+    -- the same Open, still hooked: nothing to do. A module switched off and on again has
+    -- had its hooks dropped by AceHook, so "the same Open" alone is not enough.
+    if AceConfigDialog.Open == hookedOpen and Window:IsHooked(AceConfigDialog, "Open") then return end
     if Window:IsHooked(AceConfigDialog, "Open") then Window:Unhook(AceConfigDialog, "Open") end
     Window:SecureHook(AceConfigDialog, "Open", AfterDialogOpen)
     hookedOpen = AceConfigDialog.Open
@@ -225,8 +238,10 @@ end
 local function Feed(self)
     HookDialogOpen()
     SSF:GetModule("Tooltip"):Attach(self.window.frame)
+    feeding = true
     AceConfigDialog:Open(APP, self.window)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
+    feeding = false
     self.window:FitToContent()
     -- the open put the saved spot back and the fit may have changed the width: a note
     -- showing beside the window still needs its room on the screen
@@ -273,7 +288,7 @@ end
 -- the table (a Language change or a help toggle), or the player's macros changed ("Create
 -- macros" shows or hides). Re-dress an existing window, then redraw.
 function Window:Redress()
-    if self.window then self:DressWindow() end
+    if self.window then DressWindow(self) end
     self:RefreshSoon()
 end
 
@@ -321,7 +336,7 @@ function Window:Open()
         end)
         -- bottom row: Create macros far left while shown, Key Bindings far right, the
         -- version between them
-        self:DressWindow()
+        DressWindow(self)
         -- The first open of a session measures before every text size is settled (the
         -- window has not been drawn yet), which leaves a gap above the buttons. Feed again
         -- a tick later (a zero timer, AceTimer's 0.01 s floor), after the first draw, so the

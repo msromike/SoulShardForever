@@ -24,7 +24,8 @@
 --   The quiet state ends once: when the spell turns up known (a learn, or the spell list
 --     arriving late at login), Cap sends SSF_QUIET_ENDED, with learned = true only when a
 --     learn event came first, so a login never counts as learning it.
---     Deleting is not gated here: Trimmer:WhyNot answers "paused" before it asks State.
+--     Deleting is not gated here: Trimmer:WhyNot asks Paused, IsQuiet, IsOver and IsFull,
+--     never State.
 --     IsOver(count): over the cap, the delete gate (Trimmer:WhyNot).
 --     IsFull(count): at or over the cap (Trimmer:WhyNot's "atcap").
 --     The threshold tests live here and nowhere else; Counter's color, the glow, the chat,
@@ -36,16 +37,17 @@
 -- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap,
 --          IsAuto() -> bool, LowMark() -> the low mark (never above the cap),
 --          SetLowMark(n) (Options' slider: held between MIN and the cap),
---          State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow;
---          nothing is decided by comparing these words), IsOver(count) -> bool (over the
+--          State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow:
+--          Colors maps them, LowGlow compares "low"; no delete, sort or setting is decided
+--          by comparing these words), IsOver(count) -> bool (over the
 --          cap: a press would delete), IsFull(count) -> bool,
 --          IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax
 --          off is the caller's job), Recompute().
 -- Listens: PLAYER_ENTERING_WORLD, SSF_BAGS_CHANGED; LEARNED_SPELL_IN_SKILL_LINE and
 --          SPELLS_CHANGED while quiet.
 -- Sends:   SSF_CAP_CHANGED (cap), SSF_QUIET_ENDED (learned) once.
--- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); profile.autoMax, maxShards, lowMark,
---          paused.
+-- Reads:   Bags:SoulBagSlots(), Bags:HasSoulBag(); Trimmer:Paused (the pause gate, for
+--          State); profile.autoMax, maxShards, lowMark.
 -- Saves:   profile.maxShards (SetManual, and Recompute while AutoMax follows a soul bag);
 --          profile.lowMark (SetLowMark, and written down to the cap when the cap drops under
 --          it, Recompute).
@@ -101,7 +103,7 @@ function Cap:IsQuiet()
 end
 
 function Cap:State(count)
-    if SSF.db.profile.paused then return "paused" end
+    if SSF:GetModule("Trimmer"):Paused() then return "paused" end
     if self:IsQuiet() then return "quiet" end
     if self:IsOver(count) then return "over" end
     if count < self:LowMark() then return "low" end

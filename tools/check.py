@@ -1733,6 +1733,10 @@ def constants(code):
 
 
 COMBAT_HOMES = {"Modules/Combat.lua", "Modules/Debug.lua"}  # who may call the game's two combat functions
+# the pause setting's own get and apply in Options, the only lines besides Trimmer's gate
+# that may touch profile.paused
+PAUSE_SETTING_LINE = re.compile(r"^\s*(get = function\(\) return SSF\.db\.profile\.paused end|"
+                                r"apply = function\(value\) SSF\.db\.profile\.paused = value end),\s*$")
 
 # a function of a module: `function M:Name(...)` up to the `end` at the start of a line,
 # or all on one line
@@ -1795,6 +1799,17 @@ def check_rules():
         if rel.startswith("Modules/") and pass_through(code_text(rel)):
             print(f"   {rel}: every function only calls another module; a file that adds nothing "
                   f"but a hop (its callers should ask that module, or it should own a rule)")
+            ok = False
+    # "paused" is asked of Trimmer:Paused, the one pause gate: the saved key is read only
+    # there and in the pause setting's own get and apply (Options), so a new meaning of
+    # pause in the gate reaches every reader
+    for rel in code_files:
+        for n, code in bare_code(texts[rel]):
+            if not re.search(r"\bprofile\.paused\b", code):
+                continue
+            if rel == "Modules/Trimmer.lua" or (rel == "Modules/Options.lua" and PAUSE_SETTING_LINE.search(code)):
+                continue
+            print(f"   {rel}:{n}: profile.paused is read here; ask Trimmer:Paused, the pause gate")
             ok = False
     # a message a module listens for is sent by some module: a misspelt name never arrives
     sent = {m for text in texts.values() for m, _ in SEND_RE.findall(code_lines(text))}

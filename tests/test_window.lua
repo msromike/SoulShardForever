@@ -146,6 +146,27 @@ test("learning Drain Soul owes the note again, shown when the trainer closes", f
     ok(not open(), "a later trainer visit shows nothing")
 end)
 
+test("seen and closed at the trainer, the note does not come back when the trainer closes", function()
+    shut()
+    profile.welcomed, profile.welcomeAgain = 99999, false
+    Welcome:OnQuietEnded(nil, true) -- learned at the trainer: owed again
+    Window:Open()                   -- the player opens SSF's window before leaving the trainer
+    ok(showing("You learned Drain Soul"), "the note comes up with the window")
+    Window.window:Hide()            -- and he closes it outside a fight
+    ok(type(profile.welcomed) == "number", "seen: settled")
+    WoW.FireEvent("TRAINER_CLOSED")
+    ok(not open(), "the trainer closing brings nothing back")
+    ok(type(profile.welcomed) == "number", "and the note is not owed again")
+end)
+
+test("a trainer closing shows the welcome only while it is still owed", function()
+    shut()
+    profile.welcomed, profile.welcomeAgain = 99999, false -- seen and settled
+    Welcome:RegisterEvent("TRAINER_CLOSED")              -- a wait left over, whatever its cause
+    WoW.FireEvent("TRAINER_CLOSED")
+    ok(not open(), "settled: a trainer closing shows nothing")
+end)
+
 test("before Drain Soul the note leads with the line about level 10", function()
     shut()
     local lead = "For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."
@@ -278,6 +299,27 @@ test("clicking Delete Shard in the window raises no error, with spare buttons po
     end
     eq(#WoW.deleted, 4, "four clicks, four deletes")
     eq(#WoW.errors, errors, "and no error the game would show in red")
+end)
+
+test("a redraw AceConfigDialog makes after a change in the window is refit a tick later", function()
+    shut()
+    profile.welcomed = 99999
+    Window:Open()
+    WoW.RunTimers()
+    local feeds = 0
+    local real = Window.Refresh
+    function Window:Refresh() feeds = feeds + 1 return real(self) end
+    local okay, err = pcall(function()
+        -- what AceConfigDialog does after a set made in the window
+        LibStub("AceConfigDialog-3.0"):Open("SSF", Window.window)
+        eq(feeds, 0, "not inside AceConfigDialog's redraw")
+        WoW.RunTimers()
+        eq(feeds, 1, "refit a tick later")
+        WoW.RunTimers()
+        eq(feeds, 1, "once: SSF's own refit does not ask for another")
+    end)
+    Window.Refresh = real
+    assert(okay, err)
 end)
 
 test("an open does not start a second open of itself", function()

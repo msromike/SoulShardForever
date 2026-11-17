@@ -95,6 +95,29 @@ test("a paragraph's lead is gold, its text follows in white after two spaces", f
     eq(blocks[2].blank, nil, "and only where it was asked for")
 end)
 
+test("a white paragraph can carry a blank line under it", function()
+    local news = sample()
+    news.text = { { text = "First line.", blank = true }, "Second line." }
+    fresh(news)
+    NewsShow:OnWindowOpened()
+    local blocks = asked.shown[1].opts.blocks
+    eq(blocks[1].text, "First line.", "a text alone: a white paragraph")
+    eq(blocks[1].blank, true, "with its blank line")
+end)
+
+-- The announcement that ships, built as players get it (switched on for the test whatever
+-- its switch says), so a shape NewsShow cannot draw fails here and not at a player's login.
+test("the shipped announcement builds", function()
+    if not shipped then return end
+    local copy = {}
+    for k, v in pairs(shipped) do copy[k] = v end
+    copy.on = true
+    fresh(copy)
+    NewsShow:OnWindowOpened()
+    eq(#asked.shown, 1, "it shows")
+    eq(#asked.shown[1].opts.blocks, #shipped.text, "every paragraph")
+end)
+
 test("a load in a fight opens nothing, nor when the fight ends; the next open shows it", function()
     fresh(sample())
     NewsShow:OnEnable()

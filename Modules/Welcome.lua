@@ -20,8 +20,9 @@
 -- Drain Soul (Cap's quiet state): while quiet, the note leads with one more line under the
 -- help pointer, in green, that it comes back at level 10. Learning the spell owes the note again, under its own title, and
 -- it shows when the trainer window closes, so it never lands on the trainer while the
--- player is still buying. Learned away from a trainer, it waits for the
--- next load or window open, like any owed note.
+-- player is still buying. Seen sooner (the player opened SSF's window at the trainer),
+-- the trainer's close brings nothing back: the note shows once per learn, however it
+-- first came up, and a trainer close shows it only while it is still owed.
 --
 -- While the note is open it follows the Language setting: Options' rebuild fills it again,
 -- in place, in the language the window now shows (as NewsShow does).
@@ -96,6 +97,8 @@ end
 -- brings it back.
 function Welcome:Show(auto)
     if InFight() then return end -- the window stays shut in a fight (Window)
+    -- shown now, by whatever path: a trainer closing later has nothing left to bring back
+    self:UnregisterEvent("TRAINER_CLOSED")
     self.noteOpen = true
     SSF.db.profile.welcomed = false
     local title, body, note, opts = Note(self)
@@ -123,9 +126,11 @@ function Welcome:OnQuietEnded(_, learned)
     self:RegisterEvent("TRAINER_CLOSED")
 end
 
+-- Only a note still owed: one already shown and closed (the player opened SSF's window
+-- while the trainer was still open) is not shown again.
 function Welcome:TRAINER_CLOSED()
     self:UnregisterEvent("TRAINER_CLOSED")
-    self:Show(true)
+    if Owed() then self:Show(true) end
 end
 
 function Welcome:LOADING_SCREEN_DISABLED()

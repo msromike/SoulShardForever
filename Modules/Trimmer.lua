@@ -1,8 +1,10 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Trimmer: the delete press. In combat or out, it removes one Soul Shard if the count is
--- over the cap: the shard furthest along the sort order (Bags:LastShard, top slot first
--- under SoulSort legacy Normal, Sorter:TopFirst), so loose shards go before a soul bag's.
+-- over the cap: the shard furthest along the sort order (Bags:LastShard), so loose shards
+-- go before a soul bag's. Under SoulSort legacy Normal (Sorter:TopFirst) the walk takes a
+-- regular bag top slot first, so the shard deleted is the bottom-most one in the last
+-- regular bag; otherwise the top-most.
 -- Then it runs one Sorter pass. Nothing else. The delete goes first: a pass's moves lock
 -- the shards they move, and those are the ones LastShard would pick.
 -- Runs only inside a hardware event (a slash command or a button click), because

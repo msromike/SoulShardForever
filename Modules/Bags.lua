@@ -3,9 +3,14 @@
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
 -- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
 -- moves or deletes anything. Every other module reads the bags through these methods and
--- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE. One
--- exception, once per session: Status waits for the game's BAG_UPDATE_DELAYED at a fresh
--- login before its login line, because the bags are not filled in until then.
+-- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE. Two
+-- exceptions: Status waits for the game's BAG_UPDATE_DELAYED once at a fresh login before
+-- its login line, because the bags are not filled in until then; and Debug records the
+-- game's own count (C_Item.GetItemCount) beside Bags' count, on purpose, to compare them.
+-- Right after a delete the bags still show the deleted shard until the server confirms:
+-- a listener to SSF_SHARD_DELETED that reads Bags:Count() gets the old number, and the
+-- right one with the SSF_BAGS_CHANGED that follows within half a second. The message
+-- carries the count after the delete; use that when the moment matters.
 --
 -- The bags a shard can be in, one definition (SortOrder's list): every soul bag, in any
 -- slot (the reagent slot holds a soul pouch or a reagent bag on Forever, and a shard goes

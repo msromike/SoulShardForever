@@ -146,6 +146,12 @@ test("every module can be switched off and on again", function()
         eq(#WoW.errors, errors, name .. ": no error")
     end
     ok(_G.SSFDelete == button, "/click SSFDelete still finds the first button")
+    -- and the window's hook on AceConfigDialog's Open is live again after Window's restart
+    local Window = SSF:GetModule("Window")
+    Window:Open()
+    WoW.RunTimers()
+    ok(Window:IsHooked(LibStub("AceConfigDialog-3.0"), "Open"), "Window's hook on AceConfigDialog.Open is back")
+    Window.window:Hide()
 end)
 
 test("Colors refuses a state that is not on its scale", function()

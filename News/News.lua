@@ -14,10 +14,12 @@
 --            (two digits per version part, 1.14.0 = 11400), higher than every id before
 --            it; a character that ticked "Don't show this again" saved the id it saw. on:
 --            the switch. title: the panel's title. text: the paragraphs, in order, each
---            a line (drawn white) or { lead = line, text = line }: the lead is drawn in
---            gold, the text in white after it on the same paragraph; a lead with no text
---            is a paragraph all in gold; blank = true leaves one blank line under the
---            paragraph.
+--            a line (drawn white) or a table { lead = line, text = line, blank = true }:
+--            the lead is drawn in gold, the text in white after it on the same paragraph,
+--            and either may be left out (a lead alone is a paragraph all in gold, a text
+--            alone a white one); blank = true leaves one blank line under the paragraph.
+--            So a white paragraph that needs a blank line under it is { text = ...,
+--            blank = true }.
 -- Owns no state beyond that table, no events, no frames. Touches nothing else.
 
 local _, NS = ...

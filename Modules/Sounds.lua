@@ -31,8 +31,11 @@
 -- all of them, since a SoulSort legacy move swaps another item). The rule (Heard): a sort
 -- is never heard, at a press or when combat ends, or a sort at the end of a fight would
 -- clink seconds after the last press with no clue it was SSF; a delete is heard out of
--- combat (the tink that says a shard went) and not in combat, so a fight never plays SSF
--- sounds. A later "no SSF sounds at all" option is one profile key read in Heard. Not
+-- combat (the tink that says a shard went) and not in combat. Heard decides only the
+-- game's item sounds around a move or a delete. SSF's own pause sound is played through
+-- Play (PlayPause), which Heard does not touch: whether a paused press plays it, and its
+-- silence in combat, is Trimmer's rule, and the options' previews play it on purpose. So
+-- a "no SSF sounds at all" option needs Heard and Play both, not Heard alone. Not
 -- heard = the game's MuteSoundFile on every one of those files, fn, then UnmuteSoundFile on
 -- every one: fn runs protected, so the sounds come back on even when a move throws (the
 -- error is raised again afterwards, with where it happened added to its text). A mute
@@ -49,7 +52,8 @@
 --            LSM no longer knows (a sound pack removed) falls back to the default; a nil
 --            name plays nothing (LSM:IsValid is true for nil).
 --          PlayPause() -- the pause sound at the saved level (profile.pauseSoundName,
---            pauseSoundVolume): every paused press and the options previews.
+--            pauseSoundVolume): a paused press out of combat (Trimmer decides when) and
+--            the options' previews.
 --          DefaultName() -> the default sound's LSM name (Core's profile default).
 --          LevelKeys() -> the keys in dropdown order; LevelVolume(key) -> volume ("full"
 --            for an unknown key); LevelKey(volume) -> key ("full" for an unknown volume);

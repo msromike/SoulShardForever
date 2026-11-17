@@ -48,6 +48,24 @@ test("every group is inline", function()
     ok(groups > 0, "there are groups to check")
 end)
 
+-- AceConfigCmd looks inside every group for a typed word and ignores cmdHidden there, so
+-- a window control keyed like a chat word inside a group ("pause" inside pausegroup) could
+-- take the chat command over. The window twins are keyed apart (pauseGui, logGui).
+test("no key inside a group equals a chat word", function()
+    local root = Table()
+    local function Inner(group)
+        for key, entry in pairs(group.args) do
+            if entry.args then
+                for inner in pairs(entry.args) do
+                    ok(root.args[inner] == nil and inner ~= "help", entry.name .. ": " .. inner .. " is not a chat word")
+                end
+                Inner(entry)
+            end
+        end
+    end
+    Inner(root)
+end)
+
 test("every dialogControl names a widget that is registered", function()
     local controls = 0
     Walk(Table(), function(key, entry)

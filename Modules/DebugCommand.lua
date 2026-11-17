@@ -3,8 +3,10 @@
 -- DebugCommand: the words after "/ssf debug". Naked it reports the debug record's switch;
 -- "on" and "off" set it and report; "mark <name>" writes a marker into the record, turning
 -- the record on first when it is off (and saying so); "report" opens the copy window;
--- "clear" empties the saved record and says so. Anything else prints the usage line. It
--- prints to confirm on, off and clear, and nothing else. English only, like the record: a
+-- "clear" empties the saved record and says so. Anything else prints the usage line. What
+-- it prints: the switch (naked, on, off, and a mark that turned the record on), "Debug
+-- record cleared." and the usage line; a mark on a record already on, and "report", print
+-- nothing. English only, like the record: a
 -- player is handed these words when a problem needs them. The "debug" word itself is a
 -- hidden entry in Options' table, which hands what follows it to Run.
 --

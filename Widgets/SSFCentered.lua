@@ -51,9 +51,9 @@
 -- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
 --          frame.width field (read, and written by the check box's Fit) and the widget's
 --          own width field (read for "fill"), and AceGUI.WidgetRegistry (the Dropdown
---          constructor, for the re-typed one; the re-typed widget keeps the Dropdown
---          version it was made from, so a newer Dropdown loaded later in the session never
---          reaches it). The stock Dropdown's frame, button and button_cover and its
+--          constructor, for the re-typed one; a re-typed widget already in the pool keeps
+--          the Dropdown version it was made from, while one built after another addon
+--          registered a newer Dropdown is built by that newer constructor). The stock Dropdown's frame, button and button_cover and its
 --          SetDisabled (wrapped, stock first); its list field (the values, measured for
 --          MinWidth), its text FontString's font, AceGUI's OnWidthSet call after every
 --          SetWidth (the stock Dropdown defines none; SSF's raises a width under MinWidth),
@@ -71,12 +71,12 @@
 --          checkbg (TOPLEFT) and text (LEFT) anchors are written, and put back on acquire;
 --          a CheckBox that anchors them differently leaves the radios off the check boxes'
 --          column. The stock CheckBox's private AlignImage, which its click handler runs
---          after OnValueChanged (and its SetImage runs), puts the text back against
---          checkbg with no inset; a radio keeps its inset only because AceConfigDialog
---          rebuilds the window after every set, which runs SetRadio again. A CheckBox that
---          ran AlignImage anywhere else, or a window that stopped rebuilding after a set,
---          leaves a radio's label against its dot until the next redraw. An AceGUI bump that
---          renames those breaks the top row, the
+--          after Fire("OnValueChanged") returns (and its SetImage runs), puts the text back
+--          against checkbg with no inset. AceConfigDialog rebuilds the window inside that
+--          OnValueChanged, so the AlignImage lands after the rebuild, on the clicked
+--          check box's inner widget: when AceGUI's pool has handed that inner widget to a
+--          radio row, that radio's label sits against its dot until the next redraw.
+--          Cosmetic, never an error. An AceGUI bump that renames those breaks the top row, the
 --          check boxes' layout, or the volume dropdown's construction; one whose CheckBox
 --          re-sets its text height clips wrapped labels.
 -- Reads:   Help:KeepHover/Greyed (the tooltip on a greyed control); SSF.HALF_LINE (Core).

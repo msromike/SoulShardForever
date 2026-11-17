@@ -58,8 +58,10 @@ local function Note(self, news)
     local blocks = {}
     for i, part in ipairs(news.text) do
         local line
-        if type(part) == "table" then -- a gold lead, then its text in white (the paragraph's own color)
-            line = Colors:Gold(L[part.lead]) .. (part.text and (LEAD_GAP .. L[part.text]) or "")
+        if type(part) == "table" then -- a gold lead, then its text in white; either may be left out
+            local lead = part.lead and Colors:Gold(L[part.lead])
+            local text = part.text and L[part.text]
+            line = lead and text and (lead .. LEAD_GAP .. text) or lead or text or ""
         else
             line = L[part]
         end

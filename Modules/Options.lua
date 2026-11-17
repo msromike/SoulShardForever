@@ -10,10 +10,13 @@
 -- The window's layout and life cycle are in Modules\Window.lua.
 -- Chat commands live at the root of the table (AceConfigCmd keys) and are hidden from the
 -- window; their GUI twins, where a command has one, live inside the groups (Delete Shard's
--- sits at the top, outside the groups; options and settings have none).
+-- sits at the top, outside the groups; options and settings have none). No key inside a
+-- group may equal a chat word: AceConfigCmd looks inside every group for a typed word and
+-- ignores cmdHidden there, so a twin keyed "pause" could take /ssf pause over. Hence
+-- pauseGui, setmaxGui, logGui (tests/test_options.lua holds it).
 --
 -- Pause: the "pause" setting (/ssf pause, the checkbox in the Pause group) stops every press
--- from moving or deleting (Trimmer reads profile.paused). Options:TogglePause() is the
+-- from moving or deleting (Trimmer:Paused is the gate). Options:TogglePause() is the
 -- key binding's entry (Bindings.xml SSF_PAUSE); it goes through the chat command's own
 -- path, so it applies, redraws an open window and prints the same echo, Status:PauseText
 -- ("SSF paused: Yes/No"). A bare /ssf opens the window and prints that line above
@@ -22,7 +25,7 @@
 -- Help mode is the Help module's: the table hands itself to Help:Apply at the end of every
 -- build (each option's help line is its desc), and rebuilds on SSF_HELP_CHANGED.
 --
--- Stateful settings (cap, announce, pause) are defined once through the Settings module, which
+-- Stateful settings (setmax, log, pause, and the window-only lowmark) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call,
 -- then placing its two entries in the table below.
@@ -46,7 +49,8 @@
 -- Sends:   SSF_OPTIONS_CHANGED (key, "window") from every GUI-only setter; SSF_OPTIONS_REBUILT.
 -- Reads:   Help:Apply, Settings:Define/ValueWords,
 --          Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute/LowMark/SetLowMark,
---          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete, Sounds (levels, PlayPause),
+--          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete/Paused (the pause
+--          gate, for the greyed rules and the key binding), Sounds (levels, PlayPause),
 --          Status:CountText/InBagsText/PauseText, Colors, DeleteHelp:Text,
 --          DebugCommand:Run, Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
 --          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
@@ -79,16 +83,17 @@ local function Colors() return SSF:GetModule("Colors") end
 local function Gold(text) return Colors():Gold(text) end
 
 -- the greyed-out rules the window shares between its controls
-local function NotPaused() return not SSF.db.profile.paused end
+local function Paused() return SSF:GetModule("Trimmer"):Paused() end -- the one pause gate
+local function NotPaused() return not Paused() end
 local function CounterOff() return not SSF.db.profile.counter end
 -- Colorize and the glow grey while paused and keep their ticks, the window's own rule on
 -- the pause setting, the mirror image of the pause sound rows greying while unpaused.
 -- What the count looks like while paused is Cap's and Colors' call.
-local function CounterOffOrPaused() return CounterOff() or SSF.db.profile.paused end
+local function CounterOffOrPaused() return CounterOff() or Paused() end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
 function Options:TogglePause()
-    self.pauseCmd.set(nil, SSF.db.profile.paused and "off" or "on")
+    self.pauseCmd.set(nil, Paused() and "off" or "on")
 end
 
 local function changed(key)
