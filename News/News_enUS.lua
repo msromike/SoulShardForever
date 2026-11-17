@@ -5,12 +5,13 @@
 local _, NS = ...
 local L = {}
 
-L["Coming soon to SSF"] = true
-L["Two things you've asked for are on the way."] = true
-L["Delete in combat:"] = true
-L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] = true
-L["Delete as you play:"] = true
-L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."] = true
-L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."] = true
+L["*New* SSF Beta Available"] = true
+L["SSF Delete in Combat beta is now available on CurseForge."] = true
+L["What's different:"] = true
+L["your delete key and your SSF delete macros now work in combat."] = true
+L["We've been playing on it with no problems."] = true
+L["The full release is coming soon."] = true
+L["Want it early?"] = true
+L["In the CurseForge app, right-click on the addon, select Release Type and choose Beta."] = true
 
 NS.AddLocaleStrings("enUS", L)

@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.15.2 (2026-11-16)
+
+- A new announcement: the delete in combat beta is out on CurseForge, and how to get it.
+  It opens the SSF window when you log in until you tick "Don't show this again."
+
 ## 1.15.1 (2026-11-16)
 
 - The "Coming soon to SSF" announcement is switched off. It no longer opens the window

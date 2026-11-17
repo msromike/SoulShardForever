@@ -23,16 +23,17 @@
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The first announcement: a short roadmap, in Mike's words (2026-11-15). Shipped switched
--- on in 1.14.0 and 1.15.0; switched off in 1.15.1 (Mike, 2026-11-16).
+-- The second announcement: the delete-in-combat beta is out, and how to get it. It replaces
+-- the first one, "Coming soon to SSF" (11400), which shipped in 1.14.0 and was switched
+-- off in 1.15.1.
 NS.news = {
-    id = 11400,
-    on = false,
-    title = L["Coming soon to SSF"],
+    id = 11502,
+    on = true,
+    title = L["*New* SSF Beta Available"],
     text = {
-        { lead = L["Two things you've asked for are on the way."], blank = true },
-        { lead = L["Delete in combat:"], text = L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] },
-        { lead = L["Delete as you play:"], text = L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."], blank = true },
-        L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."],
+        { lead = L["SSF Delete in Combat beta is now available on CurseForge."], blank = true },
+        { lead = L["What's different:"], text = L["your delete key and your SSF delete macros now work in combat."], blank = true },
+        { lead = L["We've been playing on it with no problems."], text = L["The full release is coming soon."], blank = true },
+        { lead = L["Want it early?"], text = L["In the CurseForge app, right-click on the addon, select Release Type and choose Beta."] },
     },
 }

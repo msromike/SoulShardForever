@@ -5,12 +5,13 @@
 local _, NS = ...
 local L = {}
 
-L["Coming soon to SSF"] = "Скоро в SSF"
-L["Two things you've asked for are on the way."] = "Две вещи, о которых вы просили, уже в работе."
-L["Delete in combat:"] = "Удаление в бою:"
-L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] = "SSF сможет удалять осколок души сверх лимита, пока вы находитесь в бою."
-L["Delete as you play:"] = "Удаление во время игры:"
-L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."] = "Необязательный режим, который автоматически удаляет осколки души сверх лимита во время обычной игры, без макроса и назначения клавиш."
-L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."] = "Каждая функция сначала выйдет в виде бета-версии на CurseForge. Мы сообщим здесь, когда они будут готовы."
+L["*New* SSF Beta Available"] = "*Новинка* Доступна бета-версия SSF"
+L["SSF Delete in Combat beta is now available on CurseForge."] = "Бета-версия SSF «Удаление в бою» уже доступна на CurseForge."
+L["What's different:"] = "Что изменилось:"
+L["your delete key and your SSF delete macros now work in combat."] = "ваша клавиша удаления и ваши макросы удаления SSF теперь работают в бою."
+L["We've been playing on it with no problems."] = "Мы уже играем с ним без проблем."
+L["The full release is coming soon."] = "Полная версия выйдет совсем скоро."
+L["Want it early?"] = "Хотите раньше?"
+L["In the CurseForge app, right-click on the addon, select Release Type and choose Beta."] = "В приложении CurseForge щёлкните правой кнопкой мыши по аддону, выберите «Release Type», затем «Beta»."
 
 NS.AddLocaleStrings("ruRU", L)
