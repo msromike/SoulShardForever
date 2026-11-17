@@ -15,8 +15,8 @@
 -- slider gets the cap): the scale stays min to max, but any value past the bound, from a
 -- drag, the "+" or the typed box, is set back to the bound before AceConfigDialog hears
 -- of it; the "+" greys at the bound; the track beyond the bound is drawn dim with a gold
--- tick TICK pixels wide at its edge, stopping where the min and max labels begin so it
--- never runs into a label or the "-" button, so the slider reads "this much is yours, that much is off limits".
+-- tick TICK pixels wide at its edge, running TICK_BELOW past the slider's bottom (under where the cap thumb sits on the slider above), so
+-- the slider reads "this much is yours, that much is off limits".
 -- The label is left-justified (the stock Slider centers it), so it lines up with the
 -- dropdown labels and checkboxes in the window.
 -- The let-go (the option's `arg` as a table with a `released` function; the pause sound
@@ -27,7 +27,7 @@
 -- The notches (the option's `arg` as a table with `notches = true`; the pause sound slider
 -- has five): one gold tick at every step from min to max, so the player sees where the
 -- thumb can rest. As wide as the bound's tick, but centered under the thumb and
--- NOTCH_INSET pixels short of the rail's top.
+-- NOTCH_INSET pixels short of the rail's top and bottom.
 -- Busy (the option's `arg` as a table with a `busy` function; the pause sound slider's
 -- says whether its sound is still playing): while it returns true the "-" and "+" are
 -- greyed, read whenever the buttons are set, so at every redraw; the owner redraws when
@@ -40,8 +40,7 @@
 --          MinWidth() -> the narrowest it stays usable, its label on one line or the
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
 -- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
---          3 px side insets, for the dim region; its min and max labels' 3 px rise into
---          the bar, LABEL_RISE, where every tick stops), frame (also handed to Help:KeepHover as
+--          3 px side insets, for the dim region), frame (also handed to Help:KeepHover as
 --          the frame that gives up the mouse while greyed) and alignoffset fields, its min,
 --          max, step and disabled fields, its OnMouseWheel script (the "-" and "+" buttons run it,
 --          so they move by the stock Slider's own step field, exactly as the wheel does; a
@@ -72,8 +71,8 @@ local VALUE_BOX = 44   -- the value box: room for three digits
 local DIM = 0.5        -- alpha of the black over the rail beyond the bound (picked by eye)
 local RAIL_INSET = 3   -- the stock Slider anchors its rail this far in from each side
 local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint)
-local LABEL_RISE = 3   -- the stock Slider puts its min and max labels this far up into its bar: every tick stops above them
-local NOTCH_INSET = 2  -- px a notch tick stops short of the rail's top (picked by eye)
+local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above
+local NOTCH_INSET = 2  -- px a notch tick stops short of the rail's top and bottom (picked by eye)
 
 -- the bound as a number right now, or nil for none
 local function Bound(self)
@@ -128,13 +127,12 @@ local function NewTick(slider)
 end
 
 -- a tick shown with its left edge x pixels along the rail: from `top` pixels under the
--- rail's top edge down to where the min and max labels begin, so it never runs into a
--- label or the "-" button under the bar
-local function PlaceTick(self, tick, x, top)
+-- rail's top edge to `below` pixels under its bottom edge (negative = short of it)
+local function PlaceTick(self, tick, x, top, below)
     local slider = self.inner.slider
     tick:ClearAllPoints()
     tick:SetPoint("TOPLEFT", slider, "TOPLEFT", x, -top)
-    tick:SetPoint("BOTTOMLEFT", slider, "BOTTOMLEFT", x, LABEL_RISE)
+    tick:SetPoint("BOTTOMLEFT", slider, "BOTTOMLEFT", x, -below)
     tick:Show()
 end
 
@@ -147,13 +145,13 @@ local function UpdateDim(self)
     dim:SetPoint("TOPLEFT", inner.slider, "TOPLEFT", x, 0)
     dim:SetPoint("BOTTOMRIGHT", inner.slider, "BOTTOMRIGHT", 0, 0)
     dim:Show()
-    PlaceTick(self, tick, x, 0)
+    PlaceTick(self, tick, x, 0, TICK_BELOW)
 end
 
 -- The notch ticks: with `notches` on, one gold tick at every step from min to max, so the
 -- player sees where the thumb can rest; none otherwise. Quieter than the bound's tick:
--- centered on the thumb's resting place and NOTCH_INSET short of the rail's top. Ticks
--- are made as needed and kept.
+-- centered on the thumb's resting place and NOTCH_INSET short of the rail's top and
+-- bottom. Ticks are made as needed and kept.
 local function UpdateNotches(self)
     local inner, ticks = self.inner, self.notchTicks
     local lo, hi, step = inner.min or 0, inner.max or 100, inner.step
@@ -163,7 +161,7 @@ local function UpdateNotches(self)
     end
     for i = 1, count do
         if not ticks[i] then ticks[i] = NewTick(inner.slider) end
-        PlaceTick(self, ticks[i], RailX(self, lo + (i - 1) * step) - TICK / 2, NOTCH_INSET)
+        PlaceTick(self, ticks[i], RailX(self, lo + (i - 1) * step) - TICK / 2, NOTCH_INSET, -NOTCH_INSET)
     end
     for i = count + 1, #ticks do ticks[i]:Hide() end
 end
