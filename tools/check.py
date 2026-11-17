@@ -1886,14 +1886,22 @@ def build_map():
     out.append("edit by hand: fix the header or the code and rerun the check. A file or message missing")
     out.append("here is missing from the headers or the code, not from this file.\n")
 
+    def file_entry(rel):
+        """The file's job line, then its header's Public, so the map is also an index of
+        what each file offers the others."""
+        entry = f"- {rel.replace('/', chr(92))}: {header_job(rel)}"
+        public = " ".join(header_fields(rel).get("Public", "").split())
+        return entry + (f"\n  Public: {public}" if public else "")
+
     out.append("## Files, in load order\n")
+    out.append("Each file's job line, then what it offers the others (its header's Public).\n")
     out.append("Widgets (custom AceGUI widgets, used from the options table through dialogControl, or")
     out.append("created by Window and by each other):\n")
     for rel in widgets:
-        out.append(f"- {rel.replace('/', chr(92))}: {header_job(rel)}")
+        out.append(file_entry(rel))
     out.append("\nCore and modules:\n")
     for rel in core_mods:
-        out.append(f"- {rel.replace('/', chr(92))}: {header_job(rel)}")
+        out.append(file_entry(rel))
     out.append("\nLocales:\n")
     for rel in locales:
         if rel.endswith("Register.lua"):

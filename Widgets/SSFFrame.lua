@@ -5,9 +5,9 @@
 -- it is never handed to another addon; it may itself have been another addon's released
 -- Frame, whose parent, strata, title, status text, size, position and resize switch the
 -- stock OnAcquire resets); SSF's parts are added on top of it, and the result is registered
--- as this type. Nothing the stock Frame does is written again here but one fallback (see
--- Exceptions): the art, the title, the drag, the status table, the content frame and the
--- container plumbing are all its own. Resize is off, through the stock Frame's own switch: the
+-- as this type. Nothing the stock Frame does is written again here: the art, the title,
+-- the drag, the status table, the content frame and the container plumbing are all its
+-- own. Resize is off, through the stock Frame's own switch: the
 -- window is sized to its content after every feed.
 --
 -- What SSF adds: an X close button top-right with an optional help button left of it
@@ -43,29 +43,35 @@
 -- Hooks:   AceHook, embedded on the widget: the stock title handle's OnMouseUp (to fire
 --          OnMoved after the stock handler saved the position) and the frame's OnHide (to
 --          close both notes with the window). Both attach in the constructor.
--- Lib internals: three reaches past the stock Frame's public surface, each guarded so a
---          changed Frame leaves the stock piece in place rather than erroring: the status
---          strip hidden through statustext's parent; the stock Close button found among
---          the frame's children by its CLOSE text, hidden, and its OnClick reused for
---          SSF's X (not found: the X does nothing and Escape still closes the window; no
---          hand copy is kept in case, see CLAUDE.md); the title handle, titletext's parent, for the hook. Also
---          read: titletext and titlebg (the band's anchors, the title's color and width),
---          localstatus (the status fallback), status (the table AceConfigDialog hands over),
---          content (re-anchored for SSF's taller bottom row); FitWidth reads the fed
---          widgets' titletext, label, text, frame.label and frame.text, and AceGUI's layout
---          fields width, children, content.width and frame.width; FitToContent reads
---          children[1].content (the ScrollFrame's scroll child). The constructor captures
---          and wraps the stock Frame's OnAcquire, OnWidthSet, OnHeightSet and ApplyStatus
---          (self.stock), and the ApplyStatus wrap assumes the stock one reads status.width
---          and status.height; it sets self.type to this Type, which is what makes
---          AceConfigDialog wrap the content in the ScrollFrame FitToContent measures
---          (it skips the wrap only for InlineGroup and SimpleGroup). Copied numbers:
---          STOCK_BOTTOM_INSET is the stock OnHeightSet's constant, TITLE_CAP the stock
---          titlebg_l/_r width. The reused stock Close click reads button.obj; the backdrop
---          tint assumes the stock frame is a BackdropTemplate. An AceGUI bump that renames
---          titletext, titlebg, content or localstatus errors at the first open (they are
---          read bare); one that drops a wrapped method errors in the constructor; one that
---          renames the rest shows as a window that no longer fits its content.
+-- Lib internals: every reach past the stock Frame's public surface, one per item, with
+--          what an AceGUI that changes it does to the window:
+--          - statustext's parent, hidden (the status strip). Guarded: the strip shows.
+--          - the stock Close button, found among the frame's children by its CLOSE text,
+--            hidden, its OnClick reused for SSF's X (that click reads button.obj).
+--            Guarded: the X does nothing, Escape still closes (no hand copy kept in case,
+--            see CLAUDE.md).
+--          - titletext's parent, the title handle, hooked for OnMoved. Guarded: a drag no
+--            longer saves the window's spot.
+--          - titletext and titlebg (the band's anchors, the title's color and width),
+--            content (re-anchored for SSF's taller bottom row), localstatus (the status
+--            fallback) and status (the table AceConfigDialog hands over). Read bare: a
+--            rename errors at the first open.
+--          - OnAcquire, OnWidthSet, OnHeightSet and ApplyStatus, captured into self.stock
+--            and wrapped; the ApplyStatus wrap assumes the stock one reads status.width and
+--            status.height. A dropped one errors in the constructor.
+--          - self.type set to this Type: AceConfigDialog wraps the content in a ScrollFrame
+--            for every type but InlineGroup and SimpleGroup, and FitToContent measures that
+--            ScrollFrame's scroll child (children[1].content). Another rule: the window
+--            stops fitting its height.
+--          - FitWidth reads the fed widgets' titletext, label, text, frame.label and
+--            frame.text, and AceGUI's layout fields width, children, content.width and
+--            frame.width. Renamed: the window stops fitting its width.
+--          - copied numbers: STOCK_BOTTOM_INSET (the stock OnHeightSet's constant) and
+--            TITLE_CAP (the stock titlebg_l/_r width). Changed upstream: the content or the
+--            title band sits off by the difference.
+--          - the stock frame is a BackdropTemplate: SSF sets its backdrop color white so the
+--            dialog art shows untinted (the stock Frame tints it black). If not: that call
+--            errors when the window is made.
 -- Game internals: UISpecialFrames (the list Escape closes), and the frame templates
 --          UIPanelCloseButton (the X) and UIPanelButtonTemplate (the bottom row's buttons).
 -- Reads:   SSF.HALF_LINE (Core), handed to the notes; the Tooltip module at runtime for every tooltip it shows; Colors.BLACK (the shade
