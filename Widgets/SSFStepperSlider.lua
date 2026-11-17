@@ -39,7 +39,10 @@
 --          released = function(value), notches = true, busy = function() }, each optional;
 --          MinWidth() -> the narrowest it stays usable, its label on one line or the
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
--- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
+-- The min and max labels and the "-", box, "+" row start UNDER_BAR below the bar (the
+-- stock Slider starts the labels inside it), so the thumb at either end, a notch tick and
+-- the bound's tick never run into a label or a button.
+-- Lib internals: the stock Slider's label, editbox, lowtext, hightext, slider (its thumb texture and its
 --          3 px side insets, for the dim region), frame (also handed to Help:KeepHover as
 --          the frame that gives up the mouse while greyed) and alignoffset fields, its min,
 --          max, step and disabled fields, its OnMouseWheel script (the "-" and "+" buttons run it,
@@ -65,13 +68,14 @@ local function Colors() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule
 local function Help() return LibStub("AceAddon-3.0"):GetAddon("SSF"):GetModule("Help") end
 
 local BUTTON = 20      -- +/- button size
-local VALUE_GAP = 5    -- px between the bar and the value row
+local VALUE_GAP = 7    -- px between the bar and the value box; the "-" and "+" stand 3 px taller, so they start UNDER_BAR below it
 local GAP = 4          -- between a button and the value box
 local VALUE_BOX = 44   -- the value box: room for three digits
 local DIM = 0.5        -- alpha of the black over the rail beyond the bound (picked by eye)
 local RAIL_INSET = 3   -- the stock Slider anchors its rail this far in from each side
 local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint)
 local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above
+local UNDER_BAR = TICK_BELOW + 1 -- px below the bar where the min and max labels start: clear of the thumb and of the tick's tail
 local NOTCH_INSET = 2  -- px a notch tick stops short of the rail's top and bottom (picked by eye)
 
 -- the bound as a number right now, or nil for none
@@ -302,6 +306,14 @@ local function Constructor()
     inner.editbox:SetWidth(VALUE_BOX)
     inner.editbox:ClearAllPoints()
     inner.editbox:SetPoint("TOP", inner.slider, "BOTTOM", 0, -VALUE_GAP)
+
+    -- the min and max labels: the stock Slider starts them 3 px up inside the bar, where
+    -- the thumb at either end, a notch tick and the bound's tick all ran into them; here
+    -- they start UNDER_BAR below it, at the same sides
+    inner.lowtext:ClearAllPoints()
+    inner.lowtext:SetPoint("TOPLEFT", inner.slider, "BOTTOMLEFT", 2, -UNDER_BAR)
+    inner.hightext:ClearAllPoints()
+    inner.hightext:SetPoint("TOPRIGHT", inner.slider, "BOTTOMRIGHT", -2, -UNDER_BAR)
 
     -- "-" and "+" frame the value box: real bordered buttons, parented to the slider's frame
     -- and raised above it so the slider's own mouse handling cannot swallow the clicks
