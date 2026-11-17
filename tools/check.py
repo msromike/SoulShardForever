@@ -916,7 +916,10 @@ def check_headers():
 
 MSG_RE = re.compile(r"\bSSF_[A-Z_]+\b")
 GAME_EVENT_RE = re.compile(r"\b(?!SSF_)[A-Z]+(?:_[A-Z]+)+\b")
-GETMODULE_RE = re.compile(r'GetModule\(\s*"(\w+)"\s*\)')
+# a module asked for by its name, with or without AceAddon's "silent" second argument
+GM_CALL = r'GetModule\(\s*"(\w+)"\s*(?:,\s*true\s*)?\)'
+GM_ANY = GM_CALL.replace(r'"(\w+)"', r'"\w+"')
+GETMODULE_RE = re.compile(GM_CALL)
 PROFILE_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\s*(?:--.*)?$", re.M)
 PROFILE_SUB_ALIAS_RE = re.compile(r"\blocal\s+(\w+)\s*=\s*(?:SSF|self)\.db\.profile\.(\w+)\s*(?:--.*)?$", re.M)
 PROFILE_KEY_IN_HEADER_RE = re.compile(r"\bprofile\.(\w+)")
@@ -1512,10 +1515,12 @@ def check_hooks():
 # ---------------------------------------------------------------- public truth
 
 MODULE_DECL_RE = re.compile(r'^local\s+(\w+)\s*=\s*[^\n]*?:New(Module|Addon)\(\s*"(\w+)"([^)\n]*)\)', re.M)
-DIRECT_CALL_RE = re.compile(r'GetModule\(\s*"(\w+)"\s*\)\s*([:.])\s*(\w+)')
-ALIAS_RHS_RE = re.compile(r'^[\w.:()"\-\s]*GetModule\(\s*"(\w+)"\s*\)$')
+DIRECT_CALL_RE = re.compile(GM_CALL + r'\s*([:.])\s*(\w+)')
+ALIAS_RHS_RE = re.compile(r'^[\w.:()"\-\s]*?' + GM_CALL + r'$')
+GM_START_RE = re.compile(r'GetModule\s*\(')
+GM_AT_RE = re.compile(GM_ANY + r'(\s*[:.])?')
 VALUE_ALIAS_RE = re.compile(r'^\s*local\s+(\w+(?:\s*,\s*\w+)*)\s*=\s*(.+)$')
-FUNC_ALIAS_RE = re.compile(r'^\s*local\s+function\s+(\w+)\(\)\s*return\s+[\w.:()"\-\s]*GetModule\(\s*"(\w+)"\s*\)\s*end\s*$')
+FUNC_ALIAS_RE = re.compile(r'^\s*local\s+function\s+(\w+)\(\)\s*return\s+[\w.:()"\-\s]*?' + GM_CALL + r'\s*end\s*$')
 ADDON_USE_RE = re.compile(r'(?:(?<![\w.:])SSF|GetAddon\(\s*"SSF"\s*\))\s*([:.])\s*(\w+)')
 ADDON = "SSF"            # the addon object's name: Core's Public is checked under it
 SHARED_STATE = "db"      # the AceDB profile: every module reads it, so the map leaves it out
@@ -1643,11 +1648,12 @@ def module_uses(rel, reg):
         table[alias] = mod
 
     for n, code in lines:
+        aliased = False
         m = FUNC_ALIAS_RE.match(code)
         if m:
             learn(func_alias, value_alias, m.group(1), m.group(2), n)
-            continue
-        m = VALUE_ALIAS_RE.match(code)
+            aliased = True
+        m = not aliased and VALUE_ALIAS_RE.match(code)
         if m:
             names = [x.strip() for x in m.group(1).split(",")]
             values = [x.strip() for x in re.split(r",(?![^()]*\))", m.group(2))]
@@ -1655,6 +1661,16 @@ def module_uses(rel, reg):
                 am = ALIAS_RHS_RE.match(value)
                 if am:
                     learn(value_alias, func_alias, alias, am.group(1), n)
+                    aliased = True
+        # every module the code asks for is one the check can follow: named in quotes, and
+        # called at once or kept in a local alias. A module object kept in a global, a field
+        # or a table, or handed around, is a use nothing here can see.
+        for start in GM_START_RE.finditer(code):
+            at = GM_AT_RE.match(code, start.start())
+            if not at:
+                problems.append(f"{rel}:{n}: GetModule with no quoted module name; name the module, \"Bags\", so the check can follow it")
+            elif not at.group(1) and not aliased:
+                problems.append(f"{rel}:{n}: a module object kept anywhere but a local alias (local Bags = SSF:GetModule(\"Bags\")); the check cannot follow it")
     uses = []
     for n, code in lines:
         for mod, _, name in DIRECT_CALL_RE.findall(code):
@@ -1908,7 +1924,7 @@ MODULE_FUNC_RE = re.compile(r"^function \w+[:.](\w+)\([^)]*\)(.*?)^end\b|^functi
                             re.M | re.S)
 # one statement that only calls another module: `SSF:GetModule("X"):Y(...)` or a local alias
 # of one (`Cap():Get()`), returned or not
-FORWARD_RE = re.compile(r'^(?:return\s+)?(?:SSF:GetModule\(\s*"\w+"\s*\)|[A-Z]\w*\(\))\s*[:.]\s*\w+\(.*\)$', re.S)
+FORWARD_RE = re.compile(r'^(?:return\s+)?(?:SSF:' + GM_ANY + r'|[A-Z]\w*\(\))\s*[:.]\s*\w+\(.*\)$', re.S)
 SETUP_FUNCS = {"OnInitialize", "OnEnable", "OnDisable"}
 
 

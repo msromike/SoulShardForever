@@ -93,7 +93,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   that code can show to the code (Public, Listens, Hooks, Sends, Reads, Saves, Acts on,
   Lib internals, Game internals, Exceptions), both ways wherever it can.
 - Modules talk only through AceEvent messages and public methods. No reaching into
-  another module's tables or frames. The AceDB profile on the addon object is the one
+  another module's tables or frames. A module is asked for by its quoted name,
+  SSF:GetModule("Bags"), and called at once or kept in a local alias (`local Bags = ...`
+  or `local function Bags() return ... end`); the check follows nothing else. The AceDB profile on the addon object is the one
   shared state and any module may read it; re-deriving another module's rule from it is
   a violation (ask that module).
 - Before writing any helper, grep the addon for the thing it does. Most helpers already
