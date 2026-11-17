@@ -48,7 +48,7 @@ end
 
 return function(opts)
     opts = opts or {}
-    loadLua("tests/wow_stub.lua")
+    loadLua("tests/wow_stub.lua", ROOT)
     WoW.root = ROOT
 
     for _, rel in ipairs(XmlFiles("embeds.xml", {})) do

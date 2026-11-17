@@ -269,6 +269,163 @@ def reach_truth(reaches, has, documented, globals_read):
     return problems
 
 
+# ---------------------------------------------------------------- frame methods, for the fake game
+
+FRAME_METHODS = os.path.join(ROOT, "tests", "frame_methods.lua")
+# each frame kind the code, its libraries or the fake game makes, as the client documents
+# it: the API tables it is made of, in the game's own widget tree
+_OBJECT = ["SimpleObjectAPI", "SimpleFrameScriptObjectAPI"]
+_SCRIPT_REGION = _OBJECT + ["SimpleScriptRegionAPI", "SimpleScriptRegionResizingAPI", "SimpleAnimatableObjectAPI"]
+_REGION = _SCRIPT_REGION + ["SimpleRegionAPI"]
+_FRAME = _SCRIPT_REGION + ["SimpleFrameAPI"]
+_FONT = ["SimpleFontAPI"]  # the font instance methods FontString and EditBox share
+FRAME_KINDS = {
+    "Frame": _FRAME,
+    "Button": _FRAME + ["SimpleButtonAPI"],
+    "CheckButton": _FRAME + ["SimpleButtonAPI", "SimpleCheckboxAPI"],
+    "EditBox": _FRAME + ["SimpleEditBoxAPI"] + _FONT,
+    "Slider": _FRAME + ["SimpleSliderAPI"],
+    "ScrollFrame": _FRAME + ["SimpleScrollFrameAPI"],
+    "StatusBar": _FRAME + ["SimpleStatusBarAPI"],
+    "Cooldown": _FRAME + ["FrameAPICooldown"],
+    "GameTooltip": _FRAME + ["FrameAPITooltip"],
+    "Minimap": _FRAME,
+    "MessageFrame": _FRAME + ["SimpleMessageFrameAPI"] + _FONT,
+    "FontString": _REGION + ["SimpleFontStringAPI"] + _FONT,
+    "Texture": _REGION + ["SimpleTextureBaseAPI", "SimpleTextureAPI"],
+    "MaskTexture": _REGION + ["SimpleTextureBaseAPI", "SimpleMaskTextureAPI"],
+    "Line": _REGION + ["SimpleTextureBaseAPI", "SimpleLineAPI"],
+    "Font": _OBJECT + _FONT,
+    "AnimationGroup": _OBJECT + ["SimpleAnimGroupAPI"],
+    "Animation": _OBJECT + ["SimpleAnimAPI"],
+    # CreateAnimation(type) makes one of these; each adds its own methods to Animation's
+    "Alpha": _OBJECT + ["SimpleAnimAPI", "SimpleAnimAlphaAPI"],
+    "Translation": _OBJECT + ["SimpleAnimAPI", "SimpleAnimTranslationAPI"],
+    "Scale": _OBJECT + ["SimpleAnimAPI", "SimpleAnimScaleAPI"],
+    "Rotation": _OBJECT + ["SimpleAnimAPI", "SimpleAnimRotationAPI"],
+    "Path": _OBJECT + ["SimpleAnimAPI", "SimpleAnimPathAPI"],
+    "FlipBook": _OBJECT + ["SimpleAnimAPI", "SimpleAnimFlipBookAPI"],
+    "VertexColor": _OBJECT + ["SimpleAnimAPI", "SimpleAnimVertexColorAPI"],
+    "TextureCoordTranslation": _OBJECT + ["SimpleAnimAPI", "SimpleAnimTextureCoordTranslationAPI"],
+}
+# the templates the code makes frames from: their mixins add Lua methods to the frame
+FRAME_TEMPLATES = ["BackdropTemplate", "DialogBorderOpaqueTemplate", "GameTooltipTemplate", "InputBoxTemplate",
+                   "UIDropDownMenuTemplate", "UIPanelButtonTemplate", "SecureActionButtonTemplate",
+                   "UIPanelCloseButton", "OptionsSliderTemplate", "UIPanelScrollFrameTemplate",
+                   "UIPanelScrollBarTemplate"]
+
+
+def frame_methods():
+    """{kind: sorted method names} and {template: sorted method names}, read from the
+    client's own API docs and UI source (tools/.wowui). The fake game refuses any other."""
+    tables = {}
+    for fn in os.listdir(WOWUI_DOCS):
+        if not fn.endswith(".lua"):
+            continue
+        text = open(os.path.join(WOWUI_DOCS, fn), encoding="utf-8", errors="replace").read()
+        m = re.search(r'^\s*Name\s*=\s*"(\w+)",\s*\n\s*Type\s*=\s*"ScriptObject"', text, re.M)
+        if not m:
+            continue
+        body = text.split("Functions =", 1)[1].split("Events =", 1)[0] if "Functions =" in text else ""
+        tables[m.group(1)] = set(re.findall(r'Name\s*=\s*"(\w+)",\s*\n\s*Type\s*=\s*"Function"', body))
+    kinds = {}
+    for kind, parts in FRAME_KINDS.items():
+        names = set()
+        for part in parts:
+            if part not in tables:
+                raise SystemExit(f"tools/check.py: the client's API docs have no {part} (FRAME_KINDS, {kind})")
+            names |= tables[part]
+        kinds[kind] = names
+
+    # the docs leave out the GameTooltip's oldest methods (AddLine, SetOwner, NumLines...):
+    # every method Blizzard's own UI calls on GameTooltip is one the game has
+    called = set()
+    for folder, _, files in os.walk(WOWUI_ADDONS):
+        for fn in files:
+            if fn.endswith(".lua"):
+                text = open(os.path.join(folder, fn), encoding="utf-8", errors="replace").read()
+                called.update(re.findall(r"\bGameTooltip:(\w+)\(", text))
+    kinds["GameTooltip"] |= called
+    kinds = {kind: sorted(names) for kind, names in kinds.items()}
+
+    # templates: the XML that defines each, its mixins and what it inherits, then each
+    # mixin's functions in the Lua (CreateFromMixins chains followed)
+    defs, lua = {}, []
+    for folder, _, files in os.walk(WOWUI_ADDONS):
+        for fn in files:
+            path = os.path.join(folder, fn)
+            if fn.endswith(".xml"):
+                text = open(path, encoding="utf-8", errors="replace").read()
+                for m in re.finditer(r'<\w+\s+([^>]*\bname="(\w+)"[^>]*\bvirtual="true"[^>]*)>', text):
+                    attrs = m.group(1)
+                    mix = re.search(r'\bmixin="([^"]*)"', attrs)
+                    inh = re.search(r'\binherits="([^"]*)"', attrs)
+                    defs.setdefault(m.group(2), (
+                        [x.strip() for x in mix.group(1).split(",")] if mix else [],
+                        [x.strip() for x in inh.group(1).split(",")] if inh else []))
+            elif fn.endswith(".lua"):
+                lua.append(path)
+    methods, chains = {}, {}
+    for path in lua:
+        text = open(path, encoding="utf-8", errors="replace").read()
+        for mixin, name in re.findall(r"^function\s+(\w+Mixin)[:.](\w+)\s*\(", text, re.M):
+            methods.setdefault(mixin, set()).add(name)
+        for mixin, args in re.findall(r"^(\w+Mixin)\s*=\s*CreateFromMixins\(([^)]*)\)", text, re.M):
+            chains.setdefault(mixin, []).extend(re.findall(r"\w+Mixin", args))
+
+    def mixin_names(mixin, seen):
+        if mixin in seen:
+            return set()
+        seen.add(mixin)
+        out = set(methods.get(mixin, set()))
+        for parent in chains.get(mixin, []):
+            out |= mixin_names(parent, seen)
+        return out
+
+    def template_names(template, seen):
+        if template in seen or template not in defs:
+            return set()
+        seen.add(template)
+        mixins, inherits = defs[template]
+        out = set()
+        for mixin in mixins:
+            out |= mixin_names(mixin, set())
+        for parent in inherits:
+            out |= template_names(parent, seen)
+        return out
+
+    templates = {t: sorted(template_names(t, set())) for t in FRAME_TEMPLATES}
+    return kinds, templates
+
+
+def write_frame_methods():
+    """Write tests/frame_methods.lua from the client's docs; True when it changed."""
+    kinds, templates = frame_methods()
+    out = ["-- Soul Shards Forever (SSF). MIT, see LICENSE.",
+           "--",
+           "-- frame_methods: every method each frame kind has in this client, and what each template",
+           "-- the code makes frames from adds, read from the client's own API docs and UI source by",
+           "-- tools/check.py. Written by the check, never by hand. The fake game (tests/wow_stub.lua)",
+           "-- refuses any method a frame of that kind does not have.",
+           "-- Touches nothing else.",
+           "",
+           "return {"]
+    for label, table in (("kinds", kinds), ("templates", templates)):
+        out.append(f"    {label} = {{")
+        for key in sorted(table):
+            words = ", ".join(f"{n} = true" for n in table[key])
+            out.append(f"        {key} = {{ {words} }},")
+        out.append("    },")
+    out.append("}")
+    text = "\n".join(out) + "\n"
+    old = open(FRAME_METHODS, encoding="utf-8").read() if os.path.exists(FRAME_METHODS) else ""
+    if text == old:
+        return False
+    with open(FRAME_METHODS, "w", encoding="utf-8", newline="\n") as f:
+        f.write(text)
+    return True
+
+
 def check_blizzard_api():
     """Every Blizzard name the code uses, against the client's own UI source (tools/.wowui,
     the wow-ui-source mirror's forever branch, the build the live client runs): no global
@@ -290,6 +447,12 @@ def check_blizzard_api():
               f"   copy on disk? Run again with {OFFLINE} to pass without this step.")
         return False
     print(f"   {WOWUI_BRANCH} build {build} ({note})")
+    if write_frame_methods():
+        print("   tests/frame_methods.lua rewritten from this client's API docs: CHANGED, run the check again "
+              "and commit it")
+        ok_methods = False
+    else:
+        ok_methods = True
     globs, namespaced = blizzard_names()
     ok = True
     deprecated = []
@@ -347,6 +510,7 @@ def check_blizzard_api():
     for p in reach_problems + reach_truth(reaches, has, documented, plain):
         print("   " + p)
         ok = False
+    ok = ok and ok_methods
     print(f"   {len(globs)} globals ({len(KNOWN_GLOBALS)} proven in game only), {len(namespaced)} namespaced calls, "
           f"{len(reaches)} reaches, " + ("ok" if ok else "FAILED"))
     return ok

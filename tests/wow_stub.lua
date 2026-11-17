@@ -7,10 +7,14 @@
 -- items once the server confirms (WoW.Settle); the player. Nothing has a size or a place that means anything, so nothing here
 -- can say how SSF looks, only what it does and what is in its window.
 --
--- Strict on purpose: a frame method this file does not know raises an error that names
--- it. A method is known one of three ways: it is written out below (it keeps state a test
--- reads), it is on a short list of answers (GET, MANY), or its name starts with a word on
--- SETTERS (it changes how a frame is drawn, which nothing here tracks). An error the game
+-- Strict on purpose, in two steps. First the game's own answer: a method the frame's kind
+-- and its templates do not have in this client (tests/frame_methods.lua, written by the
+-- check from the client's API docs) raises "the game has no method X on a <kind>", as the
+-- game would. Then this file's: a method the game has but this file does not know raises
+-- an error that names it. A method is known one of three ways: it is written out below (it
+-- keeps state a test reads), it is on a short list of answers (GET, MANY), or its name
+-- starts with a word on SETTERS (it changes how a frame is drawn, which nothing here
+-- tracks). CreateFrame takes a kind in any case, as the game does. An error the game
 -- would show in red (Ace hands those to the error handler and carries on) is kept in
 -- WoW.errors, so a runner fails on it instead of never seeing it.
 --
@@ -60,6 +64,7 @@
 --                                      adds, UnmuteSoundFile removes)
 -- Touches nothing else.
 
+local STUB_ROOT = ... -- the addon's folder (tests/load.lua passes it): frame_methods.lua is read from it
 local WoW = { bags = {}, combat = false, chat = {}, frames = {}, errors = {} }
 _G.WoW = WoW
 
@@ -296,7 +301,7 @@ function M:CreateTexture() return CreateFrame("Texture", nil, self) end
 function M:CreateMaskTexture() return CreateFrame("MaskTexture", nil, self) end
 function M:CreateLine() return CreateFrame("Line", nil, self) end
 function M:CreateAnimationGroup() return CreateFrame("AnimationGroup", nil, self) end
-function M:CreateAnimation() return CreateFrame("Animation", nil, self) end
+function M:CreateAnimation(kind) return CreateFrame(kind or "Animation", nil, self) end
 function M:GetFontString() return Part(self, "FontString", "FontString") end
 for _, name in ipairs({ "Normal", "Pushed", "Highlight", "Disabled", "Checked", "DisabledChecked", "Thumb" }) do
     M["Get" .. name .. "Texture"] = function(self) return Part(self, name, "Texture") end
@@ -354,9 +359,29 @@ local function IsSetter(k)
     end
 end
 
+-- What the game itself has: every method each frame kind has in this client, and what each
+-- template adds (tests/frame_methods.lua, written by tools/check.py from the client's own
+-- API docs). A method the frame's kind and templates do not have is an error here, as it is
+-- in the game, even when its name looks like a setter.
+local KNOWN = assert(loadfile((STUB_ROOT or ".") .. "/tests/frame_methods.lua"))()
+local function GameHas(f, k)
+    local kind = rawget(f, "__type")
+    local known = KNOWN.kinds[kind]
+    if not known then error("wow_stub: tests/frame_methods.lua has no frame kind " .. tostring(kind), 3) end
+    if known[k] then return true end
+    for word in tostring(rawget(f, "__template") or ""):gmatch("[^,%s]+") do
+        local adds = KNOWN.templates[word]
+        if adds and adds[k] then return true end
+    end
+    return false
+end
+
 local meta = {}
-meta.__index = function(_, k)
+meta.__index = function(f, k)
     if type(k) ~= "string" or not k:find("^%u") then return nil end -- a field (frame.obj), not a method
+    if not GameHas(f, k) then
+        error(("wow_stub: the game has no method %s on a %s"):format(k, tostring(rawget(f, "__type"))), 2)
+    end
     if M[k] then return M[k] end
     if MANY[k] then return MANY[k] end
     if GET[k] ~= nil then local v = GET[k] return function() return v end end
@@ -373,9 +398,14 @@ local TEMPLATE_CHILDREN = {
     UIPanelScrollFrameTemplate = { ScrollBar = "Slider" }, -- AceGUI's MultiLineEditBox (the debug report window)
 }
 
+-- The game takes a frame kind in any case ("BUTTON") and answers GetObjectType with its own spelling
+local KIND_NAMES = {}
+for kind in pairs(KNOWN.kinds) do KIND_NAMES[kind:lower()] = kind end
+
 local frames = WoW.frames
 local made = 0
 function CreateFrame(kind, name, parent, template)
+    kind = KIND_NAMES[tostring(kind):lower()] or kind
     made = made + 1
     local f = setmetatable({ __type = kind, __name = name, __events = {}, __scripts = {}, __children = {},
                              __shown = true, __order = made, __template = template,
