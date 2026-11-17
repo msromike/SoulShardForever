@@ -235,6 +235,8 @@ local function BuildTable()
     -- A gold tick marks each notch on the bar (the slider's `notches`). While the sound
     -- plays the game refuses to start it again, so the "-" and "+" are greyed until it
     -- ends (the slider's `busy`, Sounds:Busy): every click that can be made is heard.
+    -- Under the bar's ends it says "Off" and "Max" (the slider's `ends`), so 0% reads as
+    -- off without the help; the value box keeps the percentage.
     local pausesoundGui = Settings:Define("pausesound", {
         order = 2, kind = "range",
         name = L["Pause sound"],
@@ -247,6 +249,7 @@ local function BuildTable()
         released = function() Sounds():PlayPause() end,
         notches = true,
         busy = function() return Sounds():Busy() end,
+        ends = { low = L["Off"], high = L["Max"] },
     }
 
     local args = {

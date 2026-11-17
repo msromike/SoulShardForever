@@ -32,11 +32,15 @@
 -- says whether its sound is still playing): while it returns true the "-" and "+" are
 -- greyed, read whenever the buttons are set, so at every redraw; the owner redraws when
 -- the answer changes. The handle and the value box stay usable.
+-- Ends (the option's `arg` as a table with `ends = { low = text, high = text }`; the pause
+-- sound slider says "Off" and "Max"): the words under the bar's two ends, in place of the
+-- min and max numbers. The value box keeps its number.
 --
 -- Public:  the Slider's: SetLabel, SetSliderValues, SetIsPercent, SetValue, GetValue,
 --          SetDisabled; SetCustomData(arg) (AceConfigDialog hands the option's `arg` to
 --          it): a number or a function is the bound; a table is { bound = the same,
---          released = function(value), notches = true, busy = function() }, each optional;
+--          released = function(value), notches = true, busy = function(),
+--          ends = { low = text, high = text } }, each optional;
 --          MinWidth() -> the narrowest it stays usable, its label on one line or the
 --          "-", box, "+" row, whichever is wider (SSFFrame:FitWidth sizes the window to it).
 -- The min and max labels and the "-", box, "+" row start UNDER_BAR below the bar (the
@@ -60,7 +64,7 @@
 --          tooltip on a greyed slider).
 -- Touches nothing else.
 
-local Type, Version = "SSFStepperSlider", 12
+local Type, Version = "SSFStepperSlider", 13
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's modules (the addon is loaded by the time a widget is made)
@@ -170,6 +174,16 @@ local function UpdateNotches(self)
     for i = count + 1, #ticks do ticks[i]:Hide() end
 end
 
+-- The words under the bar's two ends: with `ends`, its `low` and `high` in place of the
+-- min and max numbers the stock Slider writes there (it writes them again on every
+-- SetSliderValues and SetIsPercent, so this follows both).
+local function UpdateEnds(self)
+    local ends, inner = self.ends, self.inner
+    if not ends then return end
+    if ends.low then inner.lowtext:SetText(ends.low) end
+    if ends.high then inner.hightext:SetText(ends.high) end
+end
+
 -- everything drawn on the rail, redrawn whenever the width, the scale or the `arg` changes
 local function UpdateRail(self)
     UpdateDim(self)
@@ -199,6 +213,7 @@ local methods = {
         self.inner:OnAcquire() -- the stock reset: size, enabled, 0-100 by 1, value 0, wheel off
         self.bound, self.released = nil, nil -- pooled widgets: nothing must leak to another row
         self.notches, self.busy = nil, nil
+        self.ends = nil
         self:SetWidth(200)
         self:SetHeight(44 + VALUE_GAP)
         self.inner.label:SetJustifyH("LEFT")
@@ -226,11 +241,15 @@ local methods = {
 
     ["SetSliderValues"] = function(self, min_value, max_value, step)
         self.inner:SetSliderValues(min_value, max_value, step)
+        UpdateEnds(self)
         UpdateRail(self)
         UpdateButtons(self)
     end,
 
-    ["SetIsPercent"] = function(self, value) self.inner:SetIsPercent(value) end,
+    ["SetIsPercent"] = function(self, value)
+        self.inner:SetIsPercent(value)
+        UpdateEnds(self)
+    end,
 
     -- the option's `arg`: the bound, or a table with the bound, the let-go's `released`
     -- and `notches`. A value already past the bound is shown at it (the owner keeps the
@@ -239,10 +258,13 @@ local methods = {
         if type(arg) == "table" then
             self.bound, self.released = arg.bound, arg.released
             self.notches, self.busy = arg.notches, arg.busy
+            self.ends = arg.ends
         else
             self.bound, self.released = arg, nil
             self.notches, self.busy = nil, nil
+            self.ends = nil
         end
+        UpdateEnds(self)
         local b, inner = Bound(self), self.inner
         if b and (inner:GetValue() or 0) > b then inner:SetValue(b) end
         UpdateRail(self)

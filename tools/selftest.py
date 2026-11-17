@@ -271,7 +271,7 @@ CASES = [
          "names this file sets to numbers"),
     # one value, one home
     Case("rules: a constant another file has, typed again inside a block", RULES, "Modules/Bags.lua",
-         APPEND, "\ndo\n    local VALUE_GAP = 5\nend\n", "VALUE_GAP is typed in"),
+         APPEND, "\ndo\n    local VALUE_GAP = 7\nend\n", "VALUE_GAP is typed in"),
     Case("rules: the same table constant twice, once over several lines", RULES, "Modules/Bags.lua",
          APPEND, "\ndo\n    local PROBE_SET = {\n        1,\n        2\n    }\nend\ndo\n    local PROBE_SET = { 1, 2 }\nend\n",
          "PROBE_SET is typed in"),

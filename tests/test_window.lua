@@ -424,6 +424,28 @@ test("a busy slider greys its - and +, and frees them when it is no longer busy"
     AceGUI:Release(slider)
 end)
 
+-- The pause sound slider says "Off" and "Max" under its ends, so 0% reads as off without
+-- the help. The stock Slider writes the numbers there again on every scale change.
+test("a slider with end words shows them in place of the min and max numbers", function()
+    local AceGUI = LibStub("AceGUI-3.0")
+    local slider = AceGUI:Create("SSFStepperSlider")
+    slider:SetSliderValues(0, 1, 0.25)
+    slider:SetIsPercent(true)
+    eq(slider.inner.lowtext:GetText(), "0%", "not asked for: the stock number")
+    slider:SetCustomData({ ends = { low = "Off", high = "Max" } })
+    eq(slider.inner.lowtext:GetText(), "Off", "the low end's word")
+    eq(slider.inner.hightext:GetText(), "Max", "the high end's word")
+    slider:SetSliderValues(0, 1, 0.5)
+    eq(slider.inner.lowtext:GetText(), "Off", "a scale change keeps the word")
+    slider:SetIsPercent(true)
+    eq(slider.inner.hightext:GetText(), "Max", "and so does the percent switch")
+    AceGUI:Release(slider)
+    slider = AceGUI:Create("SSFStepperSlider")
+    slider:SetSliderValues(1, 100, 1)
+    eq(tostring(slider.inner.lowtext:GetText()), "1", "handed to another row: its numbers are back")
+    AceGUI:Release(slider)
+end)
+
 test("dragging the window saves the spot with the screen size", function()
     shut()
     profile.welcomed = 99999

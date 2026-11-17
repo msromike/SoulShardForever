@@ -60,6 +60,9 @@ Pause stops SSF from moving or deleting shards until you unpause.
 
 How loud the pause sound plays. 0% turns it off. Let go to hear it.
 
+Under the bar's two ends it says Off and Max; the box between "-" and "+" keeps the
+percentage (0%, 25%, 50%, 75%, 100%).
+
 ### Log pauses to chat
 
 Each press while paused prints a chat line.
