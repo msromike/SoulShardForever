@@ -5,12 +5,14 @@
 local _, NS = ...
 local L = {}
 
-L["Coming soon to SSF"] = "Bientôt dans SSF"
-L["Two things you've asked for are on the way."] = "Deux choses que vous avez demandées arrivent."
-L["Delete in combat:"] = "Suppression en combat :"
-L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] = "SSF pourra supprimer un fragment d'âme au-delà de votre limite pendant que vous êtes en combat."
-L["Delete as you play:"] = "Suppression en jouant :"
-L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."] = "Un mode facultatif qui supprime automatiquement les fragments d'âme au-delà de votre limite pendant le jeu normal, sans macro ni raccourci clavier."
-L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."] = "Chacune sortira d'abord en bêta sur CurseForge. Nous vous préviendrons ici quand elles seront prêtes."
+L["Thanks for Trying the SSF Beta"] = "Merci d'essayer la bêta de SSF"
+L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."] = "SSF supprime désormais les fragments d'âme en combat comme hors combat. Votre raccourci fonctionne toujours, tout comme vos anciennes ou nouvelles macros."
+L["How to use it:"] = "Comment l'utiliser :"
+L["put /ssf delete on the line before the spells you cast most. Two little macros are all you need:"] = "placez /ssf delete sur la ligne avant les sorts que vous lancez le plus. Deux petites macros suffisent :"
+L["#showtooltip\n/ssf delete\n/cast %s"] = "#showtooltip\n/ssf delete\n/cast %s"
+L["Tip:"] = "Astuce :"
+L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"] = "/stopattack et /stopcasting font partir les sorts instantanés comme %s dès le premier appui, même pendant que vous tirez à la baguette :"
+L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"] = "#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"
+L["Thank you for giving our beta a try. Tell us how it went in the CurseForge comments."] = "Merci d'avoir essayé notre bêta. Dites-nous comment ça s'est passé dans les commentaires CurseForge."
 
 NS.AddLocaleStrings("frFR", L)

@@ -28,6 +28,16 @@ test("the macro text is /ssf delete before the spell, in the client's language",
     eq(table.concat(Macros:Names(), " "), "SSF_LT SSF_BoA", "found by these names")
 end)
 
+test("any spell's name comes from the game; a macro's own falls back to English", function()
+    eq(Macros:SpellNameOf(1120), "Spell 1120", "Drain Soul, by id")
+    local real = C_Spell.GetSpellName
+    C_Spell.GetSpellName = function() return nil end
+    local none, fallback = Macros:SpellNameOf(1120), Macros:SpellName("BoA")
+    C_Spell.GetSpellName = real
+    eq(none, nil, "no name from the game: nil")
+    eq(fallback, "Bane of Agony", "the macro's own English name")
+end)
+
 test("both missing: both made in the character's slots, then /reload", function()
     WoW.SetMacros({}, {})
     eq(Macros:AnyMissing(), true, "missing to begin with")

@@ -12,27 +12,37 @@ Job:    prove that tools/check.py still catches what it is there to catch. Each 
         a step nobody has seen fail, and the run fails on it ("every check step has a
         case"), as it does on a step the clean run before the cases leaves out. The map
         and the library report never fail on purpose; the map has its own case.
+How:    an orchestrator. It pulls the Blizzard UI source once, makes WORKERS copies of the
+        addon (permanent folders under %LOCALAPPDATA%/SSF-selftest, brought up to date
+        with robocopy /MIR, which copies only what changed; a fresh copy where there is no
+        robocopy, as on GitHub), and hands the cases out among them, each copy run by its
+        own process. While they run it runs the clean check on the real folder. The cases
+        break files only in the copies, never in the folder the game loads.
 Takes:  nothing, or words to match against case names (`python tools/selftest.py window`
         runs the cases with "window" in the name). LUA and LUACHECK as check.py reads them.
-Writes: nothing that stays. A case rewrites one file for the length of one step and puts
-        the original bytes back even when the step raises; at the end every file touched
-        is compared with what it held at the start, and a difference fails the run.
+Writes: the worker copies, outside the addon. In them a case rewrites one file for the
+        length of one step and puts the original bytes back even when the step raises;
+        each worker then compares every file it touched with what it held at the start,
+        and a difference fails the run.
 Exit:   0 when every case was caught for the expected reason and every file is as it was;
         1 otherwise. "SETUP WRONG" (the text a case replaces is no longer in the file)
         counts as a failure: the code moved, and the case must follow it.
-When:   on GitHub on every push and pull request (.github/workflows/check.yml), and
-        locally after any change (a code edit can move the text a case changes). Not part of check.py: it
-        takes longer, and it changes files while it runs. This folder is the one the
-        game loads, so do not /reload in game during the ten seconds it takes: a file
-        is broken on disk for a moment at a time.
+When:   on GitHub on every push and pull request (.github/workflows/check.yml), which a
+        release waits on before its tag; locally after a change to tools/ or tests/. A
+        code edit can move the text a case changes: GitHub's run catches that before any
+        release. Not part of check.py: it takes longer.
 Touches nothing else.
 """
+import concurrent.futures
 import contextlib
 import glob
 import io
 import os
 import re
+import shutil
+import subprocess
 import sys
+import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import check  # noqa: E402
@@ -327,7 +337,9 @@ CASES = [
          "    feeding = true\n", "", "timers keep queueing timers"),
     Case("tests: a white announcement paragraph with a blank line errors again", TESTS, "Modules/NewsShow.lua",
          "            local lead = part.lead and Colors:Gold(L[part.lead])",
-         "            local lead = Colors:Gold(L[part.lead])", "a white paragraph can carry a blank line under it"),
+         # caught by the test of that shape, or earlier, by the first test that opens the
+         # window, when the shipped announcement uses that shape itself: the same error
+         "            local lead = Colors:Gold(L[part.lead])", "table index is nil"),
     Case("tests: a window control keyed like a chat word inside its group", TESTS, "Modules/Options.lua",
          "                pauseGui = pauseGui,", "                pause = pauseGui,", "pause is not a chat word"),
     Case("tests: a trainer closing brings back a welcome already seen", TESTS, "Modules/Welcome.lua",
@@ -712,9 +724,74 @@ def cases_cover_every_step(extra_steps):
     return [("every check step has a case", not missing, "no case for " + ", ".join(missing))]
 
 
-def main(argv):
-    words = [w.lower() for w in argv]
+WORKER = "--worker"   # selftest.py --worker <k> <n> [words]: run job k, k+n, k+2n... in this copy
+WORKERS = max(1, min(7, (os.cpu_count() or 2) - 1))
+
+
+def jobs(words):
+    """[(name, run)] in report order: every case and every extra the words select. run()
+    returns [(name, caught, why not)]."""
     wanted = lambda name: not words or any(w in name.lower() for w in words)
+    out = []
+    for case in CASES + prose_only_cases():
+        if wanted(case.name):
+            out.append((case.name, lambda c=case: [(c.name,) + run_case(c)]))
+    if wanted("missing"):
+        out.append(("missing", missing_cases))
+    if wanted("toc: a Lua file in a new folder"):
+        out.append(("new folder", lambda: [new_folder_case()]))
+    if wanted("map:"):
+        out.append(("map", lambda: [map_case()]))
+    if wanted("locales:"):
+        out.append(("more arguments", more_arguments_cases))
+    if wanted("every check step"):
+        out.append(("every step", lambda: cases_cover_every_step(
+            [check.check_tests, check.check_blizzard_api, check.check_toc])))
+    return out
+
+
+def worker(k, n, words):
+    """Run this copy's share of the jobs and print one line per result, then any file it
+    did not put back."""
+    for i, (_, run) in enumerate(jobs(words)):
+        if i % n != k:
+            continue
+        for j, (name, caught, why) in enumerate(run()):
+            why = "" if caught else str(why).replace("\t", " ").replace("\n", " / ")
+            print(f"RESULT\t{i}\t{j}\t{name}\t{int(bool(caught))}\t{why}", flush=True)
+    for rel, raw in originals.items():
+        if open(os.path.join(check.ROOT, rel), "rb").read() != raw:
+            print(f"NOTRESTORED\t{rel}")
+    print(f"TOUCHED\t{len(originals)}")
+    return 0
+
+
+def worker_folder(k):
+    base = os.environ.get("LOCALAPPDATA") or tempfile.gettempdir()
+    return os.path.join(base, "SSF-selftest", f"w{k + 1}")
+
+
+def sync(dest):
+    """Make dest a copy of the addon, its .git and the Blizzard mirror left out. robocopy
+    /MIR copies only what changed; elsewhere a fresh copy."""
+    git, wowui = os.path.join(check.ROOT, ".git"), os.path.join(check.ROOT, "tools", ".wowui")
+    if os.name == "nt" and shutil.which("robocopy"):
+        proc = subprocess.run(["robocopy", check.ROOT, dest, "/MIR", "/XD", git, wowui,
+                               "/NFL", "/NDL", "/NJH", "/NJS", "/NP", "/R:1", "/W:1"],
+                              capture_output=True, text=True, errors="replace")
+        if proc.returncode >= 8:  # robocopy: 0-7 is success, 8 and up a failure
+            raise SystemExit(f"selftest: robocopy to {dest} failed ({proc.returncode}): {proc.stdout.strip()}")
+        return
+    if os.path.exists(dest):
+        shutil.rmtree(dest)
+    skip = lambda folder, names: [n for n in names if os.path.join(folder, n) in (git, wowui)]
+    shutil.copytree(check.ROOT, dest, ignore=skip)
+
+
+def main(argv):
+    if argv[:1] == [WORKER]:
+        return worker(int(argv[1]), int(argv[2]), [w.lower() for w in argv[3:]])
+    words = [w.lower() for w in argv]
 
     # the check must pass on the tree as it is, or a caught break proves nothing
     # (every step that can fail; checked below to be the whole of check.py's main)
@@ -728,43 +805,58 @@ def main(argv):
     if unlisted:
         print("the clean run leaves out a step check.py runs: " + ", ".join(unlisted) + "; add it to the clean list")
         return 1
+
+    # the run's one pull of the Blizzard UI source, before any worker reads it
+    check.wowui_build()
+    n = min(WORKERS, max(1, len(jobs(words))))
+    folders = [worker_folder(k) for k in range(n)]
+    with concurrent.futures.ThreadPoolExecutor(n) as pool:
+        list(pool.map(sync, folders))
+    env = dict(os.environ, SSF_WOWUI=check.WOWUI, SSF_NO_PULL="1", PYTHONIOENCODING="utf-8")
+    procs = [subprocess.Popen([sys.executable, os.path.join(folder, "tools", "selftest.py"), WORKER, str(k), str(n)]
+                              + words, cwd=folder, env=env, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+             for k, folder in enumerate(folders)]
+
+    # the clean run, on the real folder, while the workers break their copies
+    bad = 0
     for label, step in clean:
         ok, out = run_step(step)
         if not ok:
             print(f"the {label} step fails before anything is broken; fix that first:\n{out}")
-            return 1
+            bad += 1
+            break
 
-    results = []
-    for case in CASES + prose_only_cases():
-        if wanted(case.name):
-            caught, why = run_case(case)
-            results.append((case.name, caught, why))
-    extra = (missing_cases() if wanted("missing") else []) + ([new_folder_case()] if wanted("toc: a Lua file in a new folder") else [])
-    extra += [map_case()] if wanted("map:") else []
-    extra += more_arguments_cases() if wanted("locales:") else []
-    extra += cases_cover_every_step([check.check_tests, check.check_blizzard_api, check.check_toc]) if wanted("every check step") else []
-    for name, caught, why in extra:
-        results.append((name, caught, None if caught else why))
+    results, touched, changed = [], 0, []
+    for k, proc in enumerate(procs):
+        text = proc.communicate()[0].decode("utf-8", errors="replace")
+        lines = text.splitlines()
+        for line in lines:
+            parts = line.split("\t")
+            if parts[0] == "RESULT":
+                results.append((int(parts[1]), int(parts[2]), parts[3], parts[4] == "1", parts[5]))
+            elif parts[0] == "NOTRESTORED":
+                changed.append(f"w{k + 1}: {parts[1]}")
+            elif parts[0] == "TOUCHED":
+                touched += int(parts[1])
+        if proc.returncode != 0 or not any(l.startswith("TOUCHED\t") for l in lines):
+            print(f"WORKER w{k + 1} STOPPED (exit {proc.returncode}):\n" + "\n".join(lines[-15:]))
+            bad += 1
+    if bad and not results:
+        print("SELF-TEST FAILED")
+        return 1
 
-    bad = 0
-    for name, caught, why in results:
+    for _, _, name, caught, why in sorted(results):
         print(("caught  " if caught else "MISSED  ") + name)
         if not caught:
-            print("        " + str(why))
+            print("        " + why)
             bad += 1
-
-    changed = [rel for rel, raw in originals.items() if open(os.path.join(check.ROOT, rel), "rb").read() != raw]
     for rel in changed:
         print(f"NOT RESTORED  {rel}")
-    for label, step in clean:
-        ok, _ = run_step(step)
-        if not ok:
-            print(f"AFTER THE RUN the {label} step no longer passes")
-            bad += 1
-    print(f"\n{len(results) - bad} of {len(results)} breaks caught for the expected reason, "
-          f"{len(originals)} files touched and {'ALL RESTORED' if not changed else 'NOT ALL RESTORED'}")
-    print("SELF-TEST PASSED" if not bad and not changed and results else "SELF-TEST FAILED")
-    return 0 if not bad and not changed and results else 1
+    print(f"\n{sum(1 for r in results if r[3])} of {len(results)} breaks caught for the expected reason, "
+          f"{n} workers, {touched} files touched and {'ALL RESTORED' if not changed else 'NOT ALL RESTORED'}")
+    passed = not bad and not changed and results
+    print("SELF-TEST PASSED" if passed else "SELF-TEST FAILED")
+    return 0 if passed else 1
 
 
 if __name__ == "__main__":

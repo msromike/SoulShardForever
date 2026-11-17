@@ -20,7 +20,8 @@
 --          only while an announcement is owed).
 -- Reads:   NS.news from News\News.lua (the announcement: id, on, title, text);
 --          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote; Combat:InFight;
---          Colors:Gold (a paragraph's lead).
+--          Colors:Gold (a paragraph's lead); Macros:SpellNameOf and SSF.SPELLS (a paragraph's
+--          spell, by key, put into its text's %s).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
 -- Touches nothing else.
 
@@ -61,6 +62,9 @@ local function Note(self, news)
         if type(part) == "table" then -- a gold lead, then its text in white; either may be left out
             local lead = part.lead and Colors:Gold(L[part.lead])
             local text = part.text and L[part.text]
+            -- a spell's name, from the game in the client's language, like the welcome's
+            -- macros: a translation never spells one out, and a rename reaches it
+            if text and part.spell then text = text:format(SSF:GetModule("Macros"):SpellNameOf(SSF.SPELLS[part.spell]) or "") end
             line = lead and text and (lead .. LEAD_GAP .. text) or lead or text or ""
         else
             line = L[part]

@@ -148,8 +148,12 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
   `python tools/check.py --accept-window` and read its diff. The list cannot say where a
   control sits or how it looks; that takes a look in game or a screenshot.
 - The check is itself checked. tools/selftest.py breaks one thing at a time on purpose and
-  fails unless the check catches it for the expected reason. Run it after any change,
-  code included (about a minute; GitHub runs it on every push): a case finds its break by
+  fails unless the check catches it for the expected reason. At the desk, run it after a
+  change to tools\ or tests\, in the background (about 20 seconds: it runs the cases in
+  parallel in copies of the addon outside this folder, so the folder the game loads is
+  never broken). Any other change gets the check alone: GitHub runs the self-test on every
+  push, and a release is tagged only on a green run (addon-release skill), so a case left
+  behind by a code edit is still caught before anything ships. A case finds its break by
   the exact text it changes, so a code edit can leave a case pointing at text that is gone
   ("SETUP WRONG"), and the case is followed to the new text in the same commit. A new step in
   the check gets a case there in the same commit: a step nobody has seen fail proves

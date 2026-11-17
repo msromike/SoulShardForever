@@ -5,12 +5,14 @@
 local _, NS = ...
 local L = {}
 
-L["Coming soon to SSF"] = "Скоро в SSF"
-L["Two things you've asked for are on the way."] = "Две вещи, о которых вы просили, уже в работе."
-L["Delete in combat:"] = "Удаление в бою:"
-L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] = "SSF сможет удалять осколок души сверх лимита, пока вы находитесь в бою."
-L["Delete as you play:"] = "Удаление во время игры:"
-L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."] = "Необязательный режим, который автоматически удаляет осколки души сверх лимита во время обычной игры, без макроса и назначения клавиш."
-L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."] = "Каждая функция сначала выйдет в виде бета-версии на CurseForge. Мы сообщим здесь, когда они будут готовы."
+L["Thanks for Trying the SSF Beta"] = "Спасибо, что попробовали бету SSF"
+L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."] = "Теперь SSF удаляет осколки душ и в бою, и вне боя. Ваша привязка клавиши по-прежнему работает, как и любые старые или новые макросы."
+L["How to use it:"] = "Как пользоваться:"
+L["put /ssf delete on the line before the spells you cast most. Two little macros are all you need:"] = "поставьте /ssf delete в строку перед заклинаниями, которые вы применяете чаще всего. Хватит двух маленьких макросов:"
+L["#showtooltip\n/ssf delete\n/cast %s"] = "#showtooltip\n/ssf delete\n/cast %s"
+L["Tip:"] = "Совет:"
+L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"] = "/stopattack и /stopcasting заставляют мгновенные заклинания вроде «%s» срабатывать с первого нажатия, даже пока вы стреляете из жезла:"
+L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"] = "#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"
+L["Thank you for giving our beta a try. Tell us how it went in the CurseForge comments."] = "Спасибо, что попробовали нашу бету. Расскажите, как всё прошло, в комментариях на CurseForge."
 
 NS.AddLocaleStrings("ruRU", L)

@@ -25,7 +25,7 @@ created by Window and by each other):
 Core and modules:
 
 - Core.lua: the addon object, the warlock gate, the saved settings (the AceDB profile, its defaults and the migrations of old values), the Language switch (ApplyLanguage) and the shared constants on the addon object.
-  Public: SSF.SHARD_ITEM_ID; SSF.HALF_LINE (px: SSF's half line of empty space, the one spacing unit its widgets share); SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
+  Public: SSF.SHARD_ITEM_ID; SSF.SPELLS (the spell ids SSF names, by key); SSF.HALF_LINE (px: SSF's half line of empty space, the one spacing unit its widgets share); SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
 - Modules\Colors.lua: every color SSF uses, and the helpers that paint text with them.
   Public: Colors.RED, GREEN, YELLOW, GOLD, WHITE, DIM, ECHO, BLUE, CODE, SLATE, BLACK -> { r, g, b, hex } Colors:ForState(state) -> r, g, b, hex for "low" / "ok" / "over" / "paused" / "quiet"; any other state is an error (as in PaintState) Colors:Paint(color, text) -> text wrapped in the color's escape codes Colors:PaintState(state, text) -> text in the state's color Colors:Value(v) -> v in white (a setting's value) Colors:Accent(v) -> v in green (branding) Colors:OnOff(b) -> green ON / red OFF Colors:State(text, good) -> text in green (good) or red Colors:Gold(text) -> text in the label gold Colors:Echo(text) -> text in the command echo grey Colors:Class() -> r, g, b of the warlock class color (titles only)
 - Modules\Combat.lua: the two questions SSF asks about a fight, each answered here and nowhere else.
@@ -38,7 +38,7 @@ Core and modules:
   Public: Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark (never above the cap), SetLowMark(n) (Options' slider: held between MIN and the cap), State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow: Colors maps them, LowGlow compares "low"; no delete, sort or setting is decided by comparing these words), IsOver(count) -> bool (over the cap: a press would delete), IsFull(count) -> bool, IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax off is the caller's job), Recompute().
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
   Public: Pass() -> moves fired (0 while paused or in combat); TopFirst() -> true under SoulSort legacy Normal.
-- Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
+- Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, what a volume level means, and whether the game's item sounds are heard around SSF's own shard moves (Moving).
   Public: Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or "delete" (Sorter and Trimmer hand their moves over and know nothing of the rule). Returns nothing, heard or not. Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name LSM no longer knows (a sound pack removed) falls back to the default; a nil name plays nothing (LSM:IsValid is true for nil). PlayPause() -- the pause sound at the saved level (profile.pauseSoundName, pauseSoundVolume): a paused press out of combat (Trimmer decides when) and the options' previews. DefaultName() -> the default sound's LSM name (Core's profile default). LevelKeys() -> the keys in dropdown order; LevelVolume(key) -> volume ("full" for an unknown key); LevelKey(volume) -> key ("full" for an unknown volume); IsLevel(volume) -> bool.
 - Modules\Trimmer.lua: the delete press.
   Public: Delete(); Paused() -> bool, the one pause gate (Sorter:Pass asks it too); WhyNot(count) -> why a press would not delete, or nil if it would: "paused" (a mode: the only answer while paused, whatever the count), "quiet" (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap". The window's Delete Shard button greys on it with the reason under it. No combat reason: a press deletes in a fight too, and the window is shut in one.
@@ -48,7 +48,7 @@ Core and modules:
 - Modules\DebugReport.lua: the window a player copies the debug record from.
   Public: Open() (opens the window, or refills it when it is already up).
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
-  Public: Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name, desc, get(), apply(value), optional extra() -> text appended to the chat echo, optional echo() -> the whole echo line in place of "name: value" (pause), optional disabled, and for range: min, max, step }. Returns gui, cmd -- two entries for Options to place in its args table; a GUI-only setting places gui and drops cmd. cmd.set(info, input, short): short = true when the player typed a range's number with no key ("/ssf 25", Options' handler): the range check is still this module's, and a bad value's usage line comes back in that short form ("Use: /ssf <min>-<max>"). AceConfig's own set takes (info, value) only: short is SSF's, and only a caller that runs the command from code passes it. Settings:ValueWords(key) -> the words a toggle's chat command takes ("off", "on"), nil for a range or an unknown key: Options' tab completion offers them after the key.
+  Public: Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name, desc, get(), apply(value), optional extra() -> text appended to the chat echo, optional echo() -> the whole echo line in place of "name: value" (pause), optional disabled, and for range: min, max, step }. Returns gui, cmd -- two entries for Options to place in its args table; a GUI-only setting places gui and drops cmd. cmd.set(info, input, short): short = true when the player typed a range's number with no key ("/ssf 25", Options' handler): the range check is still this module's, and a bad value's usage line comes back in that short form ("Use: /ssf <min>-<max>"). AceConfig's own set takes (info, value) only: short is SSF's, and only a caller that runs the command from code passes it. Settings:ValueWords(key) -> the words a toggle's chat command takes ("off", "on"), nil for a range or an unknown key: TabComplete offers them after the key.
 - Modules\Help.lua: help mode.
   Public: IsOn() -> bool, Toggle(); Apply(root) (Options, at the end of every build); KeepHover(widget, wrapper, innerFrames) (a widget's constructor: wrapper is the widget's own frame, innerFrames the stock frames that take the mouse while enabled), Greyed(widget, disabled) (the widget's SetDisabled, after the stock call).
 - Modules\Options.lua: the one settings table.
@@ -61,8 +61,8 @@ Core and modules:
   Public: none; AceTab calls it on Tab.
 - Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
   Public: CountValue(count) -> "N" in its state color (Cap:State, Colors), always: only the bag number follows the colorize option; white while paused. count defaults to the bags. CapText(count, cap) -> "N (cap M)", StatusText's body; the cap in the value white. StatusText(count, cap) -> "Soul Shards: N (cap M)", chat (a bare /ssf, the login lines, the announce line, the paused-press line). Both arguments optional: the Trimmer passes the count it knows right after a delete, when the bags still show the deleted shard until the server confirms. CountText() -> "Soul Shards: N", the window's top line (its cap is the slider). InBagsText(count) -> "(in bags: N)", the cap command's echo tail. CapValue() -> the cap, in the value white. LowMarkValue() -> the saved low mark, in the value white. PausedValue() -> red "Yes" while paused, green "No" otherwise. PauseText() -> "SSF paused: Yes/No", the one pause wording in chat (a bare /ssf, the login lines, the /ssf pause echo and the pause key binding). PausedPressText() -> "All SSF actions paused. Soul Shards: N (cap M)", a paused press with the chat log on. DeletedText(count, cap) -> "Deleted a Soul Shard. Soul Shards: N (cap M)", the announce line. PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
-- Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
-  Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony).
+- Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony, and the one place SSF asks the game for a spell's name (SpellNameOf).
+  Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony). SpellNameOf(id) -> any spell's name in the client's language, as a macro's /cast line needs it, or nil when the game has none: the one place SSF asks the game for a spell's name (SpellName and the announcement's macros use it).
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
   Public: Stop() (also the OnHide hook's handler).
 - Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro is for and its warning.
@@ -168,7 +168,7 @@ on the right and the file on the left breaks; the check fails first.
 | SSFCentered | Help: Greyed, KeepHover |
 | Core | KeyBindings: ApplyLabels; Sounds: DefaultName, LevelKey, LevelVolume |
 | Bags | SSF: SHARD_ITEM_ID |
-| Cap | Bags: HasSoulBag, SoulBagSlots; Trimmer: Paused |
+| Cap | Bags: HasSoulBag, SoulBagSlots; SSF: SPELLS; Trimmer: Paused |
 | Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Combat: Locked; Sounds: Moving; Trimmer: Paused |
 | Sounds | Combat: Locked |
 | Trimmer | Bags: Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: Moving, PlayPause; Status: DeletedText, PausedPressText |
@@ -181,13 +181,13 @@ on the right and the file on the left breaks; the check fails first.
 | SlashCommand | Colors: Echo; Options: APP, ChatWord, SetCapShortForm; Status: PrintStatus; Window: Open |
 | TabComplete | Options: ChatWords; Settings: ValueWords |
 | Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
-| Macros | Combat: Locked |
+| Macros | Combat: Locked; SSF: SPELLS |
 | MacroGlow | Macros: Names |
 | DeleteHelp | Macros: Body, SpellName |
 | Tooltip | Colors: GOLD, WHITE |
 | Window | Colors: BLACK, Class, Gold; Combat: InFight; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
 | Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: RefreshNote, ShowNote |
-| NewsShow | Colors: Gold; Combat: InFight; Window: RefreshLeftNote, ShowLeftNote |
+| NewsShow | Colors: Gold; Combat: InFight; Macros: SpellNameOf; SSF: SPELLS; Window: RefreshLeftNote, ShowLeftNote |
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
 | LowGlow | Cap: State; Colors: RED; Counter: Refresh |

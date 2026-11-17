@@ -1,7 +1,8 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Sounds: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, and
--- what a volume level means. The sounds are Blizzard's own game files, registered by file
+-- Sounds: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, what
+-- a volume level means, and whether the game's item sounds are heard around SSF's own
+-- shard moves (Moving). The sounds are Blizzard's own game files, registered by file
 -- ID: nothing is bundled.
 --   SSF: Bag thunk   file 567559 / sound kit 1200   PutDownBag, the sound of a bag
 --                                                    dropped where it can't go; the

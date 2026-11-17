@@ -1,6 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
+-- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony,
+-- and the one place SSF asks the game for a spell's name (SpellNameOf).
 -- Holds their text (the one source: the help text shows exactly what Create writes), says
 -- whether each exists, makes the missing ones on a click and hands back /reload for the
 -- note's secure button to run (a new macro shows a stale
@@ -16,6 +17,9 @@
 -- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(),
 --          Create() -> "/reload" once it made macros, else nil.
 --          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
+--          SpellNameOf(id) -> any spell's name in the client's language, as a macro's
+--          /cast line needs it, or nil when the game has none: the one place SSF asks
+--          the game for a spell's name (SpellName and the announcement's macros use it).
 -- Listens: UPDATE_MACROS, bucketed (it fires in bursts of about five, even on a click in
 --          Blizzard's macro window); LOADING_SCREEN_DISABLED once, after Create's reload.
 -- Sends:   SSF_MACROS_CHANGED; SSF_MACRO_WINDOW_SHOWN once SSF has opened Blizzard's macro
@@ -40,8 +44,8 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 -- names are never translated: the name is how SSF finds them
 local MACROS = {
-    LT  = { name = "SSF_LT",  spell = 1454, fallback = "Life Tap" },
-    BoA = { name = "SSF_BoA", spell = 980,  fallback = "Bane of Agony" },
+    LT  = { name = "SSF_LT",  spell = SSF.SPELLS.LIFE_TAP,      fallback = "Life Tap" },
+    BoA = { name = "SSF_BoA", spell = SSF.SPELLS.BANE_OF_AGONY, fallback = "Bane of Agony" },
 }
 local ORDER = { "LT", "BoA" }
 local ICON = 134400 -- INV_Misc_QuestionMark: with #showtooltip the button shows the spell's icon
@@ -53,10 +57,14 @@ local function Limits()
     return k and k.MAX_ACCOUNT_MACROS or 120, k and k.MAX_CHARACTER_MACROS or 30
 end
 
--- the spell's name in the client's language; this client has no GetSpellInfo
+-- a spell's name in the client's language; this client has no GetSpellInfo
+function Macros:SpellNameOf(id)
+    return C_Spell.GetSpellName(id)
+end
+
 function Macros:SpellName(key)
     local m = MACROS[key]
-    return C_Spell.GetSpellName(m.spell) or m.fallback
+    return self:SpellNameOf(m.spell) or m.fallback
 end
 
 function Macros:Body(key)

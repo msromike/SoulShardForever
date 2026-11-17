@@ -18,7 +18,8 @@ local NewsShow = SSF:GetModule("NewsShow")
 local profile = SSF.db.profile
 local ID = 11400
 
-NS.AddLocaleStrings("enUS", { ["A test title"] = true, ["First line."] = true, ["Second line."] = true })
+NS.AddLocaleStrings("enUS", { ["A test title"] = true, ["First line."] = true, ["Second line."] = true,
+    ["/cast %s"] = true })
 
 -- what NewsShow asked of the window since the last fresh()
 local asked
@@ -93,6 +94,14 @@ test("a paragraph's lead is gold, its text follows in white after two spaces", f
     eq(blocks[3].text, "Second line.", "a plain line stays plain")
     eq(blocks[1].blank, true, "a blank line asked for is passed on")
     eq(blocks[2].blank, nil, "and only where it was asked for")
+end)
+
+test("a paragraph's spell is named by the game, in its text's %s", function()
+    local news = sample()
+    news.text = { { text = "/cast %s", spell = "BANE_OF_AGONY" }, "Second line." }
+    fresh(news)
+    NewsShow:OnWindowOpened()
+    eq(asked.shown[1].opts.blocks[1].text, "/cast Spell 980", "the name the game gives for that spell's id")
 end)
 
 test("a white paragraph can carry a blank line under it", function()

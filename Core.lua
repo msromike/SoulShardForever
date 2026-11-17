@@ -7,7 +7,7 @@
 -- on Ace3 for Forever only; no original code remains. The standard every file follows is
 -- CLAUDE.md at the addon root; the map of files and messages is ARCHITECTURE.md.
 --
--- Public:  SSF.SHARD_ITEM_ID; SSF.HALF_LINE (px: SSF's half line of empty space, the one
+-- Public:  SSF.SHARD_ITEM_ID; SSF.SPELLS (the spell ids SSF names, by key); SSF.HALF_LINE (px: SSF's half line of empty space, the one
 --          spacing unit its widgets share); SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db
 --          (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
 -- Lib internals: db.keys.char (AceDB's key for this character) and the raw
@@ -33,6 +33,10 @@ local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 SSF.SHARD_ITEM_ID = 6265
+-- The spells SSF names, by id: the one home for each number. Macros makes its macros from
+-- two of them, Cap's quiet state ends with Drain Soul, and the announcement names them by
+-- key. The game gives each one's name in the client's language (Macros:SpellNameOf).
+SSF.SPELLS = { LIFE_TAP = 1454, BANE_OF_AGONY = 980, DRAIN_SOUL = 1120 }
 -- Half a line of empty space, in px: the air under the radio row in the options (a look
 -- chosen on purpose) and between a divider and the text in the announcement panel.
 -- One home, so the two stay the same; the widgets read it when they lay out (they load

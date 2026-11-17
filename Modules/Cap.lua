@@ -61,7 +61,7 @@ Cap.MIN, Cap.MAX = 1, 100
 -- The spell that ends the quiet state: Drain Soul (Rank 1), learned at 10 (wowhead classic
 -- spell 1120). Tested on the stress test with Immolate (348) standing in: any
 -- trainer spell the character lacks makes a test shot.
-Cap.QUIET_UNTIL = 1120
+Cap.QUIET_UNTIL = SSF.SPELLS.DRAIN_SOUL
 
 local last -- the cap as of the last Recompute, for change detection
 local quiet, learned -- quiet as of the last check; a learn event came since

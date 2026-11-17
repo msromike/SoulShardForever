@@ -63,10 +63,20 @@ FontString  shown  enabled You won't see this welcome screen again on this chara
 Button      shown  enabled Create recommended macros
 FontString  shown  enabled Creates the macros, reloads your UI / and opens the macro box after the reload.
 Button      shown  enabled (no text: UIPanelCloseButton)
+FontString  shown  enabled Thanks for Trying the SSF Beta
+Button      shown  enabled Remind me later
 Button      hidden enabled (no text: UIPanelCloseButton)
+FontString  shown  enabled Don't show this again
 FontString  shown  enabled vtest
 Button      shown  enabled Keybindings
 Button      shown  enabled Create macros
+FontString  shown  enabled SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use.
+FontString  shown  enabled How to use it:  put /ssf delete on the line before the spells you cast most. Two little macros are all you need:
+FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1454
+FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1120
+FontString  shown  enabled Tip:  /stopattack and /stopcasting make instant casts like Spell 980 go off on the first press, even while you're wanding:
+FontString  shown  enabled #showtooltip / /ssf delete / /stopattack / /stopcasting / /cast Spell 980
+FontString  shown  enabled Thank you for giving our beta a try. Tell us how it went in the CurseForge comments.
 FontString  shown  enabled SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match.
 FontString  shown  enabled In a macro, put /ssf delete on the line before the ability:
 FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1454

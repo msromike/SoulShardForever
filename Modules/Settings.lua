@@ -23,8 +23,8 @@
 --          own set takes (info, value) only: short is SSF's, and only a caller that runs
 --          the command from code passes it.
 --          Settings:ValueWords(key) -> the words a toggle's chat command takes ("off",
---            "on"), nil for a range or an unknown key: Options' tab completion offers them
---            after the key.
+--            "on"), nil for a range or an unknown key: TabComplete offers them after the
+--            key.
 -- Sends:   SSF_OPTIONS_CHANGED with the key after every apply, and its source: "chat" when
 --          the chat command applied it, "window" when the window's control did (Window
 --          redraws an open window for every source but "window").

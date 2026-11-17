@@ -1,5 +1,19 @@
 # Changelog
 
+## 1.16.0-beta.1 (2026-11-17)
+
+- Delete in combat: your delete key and the /ssf delete line in your macros now delete a
+  shard over your cap in the middle of a fight, not only after it.
+- In a fight a delete makes no sound, and loose shards move into your soul bag when the
+  fight ends, not during it.
+- Moving a loose shard into your soul bag makes no sound.
+- A new announcement for beta players: how to use it, with three macros to copy.
+
+## 1.15.2 (2026-11-16)
+
+- A new announcement: the delete in combat beta is out on CurseForge, and how to get it.
+  It opens the SSF window when you log in until you tick "Don't show this again."
+
 ## 1.15.1 (2026-11-16)
 
 - The "Coming soon to SSF" announcement is switched off. It no longer opens the window

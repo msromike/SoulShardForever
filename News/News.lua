@@ -19,22 +19,29 @@
 --            and either may be left out (a lead alone is a paragraph all in gold, a text
 --            alone a white one); blank = true leaves one blank line under the paragraph.
 --            So a white paragraph that needs a blank line under it is { text = ...,
---            blank = true }.
+--            blank = true }. spell = a key of SSF.SPELLS (Core) puts that spell's
+--            name, as the game gives it in the client's language, into the text's one
+--            %s: a macro's /cast line, right in every language, with no spell name in
+--            any translation.
 -- Owns no state beyond that table, no events, no frames. Touches nothing else.
 
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The first announcement: a short roadmap, its wording deliberate. Shipped switched on in
--- 1.14.0 and 1.15.0; switched off in 1.15.1.
+-- The third announcement, in the beta only: thanks for trying it, and how to use it. It
+-- replaces the second, "*New* SSF Beta Available" (11502), which 1.15.2 ships to everyone.
+-- The first, "Coming soon to SSF" (11400), shipped in 1.14.0 and was switched off in 1.15.1.
 NS.news = {
-    id = 11400,
-    on = false,
-    title = L["Coming soon to SSF"],
+    id = 11600,
+    on = true,
+    title = L["Thanks for Trying the SSF Beta"],
     text = {
-        { lead = L["Two things you've asked for are on the way."], blank = true },
-        { lead = L["Delete in combat:"], text = L["SSF will be able to delete a Soul Shard over your cap while you are in combat."] },
-        { lead = L["Delete as you play:"], text = L["An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind."], blank = true },
-        L["Each one comes out first as a beta on CurseForge. We'll tell you here when they are ready."],
+        { text = L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."], blank = true },
+        { lead = L["How to use it:"], text = L["put /ssf delete on the line before the spells you cast most. Two little macros are all you need:"], blank = true },
+        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "LIFE_TAP", blank = true },
+        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "DRAIN_SOUL", blank = true },
+        { lead = L["Tip:"], text = L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"], spell = "BANE_OF_AGONY", blank = true },
+        { text = L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"], spell = "BANE_OF_AGONY", blank = true },
+        L["Thank you for giving our beta a try. Tell us how it went in the CurseForge comments."],
     },
 }

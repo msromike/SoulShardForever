@@ -120,7 +120,8 @@ def check_libs():
 
 WOWUI_REPO = "https://github.com/Gethe/wow-ui-source.git"
 WOWUI_BRANCH = "forever"
-WOWUI = os.path.join(ROOT, "tools", ".wowui")
+# SSF_WOWUI: the self-test's workers run in copies of the addon and read the one real mirror
+WOWUI = os.environ.get("SSF_WOWUI") or os.path.join(ROOT, "tools", ".wowui")
 WOWUI_ADDONS = os.path.join(WOWUI, "Interface", "AddOns")
 WOWUI_DOCS = os.path.join(WOWUI_ADDONS, "Blizzard_APIDocumentationGenerated")
 NS_CALL_RE = re.compile(r"\b(C_\w+)\.(\w+)\s*\(")
@@ -130,14 +131,23 @@ NOT_BLIZZARD = {"LibStub"}
 OFFLINE = "--offline"  # pass the Blizzard API step when there is no UI source to check against
 
 
+_wowui = []  # (build, note) once this process has pulled: one network round trip per run
+
+
 def wowui_build():
     """Bring tools/.wowui to the mirror's current forever build and say which it is: a
-    shallow clone of the branch if absent, a pull if present. Offline, the copy on disk is
-    used and the message says so; with no copy at all, None."""
+    shallow clone of the branch if absent, a pull if present, once per process. Offline,
+    the copy on disk is used and the message says so; with no copy at all, None. With
+    SSF_NO_PULL set (the self-test's workers, after the run's one pull) the copy on disk
+    is used as it is."""
+    if _wowui:
+        return _wowui[0]
     git = shutil.which("git")
     if not git:
         return None, "git not found"
-    if not os.path.isdir(os.path.join(WOWUI, ".git")):
+    if os.environ.get("SSF_NO_PULL") and os.path.isdir(os.path.join(WOWUI, ".git")):
+        note = "pulled once for this run"
+    elif not os.path.isdir(os.path.join(WOWUI, ".git")):
         proc = subprocess.run([git, "clone", "--quiet", "--depth", "1", "--single-branch", "--branch",
                                WOWUI_BRANCH, WOWUI_REPO, WOWUI], text=True, capture_output=True)
         if proc.returncode != 0:
@@ -147,6 +157,7 @@ def wowui_build():
         proc = subprocess.run([git, "-C", WOWUI, "pull", "--quiet", "--ff-only"], text=True, capture_output=True)
         note = "current" if proc.returncode == 0 else "offline, using the copy on disk"
     build = subprocess.run([git, "-C", WOWUI, "log", "-1", "--format=%s"], text=True, capture_output=True).stdout.strip()
+    _wowui.append((build, note))
     return build, note
 
 
@@ -433,9 +444,19 @@ FRAME_TEMPLATES = ["BackdropTemplate", "DialogBorderOpaqueTemplate", "GameToolti
                    "UIPanelScrollBarTemplate"]
 
 
+_wowui_reads = {}  # what was read from tools/.wowui, by job: it does not change during one run
+
+
 def frame_methods():
     """{kind: sorted method names} and {template: sorted method names}, read from the
-    client's own API docs and UI source (tools/.wowui). The fake game refuses any other."""
+    client's own API docs and UI source (tools/.wowui). The fake game refuses any other.
+    Read once per process."""
+    if "frame_methods" not in _wowui_reads:
+        _wowui_reads["frame_methods"] = _frame_methods()
+    return _wowui_reads["frame_methods"]
+
+
+def _frame_methods():
     tables = {}
     for fn in os.listdir(WOWUI_DOCS):
         if not fn.endswith(".lua"):
@@ -544,6 +565,53 @@ def write_frame_methods():
     return True
 
 
+def deprecated_definitions():
+    """[(name, "file:line")]: every name defined in the client's Deprecated files. Read once
+    per process."""
+    if "deprecated" not in _wowui_reads:
+        def_re = re.compile(r"^\s*(?:function\s+(\w+)\s*\(|(\w+)\s*=)")
+        found = []
+        for folder, _, files in os.walk(WOWUI_ADDONS):
+            if "Deprecated" not in folder:
+                continue
+            for fn in files:
+                if not fn.endswith(".lua"):
+                    continue
+                path = os.path.join(folder, fn)
+                for n, line in enumerate(open(path, encoding="utf-8", errors="replace"), 1):
+                    m = def_re.match(line)
+                    name = m and (m.group(1) or m.group(2))
+                    if name:
+                        found.append((name, f"{os.path.relpath(path, WOWUI_ADDONS)}:{n}"))
+        _wowui_reads["deprecated"] = found
+    return _wowui_reads["deprecated"]
+
+
+def api_docs():
+    """(docs, documented, documented_as) from Blizzard_APIDocumentationGenerated: each C_
+    namespace's functions, every documented function, and the enumerations and constants
+    tables by kind. Read once per process."""
+    if "api_docs" not in _wowui_reads:
+        docs, documented, documented_as = {}, set(), {}
+        for fn in os.listdir(WOWUI_DOCS):
+            if not fn.endswith(".lua"):
+                continue
+            text = open(os.path.join(WOWUI_DOCS, fn), encoding="utf-8", errors="replace").read()
+            # a member is documented by an entry of its own kind: a function for a frame or a
+            # namespace, an enumeration for Enum, a constants table for Constants. An argument,
+            # field or event that happens to share the name documents nothing.
+            names = [n for n, kind in DOC_ENTRY_RE.findall(text) if kind == "Function"]
+            documented.update(names)
+            for n, kind in DOC_ENTRY_RE.findall(text):
+                if kind in DOC_GLOBAL_KINDS.values():
+                    documented_as.setdefault(kind, set()).add(n)
+            ns = re.search(r'Namespace\s*=\s*"(C_\w+)"', text)
+            if ns:
+                docs.setdefault(ns.group(1), set()).update(names)
+        _wowui_reads["api_docs"] = (docs, documented, documented_as)
+    return _wowui_reads["api_docs"]
+
+
 def check_blizzard_api():
     """Every Blizzard name the code uses, against the client's own UI source (tools/.wowui,
     the wow-ui-source mirror's forever branch, the build the live client runs): no global
@@ -573,40 +641,14 @@ def check_blizzard_api():
         ok_methods = True
     globs, namespaced = blizzard_names()
     ok = True
-    deprecated = []
-    for folder, _, files in os.walk(WOWUI_ADDONS):
-        if "Deprecated" not in folder:
-            continue
-        for fn in files:
-            if fn.endswith(".lua"):
-                deprecated.append(os.path.join(folder, fn))
-    def_re = re.compile(r"^\s*(?:function\s+(\w+)\s*\(|(\w+)\s*=)")
     shimmed = {}
-    for path in deprecated:
-        for n, line in enumerate(open(path, encoding="utf-8", errors="replace"), 1):
-            m = def_re.match(line)
-            name = m and (m.group(1) or m.group(2))
-            if name in globs:
-                shimmed.setdefault(name, []).append(f"{os.path.relpath(path, WOWUI_ADDONS)}:{n}")
+    for name, where in deprecated_definitions():
+        if name in globs:
+            shimmed.setdefault(name, []).append(where)
     for name in sorted(shimmed):
         print(f"   {name} is a deprecated shim ({shimmed[name][0]}); move to its C_ replacement")
         ok = False
-    docs, documented, documented_as = {}, set(), {}
-    for fn in os.listdir(WOWUI_DOCS):
-        if not fn.endswith(".lua"):
-            continue
-        text = open(os.path.join(WOWUI_DOCS, fn), encoding="utf-8", errors="replace").read()
-        # a member is documented by an entry of its own kind: a function for a frame or a
-        # namespace, an enumeration for Enum, a constants table for Constants. An argument,
-        # field or event that happens to share the name documents nothing.
-        names = [n for n, kind in DOC_ENTRY_RE.findall(text) if kind == "Function"]
-        documented.update(names)
-        for n, kind in DOC_ENTRY_RE.findall(text):
-            if kind in DOC_GLOBAL_KINDS.values():
-                documented_as.setdefault(kind, set()).add(n)
-        ns = re.search(r'Namespace\s*=\s*"(C_\w+)"', text)
-        if ns:
-            docs.setdefault(ns.group(1), set()).update(names)
+    docs, documented, documented_as = api_docs()
     for (ns, fn), where in sorted(namespaced.items()):
         if fn not in docs.get(ns, ()):
             print(f"   {ns}.{fn} is not in this client's API docs ({where[0]})")

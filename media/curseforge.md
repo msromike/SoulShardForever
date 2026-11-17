@@ -1,6 +1,6 @@
 ## <span style="color:#8788EE">Coming soon</span>
 
-- **Delete in combat:**  SSF will be able to delete a Soul Shard over your cap while you are in combat.
+- **Delete in combat:**  In beta now. Your delete key and your /ssf delete macros delete a Soul Shard in and out of combat now.  To try the beta, right-click SSF in the CurseForge app, then select Release Type and choose Beta.
 - **Delete as you play:**  An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind.
 
 Each one comes out first as a beta on CurseForge.
