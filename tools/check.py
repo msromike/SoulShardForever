@@ -1589,7 +1589,8 @@ SETSCRIPT_RE = re.compile(r"((?:\w+\.)*(\w+)):SetScript\(\s*(\"(\w+)\")?")
 def code_text(rel):
     """A file's code with every comment blanked and every line kept, so a place in it is a
     line number in the file."""
-    return "\n".join("" if l.lstrip().startswith("--") else strip_comment(l) for l in read(rel).splitlines())
+    return "\n".join("" if l.lstrip().startswith("--") else strip_comment(l)
+                     for l in blank_block_comments(read(rel)).splitlines())
 
 
 def hooks_made(code):
@@ -1750,11 +1751,21 @@ def blank_strings(code):
     return re.sub(r'"(?:[^"\\]|\\.)*"|\'(?:[^\'\\]|\\.)*\'', '""', code)
 
 
+BLOCK_COMMENT_RE = re.compile(r"--\[(=*)\[.*?\]\1\]", re.S)
+
+
+def blank_block_comments(text):
+    """Source with every Lua block comment (--[[ ... ]], --[==[ ... ]==]) emptied and its
+    line breaks kept, so code disabled in one is not read as live and line numbers stay
+    true."""
+    return BLOCK_COMMENT_RE.sub(lambda m: "\n" * m.group(0).count("\n"), text)
+
+
 def bare_code(text):
-    """Source with comment-only lines dropped and trailing comments cut, line numbers kept:
-    [(line number, code)]."""
+    """Source with block comments and comment-only lines dropped and trailing comments cut,
+    line numbers kept: [(line number, code)]."""
     out = []
-    for n, line in enumerate(text.splitlines(), 1):
+    for n, line in enumerate(blank_block_comments(text).splitlines(), 1):
         if line.lstrip().startswith("--"):
             continue
         out.append((n, strip_comment(line).rstrip()))
@@ -2228,8 +2239,9 @@ def toc_files():
 
 
 def code_lines(text):
-    """Source lines with comment-only lines dropped, so a commented-out call does not count."""
-    return "\n".join(l for l in text.splitlines() if not l.lstrip().startswith("--"))
+    """Source lines with block comments and comment-only lines dropped, so a commented-out
+    call does not count."""
+    return "\n".join(l for l in blank_block_comments(text).splitlines() if not l.lstrip().startswith("--"))
 
 
 def header_job(rel):
