@@ -23,7 +23,7 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   never something a session adds on its own.
 - Custom AceGUI widgets (Widgets\) are extension-only: a widget wraps a stock AceGUI
   widget and adds to it. It never re-implements what the stock widget does. Where AceGUI
-  has no base, the widget stands alone and stays small.
+  has no base, the widget stands alone, and it still does one job (Rule 2).
 - No insurance against a library changing behavior it has had for years. Use the library
   as it is, name the reach under "Lib internals", and let the library diff be the
   warning. A hand copy of library code kept "in case" is hand-rolling.
@@ -89,7 +89,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
       Then the line "Touches nothing else."
 
   The header is the test. Anything in a file the header does not describe is misplaced.
-  A session may stop reading at the header and trust it.
+  A session may stop reading at the header and trust it: the check holds every field
+  that code can show to the code (Public, Listens, Hooks, Sends, Reads, Saves, Acts on,
+  Lib internals, Game internals, Exceptions), both ways wherever it can.
 - Modules talk only through AceEvent messages and public methods. No reaching into
   another module's tables or frames. The AceDB profile on the addon object is the one
   shared state and any module may read it; re-deriving another module's rule from it is
@@ -101,8 +103,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   the rest.
 - No pass-through files: a module whose every function only calls another module adds a
   hop and no job. The check fails on one; its callers ask the other module directly.
-- A new job gets a new file, named for the job, with its header written before its code,
-  and a line in ARCHITECTURE.md in the same commit.
+- A new job gets a new file, named for the job, with its header written before its code.
+  ARCHITECTURE.md is generated from the headers and the code: run the check, never edit
+  the map by hand.
 
 ## Libraries
 
@@ -115,9 +118,19 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
 
 ## Every commit
 
-- Run the check script (luacheck, headless tests, locale completeness, regenerate
-  ARCHITECTURE.md). A regenerated map that changed in a way the commit did not intend
-  means something moved that should not have. Stop and report.
+- Run `python tools/check.py` (about five seconds); it must end ALL PASS. Its steps, in
+  order: luacheck; the headless tests (tests/run.lua); the real options window against
+  tests/window_controls.txt; every locale carries every key and keeps its placeholders;
+  every L[...] the code looks up exists; colors typed only in Colors; the header layout;
+  the headers' claims against the code; the toc against the files on disk; Bindings.xml
+  against what it calls; the exceptions and Lib internals counted against this file;
+  Acts on; Hooks; Public; the rules (one value, one home; the shard id only in Core;
+  every message has a sender; combat asked only of Combat; no pass-through module; every
+  widget type used); Blizzard's names (no deprecated call, every global proven, every
+  reach into Blizzard's frames listed); ARCHITECTURE.md regenerated; the libraries'
+  drift from upstream (information, never a failure). A regenerated map that changed in
+  a way the commit did not intend means something moved that should not have. Stop and
+  report.
 - What is in the options window is a fact, not a reading of the code. The check opens the
   real window outside the game (tests/window.lua) and holds it to
   tests/window_controls.txt. Anything that says what a player sees or clicks there (a
@@ -129,7 +142,7 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
   control sits or how it looks; that takes a look in game or a screenshot.
 - The check is itself checked. tools/selftest.py breaks one thing at a time on purpose and
   fails unless the check catches it for the expected reason. Run it after any change to
-  tools/check.py or tests/ (about ten seconds; GitHub runs it on every push). A new step in
+  tools/check.py or tests/ (about a minute; GitHub runs it on every push). A new step in
   the check gets a case there in the same commit: a step nobody has seen fail proves
   nothing.
 - One chunk of work per commit. Any commit that changes behavior is tested in game
