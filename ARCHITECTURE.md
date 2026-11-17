@@ -20,7 +20,7 @@ created by Window and by each other):
 - Widgets\SSFFrame.lua: SSF's options window, an extension of AceGUI's stock Frame container.
   Public: the stock Frame's SetTitle, SetStatusTable, Show, Hide; FitWidth() -> changed, FitToContent(), SetTitleColor(r, g, b), SetTitleBand(alpha), SetActionButton(text, onClick, tipText), SetMiddleButton(...), SetRightButton(text, onClick, tipText), SetHelpButton(onClick, isOn, tipText), ShowSidePanel(title, body, note, opts) and ShowLeftPanel(title, opts) (opts as SSFSideNote:Show; the right note and the left one), MakeRoom() (a showing note that would hang off the screen sends the window to the center; the owner calls it after every feed, which is where the saved spot comes back and the width changes), SetFooter(text). Callback: "OnMoved"(top, left).
 - Widgets\SSFCentered.lua: three AceGUI widgets that reposition their stock counterpart, for use from the options table through `dialogControl`.
-  Public: SSFCountButton: SetText, SetCustomData(getText), SetDisabled, MinWidth(); SSFIndentCheckBox: the CheckBox's SetLabel, SetValue, GetValue, SetTriState, SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level, or { level, radio, after, follows }); MinWidth(). MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth sizes the window to.
+  Public: SSFCountButton: SetText, SetCustomData(getText), SetDisabled, MinWidth(); SSFIndentCheckBox: the CheckBox's SetLabel, SetValue, GetValue, SetTriState, SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level, or { level, radio, after, follows }); MinWidth(). SSFUnlabeledDropdown: the Dropdown's; MinWidth(). MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth sizes the window to.
 
 Core and modules:
 

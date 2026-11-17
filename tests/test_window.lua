@@ -255,6 +255,19 @@ test("the first open's second fit does not reopen a window closed in that tick",
     ok(not open(), "still closed")
 end)
 
+test("the Volume dropdown is never narrower than its longest value", function()
+    local AceGUI = LibStub("AceGUI-3.0")
+    local dropdown = AceGUI:Create("SSFUnlabeledDropdown")
+    dropdown:SetList({ short = "Full", long = "A much longer volume word" })
+    dropdown:SetWidth(85) -- what AceConfigDialog gives a "half" control
+    ok(dropdown.frame:GetWidth() >= dropdown:MinWidth(), "widened to its longest value")
+    ok(dropdown.frame:GetWidth() > 85, "past the 85 px it was given")
+    dropdown:SetList({ a = "Full", b = "Loud" })
+    dropdown:SetWidth(85)
+    eq(dropdown.frame:GetWidth(), 85, "short values: the width it was given")
+    AceGUI:Release(dropdown)
+end)
+
 test("dragging the window saves the spot with the screen size", function()
     shut()
     profile.welcomed = 99999

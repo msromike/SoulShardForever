@@ -13,7 +13,8 @@
 --                         can show, its `disabled` greys it. Greyed, it still shows its
 --                         tooltip on hover.
 --   SSFUnlabeledDropdown: a Dropdown whose label never shows; its name is only the title
---                         of its tooltip.
+--                         of its tooltip. Never narrower than its longest value on one
+--                         line, whatever width AceConfigDialog gives it.
 --   SSFIndentCheckBox   : a CheckBox inset 10px from the left, so it sits inside its group.
 --                         An option's `arg` sets the indent level (2 = 20px); no `arg` is
 --                         level 1. A table `arg`, { level = 2, radio = true }, also draws
@@ -37,13 +38,14 @@
 --                         24px, so short labels are pixel-identical to the stock widget.
 -- Two are built by composition: the real widget sits inside ours, is reset through its
 -- own OnAcquire, and every call is forwarded, the same pattern as SSFStepperSlider.
--- SSFUnlabeledDropdown is not: it is a stock Dropdown instance re-typed with one method
--- replaced (see its block).
+-- SSFUnlabeledDropdown is not: it is a stock Dropdown instance re-typed with SetLabel and
+-- SetDisabled wrapped and MinWidth and OnWidthSet added (see its block).
 --
 -- Public:  SSFCountButton: SetText, SetCustomData(getText), SetDisabled, MinWidth();
 --          SSFIndentCheckBox: the CheckBox's SetLabel, SetValue, GetValue, SetTriState,
 --          SetDisabled, SetDescription, SetType, SetImage; SetCustomData(level, or
 --          { level, radio, after, follows }); MinWidth().
+--          SSFUnlabeledDropdown: the Dropdown's; MinWidth().
 --          MinWidth() is the width the text needs on one line, which SSFFrame:FitWidth
 --          sizes the window to.
 -- Lib internals: the stock Button's frame, the stock CheckBox's text and frame, AceGUI's
@@ -52,7 +54,13 @@
 --          constructor, for the re-typed one; the re-typed widget keeps the Dropdown
 --          version it was made from, so a newer Dropdown loaded later in the session never
 --          reaches it). The stock Dropdown's frame, button and button_cover and its
---          SetDisabled (wrapped, stock first). The Button's and CheckBox's frame and the
+--          SetDisabled (wrapped, stock first); its list field (the values, measured for
+--          MinWidth), its text FontString's font, AceGUI's OnWidthSet call after every
+--          SetWidth (the stock Dropdown defines none; SSF's raises a width under MinWidth),
+--          and TEXT_CHROME, copied from its text and dropdown anchors (a
+--          Dropdown that moves them measures a value a few px off). That AceConfigDialog
+--          calls SetList before SetWidth is relied on: the other order sizes the dropdown
+--          to the last list it held. The Button's and CheckBox's frame and the
 --          Dropdown's button and button_cover are handed to Help:KeepHover as the frames
 --          that give up the mouse while greyed; a stock widget that moves its mouse to
 --          another frame leaves a greyed control silent again. The inner widget's
@@ -187,7 +195,11 @@ end
 -- puts at the top of the option's tooltip, but the row stays a bare dropdown beside the
 -- control it belongs to (the pause volume beside Play pause sound).
 do
-    local Type, Version = "SSFUnlabeledDropdown", 2
+    local Type, Version = "SSFUnlabeledDropdown", 3
+    -- what the stock Dropdown's frame is wider than its value text: its dropdown frame runs
+    -- 15 px past the left edge and 17 px past the right, and the text sits 25 px in from
+    -- the left art and 43 px in from the right (the arrow). 15 + 17 - 25 - 43 = -36.
+    local TEXT_CHROME = 36
 
     local function Constructor()
         local widget = AceGUI.WidgetRegistry["Dropdown"]()
@@ -202,6 +214,33 @@ do
             Help():Greyed(self, v)
         end
         Help():KeepHover(widget, widget.frame, { widget.button, widget.button_cover })
+        -- Never narrower than its longest value on one line: AceConfigDialog sizes a
+        -- "half" dropdown to a fixed 85 px whatever the window's width, so a long value
+        -- (a translation's longer word) would be cut. AceConfigDialog fills the list before
+        -- it sets the width, so the width can be measured then. The row grows, and
+        -- SSFFrame:FitWidth widens the window for the row as it does for any.
+        local measure = widget.frame:CreateFontString(nil, "OVERLAY")
+        measure:SetFontObject(widget.text:GetFontObject())
+        measure:Hide()
+        widget["MinWidth"] = function(self)
+            local widest = 0
+            for _, text in pairs(self.list or {}) do
+                measure:SetText(text)
+                widest = math.max(widest, measure:GetUnboundedStringWidth() or 0)
+            end
+            measure:SetText("") -- holds no text between measurements
+            return widest + TEXT_CHROME
+        end
+        -- AceGUI calls OnWidthSet after every SetWidth (the stock Dropdown has none of its
+        -- own); a width under MinWidth is raised to it, frame.width included, which is what
+        -- the layout and SSFFrame:FitWidth read
+        widget["OnWidthSet"] = function(self, width)
+            local need = self:MinWidth()
+            if width < need then
+                self.frame:SetWidth(need)
+                self.frame.width = need
+            end
+        end
         return widget
     end
 
