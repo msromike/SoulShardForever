@@ -200,6 +200,42 @@ def ui_source_has(words, build):
     return known
 
 
+WOWUI_FILES = os.path.join(ROOT, "tools", ".wowui_files.txt")
+
+
+def ui_source_files(words, build):
+    """word -> the set of UI source files it appears in as a whole word. One `git grep`
+    for the words not yet known, remembered in tools/.wowui_files.txt (gitignored) for as
+    long as the build stays the same."""
+    known = {}
+    if os.path.exists(WOWUI_FILES):
+        lines = open(WOWUI_FILES, encoding="utf-8").read().splitlines()
+        if lines and lines[0] == build:
+            for l in lines[1:]:
+                w, _, paths = l.partition(" ")
+                known[w] = set(paths.split()) if paths else set()
+    ask = sorted(set(words) - set(known))
+    if ask:
+        cmd = ["git", "-C", WOWUI, "grep", "-I", "-w", "-o", "-F"]
+        for w in ask:
+            cmd += ["-e", w]
+        proc = subprocess.run(cmd + ["--", "Interface"], capture_output=True, text=True, encoding="utf-8", errors="replace")
+        for w in ask:
+            known[w] = set()
+        for line in proc.stdout.splitlines():
+            path, _, word = line.rpartition(":")
+            if word in known:
+                known[word].add(path)
+        with open(WOWUI_FILES, "w", encoding="utf-8", newline="\n") as f:
+            f.write(build + "\n" + "".join(f"{w} {' '.join(sorted(v))}\n" for w, v in sorted(known.items())))
+    return known
+
+
+def reach_parts(name):
+    """MacroFrame.MacroSelector -> ["MacroFrame", "MacroSelector"]"""
+    return re.split(r"[:.]", name)
+
+
 def read_reaches():
     """([(name, last segment, file, built)], problems) from tools/blizzard_reaches.txt: one
     reach per line, `Name  File  [built]`. built: the code makes the name at run time (a
@@ -220,11 +256,14 @@ def read_reaches():
     return rows, problems
 
 
-def reach_truth(reaches, has, documented, globals_read):
+def reach_truth(reaches, where, documented, globals_read):
     """Blizzard's frames are read past the documented API only where it is written down,
     the way library internals are. Every reach in tools/blizzard_reaches.txt is still in
-    the client's UI source (so a new build that renames one fails here), is still in the
-    file it names, and is named in that file's header under "Game internals". And back:
+    the client's UI source by its whole name: every part of it, together in one file
+    (MacroFrame and MacroSelector both in the file that makes them), so a new build that
+    renames or moves either part fails here. It is still in the file it names (its last
+    part, and its first part too where that is a global the code reads), and is named in
+    that file's header under "Game internals". And back:
     every member the code reads off a Blizzard global (MacroFrame.MacroSelector,
     GameTooltip:SetOwner) is either in Blizzard's own API docs or a reach listed for that
     file. A field read off a local (button.Count) cannot be found this way and is listed
@@ -233,16 +272,28 @@ def reach_truth(reaches, has, documented, globals_read):
     by_file = {}
     for name, last, rel, built in reaches:
         by_file.setdefault(rel, set()).add(last)
-        if not has.get(last):
-            problems.append(f"{REACHES}: {name} is nowhere in this client's UI source: Blizzard renamed or removed it")
+        parts = reach_parts(name)
+        gone = [p for p in parts if not where.get(p)]
+        if gone:
+            problems.append(f"{REACHES}: {name}: {' and '.join(gone)} is nowhere in this client's UI source: "
+                            f"Blizzard renamed or removed it")
+        elif not set.intersection(*[where[p] for p in parts]):
+            problems.append(f"{REACHES}: {name}: no file of this client's UI source has all of "
+                            f"{', '.join(parts)}: Blizzard moved or renamed a part")
         if rel.startswith("Libs/"):
             continue  # a library's own reach: listed so a new build is searched for it, nothing more
         if not exact_path(rel):
             problems.append(f"{REACHES}: {name} names {rel}, and there is no such file")
             continue
         word = r"(?<![\w])" + re.escape(last) + r"(?![\w])"
-        if not built and not re.search(word, code_lines(read(rel))):
+        code = code_lines(read(rel))
+        if not built and not re.search(word, code):
             problems.append(f"{REACHES}: {name} is listed for {rel}, whose code no longer uses it: drop the line")
+        owner = parts[0]
+        if not built and len(parts) > 1 and owner in globals_read and \
+                not re.search(r"(?<![\w.:])" + re.escape(owner) + r"(?![\w])", code):
+            problems.append(f"{REACHES}: {name} is listed for {rel}, whose code does not read {owner}: "
+                            f"name the owner the code really reads")
         if not re.search(word, header_fields(rel).get(GAME_INTERNALS, "")):
             problems.append(f"{rel}: reaches {name}, and its header's \"{GAME_INTERNALS}\" does not name {last}")
     frames = [g for g in globals_read if g not in NOT_FRAMES]
@@ -492,7 +543,8 @@ def check_blizzard_api():
     # client's own UI source, or it is on the short list of ones proven in the game
     plain = [g for g in globs if not g.startswith("C_")]
     reaches, reach_problems = read_reaches()
-    has = ui_source_has(plain + [last for _, last, _, _ in reaches], build)
+    has = ui_source_has(plain, build)
+    where = ui_source_files([p for name, _, _, _ in reaches for p in reach_parts(name)], build)
     for name in plain:
         if not has[name] and name not in KNOWN_GLOBALS:
             print(f"   {name} is in .luacheckrc and nowhere in this client's UI source: prove the game has it "
@@ -507,7 +559,7 @@ def check_blizzard_api():
             ok = False
 
     # reaches into Blizzard's frames past the documented API
-    for p in reach_problems + reach_truth(reaches, has, documented, plain):
+    for p in reach_problems + reach_truth(reaches, where, documented, plain):
         print("   " + p)
         ok = False
     ok = ok and ok_methods

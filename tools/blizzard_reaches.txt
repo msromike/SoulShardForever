@@ -2,8 +2,11 @@
 # documented API call: frame globals, mixin methods, template names, parentKeys, FrameXML
 # constants and helpers. The "blizzard api" step in tools/check.py covers the API (the
 # .luacheckrc whitelist and every C_ call) and holds this file to the truth, every run:
-# each name's last part must still be in the client's UI source (tools/.wowui), still be
-# used by the file it names, and be named in that file's header under "Game internals";
+# each name must still be in the client's UI source (tools/.wowui) whole: every part of
+# it, together in one file, so the name is the owner that really defines the member
+# (SelectorMixin:RunSetup, not the frame that inherits it). Its last part must still be
+# used by the file it names (its first part too, when that is a global the code reads),
+# and be named in that file's header under "Game internals";
 # and every member the code reads off a Blizzard global, and every template it creates a
 # frame from, must be here. One per line: the name, the SSF file that reaches it, and
 # "built" when the code makes the name at run time (so it is not looked for in the code).
@@ -14,16 +17,16 @@ MacroFrameMixin:ChangeTab                Modules/Macros.lua
 MacroFrameMixin:SelectMacro              Modules/Macros.lua
 UIErrorsMixin:AddExternalErrorMessage    Modules/Macros.lua
 MacroFrame.MacroSelector                 Modules/MacroGlow.lua
-MacroSelector:RunSetup                   Modules/MacroGlow.lua
-MacroSelector:EnumerateButtons           Modules/MacroGlow.lua
+SelectorMixin:RunSetup                   Modules/MacroGlow.lua
+ScrollBoxSelectorMixin:EnumerateButtons  Modules/MacroGlow.lua
 MacroButtonTemplate.Name                 Modules/MacroGlow.lua
 CharacterBag0Slot                        Modules/Counter.lua  built
 CharacterBag1Slot                        Modules/Counter.lua  built
 CharacterBag2Slot                        Modules/Counter.lua  built
 CharacterBag3Slot                        Modules/Counter.lua
 CharacterReagentBag0Slot                 Modules/Counter.lua
-ItemButtonTemplate.Count                 Modules/Counter.lua
-ItemButtonTemplate.icon                  Modules/Counter.lua
+ItemButton.Count                         Modules/Counter.lua
+ItemButton.icon                          Modules/Counter.lua
 Settings.KEYBINDINGS_CATEGORY_ID         Modules/KeyBindings.lua
 Settings.GetCategory                     Modules/KeyBindings.lua
 Settings.OpenToCategory                  Modules/KeyBindings.lua
