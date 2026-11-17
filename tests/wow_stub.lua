@@ -34,7 +34,10 @@
 --                                      bags still show each item where it was, as in the game
 --          WoW.FireEvent(name, ...)    deliver a game event to every frame registered for it
 --          WoW.RunTimers()             run every C_Timer callback waiting, and any those
---                                      queue, until none is left
+--                                      queue, until none is left, in the order they fall
+--                                      due; a cancelled one is skipped
+--          WoW.now                     the clock GetTime answers: it stands still between
+--                                      timers and moves to each one's due time as it fires
 --          WoW.ClearTimers()           forget every callback waiting (a runner, between tests)
 --          WoW.errors                  every error the game's error handler was handed,
 --                                      each with where it came from
@@ -135,7 +138,6 @@ tostringall = function(...)
     return unpack(t)
 end
 seterrorhandler = function() end
-GetTime = os.clock
 date = os.date
 debugstack = function() return "" end
 issecurevariable = function() return false end
@@ -163,22 +165,42 @@ CopyTable = function(t)
     return out
 end
 
--- Timers: queued, run when a test says time passes
-local timers = {}
+-- Timers: queued with the time each falls due, run when a test says time passes. The
+-- clock (GetTime) stands still until then, and moves to each timer's due time as it fires,
+-- so timers fire in the order they fall due, the earlier-made first on a tie, as in the game.
+WoW.now = 1000
+GetTime = function() return WoW.now end
+local timers, made = {}, 0
+local function Queue(delay, fn)
+    made = made + 1
+    local t = { due = WoW.now + math.max(tonumber(delay) or 0, 0), seq = made, fn = fn }
+    timers[#timers + 1] = t
+    return t
+end
 C_Timer = {
-    After = function(_, fn) timers[#timers + 1] = fn end,
-    NewTimer = function(_, fn) timers[#timers + 1] = fn return { Cancel = function() end } end,
+    After = function(delay, fn) Queue(delay, fn) end,
+    NewTimer = function(delay, fn)
+        local t = Queue(delay, fn)
+        return { Cancel = function() t.cancelled = true end, IsCancelled = function() return t.cancelled == true end }
+    end,
     NewTicker = function() return { Cancel = function() end } end,
 }
 function WoW.ClearTimers() timers = {} end
 function WoW.RunTimers()
-    local rounds = 0
+    local fired = 0
     while #timers > 0 do
-        rounds = rounds + 1
-        assert(rounds < 100, "timers keep queueing timers")
-        local run = timers
-        timers = {}
-        for _, fn in ipairs(run) do fn() end
+        local first = 1
+        for i, t in ipairs(timers) do
+            local f = timers[first]
+            if t.due < f.due or (t.due == f.due and t.seq < f.seq) then first = i end
+        end
+        local t = table.remove(timers, first)
+        WoW.now = math.max(WoW.now, t.due)
+        if not t.cancelled then
+            fired = fired + 1
+            assert(fired < 1000, "timers keep queueing timers")
+            t.fn()
+        end
     end
 end
 
