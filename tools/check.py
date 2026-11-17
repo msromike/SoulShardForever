@@ -771,15 +771,28 @@ def placeholders(text):
     return False, [(n + 1, t) for n, (_, t) in enumerate(found)]
 
 
+# The two keys whose code hands the translation more arguments than English uses: both
+# spell names, where English names only one. Each by the start of its key, with the most
+# arguments the code passes. Any other translation uses exactly its key's arguments.
+MORE_ARGUMENTS = {
+    "The Bane macro lets you delete on the move": 2,
+    "Make sure you're not targeting an enemy with the Bane macro": 2,
+}
+
+
 def placeholder_problems(key, value):
-    """Why a translation's placeholders do not fit the key's: it may use more than the key
-    (the two Bane lines are handed both spell names and English uses one), never fewer,
-    never another type in a position, and never a mix of plain and positional."""
+    """Why a translation's placeholders do not fit the key's: never fewer than the key,
+    never more (except the keys on MORE_ARGUMENTS, up to the count named there), never
+    another type in a position, and never a mix of plain and positional."""
     _, want = placeholders(key)
     positional, got = placeholders(value)
     if positional is None:
         return ["mixes plain and positional placeholders"]
     out = []
+    allowed = next((n for start, n in MORE_ARGUMENTS.items() if key.startswith(start)), len({i for i, _ in want}))
+    used = {i for i, _ in got}
+    if used and max(used) > allowed:
+        out.append(f"uses argument {max(used)}, and the code hands it only {allowed}")
     by_index = {}
     for i, t in got:
         by_index.setdefault(i, t)
@@ -814,6 +827,12 @@ def check_locales():
         print("   FAILED: Locales/enUS.lua not found")
         return False
     ok = True
+    for start in MORE_ARGUMENTS:
+        hits = [k for k in ref if k.startswith(start)]
+        if len(hits) != 1:
+            print(f"   tools/check.py MORE_ARGUMENTS: {start!r} starts {len(hits)} enUS keys, not one: "
+                  f"follow the key's new wording or drop the line")
+            ok = False
     toc = read("SoulShardForever.toc")
     for rel in news_files():
         name = os.path.basename(rel)[len(NEWS_PREFIX):]

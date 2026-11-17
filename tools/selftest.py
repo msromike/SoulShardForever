@@ -104,6 +104,8 @@ CASES = [
          'L["No free macro slots. Delete', 'L["No free macro slot. Delete', "missing 'No free macro slots"),
     Case("locales: a translation drops a placeholder", LOCALES, "Locales/deDE.lua",
          '"Verwendung: /ssf %s on|off"', '"Verwendung: /ssf on|off"', "drops argument 1 (%s)"),
+    Case("locales: a translation uses an argument the code never hands it", LOCALES, "Locales/deDE.lua",
+         '"Verwendung: /ssf %s on|off"', '"Verwendung: /ssf %s %s on|off"', "uses argument 2, and the code hands it only 1"),
     Case("code keys: the code looks up a key enUS does not have", CODE_KEYS, "Modules/Macros.lua",
          'L["No free macro slots. Delete a macro and try again."]', 'L["No free macro slot. Delete a macro and try again."]',
          "is not a key in enUS"),
@@ -630,6 +632,29 @@ def map_case():
             "the map did not say CHANGED or does not carry the new job line")
 
 
+def more_arguments_cases():
+    """The list of keys allowed more arguments, changed in the loaded check (a case cannot
+    rewrite check.py itself: it is already loaded) and put back. [(name, caught, why not)]"""
+    real = dict(check.MORE_ARGUMENTS)
+    out = []
+    try:
+        first = next(iter(real))
+        check.MORE_ARGUMENTS[first] = 1  # the Bane line's translations use both spell names
+        ok, text = run_step(check.check_locales)
+        out.append(("locales: a Bane line allowed fewer arguments than its translations use",
+                    not ok and "uses argument 2, and the code hands it only 1" in text, "not caught, or not for this reason"))
+        check.MORE_ARGUMENTS.clear()
+        check.MORE_ARGUMENTS.update(real)
+        check.MORE_ARGUMENTS["A key nobody has"] = 2
+        ok, text = run_step(check.check_locales)
+        out.append(("locales: the extra-arguments list names a key that is gone",
+                    not ok and "starts 0 enUS keys, not one" in text, "not caught, or not for this reason"))
+    finally:
+        check.MORE_ARGUMENTS.clear()
+        check.MORE_ARGUMENTS.update(real)
+    return out
+
+
 def cases_cover_every_step(extra_steps):
     """[(name, caught, why not)]: every step check.py's main runs has a case here, except the
     two that never fail on purpose. A step nobody has seen fail proves nothing."""
@@ -669,6 +694,7 @@ def main(argv):
             results.append((case.name, caught, why))
     extra = (missing_cases() if wanted("missing") else []) + ([new_folder_case()] if wanted("toc: a Lua file in a new folder") else [])
     extra += [map_case()] if wanted("map:") else []
+    extra += more_arguments_cases() if wanted("locales:") else []
     extra += cases_cover_every_step([check.check_tests, check.check_blizzard_api, check.check_toc]) if wanted("every check step") else []
     for name, caught, why in extra:
         results.append((name, caught, None if caught else why))
