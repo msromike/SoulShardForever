@@ -42,6 +42,7 @@ Writes: ARCHITECTURE.md, only when its content changed. tests/window_controls.tx
 Touches nothing else.
 """
 import bisect
+import glob
 import os
 import re
 import shutil
@@ -1442,6 +1443,48 @@ def lib_internal_places():
     return True, {w for w in re.findall(r"\w+", m.group(1)) if w in known}
 
 
+LIB_NEW_RE = re.compile(r"(?:local\s+)?(\w+)\s*(?:,\s*\w+)?\s*=\s*LibStub:NewLibrary\(\s*(\"[^\"]+\"|'[^']+'|\w+)")
+LIB_ALIAS_RE = re.compile(r"""^\s*local\s+(\w+)\s*=\s*LibStub\(\s*["']([^"']+)["']\s*(?:,\s*true\s*)?\)\s*$""", re.M)
+
+
+def library_functions():
+    """library name -> the functions it defines on its own table (`function lib:Name(`,
+    `function lib.Name(`, `lib.Name = function`), read from every file under Libs/."""
+    out = {}
+    for path in glob.glob(os.path.join(ROOT, "Libs", "**", "*.lua"), recursive=True):
+        text = open(path, encoding="utf-8", errors="replace").read()
+        m = LIB_NEW_RE.search(text)
+        if not m:
+            continue
+        var, arg = m.group(1), m.group(2)
+        if arg[0] in "\"'":
+            name = arg[1:-1]
+        else:  # the name in a local: local MAJOR, MINOR = "AceTab-3.0", 14
+            d = re.search(r"\b" + re.escape(arg) + r"\b[\w\s,]*=\s*[\"']([^\"']+)[\"']", text)
+            if not d:
+                continue
+            name = d.group(1)
+        funcs = set(re.findall(r"\bfunction\s+" + re.escape(var) + r"[:.](\w+)\s*\(", text))
+        funcs |= set(re.findall(r"(?<![\w.:])" + re.escape(var) + r"\.(\w+)\s*=\s*function\b", text))
+        out.setdefault(name, set()).update(funcs)
+    return out
+
+
+def library_member_reads(rel):
+    """[(library, member, line)]: every member a file reads off a library object it holds in
+    a local (`local AceConfigDialog = LibStub("AceConfigDialog-3.0")`)."""
+    lines = bare_code(read(rel))
+    text = "\n".join(code for _, code in lines)
+    aliases = dict(LIB_ALIAS_RE.findall(text))
+    out = []
+    for n, code in lines:
+        code = blank_strings(code)
+        for alias, lib in aliases.items():
+            for member in re.findall(r"(?<![\w.:])" + re.escape(alias) + r"\s*[.:]\s*(\w+)", code):
+                out.append((lib, member, n))
+    return out
+
+
 def check_exceptions():
     """The standard's two lists are the truth, both ways. Exceptions: the number CLAUDE.md
     states, the lines of its list, and the Exceptions the headers document all agree, file
@@ -1473,6 +1516,18 @@ def check_exceptions():
                 problems.append(f"{rel}: has a Lib internals field, {STANDARD} does not allow one there")
         for name in sorted(places - {module_name(rel) for rel in carriers}):
             problems.append(f"{STANDARD}: allows Lib internals in {name}, whose header has no such field")
+    # and the field against the code: a member read off a library object that is not one of
+    # the library's own functions is an internal, named in that file's Lib internals
+    functions = library_functions()
+    for rel in [f for f in lua_files() if not f.startswith("tests/")]:
+        field = header_fields(rel).get("Lib internals", "")
+        for lib, member, n in library_member_reads(rel):
+            if lib not in functions:
+                problems.append(f"{rel}:{n}: reads {member} off {lib}, a library no file under Libs\\ makes")
+            elif (member not in functions[lib] or member.startswith("_")) and \
+                    not re.search(r"(?<![\w])" + re.escape(member) + r"(?![\w])", field):
+                problems.append(f"{rel}:{n}: reads {lib}'s {member}, which is not one of its functions: name it "
+                                f"under Lib internals with what breaks when {lib} moves it")
     for p in problems:
         print("   " + p)
     print(f"   {sum(documented.values())} exceptions, {len(listed)} listed; Lib internals in "
@@ -2240,6 +2295,24 @@ def check_rules():
         for m in sorted(set(LISTEN_RE.findall(code_lines(text))) - sent):
             print(f"   {rel}: listens for {m}, nothing sends it")
             ok = False
+    # events and timers go through AceEvent and AceTimer (Rule 1): no C_Timer, no OnEvent or
+    # OnUpdate script, and an event registered only on self or the file's own module object,
+    # never on a raw frame
+    module_vars = {}
+    for _, (rel, var, _) in module_registry().items():
+        module_vars.setdefault(rel, set()).add(var)
+    for rel in code_files:
+        for n, code in bare_code(texts[rel]):
+            m = (re.search(r"\bC_Timer\s*\.", blank_strings(code))
+                 or re.search(r":(?:Set|Hook)Script\(\s*\"(OnEvent|OnUpdate)\"", code))
+            if m:
+                print(f"   {rel}:{n}: a hand-rolled timer or event script; use AceTimer or AceEvent")
+                ok = False
+            for receiver in re.findall(r"((?:\w+\.)*\w+):(?:RegisterEvent|RegisterUnitEvent|RegisterAllEvents)\(", code):
+                if receiver != "self" and receiver not in module_vars.get(rel, ()):
+                    print(f"   {rel}:{n}: {receiver}:RegisterEvent is a raw frame's event; use AceEvent "
+                          f"(self:RegisterEvent on the module)")
+                    ok = False
     # one value, one home: the same ALL_CAPS local with the same literal in two files
     homes = {}
     for rel, text in texts.items():

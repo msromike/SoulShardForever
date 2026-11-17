@@ -46,7 +46,9 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   spec does not name) is allowed only where no public API exists, only in Widgets\, the
   Window, Tooltip and Help modules and Core's profile-key migration, and every such
   field is named in that file's header under "Lib internals" with what breaks when it
-  moves. The check holds the headers to that list of places, both ways.
+  moves. The check holds the headers to that list of places, both ways, and holds the
+  field to the code for every library object a file keeps from LibStub: a member it reads
+  that is not one of that library's own functions must be named there.
 - Blizzard's frames get the same treatment as a library's. A member read off a Blizzard
   global that Blizzard's API docs do not have (MacroFrame.MacroSelector, GameTooltip's
   SetOwner), a template a frame is created from, a parentKey read off a Blizzard button:
@@ -126,7 +128,8 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
   every L[...] the code looks up exists; colors typed only in Colors; the header layout;
   the headers' claims against the code; the toc against the files on disk; Bindings.xml
   against what it calls; the exceptions and Lib internals counted against this file;
-  Acts on; Hooks; Public; the rules (one value, one home; the shard id only in Core;
+  Acts on; Hooks; Public; the rules (one value, one home: the same constant name with the
+  same value typed in two files; the shard id only in Core;
   every message has a sender; combat asked only of Combat; "paused" asked only of
   Trimmer:Paused (the saved key read only there and in the pause setting's own get and
   apply); no pass-through module; every
@@ -154,3 +157,31 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
 - One chunk of work per commit. Any commit that changes behavior is tested in game
   before the next; say which tests, each command in its own paste block, and wait.
 - Never tag, bump or publish without an explicit yes.
+
+## What ALL PASS does not cover
+
+The check is static and Lua has no types, so some things only a test or a reader can
+hold. Each was weighed and left out on purpose; none is an oversight to patch around.
+
+- Arguments, returns and message payloads. Public, Sends and the map compare names only:
+  reorder a payload or change what a method returns and every listener still passes the
+  check. A regex cannot count Lua arguments soundly (varargs, optional arguments, a call
+  built at run time). The tests hold a payload where a scene depends on it. So a change
+  to a payload or a return is followed to every listener the map names, and their tests
+  read.
+- Library internals read off an object a library hands back (an AceGUI widget's frame or
+  label, a status table). The check follows a library object a file keeps from LibStub,
+  not the values it returns, because nothing static can tell which local holds a
+  library's object. Those reads are listed by hand under Lib internals, and a library
+  bump is read against every such line (Rule 1).
+- The same number under two names. One value, one home is the same constant name with
+  the same value in two files. Every number shared between two names today means two
+  different things (pixel gaps, library versions, a debug window's height and the main
+  window's width), so a rule on the number alone would flag only coincidences.
+- Whether the check ran before a commit. There is no pre-commit hook: hooks are not
+  versioned, so one would not reach the next session. GitHub runs the check and the
+  self-test on every push, and a release tags only a commit GitHub passed. Locally, a
+  failed pull of the client's UI source says "offline, using the copy on disk" and checks
+  against that copy; GitHub always clones the current one.
+- How the window looks and where a control sits: the window list names what is there
+  (tests/window_controls.txt), never where. That takes a screenshot or a look in game.
