@@ -7,13 +7,12 @@
 --
 -- Layout: the count with Delete Shard beside it, then inline groups (Pause, Limits, Bag count)
 -- and Other, then the bottom row with a small version line. Toggles are full width
--- except Play pause sound, which shares its row with the volume dropdown, and the two
--- counter place radios, which share one row; a label that
+-- except the two counter place radios, which share one row; a label that
 -- does not fit (the window is capped at the screen's width) wraps and grows its row
 -- (Widgets\SSFCentered.lua). The window sizes itself to the content after every feed,
 -- width then height (Feed -> SSFFrame:FitWidth, FitToContent), so no text is cut short
 -- and it never scrolls short of the screen's height. A control narrower than the window
--- sizes itself to its own text (the Volume dropdown to its longest value), and FitWidth
+-- sizes itself to its own text (a counter place radio to its label), and FitWidth
 -- widens the window for its row. No default size: the first feed lays out at AceConfigDialog's own default
 -- (700 x 500) and the fit sets both.
 --

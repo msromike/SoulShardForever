@@ -36,15 +36,15 @@ end
 local function recording(fn)
     Debug:Set(false)
     Debug:Clear()
-    local pauseLog, pauseSound, announce = profile.pauseLog, profile.pauseSound, profile.announce
+    local pauseLog, pauseSound, announce = profile.pauseLog, profile.pauseSoundLevel, profile.announce
     profile.paused, profile.autoMax = false, false
-    profile.pauseLog, profile.pauseSound, profile.announce = false, false, false
+    profile.pauseLog, profile.pauseSoundLevel, profile.announce = false, 0, false
     Debug:Set(true)
     local okay, err = pcall(fn)
     Debug:Set(false)
     WoW.channel, WoW.targeting, WoW.itemCount = nil, nil, nil
     profile.paused, profile.maxShards = false, 8
-    profile.pauseLog, profile.pauseSound, profile.announce = pauseLog, pauseSound, announce
+    profile.pauseLog, profile.pauseSoundLevel, profile.announce = pauseLog, pauseSound, announce
     assert(okay, err)
 end
 
@@ -158,7 +158,7 @@ test("on: what SSF prints and the sound it plays are recorded; off, the hooks ar
         ok(not last("chat").text:find("|c", 1, true), "color codes stripped")
         profile.announce = false
 
-        profile.paused, profile.pauseSound, profile.pauseLog = true, true, true
+        profile.paused, profile.pauseSoundLevel, profile.pauseLog = true, 1, true
         press(true)
         eq(kinds(), "on press deleted chat press sound chat", "paused, out of a fight: the sound and the line")
         eq(last("sound").name, SSF:GetModule("Sounds"):DefaultName(), "which sound")

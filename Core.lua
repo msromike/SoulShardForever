@@ -15,11 +15,12 @@
 --          An AceDB bump that renames them makes the migration a no-op: a character on the
 --          new key starts a fresh profile, nothing worse.
 -- Reads:   NS.locales from Locales\Register.lua; KeyBindings:ApplyLabels(),
---          Sounds:DefaultName/LevelVolume/LevelKey for the defaults and a migration;
+--          Sounds:DefaultName for a default and Sounds:LevelFromOld for a migration;
 --          profile.language (ApplyLanguage: the saved pick, or the client's locale).
 -- Saves:   every profile key's default; the migrations: profile.window.open (dropped in
---          1.8), profile.pauseSoundVolume (a dropped level goes back to full, 1.8.1), and
---          the one-time copy of a 1.8.1 profile key into the AceDB 39 key (1.9.0).
+--          1.8), profile.pauseSound and pauseSoundVolume (replaced by pauseSoundLevel, the
+--          pause sound slider), and the one-time copy of a 1.8.1 profile key into the
+--          AceDB 39 key (1.9.0).
 -- Exceptions: ApplyLanguage rewrites the AceLocale table in place, repeating AceLocale's
 --          two rules (enGB is enUS; a `true` value in the default means the key is the
 --          string). AceLocale has no runtime switch: NewLocale keeps only the default and
@@ -66,10 +67,9 @@ local function Defaults()
             soulsortReverse = false,    -- under soulsortLegacy: bottom slot first (SoulSort's reverse)
             announce = false,           -- one chat line per deletion (Trimmer)
             paused = false,             -- a press neither moves nor deletes
-            pauseSound = false,         -- while paused, every press out of combat plays a sound (Trimmer)
+            pauseSoundLevel = 0,        -- while paused, every press out of combat plays a sound this loud: a notch 0-1, 0 = off (Sounds)
             pauseLog = false,           -- ... and prints a chat line
             pauseSoundName = Sounds:DefaultName(),     -- LibSharedMedia sound name (Sounds)
-            pauseSoundVolume = Sounds:LevelVolume("full"), -- 0-1; SSF's own sounds only (Sounds)
             minimap = { hide = false }, -- LibDBIcon state
             welcomed = false,           -- the welcome version this character closed outside a fight; false while a note is owed (Welcome)
             welcomeAgain = false,       -- Drain Soul learned, note not yet closed: its second title (Welcome)
@@ -86,9 +86,14 @@ end
 -- release that dropped the value.
 local function Migrate(p)
     p.window.open = nil -- 1.8: a reopen-after-reload try that was dropped
-    -- 1.8.1: a saved volume that is no longer a level (the dropped Faint) goes back to full
-    local Sounds = SSF:GetModule("Sounds")
-    p.pauseSoundVolume = Sounds:LevelVolume(Sounds:LevelKey(p.pauseSoundVolume))
+    -- the pause sound slider: sound on/off and its volume became one notch. Neither old key
+    -- has a default any more, so each is here only if the player had changed it (AceDB
+    -- never saves a value equal to its default): on with no volume was on at full.
+    if p.pauseSound ~= nil or p.pauseSoundVolume ~= nil then
+        p.pauseSoundLevel = SSF:GetModule("Sounds"):LevelFromOld(p.pauseSound, p.pauseSoundVolume)
+        p.pauseSound = nil
+        p.pauseSoundVolume = nil
+    end
 end
 
 -- 1.9.0: the AceDB in this release names a character "Name Surname" on Forever, where the

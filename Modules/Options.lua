@@ -25,7 +25,7 @@
 -- Help mode is the Help module's: the table hands itself to Help:Apply at the end of every
 -- build (each option's help line is its desc), and rebuilds on SSF_HELP_CHANGED.
 --
--- Stateful settings (setmax, log, pause, and the window-only lowmark) are defined once through the Settings module, which
+-- Stateful settings (setmax, log, pause, and the window-only lowmark and pausesound) are defined once through the Settings module, which
 -- returns the GUI control and the chat command for each; see Modules\Settings.lua for the
 -- chat rule (naked = report, with value = apply and echo). Adding one = one Define() call,
 -- then placing its two entries in the table below.
@@ -50,14 +50,14 @@
 -- Reads:   Help:Apply, Settings:Define/ValueWords,
 --          Cap:MIN/MAX/Get/IsAuto/SetManual/Recompute/LowMark/SetLowMark,
 --          Bags:HasSoulBag, Counter:OnSoulBag, Trimmer:WhyNot/Delete/Paused (the pause
---          gate, for the greyed rules and the key binding), Sounds (levels, PlayPause),
+--          gate, for the greyed rules and the key binding), Sounds (LevelStep, PlayPause),
 --          Status:CountText/InBagsText/PauseText, Colors, DeleteHelp:Text,
 --          DebugCommand:Run, Window:Open, SSF:ApplyLanguage; NS.locales and NS.localeOrder (the Language
---          list); every profile key it shows: paused, pauseSound, pauseSoundVolume,
+--          list); every profile key it shows: paused, pauseSoundLevel,
 --          pauseLog, autoMax, counter, lowGlow, counterColorize, counterSoulBag,
 --          counterFont, minimap, announce, soulsortLegacy, soulsortReverse, language.
--- Saves:   the same keys, each through its own setter: profile.paused, pauseSound,
---          pauseSoundVolume, pauseLog, autoMax (SetManual's apply turns it off),
+-- Saves:   the same keys, each through its own setter: profile.paused, pauseSoundLevel,
+--          pauseLog, autoMax (SetManual's apply turns it off),
 --          counter, lowGlow, counterColorize, counterSoulBag, counterFont, minimap (.hide),
 --          announce, soulsortLegacy, soulsortReverse, language. The cap and the low mark
 --          are Cap's: they go through Cap:SetManual and Cap:SetLowMark.
@@ -87,7 +87,7 @@ local function Paused() return SSF:GetModule("Trimmer"):Paused() end -- the one 
 local function NotPaused() return not Paused() end
 local function CounterOff() return not SSF.db.profile.counter end
 -- Colorize and the glow grey while paused and keep their ticks, the window's own rule on
--- the pause setting, the mirror image of the pause sound rows greying while unpaused.
+-- the pause setting, the mirror image of the pause log row greying while unpaused.
 -- What the count looks like while paused is Cap's and Colors' call.
 local function CounterOffOrPaused() return CounterOff() or Paused() end
 
@@ -228,15 +228,20 @@ local function BuildTable()
     })
     lowmarkGui.arg = function() return Cap():Get() end
 
-    -- the pause sound's levels, by Sounds' keys, each with its name
-    local LEVEL_LABELS = {
-        full = L["Full volume"], loud = L["Loud"], medium = L["Medium"], quiet = L["Quiet"],
-    }
-    local function LevelValues()
-        local values = {}
-        for _, key in ipairs(Sounds():LevelKeys()) do values[key] = LEVEL_LABELS[key] end
-        return values
-    end
+    -- GUI only (no chat command): the pause sound's notch, Sounds' scale of 0 (off) to 1,
+    -- shown as a percentage. Never greyed, so it can be set before SSF is paused. The
+    -- preview plays once at the let-go, not on every drag tick (the slider's `released`,
+    -- SSFStepperSlider, fed through `arg`); at 0% it is silent, which is Sounds' call.
+    -- A gold tick marks each notch on the bar (the slider's `notches`).
+    local pausesoundGui = Settings:Define("pausesound", {
+        order = 2, kind = "range",
+        name = L["Pause sound"],
+        min = 0, max = 1, step = Sounds():LevelStep(),
+        get = function() return SSF.db.profile.pauseSoundLevel end,
+        apply = function(value) SSF.db.profile.pauseSoundLevel = value end,
+    })
+    pausesoundGui.isPercent = true
+    pausesoundGui.arg = { released = function() Sounds():PlayPause() end, notches = true }
 
     local args = {
         -- the top row: the count, with Delete Shard right after it, so a click and the number
@@ -280,35 +285,9 @@ local function BuildTable()
             name = L["Pause SSF"],
             args = {
                 pauseGui = pauseGui,
-                -- the sound, its volume and the chat line hang off the pause box: indented one
-                -- step, greyed while not paused (their values are kept)
-                pausesound = Width(Toggle(2, L["Play pause sound"],
-                    function() return SSF.db.profile.pauseSound end,
-                    function(_, value)
-                        SSF.db.profile.pauseSound = value
-                        -- ticking it on plays the sound at the selected level, as a preview
-                        if value then Sounds():PlayPause() end
-                        changed("pausesound")
-                    end,
-                    -- not full width, so the checkbox is as wide as its label (SSFIndentCheckBox)
-                    -- and the window widens to fit this row (SSFFrame:FitWidth)
-                    NotPaused, nil, 2), "normal"),
-                -- on the same row as Play pause sound; picking a level plays the sound at it
-                -- the name titles its tooltip only: the widget never shows a label
-                pausevolume = {
-                    type = "select", order = 3, width = "half",
-                    cmdHidden = true, name = L["Volume"],
-                    dialogControl = "SSFUnlabeledDropdown", -- Widgets\SSFCentered.lua
-                    values = LevelValues,
-                    sorting = Sounds():LevelKeys(),
-                    get = function() return Sounds():LevelKey(SSF.db.profile.pauseSoundVolume) end,
-                    set = function(_, key)
-                        SSF.db.profile.pauseSoundVolume = Sounds():LevelVolume(key)
-                        Sounds():PlayPause()
-                        changed("pausevolume")
-                    end,
-                    disabled = function() return NotPaused() or not SSF.db.profile.pauseSound end,
-                },
+                pausesound = pausesoundGui,
+                -- the chat line hangs off the pause box: indented one step, greyed while not
+                -- paused (its value is kept)
                 pauselog = Toggle(4, L["Log pauses to chat"],
                     function() return SSF.db.profile.pauseLog end,
                     function(_, value)
@@ -512,8 +491,7 @@ local function BuildTable()
     local bullet = "\226\128\162 "     -- "• "
     local help = {
         pausegroup = {
-            pausesound = L["Each press while paused plays a sound."],
-            pausevolume = L["Sets how loud the pause sound is."],
+            pausesound = L["How loud the pause sound plays. 0% turns it off. Let go to hear it."],
             pauselog = L["Each press while paused prints a chat line."],
         },
         cap = {

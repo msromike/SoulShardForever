@@ -103,7 +103,7 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
 - Before writing any helper, grep the addon for the thing it does. Most helpers already
   exist: bag queries are in Bags, thresholds in Cap (IsOver is the delete gate), the two
   combat questions in Combat, the pause gate in Trimmer (Paused), colors in Colors, chat and tooltip
-  wording in Status, tooltips in Tooltip, the volume levels in Sounds. ARCHITECTURE.md lists
+  wording in Status, tooltips in Tooltip, the pause sound's notches in Sounds. ARCHITECTURE.md lists
   the rest.
 - No pass-through files: a module whose every function only calls another module adds a
   hop and no job. The check fails on one; its callers ask the other module directly.

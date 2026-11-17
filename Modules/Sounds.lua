@@ -13,14 +13,19 @@
 -- Volume: SSF's own sounds play through their sound kit with C_Sound.PlaySound, which
 -- takes a per-play volume (Forever's volumeOverride, tested in game). A sound another
 -- addon registered is a file only; PlaySoundFile has no volume, so it plays at full.
--- Levels: each one about half the one before (about 6 dB), so the steps sound even to the
--- ear (tested by ear against evenly spaced levels). The key is what the dropdown stores;
--- the volume goes into profile.pauseSoundVolume. (A fifth level, 0.06, was too faint to
--- be useful and was dropped in 1.8.1.)
--- A level's number is what players have saved, and Core snaps a saved number that is no
--- level back to full on every load (Core's Migrate). So changing a level's number sends
--- every player who picked it to full volume. To retune one, first make Core carry the old
--- number over to the new one; tests/test_sounds.lua pins the numbers and says the same.
+-- Quick presses: the game does not start a sound kit again while it is still playing, so
+-- Play stops its own sound started last (StopSound on the handle PlaySound returned)
+-- before starting the next; every press is heard, the slider's "-" and "+" included.
+-- Notches: the pause sound's loudness is one saved number, profile.pauseSoundLevel, the
+-- place on the window's slider: 0, 0.25, 0.5, 0.75 or 1 (shown as 0 to 100%). 0 is off.
+-- VOLUMES is the one curve from a notch to the volume played: each notch about half the
+-- one above it (about 6 dB), so the steps sound even to the ear (tested by ear against
+-- evenly spaced volumes). What is saved is the notch, never the volume, so the curve can
+-- be retuned without touching anyone's setting; tests/test_sounds.lua pins it so that a
+-- retune is deliberate.
+-- Before the slider the profile held two values, pauseSound (on/off) and pauseSoundVolume
+-- (one of four volumes: 1, 0.5, 0.25, 0.12). LevelFromOld is the one conversion, used by
+-- Core once at load: off is notch 0, on is the notch that plays the same volume.
 --
 -- Channel: an LSM file plays on SFX; an own sound kit plays with C_Sound's default
 -- sub-type, as tested in game.
@@ -52,19 +57,23 @@
 --          Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
 --            LSM no longer knows (a sound pack removed) falls back to the default; a nil
 --            name plays nothing (LSM:IsValid is true for nil).
---          PlayPause() -- the pause sound at the saved level (profile.pauseSoundName,
---            pauseSoundVolume): a paused press out of combat (Trimmer decides when) and
---            the options' previews.
+--          PlayPause() -- the pause sound at the saved notch (profile.pauseSoundName,
+--            pauseSoundLevel), nothing at notch 0: a paused press out of combat (Trimmer
+--            decides when) and the slider's preview.
 --          DefaultName() -> the default sound's LSM name (Core's profile default).
---          LevelKeys() -> the keys in dropdown order; LevelVolume(key) -> volume ("full"
---            for an unknown key); LevelKey(volume) -> key ("full" for an unknown volume);
---            IsLevel(volume) -> bool.
+--          LevelStep() -> the distance between two notches (the slider's step; its scale
+--            is 0 to 1); LevelVolume(level) -> the volume a notch plays, 0 for notch 0 (a
+--            number between two notches plays as the nearest);
+--            LevelFromOld(on, volume) -> the notch for the two values saved before the
+--            slider (volume nil = the old default, full; a volume that was no level = full,
+--            the old rule).
 -- Sends:   SSF_SOUNDS_MUTED (kind) and SSF_SOUNDS_UNMUTED (kind), around an fn that is not
 --          heard; SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records all
 --          three; no other listener).
 -- Reads:   Combat:Locked (a delete in combat is not heard); profile.pauseSoundName,
---          pauseSoundVolume. Owns no state, no frames.
--- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given;
+--          pauseSoundLevel. Owns the handle of its own sound started last; no frames.
+-- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given,
+--          after StopSound on its own sound still playing;
 --          PlaySoundFile for any other LSM sound), and around a move that is not heard
 --          mutes every item pick-up and put-down sound, then unmutes them (MuteSoundFile,
 --          UnmuteSoundFile). LibSharedMedia's "sound" list, which every addon shares:
@@ -81,42 +90,25 @@ local OWN = {
     [DEFAULT] = { file = 567559, kit = 1200 },
 }
 
-local LEVELS = {
-    { key = "full", volume = 1 },
-    { key = "loud", volume = 0.5 },
-    { key = "medium", volume = 0.25 },
-    { key = "quiet", volume = 0.12 },
-}
-
--- the level with this volume, or nil
-local function LevelOf(volume)
-    for _, level in ipairs(LEVELS) do
-        if level.volume == volume then return level end
-    end
-end
+-- the volume each notch plays, quietest first: notch 0 (off) to notch 1 (full)
+local VOLUMES = { 0, 0.12, 0.25, 0.5, 1 }
+local STEPS = #VOLUMES - 1 -- the slider's scale is 0 to 1, in this many steps
 
 function Sounds:DefaultName() return DEFAULT end
 
-function Sounds:LevelKeys()
-    local keys = {}
-    for i, level in ipairs(LEVELS) do keys[i] = level.key end
-    return keys
+function Sounds:LevelStep() return 1 / STEPS end
+
+function Sounds:LevelVolume(level)
+    local index = math.floor((tonumber(level) or 0) * STEPS + 0.5) + 1
+    return VOLUMES[math.max(1, math.min(#VOLUMES, index))]
 end
 
-function Sounds:LevelVolume(key)
-    for _, level in ipairs(LEVELS) do
-        if level.key == key then return level.volume end
+function Sounds:LevelFromOld(on, volume)
+    if not on then return 0 end
+    for index, v in ipairs(VOLUMES) do
+        if v == volume and index > 1 then return (index - 1) / STEPS end
     end
-    return LEVELS[1].volume
-end
-
-function Sounds:LevelKey(volume)
-    local level = LevelOf(volume)
-    return level and level.key or LEVELS[1].key
-end
-
-function Sounds:IsLevel(volume)
-    return LevelOf(volume) ~= nil
+    return 1
 end
 
 -- Setup in OnEnable (Core's warlock gate): on another class the sound stays unregistered.
@@ -126,13 +118,19 @@ function Sounds:OnEnable()
     end
 end
 
+local playing -- the handle of SSF's own sound started last, or nil
+
 function Sounds:Play(name, volume)
     if not LSM:IsValid("sound", name) then name = DEFAULT end
     self:SendMessage("SSF_SOUND_PLAYED", name)
     local own = OWN[name]
     if own then
+        -- the one still playing is cut off first: the game does not start a sound kit
+        -- again while it plays, so a quick second press would be silent
+        if playing then StopSound(playing) end
         -- the sub-type left nil (its default), exactly as tested in game
-        C_Sound.PlaySound(own.kit, nil, false, false, nil, volume or 1)
+        local _, handle = C_Sound.PlaySound(own.kit, nil, false, false, nil, volume or 1)
+        playing = handle
         return
     end
     local file = LSM:Fetch("sound", name, true)
@@ -170,5 +168,6 @@ end
 
 function Sounds:PlayPause()
     local p = SSF.db.profile
-    self:Play(p.pauseSoundName, p.pauseSoundVolume)
+    local volume = self:LevelVolume(p.pauseSoundLevel)
+    if volume > 0 then self:Play(p.pauseSoundName, volume) end
 end

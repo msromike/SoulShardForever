@@ -344,17 +344,59 @@ test("the first open's second fit does not reopen a window closed in that tick",
     ok(not open(), "still closed")
 end)
 
-test("the Volume dropdown is never narrower than its longest value", function()
+-- AceConfigDialog calls an option's set on every drag tick and again at the let-go; the
+-- slider's `released` is the let-go alone, which is what the pause sound's preview plays on.
+test("the slider tells its option of a let-go once, not of every drag tick", function()
     local AceGUI = LibStub("AceGUI-3.0")
-    local dropdown = AceGUI:Create("SSFUnlabeledDropdown")
-    dropdown:SetList({ short = "Full", long = "A much longer volume word" })
-    dropdown:SetWidth(85) -- what AceConfigDialog gives a "half" control
-    ok(dropdown.frame:GetWidth() >= dropdown:MinWidth(), "widened to its longest value")
-    ok(dropdown.frame:GetWidth() > 85, "past the 85 px it was given")
-    dropdown:SetList({ a = "Full", b = "Loud" })
-    dropdown:SetWidth(85)
-    eq(dropdown.frame:GetWidth(), 85, "short values: the width it was given")
-    AceGUI:Release(dropdown)
+    local slider = AceGUI:Create("SSFStepperSlider")
+    local released, ups = {}, 0
+    slider:SetSliderValues(0, 1, 0.25)
+    slider:SetValue(0.5)
+    slider:SetCustomData({ released = function(value) released[#released + 1] = value end })
+    slider:SetCallback("OnMouseUp", function() ups = ups + 1 end)
+    slider.inner:Fire("OnValueChanged", 0.75) -- a drag tick
+    eq(#released, 0, "a drag tick: not told")
+    slider.inner:Fire("OnMouseUp", 0.75) -- the handle let go, or a typed value entered
+    eq(#released, 1, "the let-go: told once")
+    eq(released[1], 0.75, "with the value")
+    eq(ups, 1, "after AceConfigDialog heard the same let-go")
+    slider.inner:SetValue(0.5)
+    slider.right:GetScript("OnClick")(slider.right) -- "+"
+    eq(#released, 2, "a press of +: told once")
+    eq(released[2], 0.75, "with the value one notch up")
+    slider.left:GetScript("OnClick")(slider.left) -- "-"
+    eq(#released, 3, "a press of -: told once")
+    slider:SetCustomData(4) -- a plain bound, as the Low shard mark's slider gets
+    slider.inner:Fire("OnMouseUp", 0.5)
+    eq(#released, 3, "a slider with only a bound: nobody told")
+    AceGUI:Release(slider)
+end)
+
+-- The pause sound slider shows where its thumb can rest: one tick per notch. A slider that
+-- did not ask for them (Shards to keep, Low shard mark) shows none.
+test("a slider with notches shows one tick at each step, and none otherwise", function()
+    local AceGUI = LibStub("AceGUI-3.0")
+    local slider = AceGUI:Create("SSFStepperSlider")
+    local function shown()
+        local n = 0
+        for _, tick in ipairs(slider.notchTicks) do
+            if tick:IsShown() then n = n + 1 end
+        end
+        return n
+    end
+    slider:SetSliderValues(0, 1, 0.25)
+    eq(shown(), 0, "not asked for: no ticks")
+    slider:SetCustomData({ notches = true })
+    eq(shown(), 5, "0, 25, 50, 75 and 100%: five ticks")
+    slider:SetSliderValues(0, 1, 0.5)
+    eq(shown(), 3, "a coarser scale: the spare ticks are hidden")
+    slider:SetCustomData(4) -- a plain bound, as the Low shard mark's slider gets
+    eq(shown(), 0, "a slider with only a bound: none")
+    slider:SetCustomData({ notches = true })
+    AceGUI:Release(slider)
+    slider = AceGUI:Create("SSFStepperSlider")
+    eq(shown(), 0, "handed to another row: the ticks do not come along")
+    AceGUI:Release(slider)
 end)
 
 test("dragging the window saves the spot with the screen size", function()

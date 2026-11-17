@@ -319,7 +319,14 @@ function M:SetNumber(n) self.__text = tostring(n) end
 -- values a control holds
 function M:SetChecked(on) self.__checked = on and true or false end
 function M:GetChecked() return self.__checked == true end
-function M:SetValue(v) self.__value = v end
+-- as the game does, a value that changed runs the frame's OnValueChanged script (a slider's
+-- thumb moved from code: the "-" and "+" beside SSF's slider move it that way)
+function M:SetValue(v)
+    local changed = self.__value ~= v
+    self.__value = v
+    local script = changed and self:GetScript("OnValueChanged")
+    if script then script(self, v) end
+end
 function M:GetValue() return self.__value or 0 end
 function M:SetMinMaxValues(lo, hi) self.__min, self.__max = lo, hi end
 function M:GetMinMaxValues() return self.__min or 0, self.__max or 0 end
@@ -500,6 +507,7 @@ UISpecialFrames = {}
 C_UIFileAsset = { IsKnownFile = function() return true end } -- LibSharedMedia checks its media files
 C_Sound = { PlaySound = function() end }
 PlaySoundFile = function() end
+StopSound = function() end
 -- muted sound files: WoW.muted holds every file ID muted and not yet unmuted
 WoW.muted = {}
 MuteSoundFile = function(id) WoW.muted[id] = true end

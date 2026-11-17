@@ -18,7 +18,7 @@
 -- (Sounds:Moving decides what is heard); the Sorter pass does nothing in combat but note
 -- that it was asked, so a fight never moves a shard.
 -- Paused (profile.paused), a press neither moves nor deletes; every paused press out of
--- combat plays the pause sound, if profile.pauseSound is on, and prints the paused-press
+-- combat plays the pause sound (Sounds:PlayPause, silent when it is set to off) and prints the paused-press
 -- line (Status), if profile.pauseLog is on, whatever the count. In combat a paused press
 -- is silent.
 -- The delete prints no chat line unless the announce option is on.
@@ -41,7 +41,7 @@
 -- Reads:   Bags:LastShard/Count/AnyShardLocked, Cap:Get/IsOver/IsFull/IsQuiet, Sorter:TopFirst/Pass,
 --          Sounds:PlayPause/Moving, Status:DeletedText/PausedPressText, Combat:Locked (a
 --          paused press is silent in combat); profile.paused,
---          pauseSound, pauseLog, announce.
+--          pauseLog, announce.
 -- Acts on: the bags: deletes one shard (ClearCursor, PickupContainerItem puts the shard on
 --          the cursor, DeleteCursorItem deletes it only if the cursor holds a shard, then
 --          ClearCursor again).
@@ -111,10 +111,10 @@ end
 
 function Trimmer:Delete()
     local p = SSF.db.profile
-    if self:Paused() then -- every paused press out of combat: the sound and the chat line, each if switched on
+    if self:Paused() then -- every paused press out of combat: the sound and the chat line, each if set
         self:SendMessage("SSF_DELETE_PRESSED", "paused")
         if not SSF:GetModule("Combat"):Locked() then
-            if p.pauseSound then SSF:GetModule("Sounds"):PlayPause() end
+            SSF:GetModule("Sounds"):PlayPause() -- silent at notch 0, which is Sounds' call
             if p.pauseLog then SSF:Print(SSF:GetModule("Status"):PausedPressText()) end
         end
         return

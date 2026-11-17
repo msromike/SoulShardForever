@@ -2,8 +2,9 @@
 --
 -- test_sounds: Moving, the one rule for whether a shard move is heard. A sort is never
 -- heard; a delete is heard out of combat and not in it; and whatever the moves do, every
--- sound muted for them is back on afterwards, even when a move throws. And the volume
--- levels' numbers, pinned, because players' saved volumes are those numbers.
+-- sound muted for them is back on afterwards, even when a move throws. And the pause
+-- sound's notches: the curve pinned, the conversion of the two values saved before the
+-- slider, and silence at notch 0.
 -- Touches nothing else.
 
 local Sounds = SSF:GetModule("Sounds")
@@ -49,22 +50,76 @@ test("a move that throws still leaves every sound back on", function()
     eq(mutedNow(), 0, "every sound is back on")
 end)
 
--- WHY THIS IS PINNED: the profile saves the pause volume as the level's number, not its
--- key (profile.pauseSoundVolume), and Core snaps a saved number that is no level back to
--- full on every load. So changing a level's number below sends every player who picked
--- that level to full volume at their next login. To retune a level: first make Core
--- carry the old saved number over to the new one, then change the number here.
-test("the volume levels are pinned to the numbers players have saved", function()
-    local saved = { full = 1, loud = 0.5, medium = 0.25, quiet = 0.12 }
-    local keys = Sounds:LevelKeys()
-    eq(table.concat(keys, " "), "full loud medium quiet", "the levels, loudest first")
-    for _, key in ipairs(keys) do
-        eq(Sounds:LevelVolume(key), saved[key], key .. " is the number saved for it (see the note above this test)")
-        eq(Sounds:LevelKey(saved[key]), key, key .. " is found again from its saved number")
-        eq(Sounds:IsLevel(saved[key]), true, key .. "'s number is a level")
+-- WHY THIS IS PINNED: the profile saves the slider's notch (profile.pauseSoundLevel), and
+-- this curve is what each notch sounds like. Changing a number below changes how loud the
+-- pause sound is for every player on that notch, so a retune has to be deliberate.
+test("the curve from a notch to its volume is pinned", function()
+    eq(Sounds:LevelStep(), 0.25, "five notches on a scale of 0 to 1")
+    local curve = { [0] = 0, [0.25] = 0.12, [0.5] = 0.25, [0.75] = 0.5, [1] = 1 }
+    for level, volume in pairs(curve) do
+        eq(Sounds:LevelVolume(level), volume, "notch " .. level)
     end
-    eq(Sounds:IsLevel(0.06), false, "a number that is no level (the dropped Faint)")
-    eq(Sounds:LevelVolume(Sounds:LevelKey(0.06)), 1, "goes to full, which is what Core does to it at load")
+    eq(Sounds:LevelVolume(0.6), 0.25, "a number between two notches plays as the nearest")
+    eq(Sounds:LevelVolume(7), 1, "past the top is the top")
+    eq(Sounds:LevelVolume(-1), 0, "below the bottom is off")
+    eq(Sounds:LevelVolume(nil), 0, "nothing saved is off")
+end)
+
+-- The two values saved before the slider, and the notch each pair becomes. On keeps the
+-- volume the player hears; off is notch 0 whatever volume was picked.
+test("the old on/off and volume become the notch that sounds the same", function()
+    eq(Sounds:LevelFromOld(true, 1), 1, "on, Full")
+    eq(Sounds:LevelFromOld(true, 0.5), 0.75, "on, Loud")
+    eq(Sounds:LevelFromOld(true, 0.25), 0.5, "on, Medium")
+    eq(Sounds:LevelFromOld(true, 0.12), 0.25, "on, Quiet")
+    eq(Sounds:LevelFromOld(true, nil), 1, "on, volume never changed: it was the default, Full")
+    eq(Sounds:LevelFromOld(true, 0.06), 1, "on, a volume that was no level: Full, the old rule")
+    eq(Sounds:LevelFromOld(true, 0), 1, "on, a zero volume was never a level either")
+    eq(Sounds:LevelFromOld(false, 0.5), 0, "off, a volume picked: off")
+    eq(Sounds:LevelFromOld(nil, 0.25), 0, "never switched on (the old default), a volume picked: off")
+    for name, old in pairs({ Full = 1, Loud = 0.5, Medium = 0.25, Quiet = 0.12 }) do -- the four old volumes
+        eq(Sounds:LevelVolume(Sounds:LevelFromOld(true, old)), old, "the volume heard is unchanged at " .. name)
+    end
+end)
+
+test("the pause sound plays at its notch and not at all at notch 0", function()
+    local profile = SSF.db.profile
+    local kept = profile.pauseSoundLevel
+    local played = {}
+    local real = C_Sound.PlaySound
+    C_Sound.PlaySound = function(_, _, _, _, _, volume) played[#played + 1] = volume end
+    local okay, err = pcall(function()
+        profile.pauseSoundLevel = 0
+        Sounds:PlayPause()
+        eq(#played, 0, "notch 0: nothing played")
+        profile.pauseSoundLevel = 0.5
+        Sounds:PlayPause()
+        eq(#played, 1, "notch 0.5: played once")
+        eq(played[1], 0.25, "at that notch's volume")
+    end)
+    C_Sound.PlaySound = real
+    profile.pauseSoundLevel = kept
+    assert(okay, err)
+end)
+
+-- The game does not start a sound kit again while it is still playing, so a quick second
+-- press was silent. Play stops the one it started last before starting the next.
+test("a second play cuts off the first, so a quick press is heard", function()
+    local stopped, next = {}, 100
+    local realPlay, realStop = C_Sound.PlaySound, StopSound
+    C_Sound.PlaySound = function() next = next + 1 return true, next end
+    StopSound = function(handle) stopped[#stopped + 1] = handle end
+    local okay, err = pcall(function()
+        Sounds:Play(Sounds:DefaultName(), 1)
+        local before = #stopped
+        Sounds:Play(Sounds:DefaultName(), 1)
+        eq(#stopped, before + 1, "the second play stops one sound")
+        eq(stopped[#stopped], 101, "the one the first play started")
+        Sounds:Play(Sounds:DefaultName(), 1)
+        eq(stopped[#stopped], 102, "and the third stops the second")
+    end)
+    C_Sound.PlaySound, StopSound = realPlay, realStop
+    assert(okay, err)
 end)
 
 test("on a client without the mute functions the moves just run", function()

@@ -38,13 +38,18 @@ local SSF = Load({
     login = true,
     saved = {
         profileKeys = { ["Tester - PvE"] = "Tester - PvE" },
-        profiles = { ["Tester - PvE"] = { maxShards = 12, lowMark = 10, welcomed = 10801, pauseLog = true } },
+        -- pauseSound and pauseSoundVolume: the two values saved before the pause sound
+        -- slider (on, Loud), which Core turns into one notch
+        profiles = { ["Tester - PvE"] = { maxShards = 12, lowMark = 10, welcomed = 10801, pauseLog = true,
+            pauseSound = true, pauseSoundVolume = 0.5 } },
     },
     afterInit = function(addon)
         WoW.initialProfile = {
             char = addon.db.keys.char, profileKey = addon.db.keys.profile,
             maxShards = addon.db.profile.maxShards, lowMark = addon.db.profile.lowMark,
             welcomed = addon.db.profile.welcomed, pauseLog = addon.db.profile.pauseLog,
+            pauseSoundLevel = addon.db.profile.pauseSoundLevel,
+            oldSoundKeysGone = addon.db.profile.pauseSound == nil and addon.db.profile.pauseSoundVolume == nil,
         }
     end,
 })

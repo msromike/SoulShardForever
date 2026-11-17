@@ -19,8 +19,12 @@ FontString  shown  enabled Soul Shards: 5
 Button      shown  greyed  Delete Shard / cap is 8
 FontString  shown  enabled Pause SSF
 FontString  shown  enabled Pause all SSF actions
-FontString  shown  greyed  Play pause sound
-FontString  shown  enabled Full
+FontString  shown  enabled Pause sound
+FontString  shown  enabled 0%
+FontString  shown  enabled 100%
+EditBox     shown  enabled 0%
+Button      shown  enabled -
+Button      shown  enabled +
 FontString  shown  greyed  Log pauses to chat
 FontString  shown  enabled Soul shard limits
 FontString  shown  enabled Shards to keep
@@ -88,8 +92,12 @@ FontString  shown  enabled Soul Shards: 5
 Button      shown  greyed  Delete Shard / cap is 8
 FontString  shown  enabled Pause SSF
 FontString  shown  enabled Pause all SSF actions
-FontString  shown  greyed  Play pause sound
-FontString  shown  enabled Full
+FontString  shown  enabled Pause sound
+FontString  shown  enabled 0%
+FontString  shown  enabled 100%
+EditBox     shown  enabled 0%
+Button      shown  enabled -
+Button      shown  enabled +
 FontString  shown  greyed  Log pauses to chat
 FontString  shown  enabled Soul shard limits
 FontString  shown  enabled Shards to keep
