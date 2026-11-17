@@ -7,7 +7,9 @@
 -- Language change. Opens the Key Bindings page scrolled to SSF's section and expanded.
 --
 -- SECTION must equal the category attribute in Bindings.xml; that file cannot read Lua,
--- so the name is typed in both places.
+-- so the name is typed in both places. The rows' own code is in Bindings.xml: SSF_DELETE
+-- clicks the global button SSFDelete (DeleteButton), SSF_PAUSE calls Options:TogglePause().
+-- The check holds both, and the category, to the code.
 --
 -- Public:  KeyBindings:ApplyLabels() (Core:ApplyLanguage calls it after a language switch)
 --          KeyBindings:Open() (the window's Key Bindings button; the caller closes the

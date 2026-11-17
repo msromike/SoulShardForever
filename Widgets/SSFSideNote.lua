@@ -44,9 +44,10 @@
 --            button: what a click does), buttonDisabled (greys the button), onClose
 --            (called once when the note closes). titleColor: { r, g, b } or nil.
 --            The plain layout reads title, blocks, button, onClick and onClose, and: tick
---            (the tick box's label), ticked (true: the box starts ticked; a Show again
---            while it is open, such as after a Language change, keeps what the player
---            ticked), onTick (called with ticked, on every tick and untick), buttonTicked
+--            (the tick box's label), ticked (true: the box starts ticked; every Show
+--            sets the box from it, so an owner that fills an open note again, such as
+--            after a Language change, keeps the player's tick only by passing it back:
+--            NewsShow saves it through onTick and reads it again), onTick (called with ticked, on every tick and untick), buttonTicked
 --            (the button's label while ticked). body, note, lead and
 --            buttonNote are not drawn there.
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's

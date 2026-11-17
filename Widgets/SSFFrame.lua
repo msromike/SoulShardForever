@@ -90,7 +90,7 @@ local TOP_INSET = 35                  -- the content's inset from the top (the t
 local BOTTOM_INSET = ROW_OFFSET + BUTTON_HEIGHT + ROW_GAP -- the content's inset from the bottom: the button row
 local CHROME = TOP_INSET + BOTTOM_INSET
 local STOCK_BOTTOM_INSET = 57         -- what the stock Frame's OnHeightSet takes off the height it records for its content
-local DEFAULT_WIDTH, DEFAULT_HEIGHT = 420, 380 -- before the first fit
+local DEFAULT_WIDTH, DEFAULT_HEIGHT = 420, 380 -- only for a status table with no size (see ApplyStatus)
 local BUTTON_PAD = 30                 -- a bottom button is its text plus this
 local BUTTON_MIN = 80                 -- but never narrower than this
 local SCREEN_MARGIN = 40              -- the window is never taller or wider than the screen minus this
@@ -230,8 +230,9 @@ local methods = {
         if height then self:SetHeight(height + CHROME) end
     end,
 
-    -- the stock defaults (700 x 500) are a status table's fallback; SSF's window starts
-    -- smaller, and the first fit sets both
+    -- a size for a status table that arrives without one. AceConfigDialog:Open writes its
+    -- own 700 x 500 into the table before handing it over, so on every open SSF makes
+    -- today these never apply: the first feed lays out at 700 x 500 and the fit sets both
     ["ApplyStatus"] = function(self)
         local status = Status(self)
         status.width = status.width or DEFAULT_WIDTH

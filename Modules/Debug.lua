@@ -9,8 +9,9 @@
 -- permanent: it grows until Clear() empties it, with no cap. It only listens: Trimmer and
 -- Sorter send their messages whether or not it is on, and nothing here changes what a
 -- press does. Off means off: no message and no game event is registered until it is turned
--- on, and its two print hooks (see Hooks) do nothing. It prints nothing; its text is English only, on purpose: the report is read by the
--- author, whatever the player's language. It also writes down every line SSF prints
+-- on, and its two print hooks (see Hooks) do nothing. It prints nothing; its text is
+-- English only, on purpose: the report is read by whoever maintains SSF, whatever the
+-- player's language. It also writes down every line SSF prints
 -- through its own Print and Printf, and every sound SSF itself plays, so "did the line
 -- print, did the sound play" is read from the record, not asked of the player. The lines
 -- are caught by a hook on the addon object's Print and Printf, so no code that prints is

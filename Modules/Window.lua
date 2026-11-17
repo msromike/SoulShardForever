@@ -10,9 +10,11 @@
 -- except Play pause sound, which shares its row with the volume dropdown; a label that
 -- does not fit (the window is capped at the screen's width) wraps and grows its row
 -- (Widgets\SSFCentered.lua). The window sizes itself to the content after every feed,
--- width then height (Feed -> SSFFrame:FitWidth, FitToContent), so no text is cut short and
--- it never scrolls short of the screen's height. No default size: the first
--- feed lays out at AceConfigDialog's own default and the fit sets both.
+-- width then height (Feed -> SSFFrame:FitWidth, FitToContent), so no full-width text is
+-- cut short and it never scrolls short of the screen's height. FitWidth measures only
+-- full-width controls: a narrower one, the half-width Volume dropdown, can still cut a
+-- long value. No default size: the first feed lays out at AceConfigDialog's own default
+-- (700 x 500) and the fit sets both.
 --
 -- Public:  Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does
 --          nothing in a fight, Combat:InFight), Toggle() (the minimap icon and broker click),

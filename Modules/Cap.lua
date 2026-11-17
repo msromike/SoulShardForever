@@ -12,9 +12,9 @@
 --     cap, so a module that hears a bag change before Cap does still reads it right. The
 --     slider cannot set it higher either (SSFStepperSlider's bound, fed the cap by
 --     Options), and when the cap drops under it (Match soul bag size, a lower cap)
---     Recompute writes it down to the cap,
---     once, where the player sees it move. What the slider shows is what is saved: no
---     hidden value, nothing comes back by itself when the cap rises.
+--     Recompute writes it down to the cap, once, where the player sees it move. What the
+--     slider shows is what is saved: no hidden value, nothing comes back by itself when
+--     the cap rises.
 --   State(count): "paused" while SSF is paused, whatever the count (the player is
 --     stockpiling on purpose: red "go farm" and yellow "delete one" would argue with that,
 --     so the count goes white and the border off until unpause). Then "quiet" until the
@@ -26,15 +26,16 @@
 --     learn event came first, so a login never counts as learning it.
 --     Deleting is not gated here: Trimmer:WhyNot answers "paused" before it asks State.
 --     IsOver(count): over the cap, the delete gate (Trimmer:WhyNot).
---     IsFull(count): at or over the cap (Trimmer:WhyNot's "atcap"). The
---     threshold tests live here and nowhere else; Counter's color, the glow, the chat,
+--     IsFull(count): at or over the cap (Trimmer:WhyNot's "atcap").
+--     The threshold tests live here and nowhere else; Counter's color, the glow, the chat,
 --     tooltip and broker count and the Delete Shard gate all ask.
 -- Recomputes the cap at login and on bag changes and sends SSF_CAP_CHANGED when the number
 -- moves. Trimmer calls Get() fresh on every press, so a missed event can never stale a
 -- delete.
 --
--- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark
---          (never above the cap), SetLowMark(n) (Options' slider: held between MIN and the cap),
+-- Public:  Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap,
+--          IsAuto() -> bool, LowMark() -> the low mark (never above the cap),
+--          SetLowMark(n) (Options' slider: held between MIN and the cap),
 --          State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow;
 --          nothing is decided by comparing these words), IsOver(count) -> bool (over the
 --          cap: a press would delete), IsFull(count) -> bool,

@@ -20,10 +20,10 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 function DeleteHelp:Blocks(first)
     local Macros = SSF:GetModule("Macros")
     local lifeTap, bane = Macros:SpellName("LT"), Macros:SpellName("BoA")
-    -- English names "Bane" itself and takes only Life Tap's name (%s); a translation names
-    -- both, positionally (%1$s Life Tap, %2$s Bane). Extra arguments are ignored.
-    -- What it is for first, then the warning (English names Bane itself; a translation takes
-    -- its name as %s).
+    -- What the Bane macro is for, then its warning. English names Bane itself in both:
+    -- the first line takes only Life Tap's name (%s), the warning none. A translation takes
+    -- the spell names: the first line both, positionally (%1$s Life Tap, %2$s Bane), the
+    -- warning Bane's as %s. Extra arguments are ignored.
     return {
         { text = first },
         { text = L["In a macro, put /ssf delete on the line before the ability:"] },

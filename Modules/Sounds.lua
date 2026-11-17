@@ -38,8 +38,9 @@
 -- error is raised again afterwards, with where it happened added to its text). A mute
 -- left on would silence item sounds for every addon, with nothing to tell the player why.
 -- No call that asks whether a file is muted is known (neither function is in the client's
--- UI source or API docs), so if another addon keeps one of these files muted on purpose, the unmute here turns it back on (Baganator's sort does
--- the same). On a client without the two functions fn just runs.
+-- UI source or API docs), so if another addon keeps one of these files muted on purpose,
+-- the unmute here turns it back on (Baganator's sort does the same). On a client without
+-- the two functions fn just runs.
 --
 -- Public:  Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or
 --            "delete" (Sorter and Trimmer hand their moves over and know nothing of the
