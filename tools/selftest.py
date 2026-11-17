@@ -9,7 +9,9 @@ Job:    prove that tools/check.py still catches what it is there to catch. Each 
         still printing ALL PASS; this is what would notice. Every case here was first run
         by hand when its step was written.
         Add a case with the check it proves: a new step in check.py with no case here is
-        a step nobody has seen fail.
+        a step nobody has seen fail, and the run fails on it ("every check step has a
+        case"), as it does on a step the clean run before the cases leaves out. The map
+        and the library report never fail on purpose; the map has its own case.
 Takes:  nothing, or words to match against case names (`python tools/selftest.py window`
         runs the cases with "window" in the name). LUA and LUACHECK as check.py reads them.
 Writes: nothing that stays. A case rewrites one file for the length of one step and puts
@@ -87,8 +89,30 @@ WINDOW, TESTS, TOC, BIND = check.check_window, check.check_tests, check.check_to
 API = check.check_blizzard_api
 HOOKS = check.check_hooks
 COLORS, RULES = check.check_colors, check.check_rules
+LINT, LOCALES, CODE_KEYS, LAYOUT = check.check_luacheck, check.check_locales, check.check_code_keys, check.check_headers
+MAP = check.check_map
+# the steps that never fail, on purpose, so no break can be "caught" by them: the map is
+# rewritten (GitHub fails a push whose committed map differs; map_case shows it rewrites),
+# and the library drift report is information only
+NEVER_FAIL = {check.check_map, check.check_libs}
 
 CASES = [
+    # the steps every other case leans on
+    Case("lint: a local nobody uses", LINT, "Modules/Cap.lua",
+         APPEND, "\nlocal unusedProbe = 1\n", "unusedProbe"),
+    Case("locales: a key renamed in German only", LOCALES, "Locales/deDE.lua",
+         'L["No free macro slots. Delete', 'L["No free macro slot. Delete', "missing 'No free macro slots"),
+    Case("locales: a translation drops a placeholder", LOCALES, "Locales/deDE.lua",
+         '"Verwendung: /ssf %s on|off"', '"Verwendung: /ssf on|off"', "drops argument 1 (%s)"),
+    Case("code keys: the code looks up a key enUS does not have", CODE_KEYS, "Modules/Macros.lua",
+         'L["No free macro slots. Delete a macro and try again."]', 'L["No free macro slot. Delete a macro and try again."]',
+         "is not a key in enUS"),
+    Case("headers: the closing line dropped", LAYOUT, "Modules/Cap.lua",
+         "-- Touches nothing else.", "--", "last header line is not"),
+    Case("headers: fields out of template order", LAYOUT, "Modules/Macros.lua",
+         "-- Sends:   SSF_MACROS_CHANGED;", "-- Acts on: SSF_MACROS_CHANGED;", "out of template order"),
+    Case("headers: no paragraph starts with the file's name", LAYOUT, "Modules/Macros.lua",
+         "-- Macros: the two recommended macros", "-- The two recommended macros", "no paragraph starts with 'Macros:'"),
     # Public is the truth: modules and the addon object
     Case("public: a method renamed in its file only", PUBLIC, "Modules/Bags.lua",
          "function Bags:Count(", "function Bags:CountAll(", "Public lists Count"),
@@ -587,14 +611,51 @@ def new_folder_case():
             not ok and "in a place the checks do not read" in text, "the step passed, or not for this reason")
 
 
+def map_case():
+    """The map step never fails; it rewrites ARCHITECTURE.md. A job line changed in a header
+    must come out in the map, said as CHANGED. Both files go back. (name, caught, why not)"""
+    rel = "Modules/Macros.lua"
+    map_path = os.path.join(check.ROOT, check.MAP)
+    saved_map = open(map_path, "rb").read()
+    try:
+        if not mutate(rel, "-- Macros: the two recommended macros", "-- Macros: the two suggested macros", 1):
+            return ("map: a header's job line changes the map", False, f"SETUP WRONG: the job line is no longer in {rel}")
+        _, text = run_step(check.check_map)
+        shows = "the two suggested macros" in open(map_path, encoding="utf-8").read()
+    finally:
+        restore(rel)
+        with open(map_path, "wb") as f:
+            f.write(saved_map)
+    return ("map: a header's job line changes the map", "CHANGED" in text and shows,
+            "the map did not say CHANGED or does not carry the new job line")
+
+
+def cases_cover_every_step(extra_steps):
+    """[(name, caught, why not)]: every step check.py's main runs has a case here, except the
+    two that never fail on purpose. A step nobody has seen fail proves nothing."""
+    import inspect
+    steps = [getattr(check, n) for n in re.findall(r"\b(check_\w+)\(\)", inspect.getsource(check.main))]
+    covered = {c.step for c in CASES} | set(extra_steps) | NEVER_FAIL
+    missing = [s.__name__ for s in steps if s not in covered]
+    return [("every check step has a case", not missing, "no case for " + ", ".join(missing))]
+
+
 def main(argv):
     words = [w.lower() for w in argv]
     wanted = lambda name: not words or any(w in name.lower() for w in words)
 
     # the check must pass on the tree as it is, or a caught break proves nothing
-    clean = [("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("hooks", HOOKS), ("colors", COLORS), ("rules", RULES), ("exceptions", EXCEPTIONS),
+    # (every step that can fail; checked below to be the whole of check.py's main)
+    clean = [("luacheck", LINT), ("locales", LOCALES), ("code keys", CODE_KEYS), ("header layout", LAYOUT),
+             ("public truth", PUBLIC), ("header truth", HEADERS), ("acts on", ACTS), ("hooks", HOOKS), ("colors", COLORS), ("rules", RULES), ("exceptions", EXCEPTIONS),
              ("toc and files", TOC), ("bindings", BIND), ("blizzard api", API), ("window controls", WINDOW),
              ("tests", TESTS)]
+    import inspect
+    in_main = {getattr(check, n) for n in re.findall(r"\b(check_\w+)\(\)", inspect.getsource(check.main))}
+    unlisted = sorted(s.__name__ for s in in_main - {step for _, step in clean} - NEVER_FAIL)
+    if unlisted:
+        print("the clean run leaves out a step check.py runs: " + ", ".join(unlisted) + "; add it to the clean list")
+        return 1
     for label, step in clean:
         ok, out = run_step(step)
         if not ok:
@@ -607,6 +668,8 @@ def main(argv):
             caught, why = run_case(case)
             results.append((case.name, caught, why))
     extra = (missing_cases() if wanted("missing") else []) + ([new_folder_case()] if wanted("toc: a Lua file in a new folder") else [])
+    extra += [map_case()] if wanted("map:") else []
+    extra += cases_cover_every_step([check.check_tests, check.check_blizzard_api, check.check_toc]) if wanted("every check step") else []
     for name, caught, why in extra:
         results.append((name, caught, None if caught else why))
 
