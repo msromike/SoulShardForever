@@ -47,6 +47,7 @@ import re
 import shutil
 import subprocess
 import sys
+from xml.etree import ElementTree
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 TOC = os.path.join(ROOT, "SoulShardForever.toc")
@@ -1268,7 +1269,6 @@ def check_toc():
 # ---------------------------------------------------------------- Bindings.xml
 
 BINDINGS = "Bindings.xml"
-BINDING_RE = re.compile(r'<Binding\s+name="(\w+)"\s+category="([^"]*)"\s*>(.*?)</Binding>', re.S)
 NAMED_FRAME_RE = re.compile(r'\bCreateFrame\(\s*"\w+"\s*,\s*"(\w+)"')
 SECTION_RE = re.compile(r'^local\s+SECTION\s*=\s*"([^"]*)"', re.M)
 CLICK_RE = re.compile(r"/click\s+(\w+)")
@@ -1285,16 +1285,25 @@ def named_frames():
 
 
 def bindings():
-    """[(binding name, category, body)] from Bindings.xml, comments left out."""
-    text = re.sub(r"<!--.*?-->", "", read(BINDINGS), flags=re.S)
-    return BINDING_RE.findall(text)
+    """[(binding name, category, body)] from Bindings.xml, read as the XML it is: the
+    attributes in any order, comments left out. A file the game's XML reader would refuse
+    raises ValueError, with the reader's own words."""
+    try:
+        root = ElementTree.fromstring(read(BINDINGS))
+    except ElementTree.ParseError as e:
+        raise ValueError(f"{BINDINGS} is not well-formed XML ({e}): the game would load no binding from it")
+    return [(b.get("name", ""), b.get("category", ""), b.text or "") for b in root.iter("Binding")]
 
 
 def bindings_uses():
     """Every use Bindings.xml makes of a module's Public: [(module, name)]. The file is
     Lua inside XML, read by the game and by nothing else until this check."""
     out = []
-    for _, _, body in bindings():
+    try:
+        rows = bindings()
+    except ValueError:
+        return out  # the bindings step reports a file the game would refuse
+    for _, _, body in rows:
         out += [(mod, name) for mod, _, name in DIRECT_CALL_RE.findall(body)]
     return out
 
@@ -1313,7 +1322,16 @@ def check_bindings():
     if not exact_path(BINDINGS):
         print(f"   FAILED: {BINDINGS} not found (the game loads it by that exact name)")
         return False
-    rows = bindings()
+    try:
+        rows = bindings()
+    except ValueError as e:
+        print(f"   FAILED: {e}")
+        return False
+    if not rows:
+        problems.append(f"{BINDINGS}: no <Binding> in it: the Key Bindings screen would show no SSF row")
+    for name, _, _ in rows:
+        if not re.fullmatch(r"SSF_[A-Z_]+", name):
+            problems.append(f"{BINDINGS}: a binding named \"{name}\": each needs a name SSF_<WHAT>, its label's key")
     frames = named_frames()
     reg = module_registry()
     code = "\n".join("\n".join(c for _, c in bare_code(read(rel))) for rel in lua_files() if not rel.startswith("tests/"))
