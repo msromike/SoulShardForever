@@ -62,7 +62,13 @@
 --          stock checkbg size and RADIO the stock radio art's. For a radio, the CheckBox's
 --          checkbg (TOPLEFT) and text (LEFT) anchors are written, and put back on acquire;
 --          a CheckBox that anchors them differently leaves the radios off the check boxes'
---          column. An AceGUI bump that renames those breaks the top row, the
+--          column. The stock CheckBox's private AlignImage, which its click handler runs
+--          after OnValueChanged (and its SetImage runs), puts the text back against
+--          checkbg with no inset; a radio keeps its inset only because AceConfigDialog
+--          rebuilds the window after every set, which runs SetRadio again. A CheckBox that
+--          ran AlignImage anywhere else, or a window that stopped rebuilding after a set,
+--          leaves a radio's label against its dot until the next redraw. An AceGUI bump that
+--          renames those breaks the top row, the
 --          check boxes' layout, or the volume dropdown's construction; one whose CheckBox
 --          re-sets its text height clips wrapped labels.
 -- Reads:   Help:KeepHover/Greyed (the tooltip on a greyed control); SSF.HALF_LINE (Core).

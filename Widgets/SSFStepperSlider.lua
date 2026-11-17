@@ -27,7 +27,10 @@
 -- Lib internals: the stock Slider's label, editbox, slider (its thumb texture and its
 --          3 px side insets, for the dim region), frame (also handed to Help:KeepHover as
 --          the frame that gives up the mouse while greyed) and alignoffset fields, its min,
---          max and disabled fields, its OnMouseWheel script, and AceGUI's frame.width field.
+--          max and disabled fields, its OnMouseWheel script (the "-" and "+" buttons run it,
+--          so they move by the stock Slider's own step field, exactly as the wheel does; a
+--          Slider whose wheel stopped using step would make the buttons jump by something
+--          else), and AceGUI's frame.width field.
 --          The inner Slider's OnAcquire is called directly, outside AceGUI:Create, as a
 --          full repeatable reset; the 44 in OnAcquire copies the stock Slider's height; the
 --          clamp relies on the stock SetValue's setup flag to swallow the second
