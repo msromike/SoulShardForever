@@ -165,10 +165,10 @@ def blizzard_names():
 # functions built into the client that Blizzard's own Lua does not happen to use and its
 # API docs leave out. Each needs a proof from the game, since no file can give one.
 KNOWN_GLOBALS = {
-    "GetMacroIndexByName": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
-    "PlaySoundFile": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
-    "MuteSoundFile": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
-    "UnmuteSoundFile": "type() printed 'function' in game on build 1.60.1, Test Card 19, 2026-11-16",
+    "GetMacroIndexByName": "type() printed 'function' in game on build 1.60.1",
+    "PlaySoundFile": "type() printed 'function' in game on build 1.60.1",
+    "MuteSoundFile": "type() printed 'function' in game on build 1.60.1",
+    "UnmuteSoundFile": "type() printed 'function' in game on build 1.60.1",
 }
 REACHES = "tools/blizzard_reaches.txt"
 WOWUI_FOUND = os.path.join(ROOT, "tools", ".wowui_found.txt")
@@ -273,7 +273,7 @@ def check_blizzard_api():
     """Every Blizzard name the code uses, against the client's own UI source (tools/.wowui,
     the wow-ui-source mirror's forever branch, the build the live client runs): no global
     SSF reads is defined in a Deprecated file (those are shims Blizzard removes a patch or
-    two later: IsPlayerSpell and GetActionText were both found there, 2026-11-10); every
+    two later: IsPlayerSpell and GetActionText were both found there); every
     C_<namespace>.<function> it calls is in Blizzard_APIDocumentationGenerated (so a
     namespaced call is one this client has, not one borrowed from retail); every other
     global in .luacheckrc appears in that source or is on KNOWN_GLOBALS with its proof from

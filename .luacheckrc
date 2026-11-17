@@ -1,7 +1,7 @@
 -- luacheck configuration for Soul Shards Forever (WoW Forever runs Lua 5.1).
 -- Run from the addon root: luacheck .   (the check script does this before every commit)
--- Every name in read_globals was harvested from a run with no whitelist on 2026-10-20 and
--- checked to be a real WoW API or FrameXML global. Add a name only when the game has it.
+-- Every name in read_globals was harvested from a run with no whitelist and checked to be
+-- a real WoW API or FrameXML global. Add a name only when the game has it.
 
 std = "lua51"
 max_line_length = false

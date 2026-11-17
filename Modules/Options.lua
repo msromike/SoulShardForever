@@ -82,8 +82,8 @@ local function Gold(text) return Colors():Gold(text) end
 local function NotPaused() return not SSF.db.profile.paused end
 local function CounterOff() return not SSF.db.profile.counter end
 -- Colorize and the glow grey while paused and keep their ticks, the window's own rule on
--- the pause setting, the mirror image of the pause sound rows greying while unpaused
--- (Mike, 2026-10-21). What the count looks like while paused is Cap's and Colors' call.
+-- the pause setting, the mirror image of the pause sound rows greying while unpaused.
+-- What the count looks like while paused is Cap's and Colors' call.
 local function CounterOffOrPaused() return CounterOff() or SSF.db.profile.paused end
 
 -- The pause key binding (Bindings.xml SSF_PAUSE). Same path as "/ssf pause on|off".
@@ -118,9 +118,9 @@ end
 -- key: with no soul bag equipped the dot is on the far-left radio while the key still says
 -- soul bag, so the number moves to the first soul bag by itself. A click saves only on a
 -- real change: a click on the radio that has the dot writes nothing and sends nothing
--- (AceConfigDialog redraws after every set, which puts the dot back). Mike, 2026-11-11.
--- The two share one row, a half line over Colorize and the glow, so they read as one pick
--- (Mike, 2026-11-12). Not full width: each is as wide as its label (SSFIndentCheckBox).
+-- (AceConfigDialog redraws after every set, which puts the dot back).
+-- The two share one row, a half line over Colorize and the glow, so they read as one pick.
+-- Not full width: each is as wide as its label (SSFIndentCheckBox).
 -- `follows` marks the second one: it starts one check box width after the first's label.
 local function PlaceRadio(order, name, onSoulBag, disabled, follows)
     return Width(Toggle(order, name,
@@ -245,7 +245,7 @@ local function BuildTable()
             cmdHidden = true,
             dialogControl = "SSFCountButton",
             name = L["Delete Shard"],
-            -- greyed, the tooltip is only why (Mike's words, 2026-10-20); live, it teaches
+            -- greyed, the tooltip is only why (deliberate wording); live, it teaches
             -- every way to delete
             desc = function()
                 local why = SSF:GetModule("Trimmer"):WhyNot()
@@ -359,7 +359,7 @@ local function BuildTable()
                     end,
                     CounterOffOrPaused),
                 -- the place radios hang off the count checkbox, one step in; colorize and glow
-                -- line up under the count checkbox itself, under the radios' half line (Mike, 2026-11-12)
+                -- line up under the count checkbox itself, under the radios' half line
                 colorize = Toggle(4, L["Colorize bag counter"],
                     function() return SSF.db.profile.counterColorize end,
                     function(_, value)
@@ -571,8 +571,8 @@ end
 
 -- "/ssf 25": runs setmax's own chat command with the number typed alone, marked short, so
 -- Settings checks the range and a bad value answers in the short form ("Use: /ssf 1-100").
--- ON PURPOSE, not a bypass of AceConfigCmd (a release review flagged it as "Ace first" and
--- the owner kept it, 2026-11-16): AceConfigCmd can only dispatch "setmax 25", and then has
+-- ON PURPOSE, not a bypass of AceConfigCmd (a review flagged it as "Ace first"; it was
+-- kept deliberately): AceConfigCmd can only dispatch "setmax 25", and then has
 -- no way to say the player typed the short form, so the usage line would name setmax.
 -- Calling a setting's own `set` is this file's way to run a chat command from code
 -- (TogglePause does the same for the key binding). Nothing Ace does is redone here; the

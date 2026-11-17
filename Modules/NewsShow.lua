@@ -2,7 +2,7 @@
 --
 -- NewsShow: shows the current announcement (News\News.lua) in the panel on the window's
 -- left until the character ticks "Don't show this again". It comes up when the welcome
--- would (Mike, 2026-11-15: the same behavior, so there is one rule to remember): while it
+-- would (the same behavior, so there is one rule to remember): while it
 -- is owed, every load, a login or a reload alike, opens the window by itself, centered,
 -- with the announcement beside it, and every open of the window, whoever opened it, brings
 -- the announcement back with it. A load that lands in a fight opens nothing, and a fight
@@ -29,8 +29,8 @@ local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
 local NewsShow = SSF:NewModule("NewsShow", "AceEvent-3.0")
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
--- what stands between a paragraph's gold lead and its text: two spaces, as Mike types
--- after a colon (2026-11-15, on purpose)
+-- what stands between a paragraph's gold lead and its text: two spaces, as typed after a
+-- colon (on purpose)
 local LEAD_GAP = "  "
 
 -- the announcement to show, or nil: none was shipped, or it is switched off

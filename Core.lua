@@ -33,8 +33,8 @@ local SSF = LibStub("AceAddon-3.0"):NewAddon("SSF", "AceConsole-3.0", "AceEvent-
 local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 SSF.SHARD_ITEM_ID = 6265
--- Half a line of empty space, in px: the air under the radio row in the options (the look
--- Mike approved, 2026-11-12) and between a divider and the text in the announcement panel.
+-- Half a line of empty space, in px: the air under the radio row in the options (a look
+-- chosen on purpose) and between a divider and the text in the announcement panel.
 -- One home, so the two stay the same; the widgets read it when they lay out (they load
 -- before this file).
 SSF.HALF_LINE = 5

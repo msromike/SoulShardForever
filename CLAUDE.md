@@ -1,9 +1,9 @@
 # Soul Shards Forever: the standard
 
-This file is the contract for any AI session that edits this addon. The owner does not
-write Lua; every line here is written and maintained by AI sessions that start with no
-memory. The two rules below exist so that a session can change one thing by opening one
-file and trusting APIs it already knows. Read ARCHITECTURE.md next: it maps every file to
+This file is the contract for any AI session that edits this addon. Every line of Lua
+here is written and maintained by AI sessions that start with no memory. The two rules
+below exist so that a session can change one thing by opening one file and trusting APIs
+it already knows. Read ARCHITECTURE.md next: it maps every file to
 its job and every message to its sender and listeners.
 
 ## Rule 1: Ace everywhere
@@ -19,14 +19,14 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
 
 - A lib on the list that is not yet embedded is still on the list: embed it (Libs\,
   embeds.xml) and use it. Size of the job does not matter; a three-line hook uses AceHook.
-- Any other published library that would replace a block is a suggestion for the owner,
+- Any other published library that would replace a block is a suggestion to raise,
   never something a session adds on its own.
 - Custom AceGUI widgets (Widgets\) are extension-only: a widget wraps a stock AceGUI
   widget and adds to it. It never re-implements what the stock widget does. Where AceGUI
   has no base, the widget stands alone and stays small.
-- No insurance against a library changing behavior it has had for years (the owner,
-  2026-11-16). Use the library as it is, name the reach under "Lib internals", and let the
-  library diff be the warning. A hand copy of library code kept "in case" is hand-rolling.
+- No insurance against a library changing behavior it has had for years. Use the library
+  as it is, name the reach under "Lib internals", and let the library diff be the
+  warning. A hand copy of library code kept "in case" is hand-rolling.
 - Five documented exceptions, and no others. Each is explained in its file's header under
   Exceptions (a header with more than one numbers them: (1), (2)). The check counts this
   list against the headers, so it stays one per line, the file first:
@@ -121,16 +121,17 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
 - What is in the options window is a fact, not a reading of the code. The check opens the
   real window outside the game (tests/window.lua) and holds it to
   tests/window_controls.txt. Anything that says what a player sees or clicks there (a
-  test card, a README line, a comment, a reply to the owner) names only controls that
-  file lists as shown. A name in the code is not evidence: SSFFrame once called its
-  Keybindings button "closebutton", and a test card sent the owner looking for Close. When a change to the window is meant, accept the new list with
+  test card, a README line, a comment, a reply in chat) names only controls that file
+  lists as shown. A name in the code is not evidence: SSFFrame once called its
+  Keybindings button "closebutton", and a test card sent the tester looking for Close.
+  When a change to the window is meant, accept the new list with
   `python tools/check.py --accept-window` and read its diff. The list cannot say where a
-  control sits or how it looks; that takes the owner's eyes or a screenshot.
+  control sits or how it looks; that takes a look in game or a screenshot.
 - The check is itself checked. tools/selftest.py breaks one thing at a time on purpose and
   fails unless the check catches it for the expected reason. Run it after any change to
   tools/check.py or tests/ (about ten seconds; GitHub runs it on every push). A new step in
   the check gets a case there in the same commit: a step nobody has seen fail proves
   nothing.
-- One chunk of work per commit. The owner tests in game after any commit that changes
-  behavior; say which tests, each command in its own paste block, and wait.
-- Never tag, bump or publish without the owner's explicit yes.
+- One chunk of work per commit. Any commit that changes behavior is tested in game
+  before the next; say which tests, each command in its own paste block, and wait.
+- Never tag, bump or publish without an explicit yes.

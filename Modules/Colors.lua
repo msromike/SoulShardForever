@@ -9,16 +9,16 @@
 --   quiet  white  no Drain Soul yet, so no way to get a shard: no opinion until it's learned
 -- One red everywhere (bag number, chat, tooltip, the low glow), one green, one yellow: the
 -- pure ones, as vivid as each other (the yellow was the label gold and the red a lightened
--- coral until 1.9.1; picked by eye on the bag: Mike, 2026-10-22). Gold is the game's label color (NORMAL_FONT_COLOR): names
--- quoted in help lines, tooltip titles, the cap tick on the Low shard mark slider. White is
--- the neutral value color for settings. Green doubles as the branding accent on the login
--- line, by Mike's call. Grey never colors a state (it reads as "disabled"); the two greys
--- here are the tooltip's dim label and the chat command echo, which is meant to read as a
--- terminal prompt. Blue is the help "i" while help is on. Code is the macro text in the
+-- coral until 1.9.1; picked by eye on the bag). Gold is the game's label color
+-- (NORMAL_FONT_COLOR): names quoted in help lines, tooltip titles, the cap tick on the Low
+-- shard mark slider. White is the neutral value color for settings. Green doubles as the
+-- branding accent on the login line, on purpose. Grey never colors a state (it reads as
+-- "disabled"); the two greys here are the tooltip's dim label and the chat command echo,
+-- which is meant to read as a terminal prompt. Blue is the help "i" while help is on. Code is the macro text in the
 -- welcome note's boxes, a pale blue-grey that reads as text to copy; Slate is those boxes'
 -- edge. Black is every darkening layer (the title strips, the window's and the note's
 -- shade, the macro boxes' fill, the counter's backing, the dimmed slider rail); each
--- layer's alpha is its owner's own number.
+-- layer's alpha is a number of the file that draws it.
 -- Every color is typed here once, as r, g, b; the hex an escape code takes is derived
 -- (Color), so a change is one edit. Nothing outside this file types a color:
 -- tools/check.py fails on any escape code, hex or r, g, b typed elsewhere.

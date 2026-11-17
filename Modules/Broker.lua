@@ -3,8 +3,8 @@
 -- Broker: the LibDataBroker data object and the LibDBIcon minimap icon. Click toggles the
 -- options window (opens it, or closes it if open).
 -- Fields: type, label "SSF", icon, text = the count alone in its state color (the icon
--- names it, the color is the state; the cap is a setting and lives in the tooltip: Mike,
--- 2026-10-21), value = N. No suffix, no "Full", no per-bag breakdown.
+-- names it, the color is the state; the cap is a setting and lives in the tooltip),
+-- value = N. No suffix, no "Full", no per-bag breakdown.
 -- Tooltip: the same rows every time. The title in the class color; the count, always in
 -- its state color (the tooltip teaches the bag's colors); a blank line; then the settings:
 -- the cap and the low mark in white, SSF paused as a red Yes or a green No; every label in

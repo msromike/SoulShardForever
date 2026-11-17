@@ -5,8 +5,8 @@
 --   "Soul bag" picked (counterSoulBag) and a soul bag equipped: that soul bag's button,
 --     the reagent slot first, then bag 4 down to bag 1. The bag's slot does not matter.
 --   otherwise: the far-left bag button (bag 4, CharacterBag3Slot). Bag buttons are always
---     on the bar on this client, empty or not (no bag bar collapse: checked in game
---     2026-10-21 and 2026-10-22), so the anchor always exists.
+--     on the bar on this client, empty or not (no bag bar collapse: checked in game), so
+--     the anchor always exists.
 -- LowGlow sits on the same button: after every refresh the button and the count go out as
 -- SSF_COUNTER_UPDATED, so the glow never reads the bags or the anchor itself.
 -- On a soul bag button the game draws its own number (CharacterReagentBag0SlotCount on the
@@ -17,12 +17,12 @@
 -- Font is the profile's LibSharedMedia font name (Arial Narrow by default: its digits have
 -- air between them). Size is the largest that fits inside the button face with 15% of
 -- the face kept clear on each side, the outline counted, between MIN_SIZE and MAX_SIZE.
--- The old two-pixel margin let the number fill the face edge to edge and hide the bag
--- (Mike, 2026-10-21). Colored on the one state scale (Cap:State, Colors:ForState) when
--- "Colorize" is on; white when off, and white while paused or quiet (State answers
--- "paused" or "quiet"). Under the number, the bag's icon is darkened by BACKING, so the
--- number reads on a light bag: the count comes first, the bag only has to stay
--- recognizable (Mike, 2026-10-22). It shows and hides with the number.
+-- The old two-pixel margin let the number fill the face edge to edge and hide the bag.
+-- Colored on the one state scale (Cap:State, Colors:ForState) when "Colorize" is on; white
+-- when off, and white while paused or quiet (State answers "paused" or "quiet"). Under
+-- the number, the bag's icon is darkened by BACKING, so the number reads on a light bag:
+-- the count comes first, the bag only has to stay recognizable. It shows and hides with
+-- the number.
 --
 -- Public:  Refresh() (LowGlow asks it once at enable, to hear the first state);
 --          OnSoulBag() -> bool, true when "Soul bag" is the saved place and a soul bag is
@@ -56,7 +56,7 @@ local MARGIN = 0.15 -- of the face kept clear on each side of the number (so it 
 local OUTLINE = 1  -- px the OUTLINE flag draws round each glyph; GetStringWidth leaves it out
 local MAX_SIZE, MIN_SIZE = 48, 6
 local BACKING = 0.6 -- alpha of the black laid over the bag's icon under the number: the number
-                    -- reads on a light bag, the bag still shows through (Mike, 2026-10-22)
+                    -- reads on a light bag, the bag still shows through
 
 -- The bag bar button for an equipped bag: bags 1-4 are CharacterBag0Slot-CharacterBag3Slot,
 -- the reagent slot is CharacterReagentBag0Slot.

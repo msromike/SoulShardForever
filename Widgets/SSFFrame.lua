@@ -112,7 +112,7 @@ local ROUNDING = 1
 local GRAB = 60                       -- px of the window that always stay on screen
 -- The dialog background art is black with some transparency, so tinting it does nothing;
 -- a plain black layer under the content, inside the border, is what makes the window
--- read darker. Its alpha was picked by eye (Mike, 2026-10-20): 0.3 is "a little darker"
+-- read darker. Its alpha was picked by eye: 0.3 is "a little darker"
 -- than the bare art, enough to read over bright scenery without going flat.
 local SHADE = 0.3
 local SHADE_INSET = 8                 -- the border's width: the layer stays inside it

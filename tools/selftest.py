@@ -7,7 +7,7 @@ Job:    prove that tools/check.py still catches what it is there to catch. Each 
         object, and passes only if that step FAILS and says why in the words expected.
         Then the file's original bytes go back. A check can rot in the worst way, by
         still printing ALL PASS; this is what would notice. Every case here was first run
-        by hand, 2026-11-16, when its step was written.
+        by hand when its step was written.
         Add a case with the check it proves: a new step in check.py with no case here is
         a step nobody has seen fail.
 Takes:  nothing, or words to match against case names (`python tools/selftest.py window`
@@ -372,8 +372,8 @@ CASES = [
 
 def prose_only_cases():
     """Cases found from the headers themselves: a module or a profile key that a header
-    names only in its prose, outside Reads and Saves, gets a new use in that file. The rule
-    before 2026-11-16 let these pass (named "somewhere in the header" was enough)."""
+    names only in its prose, outside Reads and Saves, gets a new use in that file. An
+    earlier rule let these pass (named "somewhere in the header" was enough)."""
     reg = check.module_registry()
     modules = [m for m in reg if m != check.ADDON]
     keys = set()

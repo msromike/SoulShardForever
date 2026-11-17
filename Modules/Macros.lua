@@ -47,7 +47,7 @@ local ORDER = { "LT", "BoA" }
 local ICON = 134400 -- INV_Misc_QuestionMark: with #showtooltip the button shows the spell's icon
 
 -- The slot limits. Constants.MacroConsts on this client (the MAX_*_MACROS globals are nil);
--- the numbers are its values (spike 4, 2026-10-19), in case the table is missing.
+-- the numbers are its values (read in game), in case the table is missing.
 local function Limits()
     local k = Constants and Constants.MacroConsts
     return k and k.MAX_ACCOUNT_MACROS or 120, k and k.MAX_CHARACTER_MACROS or 30
@@ -130,9 +130,9 @@ function Macros:Create()
     end
     -- A new macro shows a stale icon (another macro's) until the next reload, even made
     -- exactly as Blizzard's macro window makes it, and nothing short of a reload clears it
-    -- (tested in game, 2026-10-19). So: hand the note's button /reload to run as its click
-    -- (the secure path; a direct ReloadUI() from addon code can be blocked, as MSBT's was on
-    -- 2026-11-08), then open the macro window on them.
+    -- (tested in game). So: hand the note's button /reload to run as its click (the secure
+    -- path; a direct ReloadUI() from addon code can be blocked, as MSBT's has been), then
+    -- open the macro window on them.
     SSF.db.profile.macroWindowAfterReload = true
     return "/reload"
 end

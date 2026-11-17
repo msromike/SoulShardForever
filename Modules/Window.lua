@@ -317,7 +317,7 @@ end
 
 -- A position reset: the saved spot is forgotten, so Open puts the window in the center of
 -- the screen (no spot is the center), now and on every later open until the player drags
--- it. Every open SSF makes by itself does this (Mike, 2026-11-15); an open the player
+-- it. Every open SSF makes by itself does this; an open the player
 -- asks for keeps his spot. Decided here, once, for every note that opens the window.
 local function Center()
     local saved = SSF.db.profile.window

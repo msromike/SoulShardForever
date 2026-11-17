@@ -68,7 +68,7 @@ L["No"] = true
 
 -- Tooltips: the help button, each option's help line while help mode is on, the bottom
 -- buttons' lines and the first-load welcome. Plain sentences: the tooltip wraps them
--- itself. Mike's final text, 2026-10-19.
+-- itself. The wording is final and deliberate.
 L["Help OFF: Click to show tooltip help when you hover over an option."] = true
 L["Help ON: Click to hide tooltip help."] = true
 L["Pause stops SSF from moving or deleting shards until you unpause."] = true

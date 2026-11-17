@@ -44,9 +44,9 @@ local function HandleCommand(input)
         AceConfigCmd:HandleCommand("ssf", APP, "")
         return
     end
-    -- a whole number on its own is the cap: "/ssf 32" is "/ssf setmax 32" (a player's ask,
-    -- 2026-11-16). Options runs setmax's own command, marked short, so Settings checks the
-    -- range and answers a bad value in the short form the player typed. Why not through
+    -- a whole number on its own is the cap: "/ssf 32" is "/ssf setmax 32" (a player's ask).
+    -- Options runs setmax's own command, marked short, so Settings checks the range and
+    -- answers a bad value in the short form the player typed. Why not through
     -- AceConfigCmd: Options:SetCapShortForm says.
     if input:match("^%d+$") then
         Options():SetCapShortForm(input)

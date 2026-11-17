@@ -15,9 +15,9 @@ Speed:  the kept copy is downloaded again only when its upstream's version chang
         asked at once: the revision number a repos.wowace.com folder listing states (their
         projects are Subversion; no Subversion client is needed to read the number), or
         the commit `git ls-remote` gives for a GitHub branch or tag. A library that does
-        need fetching has its files downloaded at once, on threads. Measured 2026-11-16:
-        17 s before (everything, one request after another), 2 s with nothing kept, under
-        half a second on a normal run.
+        need fetching has its files downloaded at once, on threads. Measured: 17 s before
+        (everything, one request after another), 2 s with nothing kept, under half a
+        second on a normal run.
 Takes:  --apply (copy upstream over Libs/; every library is downloaded fresh first, the
         kept copy is not trusted for a bump); --quiet (one line per library); --keep
         (accepted and does nothing: tools/.sync/ is always kept now, so a drifted file can

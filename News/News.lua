@@ -23,8 +23,8 @@
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The first announcement: a short roadmap, in Mike's words (2026-11-15). Shipped switched
--- on in 1.14.0 and 1.15.0; switched off in 1.15.1 (Mike, 2026-11-16).
+-- The first announcement: a short roadmap, its wording deliberate. Shipped switched on in
+-- 1.14.0 and 1.15.0; switched off in 1.15.1.
 NS.news = {
     id = 11400,
     on = false,

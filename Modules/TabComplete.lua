@@ -5,7 +5,7 @@
 -- words (ChatWords), each toggle with its value words (Settings:ValueWords); a hidden word
 -- is never offered. One completion set of whole phrases, never a second set on
 -- "/ssf <key> ": a set nested inside another can move AceTab's insert point, and on AceTab
--- 11 a Tab then replaced from the wrong place (seen in game 2026-10-22). Sorted, so a Tab
+-- 11 a Tab then replaced from the wrong place (seen in game). Sorted, so a Tab
 -- cycles in the order the list prints (AceTab 12 keeps the order; 11 scrambles it). On an
 -- ambiguous Tab it prints the part being chosen on one line: the value words when every
 -- match is under one command word, otherwise the command words.

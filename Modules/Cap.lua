@@ -5,8 +5,8 @@
 -- paused, quiet before Drain Soul, otherwise against them.
 --   The cap: AutoMax on AND a soul bag equipped -> the soul bags' slot total, and that
 --            number is written into the saved cap as it changes, so turning AutoMax off
---            leaves the cap where the player last saw it (no hidden value jumping back:
---            Mike, 2026-10-20); otherwise the saved cap, clamped to MIN-MAX and whole.
+--            leaves the cap where the player last saw it (no hidden value jumping back);
+--            otherwise the saved cap, clamped to MIN-MAX and whole.
 --   The low mark: the saved Low shard mark, never above the cap. SetLowMark is its one
 --     setter (Options' slider) and holds it there; LowMark reads it no higher than the
 --     cap, so a module that hears a bag change before Cap does still reads it right. The
@@ -14,14 +14,13 @@
 --     Options), and when the cap drops under it (Match soul bag size, a lower cap)
 --     Recompute writes it down to the cap,
 --     once, where the player sees it move. What the slider shows is what is saved: no
---     hidden value, nothing comes back by itself when the cap rises (Mike, 2026-10-20).
+--     hidden value, nothing comes back by itself when the cap rises.
 --   State(count): "paused" while SSF is paused, whatever the count (the player is
 --     stockpiling on purpose: red "go farm" and yellow "delete one" would argue with that,
---     so the count goes white and the border off until unpause; Mike, 2026-10-21). Then
---     "quiet" until the character knows Cap.QUIET_UNTIL, Drain Soul: before it there is no way
---     to get a shard, so "go farm" would be a lie (white, no border, like paused; Mike,
---     2026-10-21). Then "over" above the cap (over the cap wins), "low" below the low mark,
---     "ok" between.
+--     so the count goes white and the border off until unpause). Then "quiet" until the
+--     character knows Cap.QUIET_UNTIL, Drain Soul: before it there is no way to get a
+--     shard, so "go farm" would be a lie (white, no border, like paused). Then "over"
+--     above the cap (over the cap wins), "low" below the low mark, "ok" between.
 --   The quiet state ends once: when the spell turns up known (a learn, or the spell list
 --     arriving late at login), Cap sends SSF_QUIET_ENDED, with learned = true only when a
 --     learn event came first, so a login never counts as learning it.
@@ -57,7 +56,7 @@ local Cap = SSF:NewModule("Cap", "AceEvent-3.0")
 Cap.MIN, Cap.MAX = 1, 100
 
 -- The spell that ends the quiet state: Drain Soul (Rank 1), learned at 10 (wowhead classic
--- spell 1120). Tested on the stress test 2026-10-21 with Immolate (348) standing in: any
+-- spell 1120). Tested on the stress test with Immolate (348) standing in: any
 -- trainer spell the character lacks makes a test shot.
 Cap.QUIET_UNTIL = 1120
 

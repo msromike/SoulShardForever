@@ -4,8 +4,8 @@
 # check's own self-test: tools/selftest.py breaks one thing at a time on purpose and fails
 # unless the check catches each break for the expected reason. A map that comes out
 # different from the committed one fails the run, because the committed map must always
-# match the code. Runs on every push and every pull request, so a contribution is held to
-# the same gate as the owner's own work.
+# match the code. Runs on every push and every pull request, so every contribution, from
+# anyone, is held to the same gate.
 name: check
 
 on:

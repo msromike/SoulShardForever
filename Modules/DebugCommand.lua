@@ -35,7 +35,7 @@ function DebugCommand:Run(input)
         return
     elseif word ~= "" then
         -- each bar doubled: in chat a single bar starts an escape code, and "|r" (in
-        -- "|report") is the end-color code, which the game ate (Test Card 21)
+        -- "|report") is the end-color code, which the game eats
         SSF:Print("Use: /ssf debug on||off||mark <name>||report||clear")
         return
     end

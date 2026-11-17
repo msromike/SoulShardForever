@@ -16,7 +16,7 @@
 -- drag, the "+" or the typed box, is set back to the bound before AceConfigDialog hears
 -- of it; the "+" greys at the bound; the track beyond the bound is drawn dim with a gold
 -- tick TICK pixels wide at its edge, running TICK_BELOW past the slider's bottom (under where the cap thumb sits on the slider above), so
--- the slider reads "this much is yours, that much is off limits" (Mike, 2026-10-20).
+-- the slider reads "this much is yours, that much is off limits".
 -- The label is left-justified (the stock Slider centers it), so it lines up with the
 -- dropdown labels and checkboxes in the window.
 --
@@ -52,8 +52,8 @@ local GAP = 4          -- between a button and the value box
 local VALUE_BOX = 44   -- the value box: room for three digits
 local DIM = 0.5        -- alpha of the black over the rail beyond the bound (picked by eye)
 local RAIL_INSET = 3   -- the stock Slider anchors its rail this far in from each side
-local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint: Mike, 2026-10-21)
-local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above (Mike, 2026-10-21)
+local TICK = 2         -- width of the gold line at the bound's edge (1 read too faint)
+local TICK_BELOW = 3  -- px the tick runs on below the slider: no room above
 
 -- the bound as a number right now, or nil for none
 local function Bound(self)

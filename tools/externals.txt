@@ -1,6 +1,6 @@
-# Where each embedded library comes from. This was the .pkgmeta externals block until
-# 2026-10-20; the libraries are now committed under Libs/ and ship as is, so the packager
-# no longer reads this. tools/sync_libs.py does: it reports drift from these upstreams on
+# Where each embedded library comes from. This was once the .pkgmeta externals block; the
+# libraries are now committed under Libs/ and ship as is, so the packager no longer reads
+# this. tools/sync_libs.py does: it reports drift from these upstreams on
 # every check, and copies them in with --apply when a bump is wanted. Same syntax as the
 # .pkgmeta block, so it can go back there if that is ever wanted.
 
@@ -17,7 +17,7 @@ Libs/AceLocale-3.0: https://repos.wowace.com/wow/ace3/trunk/AceLocale-3.0
 Libs/AceGUI-3.0: https://repos.wowace.com/wow/ace3/trunk/AceGUI-3.0
 Libs/AceConfig-3.0: https://repos.wowace.com/wow/ace3/trunk/AceConfig-3.0
 # AceTab-3.0 carries a local fix, version 14: registrations survive an upgrade, no jump-back,
-# and Tab cycles in order. Sent upstream as three PRs on 2026-10-22 (#28, #29, #30). Its drift
+# and Tab cycles in order. Sent upstream as three PRs (#28, #29, #30). Its drift
 # line in the check is expected until upstream has all three. An --apply puts the stock version
 # back; restore this folder from git afterwards.
 Libs/AceTab-3.0: https://repos.wowace.com/wow/ace3/trunk/AceTab-3.0

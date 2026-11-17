@@ -8,7 +8,7 @@
 --
 -- When Welcome opens the window by itself (at load, and when the trainer closes after Drain
 -- Soul is learned) the window goes to the center of the screen, whatever spot was saved,
--- and the center is the character's spot from then on (Window's automatic open; Mike, 2026-11-15).
+-- and the center is the character's spot from then on (Window's automatic open).
 -- "Create macros" and a note that comes back with the player's own open leave the window
 -- where it is.
 --
@@ -20,11 +20,11 @@
 -- Drain Soul (Cap's quiet state): while quiet, the note leads with one more line under the
 -- help pointer, in green, that it comes back at level 10. Learning the spell owes the note again, under its own title, and
 -- it shows when the trainer window closes, so it never lands on the trainer while the
--- player is still buying (Mike, 2026-10-21). Learned away from a trainer, it waits for the
+-- player is still buying. Learned away from a trainer, it waits for the
 -- next load or window open, like any owed note.
 --
 -- While the note is open it follows the Language setting: Options' rebuild fills it again,
--- in place, in the language the window now shows (Mike, 2026-11-15, as NewsShow does).
+-- in place, in the language the window now shows (as NewsShow does).
 --
 -- Public:  Show(auto) (the note, through Window:ShowNote; auto: Welcome is opening the
 --          window by itself, which Window turns into a centered open).
@@ -50,7 +50,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 -- The welcome's version, two digits per part (Blizzard's ## Interface scheme): 1.8 = 10800.
 -- Raised only when the note changes, so players see a changed note once. 1.8.1 raised it:
 -- the note was redone and Delete Shard moved. 1.10.0 raises it again: the quiet state
--- changed the note, and it is the last release (Mike, 2026-10-22).
+-- changed the note.
 local WELCOME_VERSION = 11000
 
 -- in a fight: Combat's question for the window (the window and the note close together)

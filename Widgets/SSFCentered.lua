@@ -214,7 +214,7 @@ do
     local RADIO = 16  -- the stock radio art, smaller than the check box's
     local RADIO_INSET = (BOX - RADIO) / 2 -- the radio art's margin inside the check box's square
     local CHOICE_GAP = BOX -- px from one choice's label to the next choice's button on a shared
-                           -- row: one check box width, the window's own unit (Mike, 2026-11-12)
+                           -- row: one check box width, the window's own unit
     -- px of empty row under a control with `after`: SSF's half line, whose one home is
     -- Core. Read when a control is set up, not here: Core loads after the widgets.
     local function HalfLine() return LibStub("AceAddon-3.0"):GetAddon("SSF").HALF_LINE end
