@@ -9,10 +9,11 @@
 -- beside a copy of its "i", a body line in gold and a divider, then the optional lead (a
 -- line, gold unless its text carries its own color, with its own divider under it: the two
 -- show together or not at all, so dividers never double), then the blocks (paragraphs
--- left-justified, macros each in a dark box), a small note above the button, the button (a
--- secure action button, as wide as its text, centered; or, when the owner gives a tick box
--- with it, at the right of one row with the tick box at the left, as the plain layout's
--- row), and a gold note line last. It closes by its own X.
+-- left-justified, macros each in a dark box), a tick box on its own row when the owner
+-- gives one (under the blocks, above the button: beside the button it made the note too
+-- wide, seen in game), a small note above the button, the button (a
+-- secure action button, as wide as its text, centered), and a gold note line last. It
+-- closes by its own X.
 --   The plain layout (look.plain; the announcement's): the title, a divider, the blocks
 -- (drawn as in the welcome layout: a macro in its dark box),
 -- a second divider, then one row with a tick box at the left and the button at the right,
@@ -46,8 +47,9 @@
 --            button: what a click does), buttonDisabled (greys the button), buttonLabels
 --            (a list of every label the button may carry: it is as wide as the widest, so
 --            it keeps its size from one Show to the next), tick, ticked and onTick (a
---            tick box at the button's left, as in the plain layout below; its tick never
---            relabels the button here, the owner shows the note again), onClose
+--            tick box on its own row above the button's note, read as in the plain
+--            layout below; its tick never relabels the button here, the owner shows the
+--            note again), onClose
 --            (called once when the note closes). titleColor: { r, g, b } or nil.
 --            The plain layout reads title, blocks, button, onClick and onClose, and: tick
 --            (the tick box's label), ticked (true: the box starts ticked; every Show
@@ -77,7 +79,7 @@
 --          the button's macro text and runs as the click (Macros hands it /reload).
 -- Touches nothing else.
 
-local Type, Version = "SSFSideNote", 5
+local Type, Version = "SSFSideNote", 6
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's colors (the addon is loaded by the time a widget is made)
@@ -215,19 +217,11 @@ local function Fit(self)
         self.frame:SetHeight(y + row + SIDE_PAD)
         return
     end
+    -- the tick box on its own row, at the paragraphs' left edge, right under the blocks it
+    -- changes and above the button it steers
+    if self.ticking then Place(self.check.frame, self.check.frame:GetHeight() or 0, SIDE_TEXT_PAD) end
     if self.buttonNote:IsShown() then Place(self.buttonNote, self.buttonNote:GetStringHeight()) end
-    if self.ticking and self.button:IsShown() then -- the tick box at the left, the button at the right, on one row
-        local check, button = self.check.frame, self.button
-        local row = math.max(check:GetHeight() or 0, button:GetHeight() or 0)
-        y = y + SIDE_ROW_GAP
-        check:ClearAllPoints()
-        check:SetPoint("TOPLEFT", self.layer, "TOPLEFT", SIDE_TEXT_PAD, -(y + (row - check:GetHeight()) / 2))
-        button:ClearAllPoints()
-        button:SetPoint("TOPRIGHT", self.layer, "TOPRIGHT", -SIDE_TEXT_PAD, -(y + (row - button:GetHeight()) / 2))
-        y = y + row
-    elseif self.button:IsShown() then
-        Place(self.button, self.button:GetHeight())
-    end
+    if self.button:IsShown() then Place(self.button, self.button:GetHeight()) end
     if (self.note:GetText() or "") ~= "" then Place(self.note, self.note:GetStringHeight()) end
     self.frame:SetHeight(y + SIDE_PAD)
 end
@@ -327,7 +321,7 @@ local methods = {
         local clearX = 2 * (self.close:GetWidth() or 0)
         local width = math.floor(math.max((windowWidth or 0) * SIDE_WIDTH,
             clearX + (self.title:GetUnboundedStringWidth() or 0)))
-        if self.plain or self.ticking then width = math.max(width, TickRowWidth(self)) end
+        if self.plain then width = math.max(width, TickRowWidth(self)) end
         self.frame:SetWidth(width)
         self.title:SetWidth(width - 2 * SIDE_PAD)
         for _, divider in ipairs({ self.divider, self.bodyDivider, self.leadDivider }) do
@@ -385,9 +379,9 @@ local methods = {
         self.button:SetShown(opts.button ~= nil)
         self.buttonNote:SetText(opts.buttonNote or "")
         self.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
-        -- the welcome layout's tick box: only when the owner gives one, beside the button
+        -- the welcome layout's tick box: only when the owner gives one, on its own row
         if not self.plain then
-            self.ticking = opts.tick ~= nil and opts.button ~= nil
+            self.ticking = opts.tick ~= nil
             if self.ticking and not self.check then MakeCheck(self) end
             if self.check then self.check.frame:SetShown(self.ticking) end
         end
