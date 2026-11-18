@@ -101,7 +101,7 @@ L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this
 L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = "SSF supprime un fragment d'âme quand vous dépassez la limite. Utilisez le raccourci %1$s, le bouton %2$s, une macro, ou combinez le tout."
 L["In a macro, put /ssf delete on the line before the ability:"] = "Dans une macro, placez /ssf delete sur la ligne avant la technique :"
 L["Create recommended macros"] = "Créer les macros recommandées"
-L["may reload your UI"] = "recharge peut-être votre interface"
+L["reloads your UI"] = "recharge votre interface"
 L["Creates the macros, %s and opens the macro box after the reload."] = "Crée les macros, %s\net ouvre la fenêtre des macros après le rechargement."
 L["Macros"] = "Macros"
 L["Update macros"] = "Mettre à jour les macros"

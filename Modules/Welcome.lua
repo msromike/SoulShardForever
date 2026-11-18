@@ -35,7 +35,7 @@
 --          says what a click would do now), LOADING_SCREEN_DISABLED once at load while a
 --          note is owed, SSF_QUIET_ENDED (learned), TRAINER_CLOSED once after a learn.
 -- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
---          button note's "may reload your UI");
+--          button note's "reloads your UI");
 --          Help:IsOn/Toggle,
 --          Window:ShowNote/RefreshNote, Combat:InFight, DeleteHelp:Blocks,
 --          Macros:Pending/Create/StopWand/SetStopWand (the note's button and its tick box:
@@ -91,7 +91,7 @@ function Note(self)
     return title, L["Click for in-game tooltip help."],
         L["You won't see this welcome screen again on this character unless you click %s in the UI."]:format(L["Macros"]),
         {
-            -- in green, the note's one highlight color (as "may reload your UI"), so it stands out from the gold
+            -- in green, the note's one highlight color (as "reloads your UI"), so it stands out from the gold
             lead = quiet and Colors:Paint(Colors.GREEN, L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."]) or nil,
             blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."]:format(L["Delete Shard"], L["Delete Shard"])),
             -- the button says what its click will do (Macros:Pending), greyed when that is
@@ -107,7 +107,11 @@ function Note(self)
                 if not command then Refill(self) end
                 return command
             end,
-            buttonNote = L["Creates the macros, %s and opens the macro box after the reload."]:format(Colors:Paint(Colors.GREEN, L["may reload your UI"])),
+            -- the reload is said only when the click will reload: when it makes a macro. An
+            -- update reloads nothing, so nothing is said
+            buttonNote = pending == "create"
+                and L["Creates the macros, %s and opens the macro box after the reload."]:format(Colors:Paint(Colors.GREEN, L["reloads your UI"]))
+                or nil,
             -- the option, beside the button: the tick changes the macros shown and what
             -- the button will do; only the click writes a macro
             tick = L["Have the macro stop your wand"],

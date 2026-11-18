@@ -111,7 +111,7 @@ L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the 
 L["In a macro, put /ssf delete on the line before the ability:"] = true
 L["Create recommended macros"] = true
 -- the phrase Welcome paints green, then the line that takes it as %s; its break is in the string
-L["may reload your UI"] = true
+L["reloads your UI"] = true
 L["Creates the macros, %s and opens the macro box after the reload."] = "Creates the macros, %s\nand opens the macro box after the reload."
 L["Macros"] = true
 L["Update macros"] = true
