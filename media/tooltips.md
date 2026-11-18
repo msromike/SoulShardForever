@@ -40,15 +40,20 @@ In a macro, put /ssf delete on the line before the ability:
 
     #showtooltip
     /ssf delete
+    /cast Drain Soul
+
+    #showtooltip
+    /ssf delete
     /cast Bane of Agony
 
-The Bane macro lets you delete on the move when you don't want to use Life Tap.
+Each macro has a /stopattack line above its /cast line while the welcome note's "Have the
+macro stop your wand" is ticked.
 
 What the player types or copies is drawn in the code color, a teal (Colors' Code): the
-/ssf delete in the lead-in line, and the two macros.
+/ssf delete in the lead-in line, and the three macros.
 
 Built by DeleteHelp (Blocks, joined by Text) from this first paragraph; the macro text
-comes from Macros (spell names by ID, 1454 and 980, in the player's language). Shown
+comes from Macros (spell names by ID, 1454, 1120 and 980, in the player's language). Shown
 through AceConfigDialog's option tooltip (Options' deletebutton). /ssf help keeps its own
 older line: "Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete on
 the line before the ability."
@@ -153,9 +158,9 @@ Auto uses game client language.
 
 ## Bottom buttons
 
-### Create macros (bottom left)
+### Macros (bottom left)
 
-Shown only while SSF_LT or SSF_BoA is missing; opens the welcome note.
+Always shown; opens the welcome note.
 
 Opens the welcome screen to create the recommended macros.
 
@@ -176,7 +181,7 @@ The same lines every time; labels grey, values as noted:
     Low shard mark      6    white, never above the cap
     SSF paused         No    green No / red Yes
 
-## Welcome note (first load, once per welcome version per character; also from Create macros)
+## Welcome note (first load, once per welcome version per character; also from Macros)
 
 ### Title (warlock purple)
 
@@ -196,20 +201,30 @@ SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybin
 
 "Delete Shard" is filled in from its own label, twice.
 
-### Line above the button (two lines, the break is in the string; "reloads your UI" in green, painted by the code and taken by each translation as an argument)
+### Tick box (its own row, under the macros)
 
-Creates the macros, reloads your UI
-and opens the macro box after the reload.
+Have the macro stop your wand
 
-### Button (as wide as its text; greyed out while both macros exist)
+Ticked, the three macros shown gain a /stopattack line above their /cast line. Only the
+button's click writes a macro.
 
-Create recommended macros
+### Line above the button (green; only when the click will make a macro, otherwise blank with its height kept)
+
+Reloads your UI
+
+### Button (as wide as the widest of its three labels; says what its click will do)
+
+Create recommended macros (a macro is missing: makes it, reloads)
+
+Update macros (none missing, an unedited one not as the tick says: rewritten in place, no reload)
+
+Macros are up to date (nothing to do: greyed out)
 
 ### Gold line (last)
 
-You won't see this welcome screen again on this character unless you click Create macros in the UI.
+You won't see this welcome screen again on this character unless you click Macros in the UI.
 
-"Create macros" is filled in from the button's label.
+"Macros" is filled in from the button's label.
 
 ## Red error text (top of the screen)
 

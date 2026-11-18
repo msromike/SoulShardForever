@@ -68,7 +68,7 @@ Every keybind press or macro click deletes one shard if you're over the cap, and
   /cast Life Tap
   ```
 
-- Or let SSF make it: click *Create macros* at the bottom of the window. It makes the Life Tap macro and a Bane of Agony macro, then opens your macro window so you can drag them onto your bars.
+- Or let SSF make them: click *Macros* at the bottom of the window. It makes a Life Tap, a Drain Soul and a Bane of Agony macro, then opens your macro window so you can drag them onto your bars.
 - Or tap your keybind whenever.
 - Set the cap with the slider, or tick *Match soul bag size*: a 14-slot bag means a cap of 14.
 - Or a sort mode, if you prefer your shards in one solid block, top down or bottom up.

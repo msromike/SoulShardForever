@@ -52,16 +52,23 @@ The game lets an addon destroy one item per keypress. SSF deletes one shard per 
   ```
   #showtooltip
   /ssf delete
+  /cast Drain Soul
+  ```
+
+  ```
+  #showtooltip
+  /ssf delete
   /cast Bane of Agony
   ```
 
   The Bane one deletes on the move: with no target it doesn't cast, but the delete still
   fires.
 
-  Or let SSF make both: click **Create macros** at the bottom left of the window (it shows
-  while either is missing), then **Create recommended macros**. SSF makes them as SSF_LT
-  and SSF_BoA, reloads your UI, and opens the macro window with them glowing until you
-  drag them onto a bar.
+  Or let SSF make them: click **Macros** at the bottom left of the window, then **Create
+  recommended macros**. SSF makes them as SSF_LT, SSF_DS and SSF_BoA, reloads your UI, and
+  opens the macro window with them glowing until you drag them onto a bar. Tick **Have the
+  macro stop your wand** to add a `/stopattack` line to all three; **Update macros**
+  changes the ones you already have, with no reload.
 
 - **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason on the button: your cap (cap is 8), SSF paused, no Drain Soul yet or shard locked. The window closes itself when a fight starts and opens again only after it.
 
