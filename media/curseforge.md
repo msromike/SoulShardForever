@@ -6,7 +6,7 @@
 
 - **Delete as you play:**  An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind.
 
-It comes out first as a beta on CurseForge.
+Delete as you play comes out first as a beta on CurseForge.
 
 ## <span style="color:#8788EE">Summary</span>
 

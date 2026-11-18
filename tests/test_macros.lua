@@ -143,6 +143,7 @@ test("the option turned on with the macros made: a click rewrites them in place,
     eq(Macros:Pending(), nil, "made and matching: nothing to do")
     Macros:SetStopWand(true)
     eq(Macros:Pending(), "update", "the option changed: the click would update")
+    eq(Macros:Reloads(), false, "and says beforehand that it reloads nothing")
     eq(Macros:Create(), nil, "no reload")
     eq(bodies().LT, Macros:Body("LT", true), "Life Tap's has the line")
     eq(bodies().DS, Macros:Body("DS", true), "Drain Soul's")
@@ -178,6 +179,7 @@ test("one missing with the option on: made with the line, the others rewritten, 
     table.remove(WoW.macroList.character, 2) -- SSF_DS gone: the two an older SSF made
     Macros:SetStopWand(true)
     eq(Macros:Pending(), "create", "a missing macro comes first")
+    eq(Macros:Reloads(), true, "and the click says beforehand that it reloads")
     eq(Macros:Create(), "/reload", "a macro was made: reload")
     eq(bodies().DS, Macros:Body("DS", true), "the new one with the line")
     eq(bodies().LT, Macros:Body("LT", true), "and the two that were there too")

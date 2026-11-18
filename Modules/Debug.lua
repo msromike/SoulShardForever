@@ -76,7 +76,7 @@
 --          attach the first time the record is turned on and stay for the session, doing
 --          nothing while it is off: a secure hook cannot be taken off again, and hooking
 --          afresh at every "on" would stack one more wrapper each time.
--- Reads:   Bags:Count/GameCount/ForEachShard/NumSlots/IsSoulBag/IsRegularBag, Cap:Get; SSF.VERSION;
+-- Reads:   Bags:Count/GameCount/ForEachShard/Ids/NumSlots/IsSoulBag/IsRegularBag, Cap:Get; SSF.VERSION;
 --          profile.debugLog, debugLogin.
 -- Saves:   profile.debugLog (every event; Clear); profile.debugLogin (true from
 --          WatchNextLogin until the next login or reload takes it).
@@ -249,7 +249,7 @@ end
 local function BagFacts()
     local Bags = SSF:GetModule("Bags")
     local list = {}
-    for bag = 0, Enum.BagIndex.ReagentBag do
+    for _, bag in ipairs(Bags:Ids()) do
         local slots = Bags:NumSlots(bag)
         local kind = slots == 0 and "" or Bags:IsSoulBag(bag) and " soul" or Bags:IsRegularBag(bag) and " plain" or " other"
         list[#list + 1] = bag .. ":" .. slots .. kind

@@ -1,15 +1,16 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Welcome: the first-load welcome. The first time a character loads SSF, the window opens
--- by itself with a note beside it: the help button, every way to delete, and the button
--- that makes the macros. Once per WELCOME_VERSION, so players updating from an SSF with an
+-- by itself with a note beside it: the help button, every way to delete, the tick box for
+-- the macros' one option and the button that makes the macros or brings them in line with
+-- it. Once per WELCOME_VERSION, so players updating from an SSF with an
 -- older note see the new one once too. Waits for the loading screen to go, so the window
--- opens into a drawn, shown UI. The main window's "Create macros" shows the same note.
+-- opens into a drawn, shown UI. The main window's "Macros" shows the same note.
 --
 -- When Welcome opens the window by itself (at load, and when the trainer closes after Drain
 -- Soul is learned) the window goes to the center of the screen, whatever spot was saved,
 -- and the center is the character's spot from then on (Window's automatic open).
--- "Create macros" and a note that comes back with the player's own open leave the window
+-- "Macros" and a note that comes back with the player's own open leave the window
 -- where it is.
 --
 -- Once shown, the note is owed until the player closes it outside a fight: showing it
@@ -38,9 +39,10 @@
 --          button note's "Reloads your UI");
 --          Help:IsOn/Toggle,
 --          Window:ShowNote/RefreshNote, Combat:InFight, DeleteHelp:Blocks,
---          Macros:Pending/Create/StopWand/SetStopWand (the note's button and its tick box:
---          the button's label is what a click would do, Create's return is the click's
---          command, the tick is Macros' option).
+--          Macros:Pending/Reloads/Create/StopWand/SetStopWand (the note's button and its
+--          tick box: the button's label is what a click would do, the green line whether
+--          it would reload, Create's return is the click's command, the tick is Macros'
+--          option).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
 --          Soul is learned), and WELCOME_VERSION once the player closes it outside a fight.
 --          profile.welcomeAgain: true from the learn until that close (the second title).
@@ -107,10 +109,10 @@ function Note(self)
                 if not command then Refill(self) end
                 return command
             end,
-            -- Above the button, in green, only when the click will reload (when it makes a
-            -- macro). Otherwise the line is kept, blank, deliberate: the button stays where
+            -- Above the button, in green, only when the click will reload (Macros says
+            -- when). Otherwise the line is kept, blank, deliberate: the button stays where
             -- it is when the words come and go.
-            buttonNote = pending == "create" and Colors:Paint(Colors.GREEN, L["Reloads your UI"]) or " ",
+            buttonNote = Macros:Reloads() and Colors:Paint(Colors.GREEN, L["Reloads your UI"]) or " ",
             -- the option, beside the button: the tick changes the macros shown and what
             -- the button will do; only the click writes a macro
             tick = L["Have the macro stop your wand"],
@@ -187,7 +189,7 @@ end
 -- before OnEnable, so other classes never get the welcome.
 function Welcome:OnEnable()
     if Owed() then self:RegisterEvent("LOADING_SCREEN_DISABLED") end
-    -- the main window's "Create macros": the same note
+    -- the main window's "Macros": the same note
     self:RegisterMessage("SSF_SHOW_WELCOME", function() self:Show() end)
     self:RegisterMessage("SSF_WINDOW_OPENED", "OnWindowOpened")
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")

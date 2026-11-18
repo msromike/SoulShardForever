@@ -33,7 +33,8 @@
 -- soul bags keep bottom first. The caller passes topFirst; Bags reads no settings. The
 -- Sorter fills along the order; the Trimmer deletes from its far end (LastShard).
 --
--- Public:  NumSlots(bag) -> n; IsShardAt(bag, slot), IsFreeAt(bag, slot),
+-- Public:  Ids() -> every bag id Bags looks at, ascending, equipped or not;
+--          NumSlots(bag) -> n; IsShardAt(bag, slot), IsFreeAt(bag, slot),
 --          IsLocked(bag, slot), IsSwappableAt(bag, slot), IsSoulBag(bag),
 --          IsRegularBag(bag), HasSoulBag() -> bool; SoulBags() -> ids ascending;
 --          SortOrder() -> ids in sort order; ForEachSlot(fn(bag, slot, position), topFirst);
@@ -61,6 +62,13 @@ local FIRST_BAG, LAST_BAG = 0, Enum.BagIndex.ReagentBag -- 0 through 5
 local function num(v)
     if type(v) == "number" then return v end
     return nil
+end
+
+-- Every bag slot Bags looks at, backpack through the reagent slot, whatever is in it.
+function Bags:Ids()
+    local ids = {}
+    for bag = FIRST_BAG, LAST_BAG do ids[#ids + 1] = bag end
+    return ids
 end
 
 function Bags:NumSlots(bag)

@@ -27,6 +27,7 @@
 --          StopWand() -> bool, the option; SetStopWand(on),
 --          Pending() -> what a click would do: "create" (a macro is missing), "update"
 --          (none missing, an unedited one not as the option says), or nil (nothing),
+--          Reloads() -> bool, a click now would end in a reload (it would make a macro),
 --          Create() -> "/reload" once it made macros, else nil.
 --          key: "LT" (Life Tap), "DS" (Drain Soul) or "BoA" (Bane of Agony).
 --          BodyFor(spellName, lines) -> the same macro text for any spell's name: the
@@ -147,6 +148,13 @@ function Macros:Pending()
     if #Stale() > 0 then return "update" end
 end
 
+-- A click now would end in a reload: only making a macro needs one (a new macro's icon is
+-- stale until then), a rewrite never does. The one place that rule is decided; Create
+-- hands back /reload by it.
+function Macros:Reloads()
+    return #Missing() > 0
+end
+
 -- Blizzard's macro window on the character tab (2) or the account tab (1), that macro
 -- selected. Selection is by position within the tab: the character tab starts after the
 -- account slots. Opening always lands on the account tab first.
@@ -197,7 +205,7 @@ function Macros:Create()
     for _, key in ipairs(stale) do
         EditMacro(GetMacroIndexByName(MACROS[key].name), nil, nil, self:Body(key))
     end
-    if #missing == 0 then return end -- only rewrites: no reload
+    if not self:Reloads() then return end -- only rewrites: no reload
     for _, key in ipairs(missing) do
         CreateMacro(MACROS[key].name, ICON, self:Body(key), perChar)
     end
