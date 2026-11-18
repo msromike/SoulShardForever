@@ -1,5 +1,22 @@
 # Changelog
 
+## 1.17.0 (2026-11-18)
+
+- Three recommended macros now: a Drain Soul macro joins Life Tap and Bane of Agony.
+  Create recommended macros makes the one you're missing.
+- A new option in the welcome note: Have the macro stop your wand. Ticked, the three
+  macros get a /stopattack line, so the spell goes off on the first press while you're
+  wanding. Update macros changes the ones you already have, with no reload. A macro you
+  edited yourself is left alone.
+- The Macros button at the bottom left of the window is always there. It was Create
+  macros, and only showed while a macro was missing.
+- Fixed: on the first login after starting the game, the login line could count too few
+  shards. It missed the ones in your soul pouch.
+- Fixed: with a note beside it, the window could jump back to the middle of the screen
+  when you opened your mailbox or the auction house. It stays where you drag it now.
+- The announcement is updated, and the welcome note shows once more with the new macros.
+- For troubleshooting: /ssf debug login records your next login from its first moment.
+
 ## 1.16.0 (2026-11-18)
 
 - Delete in combat: your delete key and the /ssf delete line in your macros now delete a

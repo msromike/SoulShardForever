@@ -1,6 +1,7 @@
-## <span style="color:#8788EE">New in 1.16.0</span>
+## <span style="color:#8788EE">New in 1.17.0</span>
 
 - **Delete in combat:**  Your delete key and your /ssf delete macros delete a Soul Shard both in and out of combat.
+- **Reworked macros:**  SSF now makes three recommended macros (Life Tap, Drain Soul and Bane of Agony), and one tick has them stop your wand so the spell goes off on the first press.
 
 ## <span style="color:#8788EE">Coming soon</span>
 

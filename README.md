@@ -2,6 +2,7 @@
 
 ## Features
 
+- Have the macro stop your wand: one tick adds /stopattack to the recommended macros, so the spell goes off on the first press. (1.17.0)
 - Delete in combat: your delete key and your /ssf delete macros work in the middle of a fight. (1.16.0)
 - Sound volume slider for the pause sound, from Off to Max. (1.16.0)
 - Set your cap from chat with just a number: /ssf 25. (1.15.0)
@@ -14,7 +15,7 @@
 - Shard count on data broker bars (Titan Panel, EllesmereUI's data bars and the like). (1.9.0)
 - Delete Shard sits right beside your shard count at the top of the window. (1.8.1)
 - The minimap tooltip shows your count, cap, low mark and pause, every time. (1.8.1)
-- One click makes the recommended macros: Create macros, at the bottom left of the window. (1.8.0)
+- One click makes the three recommended macros: Macros, at the bottom left of the window. (1.8.0)
 - In-game tooltip help: click the "i" in the window. (1.7.0)
 - SSF Mode: shards move into your soul bag, and nothing else in your bags moves. (1.6.0)
 - Pause all SSF actions so you can stockpile for raid night. (1.5.0)

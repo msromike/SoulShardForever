@@ -1,6 +1,7 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Welcome: the first-load welcome. The first time a character loads SSF, the window opens
+-- Welcome: the welcome note, which is also where the recommended macros are made and kept
+-- in line with their option, at any time. The first time a character loads SSF, the window opens
 -- by itself with a note beside it: the help button, every way to delete, the tick box for
 -- the macros' one option and the button that makes the macros or brings them in line with
 -- it. Once per WELCOME_VERSION, so players updating from an SSF with an
