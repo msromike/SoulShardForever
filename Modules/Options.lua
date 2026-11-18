@@ -239,7 +239,7 @@ local function BuildTable()
     -- off without the help; the value box keeps the percentage.
     local pausesoundGui = Settings:Define("pausesound", {
         order = 2, kind = "range",
-        name = L["Pause sound"],
+        name = L["Sound volume"],
         min = 0, max = 1, step = Sounds():LevelStep(),
         get = function() return SSF.db.profile.pauseSoundLevel end,
         apply = function(value) SSF.db.profile.pauseSoundLevel = value end,

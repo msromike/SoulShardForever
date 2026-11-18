@@ -56,7 +56,7 @@ the line before the ability."
 
 Pause stops SSF from moving or deleting shards until you unpause.
 
-### Pause sound (the slider)
+### Sound volume (the slider)
 
 How loud the pause sound plays. 0% turns it off. Let go to hear it.
 
