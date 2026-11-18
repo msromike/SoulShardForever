@@ -4,8 +4,10 @@
 -- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
 -- moves or deletes anything. Every other module reads the bags through these methods and
 -- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE. Two
--- exceptions: Status listens to the game's BAG_UPDATE_DELAYED at a fresh login, for its
--- login line; and Debug to the same at a watched login, to note what the bags looked like.
+-- exceptions, both for the moment of a login, which the bucket is too late for: Status
+-- listens to the game's BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED at a fresh login, to
+-- ask CountAgrees before its login line; and Debug to the same two at a watched login, to
+-- note what the bags looked like at each, on purpose the game's own signals and not Bags'.
 --
 -- The count at a fresh login: on the first login after the game starts, the game says the
 -- bags are ready before it says what kind of bag each is. A soul pouch reads as a plain

@@ -182,12 +182,11 @@ end
 
 function Macros:Create()
     if SSF:GetModule("Combat"):Locked() then return end
-    local missing, stale = Missing(), Stale()
-
-    if #missing == 0 and #stale == 0 then -- nothing to do (the note's button is greyed out then): show them
+    if not self:Pending() then -- nothing to do (the note's button is greyed out then): show them
         ShowFirst()
         return
     end
+    local missing, stale = Missing(), Stale()
 
     local maxAccount, maxChar = Limits()
     local numAccount, numChar = GetNumMacros()
