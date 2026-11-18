@@ -1,20 +1,21 @@
 # Changelog
 
-## 1.16.0-beta.2 (2026-11-17)
-
-- Fixed: pressing delete again before the game had finished removing a shard could
-  delete a second one and take you under your cap. SSF now waits for the first to go.
-- While it waits, the Delete Shard button is grey and says "shard locked".
-- The beta announcement has a note on this fix.
-
-## 1.16.0-beta.1 (2026-11-17)
+## 1.16.0 (2026-11-18)
 
 - Delete in combat: your delete key and the /ssf delete line in your macros now delete a
   shard over your cap in the middle of a fight, not only after it.
 - In a fight a delete makes no sound, and loose shards move into your soul bag when the
   fight ends, not during it.
 - Moving a loose shard into your soul bag makes no sound.
-- A new announcement for beta players: how to use it, with three macros to copy.
+- Pressing delete again before the game has finished removing a shard waits for the
+  first to go. While it waits, the Delete Shard button is grey and says "shard locked".
+- The pause sound is one slider now: Sound volume, from Off to Max, in place of the
+  checkbox and the volume picker. Your old setting carries over at the same loudness.
+- The numbers at the ends of the three sliders sit under the bar, clear of the handle.
+- A new announcement, "Delete in Combat is Live". The welcome note shows once more: its
+  delete help no longer says SSF can't delete in combat.
+- Commands and macros in the help and the announcement are drawn in teal, and each macro
+  in the announcement sits in its own box.
 
 ## 1.15.2 (2026-11-16)
 
