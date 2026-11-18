@@ -148,7 +148,7 @@ CASES = [
     Case("widget: a window method renamed in widget and header, Window left", PUBLIC, "Widgets/SSFFrame.lua",
          "SetFooter", "SetFootLine", "calls SSFFrame:SetFooter", EVERY),
     Case("widget: a window method dropped from the widget's Public", PUBLIC, "Widgets/SSFFrame.lua",
-         "MakeRoom() (a showing note", "(a showing note", "does not list under Public"),
+         "SetTitleBand(alpha),", "(alpha),", "does not list under Public"),
     Case("widget: a typo in Window's call", PUBLIC, "Modules/Window.lua",
          "self.window:FitToContent()", "self.window:FitContent()", "calls SSFFrame:FitContent"),
     Case("widget: a side note method renamed, the loop call in SSFFrame left", PUBLIC, "Widgets/SSFSideNote.lua",

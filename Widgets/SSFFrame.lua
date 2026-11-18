@@ -15,7 +15,7 @@
 -- the content that makes the window a little darker than the bare art (SHADE, picked by
 -- eye; the notes beside get the same SHADE, help art and button height through AttachTo), an optional note on each
 -- side of the window (the SSFSideNote widget: ShowSidePanel on the right, the welcome's layout; ShowLeftPanel
--- on the left, the plain layout), room made for them on the screen (MakeRoom), Escape closes it, a bottom row of
+-- on the left, the plain layout; a note may hang off the screen, the window never moves by itself for one), Escape closes it, a bottom row of
 -- an optional right button (far right, SetRightButton), an optional action button
 -- (far left, SetActionButton), an optional middle button (SetMiddleButton) and a small
 -- footer line in the row's middle while that button is hidden (SetFooter); the buttons
@@ -36,10 +36,8 @@
 --          SetActionButton(text, onClick, tipText), SetMiddleButton(...),
 --          SetRightButton(text, onClick, tipText), SetHelpButton(onClick, isOn, tipText),
 --          ShowSidePanel(title, body, note, opts) and ShowLeftPanel(title, opts) (opts as
---          SSFSideNote:Show; the right note and the left one), MakeRoom() (a showing note
---          that would hang off the screen sends the window to the center; the owner calls
---          it after every feed, which is where the saved spot comes back and the width
---          changes), SetFooter(text). Callback: "OnMoved"(top, left).
+--          SSFSideNote:Show; the right note and the left one), SetFooter(text).
+--          Callback: "OnMoved"(top, left).
 -- Hooks:   AceHook, embedded on the widget: the stock title handle's OnMouseUp (to fire
 --          OnMoved after the stock handler saved the position) and the frame's OnHide (to
 --          close both notes with the window). Both attach in the constructor.
@@ -185,24 +183,6 @@ end
 local function SetButtonTip(button, tipText)
     button.tipText = tipText
     if tipText then RefreshTip(button) else Tooltip():Hide(button) end
-end
-
--- A note beside the window that would hang off the screen: the window goes to the center
--- of the screen, where each side has the most room (no spot in the status table is the
--- center). Asked when a note shows and after every feed, for whichever notes are showing:
--- the owner's open puts the saved spot back into the status table, and a fit changes the
--- width, so a move made once would not last.
-local function MakeRoom(self)
-    local frame = self.frame
-    local right = self.sidenote:IsShown() and self.sidenote.frame:GetWidth()
-    local left = self.leftnote:IsShown() and self.leftnote.frame:GetWidth()
-    local off = (right and (frame:GetRight() or 0) + SIDE_GAP + right > UIParent:GetRight())
-        or (left and (frame:GetLeft() or 0) - SIDE_GAP - left < UIParent:GetLeft())
-    if not off then return end
-    local status = Status(self)
-    if not (status.top and status.left) then return end -- in the center already
-    status.top, status.left = nil, nil -- ApplyStatus: no spot is the center
-    self:ApplyStatus()
 end
 
 -- SSF's methods. The ones that share a name with a stock Frame method call the stock one
@@ -403,21 +383,17 @@ local methods = {
         RefreshTip(button)
     end,
 
-    -- The note on the window's right (SSFSideNote:Show, the welcome's layout). Too near the
-    -- screen's edge for it, the window goes to the center of the screen (MakeRoom).
+    -- The note on the window's right (SSFSideNote:Show, the welcome's layout). The window
+    -- stays where it is, deliberate: near the screen's edge the note hangs off it.
     ["ShowSidePanel"] = function(self, titleText, bodyText, noteText, opts)
         self.sidenote:Show(titleText, bodyText, noteText, opts, self.titleColor)
-        MakeRoom(self)
     end,
 
     -- The note on the window's left (SSFSideNote:Show, the plain layout: a title, the
-    -- blocks, a tick box and a button). The same rule at the screen's edge.
+    -- blocks, a tick box and a button). The same at the screen's edge.
     ["ShowLeftPanel"] = function(self, titleText, opts)
         self.leftnote:Show(titleText, nil, nil, opts, self.titleColor)
-        MakeRoom(self)
     end,
-
-    ["MakeRoom"] = MakeRoom,
 
     -- the small line in the middle of the button row
     ["SetFooter"] = function(self, text)

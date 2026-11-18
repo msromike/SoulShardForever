@@ -243,9 +243,6 @@ local function Feed(self)
     if self.window:FitWidth() then AceConfigDialog:Open(APP, self.window) end
     feeding = false
     self.window:FitToContent()
-    -- the open put the saved spot back and the fit may have changed the width: a note
-    -- showing beside the window still needs its room on the screen
-    self.window:MakeRoom()
 end
 
 -- Keep the status line and the AutoMax state fresh while a window is open.
@@ -356,7 +353,9 @@ end
 -- A position reset: the saved spot is forgotten, so Open puts the window in the center of
 -- the screen (no spot is the center), now and on every later open until the player drags
 -- it. Every open SSF makes by itself does this; an open the player
--- asks for keeps his spot. Decided here, once, for every note that opens the window.
+-- asks for keeps his spot. Decided here, once, for every note that opens the window. It is
+-- the only time SSF moves the window, deliberate: a redraw, a note shown or an open the
+-- player asks for never does, even where a note beside the window hangs off the screen.
 local function Center()
     local saved = SSF.db.profile.window
     saved.top, saved.left, saved.width, saved.height = nil, nil, nil, nil
