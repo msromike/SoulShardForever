@@ -66,7 +66,7 @@ FontString  shown  enabled Welcome to SSF
 FontString  shown  enabled Click for in-game tooltip help.
 FontString  shown  enabled You won't see this welcome screen again on this character unless you click Macros in the UI.
 Button      shown  enabled Create recommended macros
-FontString  shown  enabled Creates the macros, reloads your UI / and opens the macro box after the reload.
+FontString  shown  enabled Reloads your UI
 Button      shown  enabled (no text: UIPanelCloseButton)
 FontString  shown  enabled Delete in Combat is Live
 Button      shown  enabled Remind me later
