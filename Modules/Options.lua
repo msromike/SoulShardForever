@@ -472,7 +472,7 @@ local function BuildTable()
             order = 1,
             dialogHidden = true,
             name = L["Delete Shard"],
-            desc = L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."],
+            desc = Colors():Commands(L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete on the line before the ability."]),
             func = function() SSF:GetModule("Trimmer"):Delete() end,
         },
         options = {

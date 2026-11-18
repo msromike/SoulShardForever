@@ -14,8 +14,10 @@
 -- shard mark slider. White is the neutral value color for settings. Green doubles as the
 -- branding accent on the login line, on purpose. Grey never colors a state (it reads as
 -- "disabled"); the two greys here are the tooltip's dim label and the chat command echo,
--- which is meant to read as a terminal prompt. Blue is the help "i" while help is on. Code is the macro text in the
--- welcome note's boxes, a pale blue-grey that reads as text to copy; Slate is those boxes'
+-- which is meant to read as a terminal prompt. Blue is the help "i" while help is on. Code is what the player types or
+-- copies, one color for both: a macro's text (the welcome note's boxes, the Delete Shard
+-- tooltip, an announcement) and a command named inside a sentence (/ssf delete). A teal on
+-- the blue side, clear of the state green. Slate is the macro boxes'
 -- edge. Black is every darkening layer (the title strips, the window's and the note's
 -- shade, the macro boxes' fill, the counter's backing, the dimmed slider rail); each
 -- layer's alpha is a number of the file that draws it.
@@ -35,6 +37,9 @@
 --          Colors:State(text, good) -> text in green (good) or red
 --          Colors:Gold(text) -> text in the label gold
 --          Colors:Echo(text) -> text in the command echo grey
+--          Colors:Code(text) -> text in the code color (a macro shown as text)
+--          Colors:Commands(text) -> text with each command it names (/ssf delete,
+--            /stopattack, /stopcasting) in the code color; the rest untouched
 --          Colors:Class() -> r, g, b of the warlock class color (titles only)
 -- Game internals: RAID_CLASS_COLORS.WARLOCK, the game's own table of class colors.
 -- Reads:   L for ON and OFF. Owns no state, no events, no frames.
@@ -59,7 +64,7 @@ Colors.WHITE  = Color(1, 1, 1)
 Colors.DIM    = Color(0.8, 0.8, 0.8)
 Colors.ECHO   = Color(0.5, 0.5, 0.5)
 Colors.BLUE   = Color(0.35, 0.65, 1)
-Colors.CODE   = Color(0.71, 0.80, 0.92)
+Colors.CODE   = Color(0.30, 0.85, 0.90)
 Colors.SLATE  = Color(0.3, 0.33, 0.36)
 Colors.BLACK  = Color(0, 0, 0)
 
@@ -92,6 +97,19 @@ function Colors:Value(v) return self:Paint(Colors.WHITE, v) end
 function Colors:Accent(v) return self:Paint(Colors.GREEN, v) end
 function Colors:Gold(text) return self:Paint(Colors.GOLD, text) end
 function Colors:Echo(text) return self:Paint(Colors.ECHO, text) end
+function Colors:Code(text) return self:Paint(Colors.CODE, text) end
+
+-- the commands a help text or an announcement names inside a sentence, as typed in every
+-- language (a translation keeps them as they are)
+local COMMANDS = { "/ssf delete", "/stopattack", "/stopcasting" }
+
+function Colors:Commands(text)
+    for _, command in ipairs(COMMANDS) do
+        local painted = self:Code(command)
+        text = text:gsub(command:gsub("%p", "%%%0"), function() return painted end)
+    end
+    return text
+end
 
 function Colors:OnOff(b)
     return b and self:Paint(Colors.GREEN, L["ON"]) or self:Paint(Colors.RED, L["OFF"])

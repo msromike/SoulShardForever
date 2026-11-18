@@ -814,12 +814,11 @@ def placeholders(text):
     return False, [(n + 1, t) for n, (_, t) in enumerate(found)]
 
 
-# The two keys whose code hands the translation more arguments than English uses: both
-# spell names, where English names only one. Each by the start of its key, with the most
+# The one key whose code hands the translation more arguments than English uses: both
+# spell names, where English names only one. By the start of its key, with the most
 # arguments the code passes. Any other translation uses exactly its key's arguments.
 MORE_ARGUMENTS = {
     "The Bane macro lets you delete on the move": 2,
-    "Make sure you're not targeting an enemy with the Bane macro": 2,
 }
 
 

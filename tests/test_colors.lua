@@ -11,6 +11,19 @@ local Colors = SSF:GetModule("Colors")
 
 local NAMES = { "RED", "GREEN", "YELLOW", "GOLD", "WHITE", "DIM", "ECHO", "BLUE", "CODE", "SLATE", "BLACK" }
 
+-- One color for what the player types or copies: a command named in a sentence is painted
+-- by the code, so no string and no translation carries a color.
+test("the commands a sentence names are painted in the code color, the rest left alone", function()
+    local code = function(text) return Colors:Paint(Colors.CODE, text) end
+    eq(Colors:Code("x"), code("x"), "Code paints in the code color")
+    eq(Colors:Commands("put /ssf delete first"), "put " .. code("/ssf delete") .. " first", "one command")
+    eq(Colors:Commands("/stopattack and /stopcasting help"), code("/stopattack") .. " and " .. code("/stopcasting") .. " help",
+        "two commands")
+    eq(Colors:Commands("/ssf delete, then /ssf delete"), code("/ssf delete") .. ", then " .. code("/ssf delete"), "each time it is named")
+    eq(Colors:Commands("Type /ssf help for commands."), "Type /ssf help for commands.", "another command is not on the list")
+    eq(Colors:Commands("no command here: 100%"), "no command here: 100%", "nothing to paint, a percent sign kept")
+end)
+
 test("every color's hex is its r, g, b in 255ths", function()
     for _, name in ipairs(NAMES) do
         local c = Colors[name]

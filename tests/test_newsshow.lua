@@ -96,6 +96,22 @@ test("a paragraph's lead is gold, its text follows in white after two spaces", f
     eq(blocks[2].blank, nil, "and only where it was asked for")
 end)
 
+-- What the player types or copies is in the code color: a macro paragraph whole, and in
+-- any other text only the commands it names. The lines themselves carry no color.
+test("a macro paragraph is in the code color, and so is a command inside a sentence", function()
+    local Colors = SSF:GetModule("Colors")
+    local sentence = "In a macro, put /ssf delete on the line before the ability:"
+    local news = sample()
+    news.text = { { text = sentence }, { text = "Create macros", macro = true }, sentence }
+    fresh(news)
+    NewsShow:OnWindowOpened()
+    local blocks = asked.shown[1].opts.blocks
+    eq(blocks[1].text, Colors:Commands(sentence), "the command painted, the sentence around it plain")
+    ok(blocks[1].text ~= sentence, "and it did paint one")
+    eq(blocks[2].text, Colors:Code("Create macros"), "a macro: the whole paragraph")
+    eq(blocks[3].text, Colors:Commands(sentence), "a plain line's command too")
+end)
+
 test("a paragraph's spell is named by the game, in its text's %s", function()
     local news = sample()
     news.text = { { text = "/cast %s", spell = "BANE_OF_AGONY" }, "Second line." }

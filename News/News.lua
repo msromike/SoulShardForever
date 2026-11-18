@@ -22,30 +22,32 @@
 --            blank = true }. spell = a key of SSF.SPELLS (Core) puts that spell's
 --            name, as the game gives it in the client's language, into the text's one
 --            %s: a macro's /cast line, right in every language, with no spell name in
---            any translation.
+--            any translation. macro = true: the text is a macro to copy, drawn whole in
+--            the code color. In any other text a command the player types (/ssf delete,
+--            /stopattack) is drawn in that color by NewsShow; no line here or in a
+--            translation carries a color.
 -- Owns no state beyond that table, no events, no frames. Touches nothing else.
 
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The fourth announcement, in the beta only: the third (11600, thanks for trying it, and
--- how to use it) with the second beta's one-line note and a new thank-you line on top,
--- above a line of stars. The third replaced the second, "*New* SSF Beta Available"
--- (11502), which 1.15.2 ships to everyone.
--- The first, "Coming soon to SSF" (11400), shipped in 1.14.0 and was switched off in 1.15.1.
+-- The fifth announcement, with the full release of delete in combat: what it is and how
+-- to use it, for every player. It replaced the two the beta carried (11600 and 11601,
+-- thanks for trying the beta, with the second beta's note), which never shipped in a
+-- full release. Before those: "*New* SSF Beta Available" (11502), which 1.15.2 shipped
+-- to everyone, and the first, "Coming soon to SSF" (11400), shipped in 1.14.0 and
+-- switched off in 1.15.1.
 NS.news = {
-    id = 11601,
+    id = 11602,
     on = true,
-    title = L["Thanks for Trying the SSF Beta"],
+    title = L["Delete in Combat is Live"],
     text = {
-        { lead = L["1.16.0-beta.2 notes:"], text = L["fixed race that could cause deletion below cap during rapid keypresses"], blank = true },
-        { text = L["Thank you for giving our beta a try. Close to release, would like to see a few CurseForge comments first."], blank = true },
-        { text = L["***"], blank = true },
         { text = L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."], blank = true },
-        { lead = L["How to use it:"], text = L["put /ssf delete on the line before the spells you cast most. Two little macros are all you need:"], blank = true },
-        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "LIFE_TAP", blank = true },
-        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "DRAIN_SOUL", blank = true },
-        { lead = L["Tip:"], text = L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding:"], spell = "BANE_OF_AGONY", blank = true },
-        { text = L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"], spell = "BANE_OF_AGONY" },
+        { lead = L["How to use it:"], text = L["put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:"], blank = true },
+        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "LIFE_TAP", macro = true, blank = true },
+        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "DRAIN_SOUL", macro = true, blank = true },
+        { lead = L["Tip:"], text = L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding or in melee:"], spell = "BANE_OF_AGONY", blank = true },
+        { text = L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"], spell = "BANE_OF_AGONY", macro = true, blank = true },
+        { lead = L["Note:"], text = L["I put /ssf delete into every offensive macro I use and it is working great."] },
     },
 }

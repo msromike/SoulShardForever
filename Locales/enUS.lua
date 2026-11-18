@@ -111,8 +111,6 @@ L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the 
 L["In a macro, put /ssf delete on the line before the ability:"] = true
 -- %s: Life Tap's name. A translation names both: %1$s Life Tap, %2$s Bane of Agony.
 L["The Bane macro lets you delete on the move when you don't want to use %s."] = true
--- a translation may name Bane of Agony with %s
-L["Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat."] = true
 L["Create recommended macros"] = true
 -- the phrase Welcome paints green, then the line that takes it as %s; its break is in the string
 L["reloads your UI"] = true

@@ -27,7 +27,7 @@ Core and modules:
 - Core.lua: the addon object, the warlock gate, the saved settings (the AceDB profile, its defaults and the migrations of old values), the Language switch (ApplyLanguage) and the shared constants on the addon object.
   Public: SSF.SHARD_ITEM_ID; SSF.SPELLS (the spell ids SSF names, by key); SSF.HALF_LINE (px: SSF's half line of empty space, the one spacing unit its widgets share); SSF.ICON, SSF.VERSION and SSF.AUTHOR (each from the toc); SSF.db (AceDB), SSF:ApplyLanguage() (Options' Language setting calls it, then rebuilds).
 - Modules\Colors.lua: every color SSF uses, and the helpers that paint text with them.
-  Public: Colors.RED, GREEN, YELLOW, GOLD, WHITE, DIM, ECHO, BLUE, CODE, SLATE, BLACK -> { r, g, b, hex } Colors:ForState(state) -> r, g, b, hex for "low" / "ok" / "over" / "paused" / "quiet"; any other state is an error (as in PaintState) Colors:Paint(color, text) -> text wrapped in the color's escape codes Colors:PaintState(state, text) -> text in the state's color Colors:Value(v) -> v in white (a setting's value) Colors:Accent(v) -> v in green (branding) Colors:OnOff(b) -> green ON / red OFF Colors:State(text, good) -> text in green (good) or red Colors:Gold(text) -> text in the label gold Colors:Echo(text) -> text in the command echo grey Colors:Class() -> r, g, b of the warlock class color (titles only)
+  Public: Colors.RED, GREEN, YELLOW, GOLD, WHITE, DIM, ECHO, BLUE, CODE, SLATE, BLACK -> { r, g, b, hex } Colors:ForState(state) -> r, g, b, hex for "low" / "ok" / "over" / "paused" / "quiet"; any other state is an error (as in PaintState) Colors:Paint(color, text) -> text wrapped in the color's escape codes Colors:PaintState(state, text) -> text in the state's color Colors:Value(v) -> v in white (a setting's value) Colors:Accent(v) -> v in green (branding) Colors:OnOff(b) -> green ON / red OFF Colors:State(text, good) -> text in green (good) or red Colors:Gold(text) -> text in the label gold Colors:Echo(text) -> text in the command echo grey Colors:Code(text) -> text in the code color (a macro shown as text) Colors:Commands(text) -> text with each command it names (/ssf delete, /stopattack, /stopcasting) in the code color; the rest untouched Colors:Class() -> r, g, b of the warlock class color (titles only)
 - Modules\Combat.lua: the two questions SSF asks about a fight, each answered here and nowhere else.
   Public: Locked() -> bool; InFight() -> bool. Owns no state, no events, no frames.
 - Modules\KeyBindings.lua: SSF's two rows in Blizzard's Key Bindings screen (Bindings.xml: SSF_DELETE and SSF_PAUSE), unbound until the player picks keys.
@@ -65,7 +65,7 @@ Core and modules:
   Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony). SpellNameOf(id) -> any spell's name in the client's language, as a macro's /cast line needs it, or nil when the game has none: the one place SSF asks the game for a spell's name (SpellName and the announcement's macros use it).
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
   Public: Stop() (also the OnHide hook's handler).
-- Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro is for and its warning.
+- Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro is for.
   Public: Blocks(first) -> the content as a list, for the welcome note's layout: { text } paragraphs and { text, macro = true } macros. Text(first) -> the same blocks as one string, for the tooltip. first is an already translated string.
 - Modules\Tooltip.lua: where every SSF tooltip sits and how it is shown.
   Public: Show(owner, title, text, titleGold) -- title in the label gold (true) or white; text in white, one tooltip line per line of text, a blank line as a spacer (handed over as one text the game sometimes drops a blank line) Hide(owner) -- only if the tooltip is still the owner's IsShownFor(owner) -> bool (the owner refreshes an open tooltip's text) Attach(frame) -- option tooltips shown inside this frame get the anchor
@@ -178,18 +178,18 @@ on the right and the file on the left breaks; the check fails first.
 | Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
 | Settings | Colors: OnOff, Value |
-| Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Gold, PaintState, State; Counter: OnSoulBag; DebugCommand: Run; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define; Sounds: Busy, LevelStep, PlayPause; Status: CountText, InBagsText, PauseText; Trimmer: Delete, Paused, WhyNot; Window: Open |
+| Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Commands, Gold, PaintState, State; Counter: OnSoulBag; DebugCommand: Run; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define; Sounds: Busy, LevelStep, PlayPause; Status: CountText, InBagsText, PauseText; Trimmer: Delete, Paused, WhyNot; Window: Open |
 | DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set; DebugReport: Open |
 | SlashCommand | Colors: Echo; Options: APP, ChatWord, SetCapShortForm; Status: PrintStatus; Window: Open |
 | TabComplete | Options: ChatWords; Settings: ValueWords |
 | Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
 | Macros | Combat: Locked; SSF: SPELLS |
 | MacroGlow | Macros: Names |
-| DeleteHelp | Macros: Body, SpellName |
+| DeleteHelp | Colors: Code, Commands; Macros: Body, SpellName |
 | Tooltip | Colors: GOLD, WHITE |
 | Window | Colors: BLACK, Class, Gold; Combat: InFight; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
 | Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: RefreshNote, ShowNote |
-| NewsShow | Colors: Gold; Combat: InFight; Macros: SpellNameOf; SSF: SPELLS; Window: RefreshLeftNote, ShowLeftNote |
+| NewsShow | Colors: Code, Commands, Gold; Combat: InFight; Macros: SpellNameOf; SSF: SPELLS; Window: RefreshLeftNote, ShowLeftNote |
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
 | LowGlow | Cap: State; Colors: RED; Counter: Refresh |

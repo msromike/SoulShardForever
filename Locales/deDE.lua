@@ -101,7 +101,6 @@ L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this
 L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = "SSF löscht einen Seelensplitter, wenn du über dem Limit bist. Nutze die Taste für %1$s, den Button %2$s, ein Makro oder kombiniere alles."
 L["In a macro, put /ssf delete on the line before the ability:"] = "In einem Makro steht /ssf delete in der Zeile vor der Fähigkeit:"
 L["The Bane macro lets you delete on the move when you don't want to use %s."] = "Mit dem Makro für %2$s löschst du auch in Bewegung, wenn du %1$s nicht nutzen willst."
-L["Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat."] = "Achte darauf, beim Makro für %s keinen Gegner im Ziel zu haben, denn es bringt dich in den Kampf. SSF kann im Kampf keinen Splitter löschen."
 L["Create recommended macros"] = "Empfohlene Makros erstellen"
 L["reloads your UI"] = "lädt deine Oberfläche neu"
 L["Creates the macros, %s and opens the macro box after the reload."] = "Erstellt die Makros, %s\nund öffnet danach das Makrofenster."

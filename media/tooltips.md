@@ -42,7 +42,10 @@ In a macro, put /ssf delete on the line before the ability:
     /ssf delete
     /cast Bane of Agony
 
-The Bane macro lets you delete on the move when you don't want to use Life Tap. Make sure you're not targeting an enemy with the Bane macro, because it puts you in combat. SSF cannot delete a shard while in combat.
+The Bane macro lets you delete on the move when you don't want to use Life Tap.
+
+What the player types or copies is drawn in the code color, a teal (Colors' Code): the
+/ssf delete in the lead-in line, and the two macros.
 
 Built by DeleteHelp (Blocks, joined by Text) from this first paragraph; the macro text
 comes from Macros (spell names by ID, 1454 and 980, in the player's language). Shown
