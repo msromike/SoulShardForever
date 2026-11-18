@@ -2252,6 +2252,8 @@ def constants(code):
 
 
 COMBAT_HOMES = {"Modules/Combat.lua", "Modules/Debug.lua"}  # who may call the game's two combat functions
+# who may paint text in the code color: Colors (its owner) and DeleteHelp (the tooltip's string)
+CODE_PAINT_HOMES = {"Modules/Colors.lua", "Modules/DeleteHelp.lua"}
 # the pause setting's own get and apply in Options, the only lines besides Trimmer's gate
 # that may touch profile.paused
 PAUSE_SETTING_LINE = re.compile(r"^\s*(get = function\(\) return SSF\.db\.profile\.paused end|"
@@ -2330,8 +2332,19 @@ def check_rules():
                 continue
             print(f"   {rel}:{n}: profile.paused is read here; ask Trimmer:Paused, the pause gate")
             ok = False
+    # a macro shown in a panel is a macro block ({ text, macro = true }), which the panel
+    # draws in its own box: its text is never painted by the caller. Colors:Code is for
+    # the one place that cannot draw a box, the tooltip's single string (DeleteHelp)
+    for rel in code_files:
+        if rel in CODE_PAINT_HOMES:
+            continue
+        for n, code in bare_code(texts[rel]):
+            if re.search(r":Code\(", blank_strings(code)):
+                print(f"   {rel}:{n}: a macro is painted as text here; hand the panel a macro block "
+                      f"({{ text, macro = true }}), which boxes it (Colors:Code is the tooltip's, in DeleteHelp)")
+                ok = False
     # a message a module listens for is sent by some module: a misspelt name never arrives
-    sent = {m for text in texts.values() for m, _ in SEND_RE.findall(code_lines(text))}
+    sent ={m for text in texts.values() for m, _ in SEND_RE.findall(code_lines(text))}
     for rel, text in texts.items():
         for m in sorted(set(LISTEN_RE.findall(code_lines(text))) - sent):
             print(f"   {rel}: listens for {m}, nothing sends it")

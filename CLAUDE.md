@@ -105,6 +105,10 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
   combat questions in Combat, the pause gate in Trimmer (Paused), colors in Colors, chat and tooltip
   wording in Status, tooltips in Tooltip, the pause sound's notches in Sounds. ARCHITECTURE.md lists
   the rest.
+- A macro the player copies looks the same on every panel: dark box, code color. A
+  module hands the panel a macro block ({ text, macro = true }) and SSFSideNote draws
+  the box; no caller paints a macro itself. Colors:Code is for the tooltip's one
+  string (DeleteHelp), where no box can be drawn. The check fails on any other call.
 - No pass-through files: a module whose every function only calls another module adds a
   hop and no job. The check fails on one; its callers ask the other module directly.
 - A new job gets a new file, named for the job, with its header written before its code.
@@ -132,7 +136,8 @@ local fix pending upstream, see tools/externals.txt. It is the only library edit
   same value typed in two files; the shard id only in Core;
   every message has a sender; combat asked only of Combat; "paused" asked only of
   Trimmer:Paused (the saved key read only there and in the pause setting's own get and
-  apply); no pass-through module; every
+  apply); a macro in a panel handed over as a macro block, never painted by the
+  caller; no pass-through module; every
   widget type used); Blizzard's names (no deprecated call, every global proven, every
   reach into Blizzard's frames listed); ARCHITECTURE.md regenerated; the libraries'
   drift from upstream (information, never a failure). A regenerated map that changed in
