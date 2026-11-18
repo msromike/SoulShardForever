@@ -33,7 +33,7 @@ Core and modules:
 - Modules\KeyBindings.lua: SSF's two rows in Blizzard's Key Bindings screen (Bindings.xml: SSF_DELETE and SSF_PAUSE), unbound until the player picks keys.
   Public: KeyBindings:ApplyLabels() (Core:ApplyLanguage calls it after a language switch) KeyBindings:Open() (the window's Key Bindings button; the caller closes the window first, SSF's window draws above the settings panel)
 - Modules\Bags.lua: read-only queries over the player's bags, backpack through the reagent slot (bag 5, where a soul pouch equips on Forever), and the one signal that the bags changed.
-  Public: NumSlots(bag) -> n; IsShardAt(bag, slot), IsFreeAt(bag, slot), IsLocked(bag, slot), IsSwappableAt(bag, slot), IsSoulBag(bag), IsRegularBag(bag), HasSoulBag() -> bool; SoulBags() -> ids ascending; SortOrder() -> ids in sort order; ForEachSlot(fn(bag, slot, position), topFirst); ForEachShard(fn(bag, slot)); Count() -> n; SoulBagSlots() -> n; AnyShardLocked() -> bool; LastShard(topFirst) -> bag, slot or nil. Every one is also the headless tests' handle on the bags.
+  Public: NumSlots(bag) -> n; IsShardAt(bag, slot), IsFreeAt(bag, slot), IsLocked(bag, slot), IsSwappableAt(bag, slot), IsSoulBag(bag), IsRegularBag(bag), HasSoulBag() -> bool; SoulBags() -> ids ascending; SortOrder() -> ids in sort order; ForEachSlot(fn(bag, slot, position), topFirst); ForEachShard(fn(bag, slot)); Count() -> n; SoulBagSlots() -> n; GameCount() -> the game's own count of the shards in the bags, or nil when it cannot be read; CountAgrees() -> bool, Count equals it (true when it cannot be read: nothing to hold against); AnyShardLocked() -> bool; LastShard(topFirst) -> bag, slot or nil. Every one is also the headless tests' handle on the bags.
 - Modules\Cap.lua: the thresholds, and whether Drain Soul is known (the quiet state).
   Public: Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark (never above the cap), SetLowMark(n) (Options' slider: held between MIN and the cap), State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow: Colors maps them, LowGlow compares "low"; no delete, sort or setting is decided by comparing these words), IsOver(count) -> bool (over the cap: a press would delete), IsFull(count) -> bool, IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax off is the caller's job), Recompute().
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
@@ -129,7 +129,7 @@ News:
 | Sorter | PLAYER_REGEN_ENABLED |
 | Sounds | SOUNDKIT_FINISHED |
 | Debug | PLAYER_ENTERING_WORLD; PLAYER_REGEN_DISABLED; PLAYER_REGEN_ENABLED; UNIT_SPELLCAST_CHANNEL_START; UNIT_SPELLCAST_CHANNEL_STOP; BAG_UPDATE_DELAYED; GET_ITEM_INFO_RECEIVED |
-| Status | PLAYER_ENTERING_WORLD; BAG_UPDATE_DELAYED |
+| Status | PLAYER_ENTERING_WORLD; BAG_UPDATE_DELAYED; GET_ITEM_INFO_RECEIVED |
 | Macros | LOADING_SCREEN_DISABLED; bucket UPDATE_MACROS (0.5s) |
 | MacroGlow | ACTIONBAR_SLOT_CHANGED |
 | Window | PLAYER_REGEN_DISABLED |
@@ -180,14 +180,14 @@ on the right and the file on the left breaks; the check fails first.
 | MoveSounds | Combat: Locked |
 | Trimmer | Bags: AnyShardLocked, Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; MoveSounds: Moving; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: PlayPause; Status: DeletedText, PausedPressText |
 | DeleteButton | Trimmer: Delete |
-| Debug | Bags: Count, ForEachShard, IsRegularBag, IsSoulBag, NumSlots; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
+| Debug | Bags: Count, ForEachShard, GameCount, IsRegularBag, IsSoulBag, NumSlots; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
 | Settings | Colors: OnOff, Value |
 | Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Commands, Gold, PaintState, State; Counter: OnSoulBag; DebugCommand: Run; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define; Sounds: Busy, LevelStep, PlayPause; Status: CountText, InBagsText, PauseText; Trimmer: Delete, Paused, WhyNot; Window: Open |
 | DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set, WatchNextLogin; DebugReport: Open |
 | SlashCommand | Colors: Echo; Options: APP, ChatWord, IsHelpWord, SetCapShortForm; Status: PrintStatus; Window: Open |
 | TabComplete | Options: ChatWords; Settings: ValueWords |
-| Status | Bags: Count; Cap: Get, LowMark, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
+| Status | Bags: Count, CountAgrees; Cap: Get, LowMark, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
 | Macros | Combat: Locked; SSF: SPELLS; Spells: NameOf |
 | MacroGlow | Macros: Names |
 | DeleteHelp | Colors: Code, Commands; Macros: Body, SpellName |

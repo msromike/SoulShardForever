@@ -25,9 +25,11 @@
 --          DeletedText(count, cap) -> "Deleted a Soul Shard. Soul Shards: N (cap M)", the
 --            announce line.
 --          PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
--- Listens: PLAYER_ENTERING_WORLD (once), BAG_UPDATE_DELAYED (fresh login only: the bags
---          are not readable yet when the world is entered; tested, it counted 0).
--- Reads:   Bags:Count(), Cap:Get/State/LowMark, Trimmer:Paused, Colors; SSF.VERSION,
+-- Listens: PLAYER_ENTERING_WORLD (once); BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED
+--          (fresh login only, until the login lines print: the bags are not readable yet
+--          when the world is entered, and a soul pouch is not counted until the game says
+--          what kind of bag it is; both seen in game).
+-- Reads:   Bags:Count/CountAgrees, Cap:Get/State/LowMark, Trimmer:Paused, Colors; SSF.VERSION,
 --          SSF.AUTHOR.
 -- Touches nothing else.
 
@@ -103,23 +105,32 @@ function Status:OnEnable()
 end
 
 -- Login and reload: the same two lines as a bare /ssf, once, after the version line. The
--- count needs the bag contents. On a reload they are there when the world is entered; on
--- a fresh login they are not, so the lines wait for the game's BAG_UPDATE_DELAYED, with a
--- timer in case that never comes.
+-- count needs the bag contents. On a reload they are there when the world is entered. On a
+-- fresh login they are not, and on the first login after the game starts a soul pouch is
+-- not counted until the game says what kind of bag it is, a moment after it says the bags
+-- are ready. So the lines wait until the count agrees with the game's own (Bags), asked
+-- each time the game says the bags are ready or an item's data arrives, with a timer in
+-- case that never comes.
 function Status:PLAYER_ENTERING_WORLD(_, isInitialLogin)
     self:UnregisterEvent("PLAYER_ENTERING_WORLD")
     if isInitialLogin then
-        self:RegisterEvent("BAG_UPDATE_DELAYED", "PrintLoginStatus")
+        self:RegisterEvent("BAG_UPDATE_DELAYED", "OnBagsMayBeReady")
+        self:RegisterEvent("GET_ITEM_INFO_RECEIVED", "OnBagsMayBeReady")
         self.loginTimer = self:ScheduleTimer("PrintLoginStatus", 10)
     else
         self:PrintLoginStatus()
     end
 end
 
+function Status:OnBagsMayBeReady()
+    if SSF:GetModule("Bags"):CountAgrees() then self:PrintLoginStatus() end
+end
+
 function Status:PrintLoginStatus()
     if self.loginStatusPrinted then return end
     self.loginStatusPrinted = true
     self:UnregisterEvent("BAG_UPDATE_DELAYED")
+    self:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
     if self.loginTimer then self:CancelTimer(self.loginTimer) end
     self:PrintStatus()
 end

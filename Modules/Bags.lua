@@ -4,9 +4,16 @@
 -- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
 -- moves or deletes anything. Every other module reads the bags through these methods and
 -- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE. Two
--- exceptions: Status waits for the game's BAG_UPDATE_DELAYED once at a fresh login before
--- its login line, because the bags are not filled in until then; and Debug records the
--- game's own count (C_Item.GetItemCount) beside Bags' count, on purpose, to compare them.
+-- exceptions: Status listens to the game's BAG_UPDATE_DELAYED at a fresh login, for its
+-- login line; and Debug to the same at a watched login, to note what the bags looked like.
+--
+-- The count at a fresh login: on the first login after the game starts, the game says the
+-- bags are ready before it says what kind of bag each is. A soul pouch reads as a plain
+-- bag in the reagent slot then, and no shard in it is counted, until the item data arrives
+-- a moment later (seen in game: 11 counted of 25). The game's own count of the item is
+-- right from the first moment. So GameCount hands that over, and CountAgrees says whether
+-- Count can be trusted yet: Status holds its login line until it can, and Debug records
+-- the two side by side.
 -- Right after a delete the bags still show the deleted shard until the server confirms:
 -- a listener to SSF_SHARD_DELETED that reads Bags:Count() gets the old number, and the
 -- right one with the SSF_BAGS_CHANGED that follows within half a second. The message
@@ -31,6 +38,9 @@
 --          IsRegularBag(bag), HasSoulBag() -> bool; SoulBags() -> ids ascending;
 --          SortOrder() -> ids in sort order; ForEachSlot(fn(bag, slot, position), topFirst);
 --          ForEachShard(fn(bag, slot)); Count() -> n; SoulBagSlots() -> n;
+--          GameCount() -> the game's own count of the shards in the bags, or nil when it
+--          cannot be read; CountAgrees() -> bool, Count equals it (true when it cannot be
+--          read: nothing to hold against);
 --          AnyShardLocked() -> bool;
 --          LastShard(topFirst) -> bag, slot or nil. Every one is also the headless
 --          tests' handle on the bags.
@@ -163,6 +173,21 @@ function Bags:Count()
     local n = 0
     self:ForEachShard(function() n = n + 1 end)
     return n
+end
+
+-- The game's own count of the shards in the bags, not the walk of the slots. A secret value
+-- on this engine cannot be compared: nil then.
+function Bags:GameCount()
+    local n = C_Item.GetItemCount(SHARD)
+    if issecretvalue and issecretvalue(n) then return nil end
+    return num(n)
+end
+
+-- Count can be trusted: it equals the game's own. False at a fresh login until the game
+-- says what kind of bag each is (see the header).
+function Bags:CountAgrees()
+    local game = self:GameCount()
+    return game == nil or self:Count() == game
 end
 
 -- The server still holds some shard: a delete or a move asked for and not yet answered, or

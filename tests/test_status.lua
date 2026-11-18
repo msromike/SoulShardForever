@@ -13,6 +13,64 @@ local profile = SSF.db.profile
 
 local function plain(text) return (text:gsub("|c%x%x%x%x%x%x%x%x", ""):gsub("|r", "")) end
 
+-- the chat lines printed while fn runs, color codes taken out
+local function printed(fn)
+    local from = #WoW.chat
+    fn()
+    local lines = {}
+    for i = from + 1, #WoW.chat do lines[#lines + 1] = plain(WoW.chat[i]) end
+    return lines
+end
+
+-- a fresh login, as the game announces it, with the login lines not yet printed
+local function freshLogin()
+    Status.loginStatusPrinted = nil
+    Status:PLAYER_ENTERING_WORLD("PLAYER_ENTERING_WORLD", true)
+end
+
+test("a fresh login: the lines wait until the count agrees with the game's own", function()
+    profile.paused, profile.autoMax, profile.maxShards = false, false, 8
+    -- the first login after the game starts: the pouch's shards are not counted yet
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD }) })
+    WoW.itemCount = 3
+    eq(#printed(freshLogin), 0, "entering the world prints nothing")
+    eq(#printed(function() WoW.FireEvent("BAG_UPDATE_DELAYED") end), 0, "bags ready, the count short of the game's: nothing yet")
+    eq(#printed(function() WoW.FireEvent("GET_ITEM_INFO_RECEIVED", 1, true) end), 0, "an item's data, still short: nothing yet")
+    -- the game now says the pouch is a soul bag
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD }), [5] = WoW.SoulBag(14, { [1] = SHARD, [2] = SHARD }) })
+    WoW.itemCount = nil
+    local lines = printed(function() WoW.FireEvent("GET_ITEM_INFO_RECEIVED", SHARD, true) end)
+    eq(lines[2], "SSF: Soul Shards: 3 (cap 8)", "the count agrees: the lines print, with the right number")
+    eq(#printed(function() WoW.FireEvent("BAG_UPDATE_DELAYED") end), 0, "once: a later signal prints nothing")
+end)
+
+test("a fresh login with the bags readable at once prints at the first signal", function()
+    profile.paused, profile.autoMax, profile.maxShards = false, false, 8
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD }), [5] = WoW.SoulBag(14, { [1] = SHARD }) })
+    eq(#printed(freshLogin), 0, "entering the world prints nothing")
+    local lines = printed(function() WoW.FireEvent("BAG_UPDATE_DELAYED") end)
+    eq(lines[2], "SSF: Soul Shards: 2 (cap 8)", "bags ready and agreeing: printed")
+end)
+
+test("a fresh login where the count never agrees still prints, when the timer runs out", function()
+    profile.paused, profile.autoMax, profile.maxShards = false, false, 8
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD }) })
+    WoW.itemCount = 3
+    eq(#printed(freshLogin), 0, "entering the world prints nothing")
+    eq(#printed(function() WoW.FireEvent("BAG_UPDATE_DELAYED") end), 0, "short: nothing")
+    local lines = printed(function() Status:PrintLoginStatus() end)
+    eq(lines[2], "SSF: Soul Shards: 1 (cap 8)", "the timer's call prints what SSF counts")
+    WoW.itemCount = nil
+end)
+
+test("a reload prints the lines at once", function()
+    profile.paused, profile.autoMax, profile.maxShards = false, false, 8
+    WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD }) })
+    Status.loginStatusPrinted = nil
+    local lines = printed(function() Status:PLAYER_ENTERING_WORLD("PLAYER_ENTERING_WORLD", false) end)
+    eq(lines[2], "SSF: Soul Shards: 1 (cap 8)", "printed on entering the world")
+end)
+
 test("CapText and StatusText are one wording", function()
     profile.paused = false
     profile.autoMax = false

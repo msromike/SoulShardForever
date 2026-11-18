@@ -76,7 +76,7 @@
 --          attach the first time the record is turned on and stay for the session, doing
 --          nothing while it is off: a secure hook cannot be taken off again, and hooking
 --          afresh at every "on" would stack one more wrapper each time.
--- Reads:   Bags:Count/ForEachShard/NumSlots/IsSoulBag/IsRegularBag, Cap:Get; SSF.VERSION;
+-- Reads:   Bags:Count/GameCount/ForEachShard/NumSlots/IsSoulBag/IsRegularBag, Cap:Get; SSF.VERSION;
 --          profile.debugLog, debugLogin.
 -- Saves:   profile.debugLog (every event; Clear); profile.debugLogin (true from
 --          WatchNextLogin until the next login or reload takes it).
@@ -108,12 +108,6 @@ local function plain(v)
     return v
 end
 
--- the game's own count of the shards in the bags, not SSF's walk of the slots
-local function GameCount()
-    local n = plain(C_Item.GetItemCount(SHARD))
-    return type(n) == "number" and n or nil
-end
-
 -- where every shard sits: "bag:slot" pairs, bag 0 up, top slot first
 local function Positions()
     local list = {}
@@ -138,7 +132,7 @@ local function Record(kind, e, at)
     e.lock = InCombatLockdown() and true or nil
     e.combat = UnitAffectingCombat("player") and true or nil
     e.count = SSF:GetModule("Bags"):Count()
-    e.game = GameCount()
+    e.game = SSF:GetModule("Bags"):GameCount()
     e.cap = SSF:GetModule("Cap"):Get()
     if lastCount and e.count ~= lastCount then e.delta = e.count - lastCount end
     lastCount = e.count
