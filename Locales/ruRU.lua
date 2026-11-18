@@ -100,7 +100,6 @@ L["You won't see this welcome screen again on this character unless you click %s
 L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."] = "SSF удаляет один осколок души, когда лимит превышен. Используйте клавишу «%s», эту кнопку, макрос или сочетайте их."
 L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = "SSF удаляет один осколок души, когда лимит превышен. Используйте клавишу «%1$s», кнопку «%2$s», макрос или сочетайте их."
 L["In a macro, put /ssf delete on the line before the ability:"] = "В макросе поставьте /ssf delete строкой перед способностью:"
-L["The Bane macro lets you delete on the move when you don't want to use %s."] = "Макрос «%2$s» позволяет удалять на ходу, когда вы не хотите использовать «%1$s»."
 L["Create recommended macros"] = "Создать рекомендуемые макросы"
 L["reloads your UI"] = "перезагружает интерфейс"
 L["Creates the macros, %s and opens the macro box after the reload."] = "Создаёт макросы, %s\nи после перезагрузки открывает окно макросов."

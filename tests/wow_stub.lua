@@ -565,10 +565,10 @@ function WoW.SetMacros(account, character)
     for _, name in ipairs(account or {}) do WoW.macroList.account[#WoW.macroList.account + 1] = { name = name } end
     for _, name in ipairs(character or {}) do WoW.macroList.character[#WoW.macroList.character + 1] = { name = name } end
 end
--- the macro side of a clean start: both of SSF's macros exist (so the window offers no
+-- the macro side of a clean start: all of SSF's macros exist (so the window offers no
 -- "Create macros"), nothing on a bar, no macro window, no red line, nothing refused
 function WoW.ResetMacros()
-    WoW.SetMacros({ "SSF_LT", "SSF_BoA" }, {})
+    WoW.SetMacros({ "SSF_LT", "SSF_DS", "SSF_BoA" }, {})
     WoW.macroWindow, WoW.redErrors, WoW.blocked = nil, {}, {}
     for k in pairs(WoW.actionText or {}) do WoW.actionText[k] = nil end
 end

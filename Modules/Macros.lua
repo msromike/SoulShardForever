@@ -1,6 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
+-- Macros: the three recommended macros, /ssf delete before Life Tap, Drain Soul and Bane of Agony.
 -- Holds their text (the one source: the help text shows exactly what Create writes), says
 -- whether each exists, makes the missing ones on a click and hands back /reload for the
 -- note's secure button to run (a new macro shows a stale
@@ -14,8 +14,9 @@
 -- In combat Create does nothing.
 --
 -- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(),
+--          Keys() -> the macros' keys, in the order they are shown and made,
 --          Create() -> "/reload" once it made macros, else nil.
---          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
+--          key: "LT" (Life Tap), "DS" (Drain Soul) or "BoA" (Bane of Agony).
 --          BodyFor(spellName, lines) -> the same macro text for any spell's name: the
 --          one template (Body uses it, and so does an announcement's macro). lines,
 --          optional: a list of a variant's own lines, put between /ssf delete and the
@@ -46,9 +47,10 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 -- names are never translated: the name is how SSF finds them
 local MACROS = {
     LT  = { name = "SSF_LT",  spell = SSF.SPELLS.LIFE_TAP,      fallback = "Life Tap" },
+    DS  = { name = "SSF_DS",  spell = SSF.SPELLS.DRAIN_SOUL,    fallback = "Drain Soul" },
     BoA = { name = "SSF_BoA", spell = SSF.SPELLS.BANE_OF_AGONY, fallback = "Bane of Agony" },
 }
-local ORDER = { "LT", "BoA" }
+local ORDER = { "LT", "DS", "BoA" }
 local ICON = 134400 -- INV_Misc_QuestionMark: with #showtooltip the button shows the spell's icon
 
 -- The slot limits. Constants.MacroConsts on this client (the MAX_*_MACROS globals are nil);
@@ -73,6 +75,11 @@ end
 
 function Macros:Body(key)
     return self:BodyFor(self:SpellName(key))
+end
+
+-- a copy, so a caller cannot change the order
+function Macros:Keys()
+    return { unpack(ORDER) }
 end
 
 function Macros:Exists(key)

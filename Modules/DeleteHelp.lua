@@ -1,18 +1,18 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- DeleteHelp: the text that teaches every way to delete a shard: a first paragraph (the
--- caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro
--- is for. The Delete Shard tooltip and the welcome note both show it, each with its own
+-- caller's own), the one-line lead-in, then the recommended macros (Macros' list, in its
+-- order). The Delete Shard tooltip and the welcome note both show it, each with its own
 -- first paragraph.
 -- What the player types or copies is in the code color (Colors): the command in the
--- lead-in, and in the tooltip's one string the two macros. The welcome note draws a macro
+-- lead-in, and in the tooltip's one string the macros. The welcome note draws a macro
 -- in its own box, in that color, so a block's text carries none.
 --
 -- Public:  Blocks(first) -> the content as a list, for the welcome note's layout:
 --            { text } paragraphs and { text, macro = true } macros.
 --          Text(first) -> the same blocks as one string, for the tooltip.
 --          first is an already translated string.
--- Reads:   Macros:Body(key), Macros:SpellName(key); Colors:Commands, Colors:Code.
+-- Reads:   Macros:Keys(), Macros:Body(key); Colors:Commands, Colors:Code.
 -- Owns no state, no events, no frames. Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
@@ -22,17 +22,14 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 
 function DeleteHelp:Blocks(first)
     local Macros, Colors = SSF:GetModule("Macros"), SSF:GetModule("Colors")
-    local lifeTap, bane = Macros:SpellName("LT"), Macros:SpellName("BoA")
-    -- What the Bane macro is for. English names Bane itself and takes only Life Tap's name
-    -- (%s). A translation takes both spell names, positionally (%1$s Life Tap, %2$s Bane).
-    -- Extra arguments are ignored.
-    return {
+    local blocks = {
         { text = first },
         { text = Colors:Commands(L["In a macro, put /ssf delete on the line before the ability:"]) },
-        { text = Macros:Body("LT"), macro = true },
-        { text = Macros:Body("BoA"), macro = true },
-        { text = L["The Bane macro lets you delete on the move when you don't want to use %s."]:format(lifeTap, bane) },
     }
+    for _, key in ipairs(Macros:Keys()) do
+        blocks[#blocks + 1] = { text = Macros:Body(key), macro = true }
+    end
+    return blocks
 end
 
 function DeleteHelp:Text(first)

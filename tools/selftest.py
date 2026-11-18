@@ -124,7 +124,7 @@ CASES = [
     Case("headers: fields out of template order", LAYOUT, "Modules/Macros.lua",
          "-- Sends:   SSF_MACROS_CHANGED;", "-- Acts on: SSF_MACROS_CHANGED;", "out of template order"),
     Case("headers: no paragraph starts with the file's name", LAYOUT, "Modules/Macros.lua",
-         "-- Macros: the two recommended macros", "-- The two recommended macros", "no paragraph starts with 'Macros:'"),
+         "-- Macros: the three recommended macros", "-- The three recommended macros", "no paragraph starts with 'Macros:'"),
     # Public is the truth: modules and the addon object
     Case("public: a method renamed in its file only", PUBLIC, "Modules/Bags.lua",
          "function Bags:Count(", "function Bags:CountAll(", "Public lists Count"),
@@ -521,7 +521,7 @@ CASES = [
          "ADDON_ACTION_BLOCKED: CreateMacro under combat lockdown"),
     Case("tests: Create splits the macros over the two sections", TESTS, "Modules/Macros.lua",
          "if numChar + #missing <= maxChar then", "if numChar + 1 <= maxChar then",
-         "none in the one free character slot"),
+         "none in the two free character slots"),
     Case("tests: a frame method misspelled", TESTS, "Modules/Counter.lua",
          "self.text:SetTextColor(r, g, b)", "self.text:SetTextColour(r, g, b)",
          "the game has no method SetTextColour on a FontString"),
@@ -694,10 +694,10 @@ def map_case():
     map_path = os.path.join(check.ROOT, check.MAP)
     saved_map = open(map_path, "rb").read()
     try:
-        if not mutate(rel, "-- Macros: the two recommended macros", "-- Macros: the two suggested macros", 1):
+        if not mutate(rel, "-- Macros: the three recommended macros", "-- Macros: the three suggested macros", 1):
             return ("map: a header's job line changes the map", False, f"SETUP WRONG: the job line is no longer in {rel}")
         _, text = run_step(check.check_map)
-        shows = "the two suggested macros" in open(map_path, encoding="utf-8").read()
+        shows = "the three suggested macros" in open(map_path, encoding="utf-8").read()
     finally:
         restore(rel)
         with open(map_path, "wb") as f:
@@ -712,11 +712,10 @@ def more_arguments_cases():
     real = dict(check.MORE_ARGUMENTS)
     out = []
     try:
-        first = next(iter(real))
-        check.MORE_ARGUMENTS[first] = 1  # the Bane line's translations use both spell names
+        check.MORE_ARGUMENTS["(in bags: %s)"] = 0  # a real key with one argument, listed as having none
         ok, text = run_step(check.check_locales)
-        out.append(("locales: a Bane line allowed fewer arguments than its translations use",
-                    not ok and "uses argument 2, and the code hands it only 1" in text, "not caught, or not for this reason"))
+        out.append(("locales: a key allowed fewer arguments than its translations use",
+                    not ok and "uses argument 1, and the code hands it only 0" in text, "not caught, or not for this reason"))
         check.MORE_ARGUMENTS.clear()
         check.MORE_ARGUMENTS.update(real)
         check.MORE_ARGUMENTS["A key nobody has"] = 2

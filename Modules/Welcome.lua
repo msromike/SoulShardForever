@@ -84,7 +84,7 @@ local function Note(self)
             button = L["Create recommended macros"],
             onClick = function() return Macros:Create() end,
             buttonNote = L["Creates the macros, %s and opens the macro box after the reload."]:format(Colors:Paint(Colors.GREEN, L["reloads your UI"])),
-            buttonDisabled = not Macros:AnyMissing(), -- both made already: nothing to do
+            buttonDisabled = not Macros:AnyMissing(), -- all made already: nothing to do
             onClose = function()
                 self.noteOpen = false
                 if InFight() then return end -- a fight closed it: still owed

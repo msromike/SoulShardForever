@@ -109,8 +109,6 @@ L["For now you can play around with the addon. When you learn Drain Soul at leve
 L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, this button, a macro, or mix and match."] = true
 L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."] = true
 L["In a macro, put /ssf delete on the line before the ability:"] = true
--- %s: Life Tap's name. A translation names both: %1$s Life Tap, %2$s Bane of Agony.
-L["The Bane macro lets you delete on the move when you don't want to use %s."] = true
 L["Create recommended macros"] = true
 -- the phrase Welcome paints green, then the line that takes it as %s; its break is in the string
 L["reloads your UI"] = true

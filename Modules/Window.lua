@@ -118,7 +118,7 @@ local function DressWindow(self)
     -- slot stays empty
     self.window:SetMiddleButton(nil)
 
-    -- "Create macros" far left, while either macro is missing, across from Key Bindings: it
+    -- "Create macros" far left, while any macro is missing, across from Key Bindings: it
     -- opens the welcome note (Welcome listens), whose button makes them. Never calls
     -- Welcome, so nothing loops.
     local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
