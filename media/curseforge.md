@@ -7,7 +7,7 @@
 
 - **Delete as you play:**  An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind.  Delete as you play comes out first as a beta on CurseForge.
 
-- **Optional HUD:**  Display movable HUD with tiles for shard count, soulstone status, and healthstone status.  Optional ability to delete shard, cast soulstone or use healthstone from HUD click.
+- **Optional HUD:**  A movable HUD with tiles for shard count, soulstone status and healthstone status.  Optionally, click a tile to delete a shard, cast your soulstone or use your healthstone.
 
 ## <span style="color:#8788EE">Summary</span>
 
