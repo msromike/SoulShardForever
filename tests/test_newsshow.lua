@@ -112,6 +112,19 @@ test("a macro paragraph is in the code color, and so is a command inside a sente
     eq(blocks[3].text, Colors:Commands(sentence), "a plain line's command too")
 end)
 
+-- The recommended macro's text has one source, Macros. An announcement names the spell
+-- and never types the macro out.
+test("a macro paragraph with a spell and no text is Macros' text for that spell", function()
+    local Colors, Macros = SSF:GetModule("Colors"), SSF:GetModule("Macros")
+    local news = sample()
+    news.text = { { spell = "LIFE_TAP", macro = true } }
+    fresh(news)
+    NewsShow:OnWindowOpened()
+    local name = Macros:SpellNameOf(SSF.SPELLS.LIFE_TAP)
+    eq(asked.shown[1].opts.blocks[1].text, Colors:Code(Macros:BodyFor(name)), "Macros' template, in the code color")
+    eq(Macros:BodyFor(name), Macros:Body("LT"), "the same text the Life Tap macro is made with")
+end)
+
 test("a paragraph's spell is named by the game, in its text's %s", function()
     local news = sample()
     news.text = { { text = "/cast %s", spell = "BANE_OF_AGONY" }, "Second line." }

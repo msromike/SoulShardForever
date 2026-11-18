@@ -42,6 +42,7 @@ Modules\Bags.lua
 Modules\Cap.lua
 Modules\Sorter.lua
 Modules\Sounds.lua
+Modules\MoveSounds.lua
 Modules\Trimmer.lua
 Modules\DeleteButton.lua
 Modules\Debug.lua

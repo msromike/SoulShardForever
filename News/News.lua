@@ -23,7 +23,8 @@
 --            name, as the game gives it in the client's language, into the text's one
 --            %s: a macro's /cast line, right in every language, with no spell name in
 --            any translation. macro = true: the text is a macro to copy, drawn whole in
---            the code color. In any other text a command the player types (/ssf delete,
+--            the code color. A macro with a spell and no text is the recommended macro
+--            for that spell, whose text is Macros' (BodyFor): it is never typed here. In any other text a command the player types (/ssf delete,
 --            /stopattack) is drawn in that color by NewsShow; no line here or in a
 --            translation carries a color.
 -- Owns no state beyond that table, no events, no frames. Touches nothing else.
@@ -44,8 +45,8 @@ NS.news = {
     text = {
         { text = L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."], blank = true },
         { lead = L["How to use it:"], text = L["put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:"], blank = true },
-        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "LIFE_TAP", macro = true, blank = true },
-        { text = L["#showtooltip\n/ssf delete\n/cast %s"], spell = "DRAIN_SOUL", macro = true, blank = true },
+        { spell = "LIFE_TAP", macro = true, blank = true },
+        { spell = "DRAIN_SOUL", macro = true, blank = true },
         { lead = L["Tip:"], text = L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding or in melee:"], spell = "BANE_OF_AGONY", blank = true },
         { text = L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"], spell = "BANE_OF_AGONY", macro = true, blank = true },
         { lead = L["Note:"], text = L["I put /ssf delete into every offensive macro I use and it is working great."] },

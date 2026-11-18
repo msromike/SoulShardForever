@@ -27,7 +27,7 @@
 --          PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
 -- Listens: PLAYER_ENTERING_WORLD (once), BAG_UPDATE_DELAYED (fresh login only: the bags
 --          are not readable yet when the world is entered; tested, it counted 0).
--- Reads:   Bags:Count(), Cap:Get/State, Trimmer:Paused, Colors; profile.lowMark; SSF.VERSION,
+-- Reads:   Bags:Count(), Cap:Get/State/LowMark, Trimmer:Paused, Colors; SSF.VERSION,
 --          SSF.AUTHOR.
 -- Touches nothing else.
 
@@ -67,7 +67,7 @@ function Status:CapValue()
 end
 
 function Status:LowMarkValue()
-    return Colors():Value(SSF.db.profile.lowMark)
+    return Colors():Value(Cap():LowMark())
 end
 
 -- Paused or not, as a stop/go word: "Yes" in red while paused (nothing moves or deletes),

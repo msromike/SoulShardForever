@@ -38,8 +38,10 @@ Core and modules:
   Public: Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark (never above the cap), SetLowMark(n) (Options' slider: held between MIN and the cap), State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow: Colors maps them, LowGlow compares "low"; no delete, sort or setting is decided by comparing these words), IsOver(count) -> bool (over the cap: a press would delete), IsFull(count) -> bool, IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax off is the caller's job), Recompute().
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
   Public: Pass() -> moves fired (0 while paused or in combat); TopFirst() -> true under SoulSort legacy Normal.
-- Modules\Sounds.lua: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, what a volume level means, and whether the game's item sounds are heard around SSF's own shard moves (Moving).
-  Public: Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or "delete" (Sorter and Trimmer hand their moves over and know nothing of the rule). Returns nothing, heard or not. Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name LSM no longer knows (a sound pack removed) falls back to the default; a nil name plays nothing (LSM:IsValid is true for nil). PlayPause() -- the pause sound at the saved notch (profile.pauseSoundName, pauseSoundLevel), nothing at notch 0: a paused press out of combat (Trimmer decides when) and the slider's preview. Busy() -> true while an own sound plays (a play asked for now would be silent). DefaultName() -> the default sound's LSM name (Core's profile default). LevelStep() -> the distance between two notches (the slider's step; its scale is 0 to 1); LevelVolume(level) -> the volume a notch plays, 0 for notch 0 (a number between two notches plays as the nearest); LevelFromOld(on, volume) -> the notch for the two values saved before the slider (volume nil = the old default, full; a volume that was no level = full, the old rule).
+- Modules\Sounds.lua: SSF's own sounds: in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
+  Public: Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name LSM no longer knows (a sound pack removed) falls back to the default; a nil name plays nothing (LSM:IsValid is true for nil). PlayPause() -- the pause sound at the saved notch (profile.pauseSoundName, pauseSoundLevel), nothing at notch 0: a paused press out of combat (Trimmer decides when) and the slider's preview. Busy() -> true while an own sound plays (a play asked for now would be silent). DefaultName() -> the default sound's LSM name (Core's profile default). LevelStep() -> the distance between two notches (the slider's step; its scale is 0 to 1); LevelVolume(level) -> the volume a notch plays, 0 for notch 0 (a number between two notches plays as the nearest); LevelFromOld(on, volume) -> the notch for the two values saved before the slider (volume nil = the old default, full; a volume that was no level = full, the old rule).
+- Modules\MoveSounds.lua: whether the game's item sounds are heard around SSF's own shard moves.
+  Public: Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or "delete" (Sorter and Trimmer hand their moves over and know nothing of the rule). Returns nothing, heard or not.
 - Modules\Trimmer.lua: the delete press.
   Public: Delete(); Paused() -> bool, the one pause gate (Sorter:Pass asks it too); WhyNot(count) -> why a press would not delete, or nil if it would: "paused" (a mode: the only answer while paused, whatever the count), "quiet" (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap", "locked" (over the cap, but the server still holds a shard). The window's Delete Shard button greys on it with the reason under it. No combat reason: a press deletes in a fight too, and the window is shut in one.
 - Modules\DeleteButton.lua: the global button "SSFDelete".
@@ -62,7 +64,7 @@ Core and modules:
 - Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
   Public: CountValue(count) -> "N" in its state color (Cap:State, Colors), always: only the bag number follows the colorize option; white while paused. count defaults to the bags. CapText(count, cap) -> "N (cap M)", StatusText's body; the cap in the value white. StatusText(count, cap) -> "Soul Shards: N (cap M)", chat (a bare /ssf, the login lines, the announce line, the paused-press line). Both arguments optional: the Trimmer passes the count it knows right after a delete, when the bags still show the deleted shard until the server confirms. CountText() -> "Soul Shards: N", the window's top line (its cap is the slider). InBagsText(count) -> "(in bags: N)", the cap command's echo tail. CapValue() -> the cap, in the value white. LowMarkValue() -> the saved low mark, in the value white. PausedValue() -> red "Yes" while paused, green "No" otherwise. PauseText() -> "SSF paused: Yes/No", the one pause wording in chat (a bare /ssf, the login lines, the /ssf pause echo and the pause key binding). PausedPressText() -> "All SSF actions paused. Soul Shards: N (cap M)", a paused press with the chat log on. DeletedText(count, cap) -> "Deleted a Soul Shard. Soul Shards: N (cap M)", the announce line. PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
 - Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony, and the one place SSF asks the game for a spell's name (SpellNameOf).
-  Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony). SpellNameOf(id) -> any spell's name in the client's language, as a macro's /cast line needs it, or nil when the game has none: the one place SSF asks the game for a spell's name (SpellName and the announcement's macros use it).
+  Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony). BodyFor(spellName) -> the same macro text for any spell's name: the one template (Body uses it, and so does an announcement's macro). SpellNameOf(id) -> any spell's name in the client's language, as a macro's /cast line needs it, or nil when the game has none: the one place SSF asks the game for a spell's name (SpellName and the announcement's macros use it).
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
   Public: Stop() (also the OnHide hook's handler).
 - Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro is for.
@@ -110,8 +112,8 @@ News:
 | SSF_SORTED | Sorter | Debug | moved, moves |
 | SSF_SORT_NOTED | Sorter | Debug |  |
 | SSF_SORT_RESUMED | Sorter | Debug |  |
-| SSF_SOUNDS_MUTED | Sounds | Debug | kind |
-| SSF_SOUNDS_UNMUTED | Sounds | Debug | kind |
+| SSF_SOUNDS_MUTED | MoveSounds | Debug | kind |
+| SSF_SOUNDS_UNMUTED | MoveSounds | Debug | kind |
 | SSF_SOUND_BUSY | Sounds | Window | true |
 | SSF_SOUND_PLAYED | Sounds | Debug | name |
 | SSF_WINDOW_OPENED | Window | NewsShow, Welcome |  |
@@ -144,7 +146,8 @@ its code (the ACTS list in tools/check.py). Each file's header says the same und
 | SSFFrame | adds a frame to the list Escape closes; sets a global name |
 | KeyBindings | opens Blizzard's settings panel; sets a key binding's label (a global) |
 | Sorter | picks an item up or drops it (moves items); clears the cursor |
-| Sounds | mutes a game sound; unmutes a game sound; plays a sound file; plays a sound; adds media to the list every addon shares |
+| Sounds | plays a sound file; plays a sound; adds media to the list every addon shares |
+| MoveSounds | mutes a game sound; unmutes a game sound |
 | Trimmer | picks an item up or drops it (moves items); clears the cursor; deletes the item on the cursor |
 | DeleteButton | sets a global name |
 | SlashCommand | registers a slash command |
@@ -171,9 +174,9 @@ on the right and the file on the left breaks; the check fails first.
 | Core | KeyBindings: ApplyLabels; Sounds: DefaultName, LevelFromOld |
 | Bags | SSF: SHARD_ITEM_ID |
 | Cap | Bags: HasSoulBag, SoulBagSlots; SSF: SPELLS; Trimmer: Paused |
-| Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Combat: Locked; Sounds: Moving; Trimmer: Paused |
-| Sounds | Combat: Locked |
-| Trimmer | Bags: AnyShardLocked, Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: Moving, PlayPause; Status: DeletedText, PausedPressText |
+| Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Combat: Locked; MoveSounds: Moving; Trimmer: Paused |
+| MoveSounds | Combat: Locked |
+| Trimmer | Bags: AnyShardLocked, Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; MoveSounds: Moving; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: PlayPause; Status: DeletedText, PausedPressText |
 | DeleteButton | Trimmer: Delete |
 | Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
@@ -182,14 +185,14 @@ on the right and the file on the left breaks; the check fails first.
 | DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set; DebugReport: Open |
 | SlashCommand | Colors: Echo; Options: APP, ChatWord, SetCapShortForm; Status: PrintStatus; Window: Open |
 | TabComplete | Options: ChatWords; Settings: ValueWords |
-| Status | Bags: Count; Cap: Get, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
+| Status | Bags: Count; Cap: Get, LowMark, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
 | Macros | Combat: Locked; SSF: SPELLS |
 | MacroGlow | Macros: Names |
 | DeleteHelp | Colors: Code, Commands; Macros: Body, SpellName |
 | Tooltip | Colors: GOLD, WHITE |
 | Window | Colors: BLACK, Class, Gold; Combat: InFight; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
 | Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: RefreshNote, ShowNote |
-| NewsShow | Colors: Code, Commands, Gold; Combat: InFight; Macros: SpellNameOf; SSF: SPELLS; Window: RefreshLeftNote, ShowLeftNote |
+| NewsShow | Colors: Code, Commands, Gold; Combat: InFight; Macros: BodyFor, SpellNameOf; SSF: SPELLS; Window: RefreshLeftNote, ShowLeftNote |
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
 | LowGlow | Cap: State; Colors: RED; Counter: Refresh |

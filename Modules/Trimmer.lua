@@ -15,7 +15,7 @@
 -- Runs only inside a hardware event (a slash command or a button click), because
 -- DeleteCursorItem is limited to one delete per hardware event on this engine.
 -- In combat the delete is the same as out of it (the live server keeps it), but silent
--- (Sounds:Moving decides what is heard); the Sorter pass does nothing in combat but note
+-- (MoveSounds:Moving decides what is heard); the Sorter pass does nothing in combat but note
 -- that it was asked, so a fight never moves a shard.
 -- Paused (profile.paused), a press neither moves nor deletes; every paused press out of
 -- combat plays the pause sound (Sounds:PlayPause, silent when it is set to off) and prints the paused-press
@@ -39,7 +39,7 @@
 --          decided to delete did not. Debug records all three; the first and last have no
 --          other listener.
 -- Reads:   Bags:LastShard/Count/AnyShardLocked, Cap:Get/IsOver/IsFull/IsQuiet, Sorter:TopFirst/Pass,
---          Sounds:PlayPause/Moving, Status:DeletedText/PausedPressText, Combat:Locked (a
+--          Sounds:PlayPause, MoveSounds:Moving, Status:DeletedText/PausedPressText, Combat:Locked (a
 --          paused press is silent in combat); profile.paused,
 --          pauseLog, announce.
 -- Acts on: the bags: deletes one shard (ClearCursor, PickupContainerItem puts the shard on
@@ -62,9 +62,9 @@ local function TrimOne(count, cap)
         return
     end
 
-    -- the pickup and the delete go through Sounds, which decides whether they are heard
+    -- the pickup and the delete go through MoveSounds, which decides whether they are heard
     local failed
-    SSF:GetModule("Sounds"):Moving("delete", function()
+    SSF:GetModule("MoveSounds"):Moving("delete", function()
         ClearCursor()
         C_Container.PickupContainerItem(bag, slot)
         local kind, cursorID = GetCursorInfo()

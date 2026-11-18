@@ -1,9 +1,9 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Sounds: SSF's sounds in LibSharedMedia's "sound" list, playing one by its LSM name, what
--- a volume level means, and whether the game's item sounds are heard around SSF's own
--- shard moves (Moving). The sounds are Blizzard's own game files, registered by file
--- ID: nothing is bundled.
+-- Sounds: SSF's own sounds: in LibSharedMedia's "sound" list, playing one by its LSM
+-- name, and what a volume level means. The sounds are Blizzard's own game files,
+-- registered by file ID: nothing is bundled. (Whether the game's item sounds are heard
+-- around a shard move is MoveSounds' job.)
 --   SSF: Bag thunk   file 567559 / sound kit 1200   PutDownBag, the sound of a bag
 --                                                    dropped where it can't go; the
 --                                                    default pause sound.
@@ -34,31 +34,10 @@
 -- Channel: an LSM file plays on SFX; an own sound kit plays with C_Sound's default
 -- sub-type, as tested in game.
 --
--- Moving shards: the game plays an item's pickup and put-down sound on every move, and SSF
--- moves shards from code. Moving(kind, fn) is the one place that decides whether those
--- sounds are heard, and the one place that knows their file IDs (MOVE_FIRST to MOVE_LAST
--- and MOVE_MORE: every item pickup and put-down sound, the list Baganator's sort mutes;
--- all of them, since a SoulSort legacy move swaps another item). The rule (Heard): a sort
--- is never heard, at a press or when combat ends, or a sort at the end of a fight would
--- clink seconds after the last press with no clue it was SSF; a delete is heard out of
--- combat (the tink that says a shard went) and not in combat. Heard decides only the
--- game's item sounds around a move or a delete. SSF's own pause sound is played through
--- Play (PlayPause), which Heard does not touch: whether a paused press plays it, and its
--- silence in combat, is Trimmer's rule, and the options' previews play it on purpose. So
--- a "no SSF sounds at all" option needs Heard and Play both, not Heard alone. Not
--- heard = the game's MuteSoundFile on every one of those files, fn, then UnmuteSoundFile on
--- every one: fn runs protected, so the sounds come back on even when a move throws (the
--- error is raised again afterwards, with where it happened added to its text). A mute
--- left on would silence item sounds for every addon, with nothing to tell the player why.
--- No call that asks whether a file is muted is known (neither function is in the client's
--- UI source or API docs), so if another addon keeps one of these files muted on purpose,
--- the unmute here turns it back on (Baganator's sort does the same). On a client without
--- the two functions fn just runs.
+-- Whether a paused press plays the pause sound, and its silence in combat, is Trimmer's
+-- rule; the options' previews play it on purpose.
 --
--- Public:  Moving(kind, fn) -- runs fn, which moves or deletes shards; kind is "sort" or
---            "delete" (Sorter and Trimmer hand their moves over and know nothing of the
---            rule). Returns nothing, heard or not.
---          Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
+-- Public:  Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name
 --            LSM no longer knows (a sound pack removed) falls back to the default; a nil
 --            name plays nothing (LSM:IsValid is true for nil).
 --          PlayPause() -- the pause sound at the saved notch (profile.pauseSoundName,
@@ -73,16 +52,12 @@
 --            slider (volume nil = the old default, full; a volume that was no level = full,
 --            the old rule).
 -- Listens: SOUNDKIT_FINISHED (the own sound playing has ended).
--- Sends:   SSF_SOUNDS_MUTED (kind) and SSF_SOUNDS_UNMUTED (kind), around an fn that is not
---          heard; SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records all
---          three; no other listener); SSF_SOUND_BUSY (true or false) when an own sound
+-- Sends:   SSF_SOUND_PLAYED (the LSM name) from every Play (Debug records it; no other
+--          listener); SSF_SOUND_BUSY (true or false) when an own sound
 --          starts and when it ends (Window redraws).
--- Reads:  Combat:Locked (a delete in combat is not heard); profile.pauseSoundName,
---          pauseSoundLevel. Owns the handle of its own sound while it plays; no frames.
+-- Reads:   profile.pauseSoundName, pauseSoundLevel. Owns the handle of its own sound while it plays; no frames.
 -- Acts on: the game's sound: plays one (PlaySound for SSF's own, at the volume given;
---          PlaySoundFile for any other LSM sound), and around a move that is not heard
---          mutes every item pick-up and put-down sound, then unmutes them (MuteSoundFile,
---          UnmuteSoundFile). LibSharedMedia's "sound" list, which every addon shares:
+--          PlaySoundFile for any other LSM sound). LibSharedMedia's "sound" list, which every addon shares:
 --          SSF's sounds are added to it at enable.
 -- Touches nothing else.
 
@@ -152,35 +127,6 @@ function Sounds:Play(name, volume)
     end
     local file = LSM:Fetch("sound", name, true)
     if file then PlaySoundFile(file, "SFX") end
-end
-
--- every item pickup and put-down sound, by file ID: one run of IDs, then the rest
-local MOVE_FIRST, MOVE_LAST = 567542, 567577
-local MOVE_MORE = { 2308876, 2308881, 2308889, 2308894, 2308901, 2308907, 2308914, 2308920, 2308925, 2308930, 2308935, 2308942, 2308948, 2308956, 2308962, 2308968, 2308974, 2308985, 2308992, 2309001, 2309006, 2309013, 2309025, 2309036, 2309051, 2309057, 2309070, 2309078, 2309089, 2309100, 2309109, 2309120, 2309126, 2309132, 2309137, 2309141 }
-
-local function EachMoveSound(fn)
-    for id = MOVE_FIRST, MOVE_LAST do fn(id) end
-    for _, id in ipairs(MOVE_MORE) do fn(id) end
-end
-
--- The rule: is a move of this kind heard? See the header.
-local function Heard(kind)
-    return kind == "delete" and not SSF:GetModule("Combat"):Locked()
-end
-
-function Sounds:Moving(kind, fn)
-    if Heard(kind) or not (MuteSoundFile and UnmuteSoundFile) then
-        fn()
-        return
-    end
-    EachMoveSound(MuteSoundFile)
-    self:SendMessage("SSF_SOUNDS_MUTED", kind)
-    -- the handler adds where the error happened: raising it again from here would
-    -- otherwise show only this line
-    local okay, err = xpcall(fn, function(e) return tostring(e) .. "\n" .. debugstack(2) end)
-    EachMoveSound(UnmuteSoundFile)
-    self:SendMessage("SSF_SOUNDS_UNMUTED", kind)
-    if not okay then error(err, 0) end
 end
 
 function Sounds:PlayPause()

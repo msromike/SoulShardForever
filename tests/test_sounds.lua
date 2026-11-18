@@ -1,54 +1,11 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- test_sounds: Moving, the one rule for whether a shard move is heard. A sort is never
--- heard; a delete is heard out of combat and not in it; and whatever the moves do, every
--- sound muted for them is back on afterwards, even when a move throws. And the pause
--- sound's notches: the curve pinned, the conversion of the two values saved before the
--- slider, and silence at notch 0.
+-- test_sounds: the pause sound. Its notches: the curve pinned, the conversion of the two
+-- values saved before the slider, and silence at notch 0. And Busy: an own sound from its
+-- start until the game says it ended.
 -- Touches nothing else.
 
 local Sounds = SSF:GetModule("Sounds")
-
-local function mutedNow()
-    local n = 0
-    for _ in pairs(WoW.muted) do n = n + 1 end
-    return n
-end
-
--- runs Moving and returns how many sound files were muted while fn ran
-local function mutedDuring(kind)
-    local during
-    Sounds:Moving(kind, function() during = mutedNow() end)
-    return during
-end
-
-test("a sort is never heard: muted while it runs, back on after", function()
-    eq(mutedNow(), 0, "nothing muted to begin with")
-    eq(mutedDuring("sort"), 72, "out of combat: every item move sound muted")
-    eq(mutedNow(), 0, "and all back on")
-    WoW.combat = true
-    eq(mutedDuring("sort"), 72, "in combat: the same")
-    eq(mutedNow(), 0, "and all back on")
-end)
-
-test("a delete is heard out of combat and not in combat", function()
-    eq(mutedDuring("delete"), 0, "out of combat: nothing muted, the tink plays")
-    eq(select("#", Sounds:Moving("delete", function() return 1, 2 end)), 0, "heard: returns nothing")
-    eq(select("#", Sounds:Moving("sort", function() return 1, 2 end)), 0, "muted: returns nothing")
-    WoW.combat = true
-    eq(mutedDuring("delete"), 72, "in combat: muted")
-    eq(mutedNow(), 0, "and all back on")
-end)
-
-test("a move that throws still leaves every sound back on", function()
-    local okay, err = pcall(Sounds.Moving, Sounds, "sort", function()
-        eq(mutedNow(), 72, "muted when the move starts")
-        error("the move broke", 0)
-    end)
-    eq(okay, false, "the error is not swallowed")
-    ok(tostring(err):find("the move broke", 1, true) == 1, "and it is the move's own error, first")
-    eq(mutedNow(), 0, "every sound is back on")
-end)
 
 -- WHY THIS IS PINNED: the profile saves the slider's notch (profile.pauseSoundLevel), and
 -- this curve is what each notch sounds like. Changing a number below changes how loud the
@@ -133,14 +90,4 @@ test("an own sound is busy from its start until the game says it ended", functio
     listener:UnregisterAllMessages()
     WoW.FireEvent("SOUNDKIT_FINISHED", 7)
     assert(okay, err)
-end)
-
-test("on a client without the mute functions the moves just run", function()
-    local mute, unmute = MuteSoundFile, UnmuteSoundFile
-    MuteSoundFile, UnmuteSoundFile = nil, nil
-    local ran = false
-    local okay, err = pcall(Sounds.Moving, Sounds, "sort", function() ran = true end)
-    MuteSoundFile, UnmuteSoundFile = mute, unmute
-    assert(okay, err)
-    eq(ran, true, "the moves ran")
 end)

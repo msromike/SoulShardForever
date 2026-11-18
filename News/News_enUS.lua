@@ -9,7 +9,6 @@ L["Delete in Combat is Live"] = true
 L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."] = true
 L["How to use it:"] = true
 L["put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:"] = true
-L["#showtooltip\n/ssf delete\n/cast %s"] = true
 L["Tip:"] = true
 L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding or in melee:"] = true
 L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"] = true

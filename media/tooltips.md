@@ -173,7 +173,7 @@ The same lines every time; labels grey, values as noted:
     Soul Shards        13    red below warn / green in range / yellow over cap, always
     (blank line)             the count above, the settings below
     Soul shard cap     16    white
-    Low shard mark      6    white, the setting as set
+    Low shard mark      6    white, never above the cap
     SSF paused         No    green No / red Yes
 
 ## Welcome note (first load, once per welcome version per character; also from Create macros)

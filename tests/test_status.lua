@@ -55,13 +55,15 @@ test("CountValue, CountText and InBagsText with no count read the bags", functio
     eq(plain(Status:InBagsText()), "(in bags: 2)", "the cap command's echo tail")
 end)
 
-test("LowMarkValue is the saved mark", function()
+-- Cap owns what the low mark is, and it is never above the cap. The tooltip asks Cap; it
+-- does not read the saved number itself.
+test("LowMarkValue is Cap's low mark, never above the cap", function()
     profile.autoMax = false
     profile.maxShards = 8
     profile.lowMark = 4
-    eq(plain(Status:LowMarkValue()), "4", "as saved")
+    eq(plain(Status:LowMarkValue()), "4", "under the cap: the mark")
     profile.lowMark = 73
-    eq(plain(Status:LowMarkValue()), "73", "as saved, even above the cap (the tooltip shows the setting)")
+    eq(plain(Status:LowMarkValue()), "8", "a saved number above the cap: the cap, as everywhere else")
     profile.lowMark = 4
 end)
 

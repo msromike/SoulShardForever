@@ -9,6 +9,12 @@
 -- nothing. English only, like the record: a
 -- player is handed these words when a problem needs them. The "debug" word itself is a
 -- hidden entry in Options' table, which hands what follows it to Run.
+-- AceConfigCmd reads the "debug" word and stops there on purpose: it cannot do the rest.
+-- The bare word reports the switch, and "mark", "report" and "clear" hang off the same
+-- word. As a group of AceConfig entries the bare word would print Ace's list of
+-- sub-commands in place of the switch, and a wrong word Ace's own error in place of the
+-- usage line. Settings reads its own words for the same reason (Run below is that rule,
+-- not a copy of AceConfigCmd's parsing).
 --
 -- Public:  Run(input) -- input: the text after "/ssf debug".
 -- Reads:   Debug:IsOn/Set/Mark/Clear, DebugReport:Open, Colors:OnOff.

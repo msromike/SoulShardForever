@@ -21,7 +21,8 @@
 -- Reads:   NS.news from News\News.lua (the announcement: id, on, title, text);
 --          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote; Combat:InFight;
 --          Colors:Gold (a paragraph's lead), Colors:Code (a macro paragraph) and
---          Colors:Commands (the commands in any other text); Macros:SpellNameOf and SSF.SPELLS (a paragraph's
+--          Colors:Commands (the commands in any other text); Macros:BodyFor (a macro
+--          paragraph with a spell and no text) and Macros:SpellNameOf and SSF.SPELLS (a paragraph's
 --          spell, by key, put into its text's %s).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
 -- Touches nothing else.
@@ -65,7 +66,11 @@ local function Note(self, news)
             local text = part.text and L[part.text]
             -- a spell's name, from the game in the client's language, like the welcome's
             -- macros: a translation never spells one out, and a rename reaches it
-            if text and part.spell then text = text:format(SSF:GetModule("Macros"):SpellNameOf(SSF.SPELLS[part.spell]) or "") end
+            local Macros = SSF:GetModule("Macros")
+            local spellName = part.spell and (Macros:SpellNameOf(SSF.SPELLS[part.spell]) or "")
+            if text and spellName then text = text:format(spellName) end
+            -- a macro with a spell and no text: the recommended macro for it, Macros' text
+            if part.macro and spellName and not text then text = Macros:BodyFor(spellName) end
             -- a macro is drawn whole in the code color; in a sentence, only its commands
             if text then text = part.macro and Colors:Code(text) or Colors:Commands(text) end
             line = lead and text and (lead .. LEAD_GAP .. text) or lead or text or ""

@@ -25,6 +25,8 @@ end
 test("the macro text is /ssf delete before the spell, in the client's language", function()
     eq(Macros:Body("LT"), "#showtooltip\n/ssf delete\n/cast Spell 1454", "Life Tap")
     eq(Macros:Body("BoA"), "#showtooltip\n/ssf delete\n/cast Spell 980", "Bane of Agony")
+    eq(Macros:BodyFor("Any Spell"), "#showtooltip\n/ssf delete\n/cast Any Spell", "the one template, for any spell's name")
+    eq(Macros:Body("LT"), Macros:BodyFor(Macros:SpellName("LT")), "and the recommended macros are made from it")
     eq(table.concat(Macros:Names(), " "), "SSF_LT SSF_BoA", "found by these names")
 end)
 

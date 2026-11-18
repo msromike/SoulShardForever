@@ -9,7 +9,7 @@
 -- is forgotten without a note); when combat ends, a noted pass runs once and the
 -- note clears (not while paused: the note is dropped). No
 -- note, nothing runs: SSF only ever moves shards because of a press. A pass out of combat
--- clears the note too. Every move is silent: the moves go through Sounds:Moving.
+-- clears the note too. Every move is silent: the moves go through MoveSounds:Moving.
 -- Paused, a pass moves nothing, whoever asks for it: Pass asks Trimmer:Paused itself, and
 -- drops any note and any leftovers waiting, so a follow-up never moves a shard after the
 -- player paused.
@@ -35,7 +35,7 @@
 --          pass was asked for in combat and was noted; SSF_SORT_RESUMED when combat ended
 --          and the noted pass is about to run (Debug records the last two; no other
 --          listener).
--- Reads:   Bags; Sounds:Moving; Trimmer:Paused (the pause gate, at every pass and when
+-- Reads:   Bags; MoveSounds:Moving; Trimmer:Paused (the pause gate, at every pass and when
 --          combat ends); Combat:Locked (nothing moves in combat);
 --          profile.soulsortLegacy, soulsortReverse.
 -- Acts on: the bags: moves shards (PickupContainerItem on the shard, then on the free soul
@@ -97,9 +97,9 @@ function Sorter:Pass()
         moved, f = moved + 1, f + 1
         moves[moved] = { shard[1], shard[2], target[1], target[2] }
     end
-    -- fire them all, through Sounds, which keeps them silent
+    -- fire them all, through MoveSounds, which keeps them silent
     if moved > 0 then
-        SSF:GetModule("Sounds"):Moving("sort", function()
+        SSF:GetModule("MoveSounds"):Moving("sort", function()
             for _, move in ipairs(moves) do
                 ClearCursor()
                 C_Container.PickupContainerItem(move[1], move[2])

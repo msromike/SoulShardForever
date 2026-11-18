@@ -17,6 +17,8 @@
 -- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(),
 --          Create() -> "/reload" once it made macros, else nil.
 --          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
+--          BodyFor(spellName) -> the same macro text for any spell's name: the one
+--          template (Body uses it, and so does an announcement's macro).
 --          SpellNameOf(id) -> any spell's name in the client's language, as a macro's
 --          /cast line needs it, or nil when the game has none: the one place SSF asks
 --          the game for a spell's name (SpellName and the announcement's macros use it).
@@ -67,8 +69,13 @@ function Macros:SpellName(key)
     return self:SpellNameOf(m.spell) or m.fallback
 end
 
+-- the one template: /ssf delete on the line before the cast
+function Macros:BodyFor(spellName)
+    return "#showtooltip\n/ssf delete\n/cast " .. spellName
+end
+
 function Macros:Body(key)
-    return "#showtooltip\n/ssf delete\n/cast " .. self:SpellName(key)
+    return self:BodyFor(self:SpellName(key))
 end
 
 function Macros:Exists(key)
