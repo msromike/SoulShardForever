@@ -1,7 +1,6 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony,
--- and the one place SSF asks the game for a spell's name (SpellNameOf).
+-- Macros: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
 -- Holds their text (the one source: the help text shows exactly what Create writes), says
 -- whether each exists, makes the missing ones on a click and hands back /reload for the
 -- note's secure button to run (a new macro shows a stale
@@ -17,11 +16,10 @@
 -- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(),
 --          Create() -> "/reload" once it made macros, else nil.
 --          key: "LT" (Life Tap) or "BoA" (Bane of Agony).
---          BodyFor(spellName) -> the same macro text for any spell's name: the one
---          template (Body uses it, and so does an announcement's macro).
---          SpellNameOf(id) -> any spell's name in the client's language, as a macro's
---          /cast line needs it, or nil when the game has none: the one place SSF asks
---          the game for a spell's name (SpellName and the announcement's macros use it).
+--          BodyFor(spellName, lines) -> the same macro text for any spell's name: the
+--          one template (Body uses it, and so does an announcement's macro). lines,
+--          optional: a list of a variant's own lines, put between /ssf delete and the
+--          cast.
 -- Listens: UPDATE_MACROS, bucketed (it fires in bursts of about five, even on a click in
 --          Blizzard's macro window); LOADING_SCREEN_DISABLED once, after Create's reload.
 -- Sends:   SSF_MACROS_CHANGED; SSF_MACRO_WINDOW_SHOWN once SSF has opened Blizzard's macro
@@ -30,7 +28,8 @@
 --          (Blizzard_MacroUI loads on demand), MacroFrame's ChangeTab and SelectMacro pick the tab
 --          and the macro; UIErrorsFrame's AddExternalErrorMessage prints the red line. A Blizzard
 --          rename breaks the "show them" step or the no-free-slot message.
--- Reads:   Combat:Locked (Create does nothing in combat); profile.macroWindowAfterReload;
+-- Reads:   Combat:Locked (Create does nothing in combat); Spells:NameOf (a macro's spell,
+--          in the client's language); profile.macroWindowAfterReload;
 --          Blizzard's macro API and MacroFrame.
 -- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
 -- Acts on: the player's macros (CreateMacro: makes the missing ones, in the character's
@@ -59,19 +58,17 @@ local function Limits()
     return k and k.MAX_ACCOUNT_MACROS or 120, k and k.MAX_CHARACTER_MACROS or 30
 end
 
--- a spell's name in the client's language; this client has no GetSpellInfo
-function Macros:SpellNameOf(id)
-    return C_Spell.GetSpellName(id)
-end
-
 function Macros:SpellName(key)
     local m = MACROS[key]
-    return self:SpellNameOf(m.spell) or m.fallback
+    return SSF:GetModule("Spells"):NameOf(m.spell) or m.fallback
 end
 
--- the one template: /ssf delete on the line before the cast
-function Macros:BodyFor(spellName)
-    return "#showtooltip\n/ssf delete\n/cast " .. spellName
+-- the one template: /ssf delete on the line before the cast; a variant's own lines
+-- (/stopattack, /stopcasting) go between the two
+function Macros:BodyFor(spellName, lines)
+    local between = ""
+    for _, line in ipairs(lines or {}) do between = between .. line .. "\n" end
+    return "#showtooltip\n/ssf delete\n" .. between .. "/cast " .. spellName
 end
 
 function Macros:Body(key)

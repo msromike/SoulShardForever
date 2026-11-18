@@ -11,10 +11,11 @@
 -- /ssf. Every typed command is echoed first, in grey after a "> " prompt, the way a
 -- terminal does (WoW's chat never shows the slash command typed), except "delete": macros
 -- run it before every cast, and an echo there would flood chat. Which words are commands,
--- listed or hidden, is Options' answer (ChatWord).
+-- listed or hidden, is Options' answer (ChatWord), and so is which word asks for the list
+-- (IsHelpWord).
 --
 -- Public:  none; the game calls the handler through /ssf.
--- Reads:   Options:ChatWord/SetCapShortForm and Options.APP, Window:Open,
+-- Reads:   Options:ChatWord/IsHelpWord/SetCapShortForm and Options.APP, Window:Open,
 --          Status:PrintStatus, Colors:Echo.
 -- Acts on: the slash command /ssf (AceConsole's RegisterChatCommand, on the addon object).
 -- Touches nothing else.
@@ -40,7 +41,7 @@ local function HandleCommand(input)
         SSF:Print(L["Type /ssf help for commands."])
         return
     end
-    if first == "help" or first == "?" then
+    if Options():IsHelpWord(first) then
         AceConfigCmd:HandleCommand("ssf", APP, "")
         return
     end

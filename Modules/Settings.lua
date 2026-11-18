@@ -7,9 +7,7 @@
 --
 -- Chat rule it enforces for every stateful command: typed naked it reports the current
 -- value; typed with a value it applies and echoes the new one; booleans show green ON /
--- red OFF. AceConfigCmd cannot do that by itself (a naked toggle flips, a naked range
--- errors), which is the only reason this module exists (Parse below is that rule, not a
--- copy of AceConfigCmd's parsing).
+-- red OFF.
 --
 -- Public:  Settings:Define(key, def) where def = { order, kind = "toggle"|"range", name,
 --          desc, get(), apply(value), optional extra() -> text appended to the chat echo,
@@ -29,6 +27,10 @@
 --          the chat command applied it, "window" when the window's control did (Window
 --          redraws an open window for every source but "window").
 -- Reads:   Colors:OnOff/Value for the echo. Prints through AceConsole only.
+-- Exceptions: a stateful command's value is read by hand (Parse), deliberate, where
+--          AceConfigCmd could take it as a toggle or a range. Typed naked, Ace flips a
+--          toggle and errors on a range; SSF reports the current value. So each chat
+--          command is an input entry and this module reads its word.
 -- Owns no state beyond which keys are toggles, no events, no frames. Touches nothing else.
 
 local ADDON = ...

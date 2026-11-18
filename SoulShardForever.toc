@@ -54,6 +54,7 @@ Modules\DebugCommand.lua
 Modules\SlashCommand.lua
 Modules\TabComplete.lua
 Modules\Status.lua
+Modules\Spells.lua
 Modules\Macros.lua
 Modules\MacroGlow.lua
 Modules\DeleteHelp.lua

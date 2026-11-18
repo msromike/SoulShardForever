@@ -42,8 +42,9 @@
 --
 -- Public:  TogglePause() (the pause key binding), Rebuild();
 --          ChatWord(word) -> "listed" | "hidden" | nil, ChatWords() -> every listed word,
---          sorted (SlashCommand, TabComplete); SetCapShortForm(input) ("/ssf 25",
---          SlashCommand);
+--          sorted (SlashCommand, TabComplete); IsHelpWord(word) -> true for the word
+--          that prints the command list or its short form (SlashCommand);
+--          SetCapShortForm(input) ("/ssf 25", SlashCommand);
 --          Options.APP, the AceConfig app name (Window opens the window by it).
 -- Listens: SSF_HELP_CHANGED (Rebuild: the table captured its tooltip style when built).
 -- Sends:   SSF_OPTIONS_CHANGED (key, "window") from every GUI-only setter; SSF_OPTIONS_REBUILT.
@@ -152,6 +153,11 @@ local OLD_LOG_WORD = "announce"
 local DEBUG_WORD = "debug"
 -- the chat words /ssf lets through although the help list and Tab never show them
 local HIDDEN_WORDS = { [OLD_LOG_WORD] = true, [DEBUG_WORD] = true }
+-- The word that prints the command list, shown in that list and offered on Tab, and its
+-- short form, which works but is never shown. Neither is an entry of the table:
+-- SlashCommand acts on them, and asks here which words they are (IsHelpWord).
+local HELP_WORD = "help"
+local HELP_WORDS = { [HELP_WORD] = true, ["?"] = true }
 
 -- The reason on a greyed Delete Shard, per Trimmer:WhyNot(). Read live from L, so a
 -- Language change shows at once.
@@ -462,7 +468,7 @@ local function BuildTable()
             dialogHidden = true,
             cmdHidden = true,
             name = "Debug",
-            desc = "The debug record: on, off, mark <name>, report, clear.",
+            desc = "The debug record's command.",
             get = function() return "" end,
             set = function(_, input) SSF:GetModule("DebugCommand"):Run(input) end,
         },
@@ -542,22 +548,27 @@ local function BuildTable()
     return root
 end
 
--- What a word typed after /ssf is: "listed" (a root entry AceConfigCmd shows, or "help",
--- SlashCommand's own word, listed with them), "hidden" (a command that works but is never
+-- True for a word that asks for the command list: the help word or its short form.
+function Options:IsHelpWord(word)
+    return HELP_WORDS[word] == true
+end
+
+-- What a word typed after /ssf is: "listed" (a root entry AceConfigCmd shows, or the help
+-- word, listed with them), "hidden" (a command that works but is never
 -- listed or offered: HIDDEN_WORDS), or nil (not a command). SlashCommand's unknown-word
 -- check and TabComplete's list both ask this, so the two can never disagree.
 function Options:ChatWord(word)
-    if word == "help" then return "listed" end
+    if word == HELP_WORD then return "listed" end
     if HIDDEN_WORDS[word] then return "hidden" end
     local entry = self.table.args[word]
     if entry ~= nil and not entry.cmdHidden then return "listed" end
 end
 
--- Every listed chat word, "help" included, sorted.
+-- Every listed chat word, the help word included, sorted.
 function Options:ChatWords()
-    local list = { "help" }
+    local list = { HELP_WORD }
     for key in pairs(self.table.args) do
-        if key ~= "help" and self:ChatWord(key) == "listed" then list[#list + 1] = key end
+        if key ~= HELP_WORD and self:ChatWord(key) == "listed" then list[#list + 1] = key end
     end
     table.sort(list)
     return list

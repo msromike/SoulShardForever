@@ -456,7 +456,7 @@ CASES = [
     Case("exceptions: a header's Exceptions field removed, the list left", EXCEPTIONS, "Modules/Counter.lua",
          "-- Exceptions: the FontString", "--          the FontString", "documents 0 exception(s)"),
     Case("exceptions: the number in CLAUDE.md changed, the list left", EXCEPTIONS, "CLAUDE.md",
-         "- Five documented exceptions", "- Six documented exceptions", "says Six documented exceptions, lists 5"),
+         "- Seven documented exceptions", "- Eight documented exceptions", "says Eight documented exceptions, lists 7"),
     Case("exceptions: a line dropped from CLAUDE.md's list", EXCEPTIONS, "CLAUDE.md",
          "    - Core: ApplyLanguage writes into AceLocale's own table (AceLocale has no way to\n"
          "      switch language while the game runs).\n", "", "lists 0 for Core"),

@@ -11,7 +11,6 @@ L["How to use it:"] = "Como usar:"
 L["put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:"] = "coloque /ssf delete na linha antes dos feitiços que você mais usa. Duas ou três macros bastam:"
 L["Tip:"] = "Dica:"
 L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding or in melee:"] = "/stopattack e /stopcasting fazem feitiços instantâneos como %s saírem no primeiro toque, mesmo enquanto você atira com a varinha ou está em corpo a corpo:"
-L["#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"] = "#showtooltip\n/ssf delete\n/stopattack\n/stopcasting\n/cast %s"
 L["Note:"] = "Nota:"
 L["I put /ssf delete into every offensive macro I use and it is working great."] = "Coloquei /ssf delete em todas as macros ofensivas que uso e está funcionando muito bem."
 

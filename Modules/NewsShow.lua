@@ -23,7 +23,7 @@
 --          Colors:Gold (a paragraph's lead) and Colors:Commands (the commands in any
 --          text that is not a macro; a macro is handed to the panel as a macro block,
 --          which draws it in its own box); Macros:BodyFor (a macro
---          paragraph with a spell and no text) and Macros:SpellNameOf and SSF.SPELLS (a paragraph's
+--          paragraph with a spell and no text) and Spells:NameOf and SSF.SPELLS (a paragraph's
 --          spell, by key, put into its text's %s).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
 -- Touches nothing else.
@@ -68,10 +68,11 @@ local function Note(self, news)
             -- a spell's name, from the game in the client's language, like the welcome's
             -- macros: a translation never spells one out, and a rename reaches it
             local Macros = SSF:GetModule("Macros")
-            local spellName = part.spell and (Macros:SpellNameOf(SSF.SPELLS[part.spell]) or "")
+            local spellName = part.spell and (SSF:GetModule("Spells"):NameOf(SSF.SPELLS[part.spell]) or "")
             if text and spellName then text = text:format(spellName) end
-            -- a macro with a spell and no text: the recommended macro for it, Macros' text
-            if part.macro and spellName and not text then text = Macros:BodyFor(spellName) end
+            -- a macro with a spell and no text: Macros' text for it, the paragraph's own
+            -- lines (if any) before the cast
+            if part.macro and spellName and not text then text = Macros:BodyFor(spellName, part.lines) end
             -- a macro goes to the panel as it is: the panel draws it in its own box, in
             -- the code color. In a sentence, only its commands are painted
             if text and not part.macro then text = Colors:Commands(text) end

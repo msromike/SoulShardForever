@@ -27,7 +27,7 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
 - No insurance against a library changing behavior it has had for years. Use the library
   as it is, name the reach under "Lib internals", and let the library diff be the
   warning. A hand copy of library code kept "in case" is hand-rolling.
-- Five documented exceptions, and no others. Each is explained in its file's header under
+- Seven documented exceptions, and no others. Each is explained in its file's header under
   Exceptions (a header with more than one numbers them: (1), (2)). The check counts this
   list against the headers, so it stays one per line, the file first:
     - DeleteButton: a raw named frame (/click needs a global name).
@@ -39,6 +39,11 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
       it on Escape; the stock Frame is unnamed and Escape has no other way in).
     - Core: ApplyLanguage writes into AceLocale's own table (AceLocale has no way to
       switch language while the game runs).
+    - Settings: reads a stateful chat command's value by hand (typed naked, AceConfigCmd
+      flips a toggle and errors on a range; SSF reports the current value).
+    - DebugCommand: splits the words after "/ssf debug" by hand (as a group AceConfigCmd
+      prints its own sub-command list on the bare word and its own error on a wrong one;
+      SSF reports the switch and prints its usage line).
 - The stock Frame container is the window base: dialog-box art, resize disabled through
   its public EnableResize. Nothing styled like a different UI kit.
 - Reading a library's internals (an AceGUI widget's label, frame or children, an
@@ -103,7 +108,7 @@ LibDataBroker, LibDBIcon, LibSharedMedia and its AceGUI widgets
 - Before writing any helper, grep the addon for the thing it does. Most helpers already
   exist: bag queries are in Bags, thresholds in Cap (IsOver is the delete gate), the two
   combat questions in Combat, the pause gate in Trimmer (Paused), colors in Colors, chat and tooltip
-  wording in Status, tooltips in Tooltip, the pause sound's notches in Sounds. ARCHITECTURE.md lists
+  wording in Status, tooltips in Tooltip, the pause sound's notches in Sounds, a spell's name in Spells, a macro's text in Macros. ARCHITECTURE.md lists
   the rest.
 - A macro the player copies looks the same on every panel: dark box, code color. A
   module hands the panel a macro block ({ text, macro = true }) and SSFSideNote draws

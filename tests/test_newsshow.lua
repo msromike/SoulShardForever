@@ -123,8 +123,12 @@ test("a macro paragraph with a spell and no text is Macros' text for that spell"
     news.text = { { spell = "LIFE_TAP", macro = true } }
     fresh(news)
     NewsShow:OnWindowOpened()
-    local name = Macros:SpellNameOf(SSF.SPELLS.LIFE_TAP)
+    local name = SSF:GetModule("Spells"):NameOf(SSF.SPELLS.LIFE_TAP)
     eq(asked.shown[1].opts.blocks[1].text, Macros:BodyFor(name), "Macros' template")
+    news.text = { { spell = "LIFE_TAP", macro = true, lines = { "/stopattack" } } }
+    fresh(news)
+    NewsShow:OnWindowOpened()
+    eq(asked.shown[1].opts.blocks[1].text, Macros:BodyFor(name, { "/stopattack" }), "with the paragraph's own lines before the cast")
     eq(Macros:BodyFor(name), Macros:Body("LT"), "the same text the Life Tap macro is made with")
 end)
 

@@ -54,7 +54,7 @@ Core and modules:
 - Modules\Help.lua: help mode.
   Public: IsOn() -> bool, Toggle(); Apply(root) (Options, at the end of every build); KeepHover(widget, wrapper, innerFrames) (a widget's constructor: wrapper is the widget's own frame, innerFrames the stock frames that take the mouse while enabled), Greyed(widget, disabled) (the widget's SetDisabled, after the stock call).
 - Modules\Options.lua: the one settings table.
-  Public: TogglePause() (the pause key binding), Rebuild(); ChatWord(word) -> "listed" | "hidden" | nil, ChatWords() -> every listed word, sorted (SlashCommand, TabComplete); SetCapShortForm(input) ("/ssf 25", SlashCommand); Options.APP, the AceConfig app name (Window opens the window by it).
+  Public: TogglePause() (the pause key binding), Rebuild(); ChatWord(word) -> "listed" | "hidden" | nil, ChatWords() -> every listed word, sorted (SlashCommand, TabComplete); IsHelpWord(word) -> true for the word that prints the command list or its short form (SlashCommand); SetCapShortForm(input) ("/ssf 25", SlashCommand); Options.APP, the AceConfig app name (Window opens the window by it).
 - Modules\DebugCommand.lua: the words after "/ssf debug".
   Public: Run(input) -- input: the text after "/ssf debug".
 - Modules\SlashCommand.lua: /ssf itself.
@@ -63,8 +63,10 @@ Core and modules:
   Public: none; AceTab calls it on Tab.
 - Modules\Status.lua: the one wording for every number SSF shows and every status line it prints.
   Public: CountValue(count) -> "N" in its state color (Cap:State, Colors), always: only the bag number follows the colorize option; white while paused. count defaults to the bags. CapText(count, cap) -> "N (cap M)", StatusText's body; the cap in the value white. StatusText(count, cap) -> "Soul Shards: N (cap M)", chat (a bare /ssf, the login lines, the announce line, the paused-press line). Both arguments optional: the Trimmer passes the count it knows right after a delete, when the bags still show the deleted shard until the server confirms. CountText() -> "Soul Shards: N", the window's top line (its cap is the slider). InBagsText(count) -> "(in bags: N)", the cap command's echo tail. CapValue() -> the cap, in the value white. LowMarkValue() -> the saved low mark, in the value white. PausedValue() -> red "Yes" while paused, green "No" otherwise. PauseText() -> "SSF paused: Yes/No", the one pause wording in chat (a bare /ssf, the login lines, the /ssf pause echo and the pause key binding). PausedPressText() -> "All SSF actions paused. Soul Shards: N (cap M)", a paused press with the chat log on. DeletedText(count, cap) -> "Deleted a Soul Shard. Soul Shards: N (cap M)", the announce line. PrintStatus() -> prints PauseText then StatusText (a bare /ssf, login).
-- Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony, and the one place SSF asks the game for a spell's name (SpellNameOf).
-  Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony). BodyFor(spellName) -> the same macro text for any spell's name: the one template (Body uses it, and so does an announcement's macro). SpellNameOf(id) -> any spell's name in the client's language, as a macro's /cast line needs it, or nil when the game has none: the one place SSF asks the game for a spell's name (SpellName and the announcement's macros use it).
+- Modules\Spells.lua: a spell's name as the game gives it, in the client's language.
+  Public: NameOf(id) -> the spell's name, or nil when the game has none. Owns no state, no events, no frames.
+- Modules\Macros.lua: the two recommended macros, /ssf delete before Life Tap and before Bane of Agony.
+  Public: SpellName(key), Body(key), Exists(key), AnyMissing(), Names(), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap) or "BoA" (Bane of Agony). BodyFor(spellName, lines) -> the same macro text for any spell's name: the one template (Body uses it, and so does an announcement's macro). lines, optional: a list of a variant's own lines, put between /ssf delete and the cast.
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
   Public: Stop() (also the OnHide hook's handler).
 - Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, the two recommended macros, then what the Bane macro is for.
@@ -183,16 +185,16 @@ on the right and the file on the left breaks; the check fails first.
 | Settings | Colors: OnOff, Value |
 | Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Commands, Gold, PaintState, State; Counter: OnSoulBag; DebugCommand: Run; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define; Sounds: Busy, LevelStep, PlayPause; Status: CountText, InBagsText, PauseText; Trimmer: Delete, Paused, WhyNot; Window: Open |
 | DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set; DebugReport: Open |
-| SlashCommand | Colors: Echo; Options: APP, ChatWord, SetCapShortForm; Status: PrintStatus; Window: Open |
+| SlashCommand | Colors: Echo; Options: APP, ChatWord, IsHelpWord, SetCapShortForm; Status: PrintStatus; Window: Open |
 | TabComplete | Options: ChatWords; Settings: ValueWords |
 | Status | Bags: Count; Cap: Get, LowMark, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
-| Macros | Combat: Locked; SSF: SPELLS |
+| Macros | Combat: Locked; SSF: SPELLS; Spells: NameOf |
 | MacroGlow | Macros: Names |
 | DeleteHelp | Colors: Code, Commands; Macros: Body, SpellName |
 | Tooltip | Colors: GOLD, WHITE |
 | Window | Colors: BLACK, Class, Gold; Combat: InFight; Help: IsOn, Toggle; KeyBindings: Open; Macros: AnyMissing; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, MakeRoom, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
 | Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: AnyMissing, Create; Window: RefreshNote, ShowNote |
-| NewsShow | Colors: Commands, Gold; Combat: InFight; Macros: BodyFor, SpellNameOf; SSF: SPELLS; Window: RefreshLeftNote, ShowLeftNote |
+| NewsShow | Colors: Commands, Gold; Combat: InFight; Macros: BodyFor; SSF: SPELLS; Spells: NameOf; Window: RefreshLeftNote, ShowLeftNote |
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |
 | LowGlow | Cap: State; Colors: RED; Counter: Refresh |
@@ -204,11 +206,13 @@ The AceDB profile is the one shared state: any module may read it, only its owne
 a rule from it (CLAUDE.md). NS is the addon-private table Core and the locale registrar
 share.
 
-The documented exceptions to the two rules, 5 in all, from each header's Exceptions:
+The documented exceptions to the two rules, 7 in all, from each header's Exceptions:
 
 - Core: ApplyLanguage rewrites the AceLocale table in place, repeating AceLocale's two rules (enGB is enUS; a `true` value in the default means the key is the string). AceLocale has no runtime switch: NewLocale keeps only the default and the client's locale (GAME_LOCALE, when set, stands in for the client's), so the Language setting can only be done by writing into the table every module holds.
 - Counter: the FontString and the backing texture are raw: AceGUI builds widgets inside its own windows and cannot draw on a Blizzard button. One of the exceptions CLAUDE.md lists.
+- DebugCommand: Run splits the words after "debug" by hand, deliberate, where AceConfigCmd could split them as a group of entries. As a group the bare "/ssf debug" would print Ace's list of sub-commands in place of the switch, and a wrong word Ace's own error in place of the usage line. SSF keeps its own two answers, so AceConfigCmd reads the "debug" word and stops there.
 - DeleteButton: a raw, named CreateFrame. /click resolves a GLOBAL frame name, and AceGUI widgets are pooled frames meant for windows, unnamed or named by a counter, so a raw frame with a fixed name is the only way to give /click a target. One of the exceptions CLAUDE.md lists.
+- Settings: a stateful command's value is read by hand (Parse), deliberate, where AceConfigCmd could take it as a toggle or a range. Typed naked, Ace flips a toggle and errors on a range; SSF reports the current value. So each chat command is an input entry and this module reads its word. Owns no state beyond which keys are toggles, no events, no frames.
 - Window: the title strip behind each group title is a raw frame: AceConfigDialog hardcodes the InlineGroup widget, so there is no Ace way to add one. One of the exceptions CLAUDE.md lists.
 - SSFFrame: the frame gets a global name (FRAME_NAME) so UISpecialFrames can close it on Escape; the stock Frame is unnamed and Escape has no other way in.
 

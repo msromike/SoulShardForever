@@ -36,7 +36,7 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 SSF.SHARD_ITEM_ID = 6265
 -- The spells SSF names, by id: the one home for each number. Macros makes its macros from
 -- two of them, Cap's quiet state ends with Drain Soul, and the announcement names them by
--- key. The game gives each one's name in the client's language (Macros:SpellNameOf).
+-- key. The game gives each one's name in the client's language (Spells:NameOf).
 SSF.SPELLS = { LIFE_TAP = 1454, BANE_OF_AGONY = 980, DRAIN_SOUL = 1120 }
 -- Half a line of empty space, in px: the air under the radio row in the options (a look
 -- chosen on purpose) and between a divider and the text in the announcement panel.
