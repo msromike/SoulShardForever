@@ -2,6 +2,8 @@
 
 ## Features
 
+- Delete in combat: your delete key and your /ssf delete macros work in the middle of a fight. (1.16.0)
+- Sound volume slider for the pause sound, from Off to Max. (1.16.0)
 - Set your cap from chat with just a number: /ssf 25. (1.15.0)
 - News on the left of the window: what's coming next, gone for good once you tick Don't show this again. (1.14.0)
 - Pick where the shard counter sits: Far-left bag or Soul bag. (1.13.0)
@@ -27,7 +29,7 @@
 
 ## Description
 
-A Warlock addon that keeps your Soul Shards at a cap you set. Each press of a key, a macro line or a button deletes one shard if you're over the cap and moves shards into your soul bag, but never in combat. It can show your shard count on the bag bar, color-coded, and glow the bag button when you're running low. A new feature is a pause so you can stockpile for an instance or summoning session without dragging your sliders around.
+A Warlock addon that keeps your Soul Shards at a cap you set. Each press of a key, a macro line or a button deletes one shard if you're over the cap, in combat or out, and moves shards into your soul bag. It can show your shard count on the bag bar, color-coded, and glow the bag button when you're running low. A new feature is a pause so you can stockpile for an instance or summoning session without dragging your sliders around.
 
 Why did I write it? The shard addon I used for years had no Forever port when I started (and was somewhat dated). There are a handful of addons that do shard management, but they tend to be hard to configure or have features not related to the task at hand. So this addon is focused on one thing only: deleting soul shards and showing you when you're low.
 
@@ -35,7 +37,7 @@ This addon is for Forever only, and not tied to backwards compatibility.
 
 ## Using it
 
-The game lets an addon destroy one item per keypress, and none in combat. SSF deletes one shard per event, but only when you're over the cap, and it does nothing while you're fighting. It always moves shards into your soul bag when out of combat and not paused, cap or not. Call it however you like:
+The game lets an addon destroy one item per keypress. SSF deletes one shard per event, but only when you're over the cap, in combat or out. It always moves shards into your soul bag when not paused, cap or not; in a fight the move waits until the fight is over. Call it however you like:
 
 - **A key.** Open the options window (`/ssf`, or the minimap icon) and click Keybindings. Bind Delete Shard, and Pause all SSF actions if you want it.
 - **From chat.** `/ssf delete`
@@ -53,9 +55,8 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
   /cast Bane of Agony
   ```
 
-  Life Tap never puts you in combat. The Bane one deletes on the move: with no target it
-  doesn't cast, but the delete still fires. Don't use it with an enemy targeted, or you're
-  in combat before the delete fires.
+  The Bane one deletes on the move: with no target it doesn't cast, but the delete still
+  fires.
 
   Or let SSF make both: click **Create macros** at the bottom left of the window (it shows
   while either is missing), then **Create recommended macros**. SSF makes them as SSF_LT
@@ -64,9 +65,9 @@ The game lets an addon destroy one item per keypress, and none in combat. SSF de
 
 - **The Delete Shard button** in the GUI window, right beside your shard count. When a click can't delete, it's greyed out with the reason on the button: your cap (cap is 8), SSF paused, no Drain Soul yet or shard locked. The window closes itself when a fight starts and opens again only after it.
 
-Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless you pick one of the sort modes.
+Every press deletes first if you're over the cap: the shard nearest the backpack goes, so loose shards go before your soul bag's. Then it moves loose shards into free slots in your soul bag, bottom slots first. No soul bag, or a full one? Nothing moves. Nothing else in your bags is touched unless you pick one of the sort modes. In a fight a delete makes no sound, and the move waits until the fight is over.
 
-- **Pause all SSF actions** stops every press from moving or deleting, for when you want to stockpile shards (raid night: soulstones, healthstones, summons). Your cap stays as it is. While paused the count goes white everywhere and the bag button's red border stays off: you're stockpiling on purpose, so no red and no yellow until you unpause. **Colorize bag counter** and **Glow bag button when low** grey out and keep their ticks. **Sound volume** sets how loud the soft bag thunk is on every paused press, from Off to Max. **Log pauses to chat** prints a line to chat as well. In combat a press does nothing, paused or not.
+- **Pause all SSF actions** stops every press from moving or deleting, for when you want to stockpile shards (raid night: soulstones, healthstones, summons). Your cap stays as it is. While paused the count goes white everywhere and the bag button's red border stays off: you're stockpiling on purpose, so no red and no yellow until you unpause. **Colorize bag counter** and **Glow bag button when low** grey out and keep their ticks. **Sound volume** sets how loud the soft bag thunk is on every paused press, from Off to Max. **Log pauses to chat** prints a line to chat as well. In combat a paused press makes no sound and no chat line.
 - **Shards to keep** is the cap, 1 to 100. Use the slider or use the − and + to fine tune.
 - **Match soul bag size** ties the cap to your soul bag's slot count while one is equipped (all of them, if you carry more than one), and writes that number into Shards to keep, so unticking it leaves the cap at the bag size.
 - **Low shard mark** is your low mark, 1 to 100. Below it the shard count turns red and the bag button gets a red border. It can't go above the cap: the slider stops there, the track past the cap is dimmed with a gold line where the cap sits, and if the cap drops under your mark, the mark follows it down and stays. Same slider and − and + as the cap.

@@ -1,10 +1,12 @@
-## <span style="color:#8788EE">Coming soon</span>
+## <span style="color:#8788EE">New in 1.16.0</span>
 
-- **NEW – Delete in combat:**  In beta now. Your delete key and your /ssf delete macros delete a Soul Shard in and out of combat now.  To try the beta, right-click SSF in the CurseForge app, then select Release Type and choose Beta.
+- **Delete in combat:**  Your delete key and your /ssf delete macros delete a Soul Shard both in and out of combat.
+
+## <span style="color:#8788EE">Coming soon</span>
 
 - **Delete as you play:**  An optional mode that deletes Soul Shards over your cap automatically during normal gameplay without using a macro or keybind.
 
-Each one comes out first as a beta on CurseForge.
+It comes out first as a beta on CurseForge.
 
 ## <span style="color:#8788EE">Summary</span>
 
@@ -12,7 +14,7 @@ This addon helps you prune excess Warlock Soul Shards held in your bags in WoW F
 
 ## <span style="color:#8788EE">Description</span>
 
-Keeps your Soul Shards at the cap you set, one press at a time, but not in combat yet. Displays shard count, and can be paused.
+Keeps your Soul Shards at the cap you set, one press at a time, in combat or out. Displays shard count, and can be paused.
 
 ## <span style="color:#8788EE">Why this one</span>
 
@@ -85,7 +87,7 @@ Displays shard count:
 When you're stockpiling for soulstones, healthstones and summons, SSF stops deleting.
 
 - Pause and unpause with a key, or the checkbox in the window.
-- A soft thunk and a chat line, if you want them, so you know it's paused.
+- A soft thunk at the volume you set and a chat line, if you want them, so you know it's paused.
 - The count goes white, no red, no yellow, no border, until you unpause.
 - Your cap stays where it was when you resume SSF.
 
