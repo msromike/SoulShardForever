@@ -2,10 +2,10 @@
 --
 -- Combat: the two questions SSF asks about a fight, each answered here and nowhere else.
 --   Locked(): the game's combat lockdown is on. While it is, SSF moves no shard, makes no
---     macro and sets no secure button's command; a delete is not heard (Sounds) and a
+--     macro and sets no secure button's command; a delete is not heard (MoveSounds) and a
 --     paused press plays no sound and prints no line (Trimmer). A delete still deletes,
 --     and its announce line still prints when that setting is on: each asker decides what
---     "locked" means for it. Sorter, Sounds, Trimmer, Macros and SSFSideNote ask.
+--     "locked" means for it. Sorter, MoveSounds, Trimmer, Macros and SSFSideNote ask.
 --   InFight(): the lockdown, or the player already flagged in combat
 --     (PLAYER_REGEN_DISABLED fires as the fight starts, before the lockdown itself is on).
 --     The window and the notes beside it stay shut for the whole of it. Window, Welcome
