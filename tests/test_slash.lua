@@ -162,13 +162,22 @@ test("/ssf debug: naked reports, on and off set, anything else is the usage line
     lines = slash("debug OFF")
     eq(Debug:IsOn(), false, "off, capitals forgiven")
     ok(any(lines, "Debug: OFF"), "and says so")
-    for _, bad in ipairs({ "debug sideways", "debug on now", "debug mark", "debug report now", "debug clear all" }) do
+    for _, bad in ipairs({ "debug sideways", "debug on now", "debug mark", "debug report now", "debug clear all", "debug login now" }) do
         -- the line as SSF hands it to the chat frame, each bar doubled: the game draws a
         -- doubled bar as one, and eats the "|r" of a single-barred "|report"
         local _, raw = slash(bad)
-        ok(any(raw, "Use: /ssf debug on||off||mark <name>||report||clear"), bad .. ": the usage line")
+        ok(any(raw, "Use: /ssf debug on||off||mark <name>||report||clear||login"), bad .. ": the usage line")
     end
     eq(Debug:IsOn(), false, "none of them turned it on")
+end)
+
+test("/ssf debug login asks for the next login to be recorded, and leaves the record as it is", function()
+    Debug:Set(false)
+    local lines = slash("debug login")
+    ok(any(lines, "Debug will record your next login or reload."), "says so")
+    eq(SSF.db.profile.debugLogin, true, "asked for")
+    eq(Debug:IsOn(), false, "the record is not turned on now")
+    SSF.db.profile.debugLogin = nil
 end)
 
 test("/ssf debug mark turns the record on when it is off, and says so only then", function()

@@ -77,6 +77,7 @@ local function Defaults()
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
             window = {},                -- options window position: top, left and the screen size (set after a drag)
             -- debugLog: absent until the debug record is first turned on; its events, kept until cleared (Debug)
+            -- debugLogin: absent, or true from "/ssf debug login" until the next login or reload takes it (Debug)
             -- language: absent = Auto (the client's locale); a code in NS.locales (deDE) forces it
         },
     }

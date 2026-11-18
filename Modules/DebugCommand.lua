@@ -3,15 +3,17 @@
 -- DebugCommand: the words after "/ssf debug". Naked it reports the debug record's switch;
 -- "on" and "off" set it and report; "mark <name>" writes a marker into the record, turning
 -- the record on first when it is off (and saying so); "report" opens the copy window;
--- "clear" empties the saved record and says so. Anything else prints the usage line. What
+-- "clear" empties the saved record and says so; "login" has the next login or reload
+-- recorded from its first moment and says so. Anything else prints the usage line. What
 -- it prints: the switch (naked, on, off, and a mark that turned the record on), "Debug
--- record cleared." and the usage line; a mark on a record already on, and "report", print
+-- record cleared.", "Debug will record your next login or reload." and the usage line; a
+-- mark on a record already on, and "report", print
 -- nothing. English only, like the record: a
 -- player is handed these words when a problem needs them. The "debug" word itself is a
 -- hidden entry in Options' table, which hands what follows it to Run.
 --
 -- Public:  Run(input) -- input: the text after "/ssf debug".
--- Reads:   Debug:IsOn/Set/Mark/Clear, DebugReport:Open, Colors:OnOff.
+-- Reads:   Debug:IsOn/Set/Mark/Clear/WatchNextLogin, DebugReport:Open, Colors:OnOff.
 -- Exceptions: Run splits the words after "debug" by hand, deliberate, where AceConfigCmd
 --          could split them as a group of entries. As a group the bare "/ssf debug" would
 --          print Ace's list of sub-commands in place of the switch, and a wrong word Ace's
@@ -40,10 +42,14 @@ function DebugCommand:Run(input)
         Debug:Clear()
         SSF:Print("Debug record cleared.")
         return
+    elseif word == "login" and rest == "" then
+        Debug:WatchNextLogin()
+        SSF:Print("Debug will record your next login or reload.")
+        return
     elseif word ~= "" then
         -- each bar doubled: in chat a single bar starts an escape code, and "|r" (in
         -- "|report") is the end-color code, which the game eats
-        SSF:Print("Use: /ssf debug on||off||mark <name>||report||clear")
+        SSF:Print("Use: /ssf debug on||off||mark <name>||report||clear||login")
         return
     end
     SSF:Printf("Debug: %s", SSF:GetModule("Colors"):OnOff(Debug:IsOn()))

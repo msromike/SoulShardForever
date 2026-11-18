@@ -46,7 +46,7 @@ Core and modules:
   Public: Delete(); Paused() -> bool, the one pause gate (Sorter:Pass asks it too); WhyNot(count) -> why a press would not delete, or nil if it would: "paused" (a mode: the only answer while paused, whatever the count), "quiet" (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap", "locked" (over the cap, but the server still holds a shard). The window's Delete Shard button greys on it with the reason under it. No combat reason: a press deletes in a fight too, and the window is shut in one.
 - Modules\DeleteButton.lua: the global button "SSFDelete".
 - Modules\Debug.lua: the debug record.
-  Public: IsOn() -> bool; Set(on) (turns the record on or off and records that); Mark(name) (a marker; turns the record on first when it is off); Clear() (empties the saved record; the switch stays as it is); Log() -> the saved list of events (the tests' handle); Text() -> this session's events as text, one line each under two heading lines: every event since the record was first turned on after the last login or reload.
+  Public: IsOn() -> bool; Set(on) (turns the record on or off and records that); Mark(name) (a marker; turns the record on first when it is off); Clear() (empties the saved record; the switch stays as it is); WatchNextLogin() (the next login or reload starts with the record on and its steps noted, once); Log() -> the saved list of events (the tests' handle); Text() -> this session's events as text, one line each under two heading lines: every event since the record was first turned on after the last login or reload.
 - Modules\DebugReport.lua: the window a player copies the debug record from.
   Public: Open() (opens the window, or refills it when it is already up).
 - Modules\Settings.lua: turns ONE definition of a stateful setting into the two AceConfig entries it needs: a GUI control (toggle or range, hidden from chat) and a chat command (hidden from the GUI) that share the same get/apply.
@@ -128,7 +128,7 @@ News:
 | Cap | PLAYER_ENTERING_WORLD; LEARNED_SPELL_IN_SKILL_LINE; SPELLS_CHANGED |
 | Sorter | PLAYER_REGEN_ENABLED |
 | Sounds | SOUNDKIT_FINISHED |
-| Debug | PLAYER_ENTERING_WORLD; PLAYER_REGEN_DISABLED; PLAYER_REGEN_ENABLED; UNIT_SPELLCAST_CHANNEL_START; UNIT_SPELLCAST_CHANNEL_STOP |
+| Debug | PLAYER_ENTERING_WORLD; PLAYER_REGEN_DISABLED; PLAYER_REGEN_ENABLED; UNIT_SPELLCAST_CHANNEL_START; UNIT_SPELLCAST_CHANNEL_STOP; BAG_UPDATE_DELAYED; GET_ITEM_INFO_RECEIVED |
 | Status | PLAYER_ENTERING_WORLD; BAG_UPDATE_DELAYED |
 | Macros | LOADING_SCREEN_DISABLED; bucket UPDATE_MACROS (0.5s) |
 | MacroGlow | ACTIONBAR_SLOT_CHANGED |
@@ -180,11 +180,11 @@ on the right and the file on the left breaks; the check fails first.
 | MoveSounds | Combat: Locked |
 | Trimmer | Bags: AnyShardLocked, Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; MoveSounds: Moving; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: PlayPause; Status: DeletedText, PausedPressText |
 | DeleteButton | Trimmer: Delete |
-| Debug | Bags: Count, ForEachShard; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
+| Debug | Bags: Count, ForEachShard, IsRegularBag, IsSoulBag, NumSlots; Cap: Get; SSF: SHARD_ITEM_ID, VERSION |
 | DebugReport | Debug: Text |
 | Settings | Colors: OnOff, Value |
 | Options | Bags: HasSoulBag; Cap: Get, IsAuto, LowMark, MAX, MIN, Recompute, SetLowMark, SetManual; Colors: Commands, Gold, PaintState, State; Counter: OnSoulBag; DebugCommand: Run; DeleteHelp: Text; Help: Apply; SSF: ApplyLanguage; Settings: Define; Sounds: Busy, LevelStep, PlayPause; Status: CountText, InBagsText, PauseText; Trimmer: Delete, Paused, WhyNot; Window: Open |
-| DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set; DebugReport: Open |
+| DebugCommand | Colors: OnOff; Debug: Clear, IsOn, Mark, Set, WatchNextLogin; DebugReport: Open |
 | SlashCommand | Colors: Echo; Options: APP, ChatWord, IsHelpWord, SetCapShortForm; Status: PrintStatus; Window: Open |
 | TabComplete | Options: ChatWords; Settings: ValueWords |
 | Status | Bags: Count; Cap: Get, LowMark, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |

@@ -5,7 +5,10 @@
 -- session's part of the record back as text for the report window (DebugReport). It ships
 -- to every player: one with a problem turns it on, plays, and sends the report.
 -- It always starts off: the switch is not saved, so after every login and every reload it
--- has to be turned on again, and nobody leaves it on by accident. The record itself is
+-- has to be turned on again, and nobody leaves it on by accident. One thing turns it on by
+-- itself, once: WatchNextLogin, asked for by the player, has the next login or reload start
+-- with the record on and note what the bags look like at each step of the load, because
+-- no command can be typed that early. The record itself is
 -- permanent: it grows until Clear() empties it, with no cap. It only listens: Trimmer and
 -- Sorter send their messages whether or not it is on, and nothing here changes what a
 -- press does. Off means off: no message and no game event is registered until it is turned
@@ -29,6 +32,10 @@
 -- The kinds, with what each adds:
 --   on, off    the switch (on: day, at)
 --   zone       the world loaded again, through a loading screen (at)
+--   login      one step of a watched login or reload (step: the addon enabled, the world
+--              entered, the game said the bags are ready, the shard's item data arrived,
+--              the watch ended; bags: every bag slot 0 up as "bag:slots kind", kind being
+--              what Bags takes the bag for: soul, plain, or other; at)
 --   mark       a name the player typed, to split the record by test (name, at)
 --   press      a delete press, before anything is deleted (decision: "delete" or
 --              Trimmer:WhyNot's answer; channel: the spell being channeled; circle: a
@@ -52,6 +59,8 @@
 -- Public:  IsOn() -> bool; Set(on) (turns the record on or off and records that);
 --          Mark(name) (a marker; turns the record on first when it is off);
 --          Clear() (empties the saved record; the switch stays as it is);
+--          WatchNextLogin() (the next login or reload starts with the record on and its
+--          steps noted, once);
 --          Log() -> the saved list of events (the tests' handle); Text() -> this session's
 --          events as text, one line each under two heading lines: every event since the
 --          record was first turned on after the last login or reload.
@@ -59,24 +68,32 @@
 --          SSF_SORTED, SSF_SORT_NOTED, SSF_SORT_RESUMED, SSF_SOUNDS_MUTED,
 --          SSF_SOUNDS_UNMUTED, SSF_SOUND_PLAYED, SSF_BAGS_CHANGED; PLAYER_ENTERING_WORLD,
 --          PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_CHANNEL_START,
---          UNIT_SPELLCAST_CHANNEL_STOP.
+--          UNIT_SPELLCAST_CHANNEL_STOP. During a watched login, for its first minute:
+--          BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED.
 -- Hooks:   through AceHook (secure hooks, after the original): SSF.Print and SSF.Printf
 --          (the addon object's, from AceConsole), to note each line SSF prints. They
 --          attach the first time the record is turned on and stay for the session, doing
 --          nothing while it is off: a secure hook cannot be taken off again, and hooking
 --          afresh at every "on" would stack one more wrapper each time.
--- Reads:   Bags:Count/ForEachShard, Cap:Get; SSF.VERSION; profile.debugLog.
--- Saves:   profile.debugLog (every event; Clear).
+-- Reads:   Bags:Count/ForEachShard/NumSlots/IsSoulBag/IsRegularBag, Cap:Get; SSF.VERSION;
+--          profile.debugLog, debugLogin.
+-- Saves:   profile.debugLog (every event; Clear); profile.debugLogin (true from
+--          WatchNextLogin until the next login or reload takes it).
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Debug = SSF:NewModule("Debug", "AceEvent-3.0", "AceHook-3.0")
+local Debug = SSF:NewModule("Debug", "AceEvent-3.0", "AceHook-3.0", "AceTimer-3.0")
 
 local SHARD = SSF.SHARD_ITEM_ID
 
 -- The switch, and where this session's events start in the saved record (nil until the
 -- record is first turned on). Neither is saved: both are gone at a login or a reload.
 local on, sessionStart = false, nil
+
+-- A watched login: how long after the addon is enabled the game's own "bags are ready" and
+-- the shard's item data are noted, and whether that is going on now.
+local LOGIN_WATCH_SECONDS = 60
+local watching = false
 
 -- the count and the shard positions of the event before, for delta and for "did the
 -- shards move"
@@ -230,10 +247,47 @@ function Debug:OnChannel(event, unit)
     Record("channel", { state = start and "start" or "stop", spell = start and Channeling() or nil })
 end
 
--- a loading screen inside a session; a login or a reload never gets here, the record is
--- off by then
-function Debug:OnEnteringWorld()
-    Record("zone", nil, true)
+-- Every bag slot from the backpack to the reagent slot, as "bag:slots kind": how many slots
+-- the game says the bag has and what Bags takes it for. A bag with no slots is empty or not
+-- filled in yet; "other" is a bag Bags counts no shard in.
+local function BagFacts()
+    local Bags = SSF:GetModule("Bags")
+    local list = {}
+    for bag = 0, Enum.BagIndex.ReagentBag do
+        local slots = Bags:NumSlots(bag)
+        local kind = slots == 0 and "" or Bags:IsSoulBag(bag) and " soul" or Bags:IsRegularBag(bag) and " plain" or " other"
+        list[#list + 1] = bag .. ":" .. slots .. kind
+    end
+    return table.concat(list, ", ")
+end
+
+local function LoginStep(step)
+    Record("login", { step = step, bags = BagFacts() }, true)
+end
+
+function Debug:OnBagsReady()
+    LoginStep("bags ready")
+end
+
+function Debug:OnItemInfo(_, itemID)
+    if plain(itemID) == SHARD then LoginStep("shard data arrived") end
+end
+
+function Debug:EndLoginWatch()
+    watching = false
+    self:UnregisterEvent("BAG_UPDATE_DELAYED")
+    self:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
+    LoginStep("watch over")
+end
+
+-- A loading screen inside a session. At a login or a reload the record is off by then,
+-- unless the load is a watched one: then it is a step of that.
+function Debug:OnEnteringWorld(_, isLogin, isReload)
+    if watching then
+        LoginStep(isLogin and "world entered, login" or isReload and "world entered, reload" or "world entered")
+    else
+        Record("zone", nil, true)
+    end
 end
 
 function Debug:IsOn()
@@ -276,7 +330,8 @@ function Debug:Set(want)
         -- does, the record is off and nothing of it is left registered
         self:UnregisterAllMessages()
         self:UnregisterAllEvents()
-        on = false
+        self:CancelAllTimers()
+        on, watching = false, false
         Record("off")
     end
 end
@@ -284,7 +339,26 @@ end
 -- AceAddon switched the module off: the switch follows (AceEvent has already dropped every
 -- registration, and the hooks stay, doing nothing while off; a later Set(true) listens again)
 function Debug:OnDisable()
-    on = false
+    on, watching = false, false
+end
+
+function Debug:WatchNextLogin()
+    SSF.db.profile.debugLogin = true
+end
+
+-- The watched login or reload, asked for before it: the record on from the first moment,
+-- once. Setup lives in OnEnable, not OnInitialize: Core's warlock gate switches modules off
+-- before OnEnable.
+function Debug:OnEnable()
+    local p = SSF.db.profile
+    if not p.debugLogin then return end
+    p.debugLogin = nil
+    self:Set(true)
+    watching = true
+    self:RegisterEvent("BAG_UPDATE_DELAYED", "OnBagsReady")
+    self:RegisterEvent("GET_ITEM_INFO_RECEIVED", "OnItemInfo")
+    self:ScheduleTimer("EndLoginWatch", LOGIN_WATCH_SECONDS)
+    LoginStep("addon enabled")
 end
 
 function Debug:Mark(name)
@@ -306,6 +380,7 @@ local function What(e)
     if kind == "on" then return "debug on" .. (e.day and (" " .. e.day) or "") end
     if kind == "off" then return "debug off" end
     if kind == "zone" then return "loading screen" end
+    if kind == "login" then return "login: " .. tostring(e.step) .. " | bags " .. tostring(e.bags) end
     if kind == "mark" then return "mark " .. tostring(e.name) end
     if kind == "press" then
         return "press: " .. tostring(e.decision)
