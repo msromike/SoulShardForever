@@ -51,8 +51,9 @@ local L = LibStub("AceLocale-3.0"):GetLocale(ADDON)
 -- The welcome's version, two digits per part (Blizzard's ## Interface scheme): 1.8 = 10800.
 -- Raised only when the note changes, so players see a changed note once. 1.8.1 raised it:
 -- the note was redone and Delete Shard moved. 1.10.0 raises it again: the quiet state
--- changed the note.
-local WELCOME_VERSION = 11000
+-- changed the note. 1.16.0 raises it: the delete help lost its warning about combat, and
+-- what the player types or copies is in the code color.
+local WELCOME_VERSION = 11600
 
 -- in a fight: Combat's question for the window (the window and the note close together)
 local function InFight() return SSF:GetModule("Combat"):InFight() end
