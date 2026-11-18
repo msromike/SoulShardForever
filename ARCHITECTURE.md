@@ -67,6 +67,8 @@ Core and modules:
   Public: NameOf(id) -> the spell's name, or nil when the game has none. Owns no state, no events, no frames.
 - Modules\Macros.lua: the three recommended macros, /ssf delete before Life Tap, Drain Soul and Bane of Agony.
   Public: SpellName(key), Body(key, stopWand) (stopWand: with the wand line or without; left out, as the option says), Exists(key), Names(), Keys() -> the macros' keys, in the order they are shown and made, StopWand() -> bool, the option; SetStopWand(on), Pending() -> what a click would do: "create" (a macro is missing), "update" (none missing, an unedited one not as the option says), or nil (nothing), Reloads() -> bool, a click now would end in a reload (it would make a macro), Create() -> "/reload" once it made macros, else nil. key: "LT" (Life Tap), "DS" (Drain Soul) or "BoA" (Bane of Agony). BodyFor(spellName, lines) -> the same macro text for any spell's name: the one template (Body uses it, and so does an announcement's macro). lines, optional: a list of a variant's own lines, put between /ssf delete and the cast.
+- Modules\MacroControls.lua: the macro controls a note carries: the tick box for the macros' one option ("Have the macro stop your wand") and the button that makes the recommended macros or brings them in line with it, with the green line above the button.
+  Public: Fields(refill) -> the fields for a note's options (SSFSideNote:Show): tick, ticked, onTick, button, buttonLabels, buttonDisabled, onClick, buttonNote. refill: the owner's function that fills its note again; kept, and called as said above (the owner decides whether its note is open).
 - Modules\MacroGlow.lua: when SSF opens Blizzard's macro window on its macros, each one not yet on an action bar glows (LibCustomGlow's button glow, the proc look) until the player drops it on a bar.
   Public: Stop() (also the OnHide hook's handler).
 - Modules\DeleteHelp.lua: the text that teaches every way to delete a shard: a first paragraph (the caller's own), the one-line lead-in, then the recommended macros (Macros' list, in its order).
@@ -75,7 +77,7 @@ Core and modules:
   Public: Show(owner, title, text, titleGold) -- title in the label gold (true) or white; text in white, one tooltip line per line of text, a blank line as a spacer (handed over as one text the game sometimes drops a blank line) Hide(owner) -- only if the tooltip is still the owner's IsShownFor(owner) -> bool (the owner refreshes an open tooltip's text) Attach(frame) -- option tooltips shown inside this frame get the anchor
 - Modules\Window.lua: SSF's own options window.
   Public: Open() (open only, never a toggle: /ssf, /ssf options, /ssf settings; does nothing in a fight, Combat:InFight), Toggle() (the minimap icon and broker click), Refresh() (redraws only a window showing; also by name through a timer), ShowNote(title, body, note, opts, auto) (open with a note on the right: Welcome's; opts as SSFSideNote:Show), ShowLeftNote(title, opts, auto) (open with a note on the left: NewsShow's); auto: SSF is opening the window by itself, so it goes to the center of the screen first (a position reset, see Center below), RefreshNote(...) and RefreshLeftNote(...) (the same arguments: fill that note again while the window is showing, without an open: the note after a Language change), OpenKeyBindings() (the bottom-right button).
-- Modules\Welcome.lua: the welcome note, which is also where the recommended macros are made and kept in line with their option, at any time.
+- Modules\Welcome.lua: the welcome note and when it shows.
   Public: Show(auto) (the note, through Window:ShowNote; auto: Welcome is opening the window by itself, which Window turns into a centered open).
 - Modules\NewsShow.lua: shows the current announcement (News\News.lua) in the panel on the window's left until the character ticks "Don't show this again".
   Public: Show(auto) (the panel, through Window:ShowLeftNote; auto: NewsShow is opening the window by itself, which Window turns into a centered open), Owed() -> bool.
@@ -104,7 +106,7 @@ News:
 | SSF_DELETE_FAILED | Trimmer | Debug | failed |
 | SSF_DELETE_PRESSED | Trimmer | Debug | why or "delete", count, cap |
 | SSF_HELP_CHANGED | Help | Options | self.on |
-| SSF_MACROS_CHANGED | Macros | Welcome |  |
+| SSF_MACROS_CHANGED | Macros | MacroControls |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, "window" |
 | SSF_OPTIONS_REBUILT | Options | NewsShow, Welcome, Window |  |
@@ -189,11 +191,12 @@ on the right and the file on the left breaks; the check fails first.
 | TabComplete | Options: ChatWords; Settings: ValueWords |
 | Status | Bags: Count, CountAgrees; Cap: Get, LowMark, State; Colors: Accent, PaintState, State, Value; SSF: AUTHOR, VERSION; Trimmer: Paused |
 | Macros | Combat: Locked; SSF: SPELLS; Spells: NameOf |
+| MacroControls | Colors: GREEN, Paint; Macros: Create, Pending, Reloads, SetStopWand, StopWand |
 | MacroGlow | Macros: Names |
 | DeleteHelp | Colors: Code, Commands; Macros: Body, Keys |
 | Tooltip | Colors: GOLD, WHITE |
 | Window | Colors: BLACK, Class, Gold; Combat: InFight; Help: IsOn, Toggle; KeyBindings: Open; Options: APP; SSF: VERSION; SSFFrame: FitToContent, FitWidth, SetActionButton, SetFooter, SetHelpButton, SetMiddleButton, SetRightButton, SetTitleBand, SetTitleColor, ShowLeftPanel, ShowSidePanel; Tooltip: Attach |
-| Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; Macros: Create, Pending, Reloads, SetStopWand, StopWand; Window: RefreshNote, ShowNote |
+| Welcome | Cap: IsQuiet; Colors: GREEN, Paint; Combat: InFight; DeleteHelp: Blocks; Help: IsOn, Toggle; MacroControls: Fields; Window: RefreshNote, ShowNote |
 | NewsShow | Colors: Commands, Gold; Combat: InFight; Macros: BodyFor; SSF: SPELLS; Spells: NameOf; Window: RefreshLeftNote, ShowLeftNote |
 | Broker | Bags: Count; Colors: Class, DIM; SSF: ICON; Status: CapValue, CountValue, LowMarkValue, PausedValue; Window: Toggle |
 | Counter | Bags: Count, HasSoulBag, SoulBags; Cap: State; Colors: BLACK, ForState, WHITE |

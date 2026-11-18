@@ -562,7 +562,7 @@ CASES = [
     Case("tests: help mode gives a tooltip to an option with no help line", TESTS, "Modules/Help.lua",
          'entry.descStyle = entry.desc and style or "hidden"', "entry.descStyle = style", "no help line: still hidden"),
     Case("tests: a fight that closes the welcome settles it", TESTS, "Modules/Welcome.lua",
-         "                if InFight() then return end -- a fight closed it: still owed", "", "and the note is still owed"),
+         "            if InFight() then return end -- a fight closed it: still owed", "", "and the note is still owed"),
     Case("tests: the saved spot is used on another screen size", TESTS, "Modules/Window.lua",
          "math.abs(saved.width - w) < 1 and", "math.abs(saved.width - w) < 10000 and", "another screen size: centered"),
     Case("tests: a new state in Cap with no color", TESTS, "Modules/Cap.lua",

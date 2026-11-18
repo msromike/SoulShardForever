@@ -1,10 +1,8 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
--- Welcome: the welcome note, which is also where the recommended macros are made and kept
--- in line with their option, at any time. The first time a character loads SSF, the window opens
--- by itself with a note beside it: the help button, every way to delete, the tick box for
--- the macros' one option and the button that makes the macros or brings them in line with
--- it. Once per WELCOME_VERSION, so players updating from an SSF with an
+-- Welcome: the welcome note and when it shows. The first time a character loads SSF, the window opens
+-- by itself with a note beside it: the help button, every way to delete, and the macro
+-- controls (MacroControls' tick box and button, handed in as they are). Once per WELCOME_VERSION, so players updating from an SSF with an
 -- older note see the new one once too. Waits for the loading screen to go, so the window
 -- opens into a drawn, shown UI. The main window's "Macros" shows the same note.
 --
@@ -33,17 +31,14 @@
 --          window by itself, which Window turns into a centered open).
 -- Listens: SSF_SHOW_WELCOME (Window's "Macros"), SSF_WINDOW_OPENED (any open),
 --          SSF_OPTIONS_REBUILT (a Language change or a help toggle: the open note is
---          filled again), SSF_MACROS_CHANGED (the open note is filled again: its button
---          says what a click would do now), LOADING_SCREEN_DISABLED once at load while a
+--          filled again), LOADING_SCREEN_DISABLED once at load while a
 --          note is owed, SSF_QUIET_ENDED (learned), TRAINER_CLOSED once after a learn.
--- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors.GREEN (the lead line and the
---          button note's "Reloads your UI");
+-- Reads:   profile.welcomed, welcomeAgain; Cap:IsQuiet; Colors:Paint and Colors.GREEN (the
+--          lead line);
 --          Help:IsOn/Toggle,
 --          Window:ShowNote/RefreshNote, Combat:InFight, DeleteHelp:Blocks,
---          Macros:Pending/Reloads/Create/StopWand/SetStopWand (the note's button and its
---          tick box: the button's label is what a click would do, the green line whether
---          it would reload, Create's return is the click's command, the tick is Macros'
---          option).
+--          MacroControls:Fields (the note's tick box, button and the line above it; it
+--          is handed the function that fills the open note again).
 -- Saves:   profile.welcomed: false while the note is owed (set when it shows, and when Drain
 --          Soul is learned), and WELCOME_VERSION once the player closes it outside a fight.
 --          profile.welcomeAgain: true from the learn until that close (the second title).
@@ -80,55 +75,33 @@ local function Refill(self)
 end
 
 -- The note: the pointer at the help button, every way to delete with the recommended macros
--- (DeleteHelp), what the button does, the option and the button that makes them or brings
--- them in line with it (Macros), and the gold
+-- (DeleteHelp), the macro controls (MacroControls), and the gold
 -- line last. Always the same box. What the note is handed: its title, body line, gold
 -- note and options, looked up now, so they are in the language of the moment.
 function Note(self)
     local p = SSF.db.profile
-    local Macros = SSF:GetModule("Macros")
-    local pending = Macros:Pending()
     local title = p.welcomeAgain and L["You learned Drain Soul"] or L["Welcome to SSF"]
     local quiet = SSF:GetModule("Cap"):IsQuiet()
     local Colors = SSF:GetModule("Colors")
+    local opts = {
+        -- in green, the note's one highlight color, so it stands out from the gold
+        lead = quiet and Colors:Paint(Colors.GREEN, L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."]) or nil,
+        blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."]:format(L["Delete Shard"], L["Delete Shard"])),
+        onClose = function()
+            self.noteOpen = false
+            if InFight() then return end -- a fight closed it: still owed
+            p.welcomed = WELCOME_VERSION
+            p.welcomeAgain = false
+        end,
+    }
+    -- the tick box, the button and the line above it are MacroControls'; it asks for the
+    -- note to be filled again when what they show has changed
+    for field, value in pairs(SSF:GetModule("MacroControls"):Fields(function() Refill(self) end)) do
+        opts[field] = value
+    end
     return title, L["Click for in-game tooltip help."],
         L["You won't see this welcome screen again on this character unless you click %s in the UI."]:format(L["Macros"]),
-        {
-            -- in green, the note's one highlight color (as "Reloads your UI"), so it stands out from the gold
-            lead = quiet and Colors:Paint(Colors.GREEN, L["For now you can play around with the addon. When you learn Drain Soul at level 10, we'll show you this window again."]) or nil,
-            blocks = SSF:GetModule("DeleteHelp"):Blocks(L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the %s button, a macro, or mix and match."]:format(L["Delete Shard"], L["Delete Shard"])),
-            -- the button says what its click will do (Macros:Pending), greyed when that is
-            -- nothing; as wide as the widest of its three labels, so it keeps its size
-            button = pending == "create" and L["Create recommended macros"]
-                or pending == "update" and L["Update macros"] or L["Macros are up to date"],
-            buttonLabels = { L["Create recommended macros"], L["Update macros"], L["Macros are up to date"] },
-            buttonDisabled = pending == nil,
-            -- a click that made no macro reloads nothing: the note is filled again, so the
-            -- button shows what is left to do
-            onClick = function()
-                local command = Macros:Create()
-                if not command then Refill(self) end
-                return command
-            end,
-            -- Above the button, in green, only when the click will reload (Macros says
-            -- when). Otherwise the line is kept, blank, deliberate: the button stays where
-            -- it is when the words come and go.
-            buttonNote = Macros:Reloads() and Colors:Paint(Colors.GREEN, L["Reloads your UI"]) or " ",
-            -- the option, beside the button: the tick changes the macros shown and what
-            -- the button will do; only the click writes a macro
-            tick = L["Have the macro stop your wand"],
-            ticked = Macros:StopWand(),
-            onTick = function(ticked)
-                Macros:SetStopWand(ticked)
-                Refill(self)
-            end,
-            onClose = function()
-                self.noteOpen = false
-                if InFight() then return end -- a fight closed it: still owed
-                p.welcomed = WELCOME_VERSION
-                p.welcomeAgain = false
-            end,
-        }
+        opts
 end
 
 -- Owed from here until a close outside a fight, saved, so a reload in between still
@@ -149,11 +122,6 @@ function Welcome:OnOptionsRebuilt()
     Refill(self)
 end
 
--- The player's macros changed (one made, deleted or edited, by anyone): the open note is
--- filled again, so its button says what a click would do now.
-function Welcome:OnMacrosChanged()
-    Refill(self)
-end
 
 -- Any open of the window: a note still owed comes up with it. (ShowNote opens the window
 -- too; the note is already marked open by then, so no loop.)
@@ -194,6 +162,5 @@ function Welcome:OnEnable()
     self:RegisterMessage("SSF_SHOW_WELCOME", function() self:Show() end)
     self:RegisterMessage("SSF_WINDOW_OPENED", "OnWindowOpened")
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "OnOptionsRebuilt")
-    self:RegisterMessage("SSF_MACROS_CHANGED", "OnMacrosChanged")
     self:RegisterMessage("SSF_QUIET_ENDED", "OnQuietEnded")
 end
