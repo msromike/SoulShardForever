@@ -10,7 +10,7 @@ L["SSF now deletes shards in and out of combat. Your keybind still works, and so
 L["New macros:"] = "Novas macros:"
 L["we reworked the recommended macros to go with it. There's a new %s macro, and an option to have the macro stop your wand."] = "refizemos as macros recomendadas para acompanhar. Há uma nova macro de %s e uma opção para a macro parar sua varinha."
 L["How to get them:"] = "Como obtê-las:"
-L["click %s in the panel on the right."] = "clique em %s no painel à direita."
+L["click %s in the Help panel."] = "clique em %s no painel de ajuda."
 L["Note:"] = "Nota:"
 L["I put /ssf delete into every offensive macro I use and it is working great."] = "Coloquei /ssf delete em todas as macros ofensivas que uso e está funcionando muito bem."
 

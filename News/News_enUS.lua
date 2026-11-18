@@ -10,7 +10,7 @@ L["SSF now deletes shards in and out of combat. Your keybind still works, and so
 L["New macros:"] = true
 L["we reworked the recommended macros to go with it. There's a new %s macro, and an option to have the macro stop your wand."] = true
 L["How to get them:"] = true
-L["click %s in the panel on the right."] = true
+L["click %s in the Help panel."] = true
 L["Note:"] = true
 L["I put /ssf delete into every offensive macro I use and it is working great."] = true
 

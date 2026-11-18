@@ -77,7 +77,7 @@ Button      shown  enabled Keybindings
 Button      shown  enabled Macros
 FontString  shown  enabled SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use.
 FontString  shown  enabled New macros:  we reworked the recommended macros to go with it. There's a new Spell 1120 macro, and an option to have the macro stop your wand.
-FontString  shown  enabled How to get them:  click Create recommended macros in the panel on the right.
+FontString  shown  enabled How to get them:  click Create recommended macros in the Help panel.
 FontString  shown  enabled Note:  I put /ssf delete into every offensive macro I use and it is working great.
 FontString  shown  enabled SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match.
 FontString  shown  enabled In a macro, put /ssf delete on the line before the ability:

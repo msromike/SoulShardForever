@@ -243,9 +243,12 @@ function Debug:OnChannel(event, unit)
     Record("channel", { state = start and "start" or "stop", spell = start and Channeling() or nil })
 end
 
--- Every bag slot from the backpack to the reagent slot, as "bag:slots kind": how many slots
--- the game says the bag has and what Bags takes it for. A bag with no slots is empty or not
--- filled in yet; "other" is a bag Bags counts no shard in.
+-- Every bag slot Bags looks at, as "bag:slots kind": how many slots the game says the bag
+-- has, and what Bags' two questions answer for it right now: "soul" (IsSoulBag), "plain"
+-- (IsRegularBag) or "other" (neither). Bags' answers as they are, on purpose, and not
+-- whether Bags counts the bag: a soul pouch that reads "plain" in the reagent slot is the
+-- thing this record is for (Bags counts nothing there until it reads "soul"). A bag with
+-- no slots is empty or not filled in yet.
 local function BagFacts()
     local Bags = SSF:GetModule("Bags")
     local list = {}

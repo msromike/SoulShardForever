@@ -51,7 +51,11 @@ NS.news = {
     text = {
         { text = L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."], blank = true },
         { lead = L["New macros:"], text = L["we reworked the recommended macros to go with it. There's a new %s macro, and an option to have the macro stop your wand."], spell = "DRAIN_SOUL", blank = true },
-        { lead = L["How to get them:"], text = L["click %s in the panel on the right."], label = L["Create recommended macros"], blank = true },
+        -- Names the welcome note's button by the first of its three labels, deliberate:
+        -- that is what the button reads for a character that has not made the macros
+        -- yet, which is who this line is for. An announcement is words for one release
+        -- and is replaced, not kept in step with the button; nothing acts on the label.
+        { lead = L["How to get them:"], text = L["click %s in the Help panel."], label = L["Create recommended macros"], blank = true },
         { lead = L["Note:"], text = L["I put /ssf delete into every offensive macro I use and it is working great."] },
     },
 }

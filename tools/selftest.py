@@ -517,7 +517,7 @@ CASES = [
          'self:SecureHookScript(handle, "OnMouseUp", function()', 'self:SecureHookScript(handle, "OnMouseDown", function()',
          "top  got nil, want 512"),
     Case("tests: Create makes macros in combat, which the game refuses", TESTS, "Modules/Macros.lua",
-         '    if SSF:GetModule("Combat"):Locked() then return end\n    local missing', "    local missing",
+         '    if SSF:GetModule("Combat"):Locked() then return end\n    if not self:Pending()', "    if not self:Pending()",
          "ADDON_ACTION_BLOCKED: CreateMacro under combat lockdown"),
     Case("tests: Create splits the macros over the two sections", TESTS, "Modules/Macros.lua",
          "if numChar + #missing <= maxChar then", "if numChar + 1 <= maxChar then",
