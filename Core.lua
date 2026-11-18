@@ -75,6 +75,7 @@ local function Defaults()
             welcomeAgain = false,       -- Drain Soul learned, note not yet closed: its second title (Welcome)
             newsSeen = false,           -- the id of the announcement this character ticked "Don't show this again" on (NewsShow)
             macroWindowAfterReload = false, -- Macros made macros and reloaded: open the macro window
+            macroStopWand = false,      -- the recommended macros carry /stopattack before the cast (Macros)
             window = {},                -- options window position: top, left and the screen size (set after a drag)
             -- debugLog: absent until the debug record is first turned on; its events, kept until cleared (Debug)
             -- debugLogin: absent, or true from "/ssf debug login" until the next login or reload takes it (Debug)

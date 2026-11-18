@@ -69,7 +69,10 @@ local function Note(self, news)
             -- macros: a translation never spells one out, and a rename reaches it
             local Macros = SSF:GetModule("Macros")
             local spellName = part.spell and (SSF:GetModule("Spells"):NameOf(SSF.SPELLS[part.spell]) or "")
-            if text and spellName then text = text:format(spellName) end
+            -- or a button's own label, looked up now: a sentence that names a button
+            -- never carries a copy of its words
+            local named = spellName or (part.label and L[part.label])
+            if text and named then text = text:format(named) end
             -- a macro with a spell and no text: Macros' text for it, the paragraph's own
             -- lines (if any) before the cast
             if part.macro and spellName and not text then text = Macros:BodyFor(spellName, part.lines) end

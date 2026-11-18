@@ -1,8 +1,12 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Macros: the three recommended macros, /ssf delete before Life Tap, Drain Soul and Bane of Agony.
+-- One option, off unless the player turns it on: the macros stop the wand, a /stopattack
+-- line between /ssf delete and the cast, in all three. Nothing else is ever added to a
+-- macro, deliberate: no line that cancels a cast or holds a channel.
 -- Holds their text (the one source: the help text shows exactly what Create writes), says
--- whether each exists, makes the missing ones on a click and hands back /reload for the
+-- what a click would do (make the missing ones, bring the others in line with the option,
+-- or nothing), does it, and after making any hands back /reload for the
 -- note's secure button to run (a new macro shows a stale
 -- icon until a reload: a game bug) and then opens Blizzard's macro window on the first of
 -- them (SSF_LT). The
@@ -11,10 +15,18 @@
 -- Found by name in both the account and the character section, so a renamed one counts as
 -- missing. Never split: the missing ones all go to the character's macros if there is a
 -- free slot for each, else all to the account's, else a red error and nothing is made.
+-- A macro that exists is rewritten, in place, only when its text is exactly SSF's other
+-- text for it (with the wand line while the option is off, without it while it is on): one
+-- the player edited is never touched. A rewrite needs no reload (seen in game: the bar
+-- icon stays, and Blizzard's macro window shows the new text at once).
 -- In combat Create does nothing.
 --
--- Public:  SpellName(key), Body(key), Exists(key), AnyMissing(), Names(),
+-- Public:  SpellName(key), Body(key, stopWand) (stopWand: with the wand line or without;
+--          left out, as the option says), Exists(key), Names(),
 --          Keys() -> the macros' keys, in the order they are shown and made,
+--          StopWand() -> bool, the option; SetStopWand(on),
+--          Pending() -> what a click would do: "create" (a macro is missing), "update"
+--          (none missing, an unedited one not as the option says), or nil (nothing),
 --          Create() -> "/reload" once it made macros, else nil.
 --          key: "LT" (Life Tap), "DS" (Drain Soul) or "BoA" (Bane of Agony).
 --          BodyFor(spellName, lines) -> the same macro text for any spell's name: the
@@ -30,11 +42,13 @@
 --          and the macro; UIErrorsFrame's AddExternalErrorMessage prints the red line. A Blizzard
 --          rename breaks the "show them" step or the no-free-slot message.
 -- Reads:   Combat:Locked (Create does nothing in combat); Spells:NameOf (a macro's spell,
---          in the client's language); profile.macroWindowAfterReload;
+--          in the client's language); profile.macroWindowAfterReload, macroStopWand;
 --          Blizzard's macro API and MacroFrame.
--- Saves:   profile.macroWindowAfterReload, true only across Create's reload.
+-- Saves:   profile.macroWindowAfterReload, true only across Create's reload;
+--          profile.macroStopWand, the option.
 -- Acts on: the player's macros (CreateMacro: makes the missing ones, in the character's
---          slots when they fit, else the account's); Blizzard's macro window
+--          slots when they fit, else the account's; EditMacro: rewrites an unedited one's
+--          text to what the option says); Blizzard's macro window
 --          (ShowMacroFrame opens it, then MacroFrame's tab and selection are set); the
 --          game's red error text (UIErrorsFrame, one line when no macro slot is free).
 -- Touches nothing else.
@@ -73,8 +87,20 @@ function Macros:BodyFor(spellName, lines)
     return "#showtooltip\n/ssf delete\n" .. between .. "/cast " .. spellName
 end
 
-function Macros:Body(key)
-    return self:BodyFor(self:SpellName(key))
+-- the option's own line, in every macro while it is on
+local STOP_WAND = { "/stopattack" }
+
+function Macros:StopWand()
+    return SSF.db.profile.macroStopWand == true
+end
+
+function Macros:SetStopWand(on)
+    SSF.db.profile.macroStopWand = on and true or false
+end
+
+function Macros:Body(key, stopWand)
+    if stopWand == nil then stopWand = self:StopWand() end
+    return self:BodyFor(self:SpellName(key), stopWand and STOP_WAND or nil)
 end
 
 -- a copy, so a caller cannot change the order
@@ -95,8 +121,30 @@ local function Missing()
     return missing
 end
 
-function Macros:AnyMissing()
-    return #Missing() > 0
+-- a macro's text as the game hands it back, without the line ends and spaces the game or
+-- its macro window may leave around it
+local function Tidy(text)
+    return strtrim((text:gsub("\r", "")))
+end
+
+-- The keys of the macros that exist and hold exactly SSF's other text: made by SSF, never
+-- edited, and not as the option says now. In ORDER.
+local function Stale()
+    local other = not Macros:StopWand()
+    local stale = {}
+    for _, key in ipairs(ORDER) do
+        local index = GetMacroIndexByName(MACROS[key].name)
+        local _, _, body = GetMacroInfo(index)
+        if index > 0 and type(body) == "string" and Tidy(body) == Macros:Body(key, other) then
+            stale[#stale + 1] = key
+        end
+    end
+    return stale
+end
+
+function Macros:Pending()
+    if #Missing() > 0 then return "create" end
+    if #Stale() > 0 then return "update" end
 end
 
 -- Blizzard's macro window on the character tab (2) or the account tab (1), that macro
@@ -126,9 +174,9 @@ end
 
 function Macros:Create()
     if SSF:GetModule("Combat"):Locked() then return end
-    local missing = Missing()
+    local missing, stale = Missing(), Stale()
 
-    if #missing == 0 then -- nothing to make (the note's button is greyed out then): show them
+    if #missing == 0 and #stale == 0 then -- nothing to do (the note's button is greyed out then): show them
         ShowFirst()
         return
     end
@@ -144,6 +192,12 @@ function Macros:Create()
         UIErrorsFrame:AddExternalErrorMessage(L["No free macro slots. Delete a macro and try again."])
         return
     end
+    -- the unedited ones brought in line with the option, in place: the name and the icon
+    -- stay, so the macro keeps its bar button
+    for _, key in ipairs(stale) do
+        EditMacro(GetMacroIndexByName(MACROS[key].name), nil, nil, self:Body(key))
+    end
+    if #missing == 0 then return end -- only rewrites: no reload
     for _, key in ipairs(missing) do
         CreateMacro(MACROS[key].name, ICON, self:Body(key), perChar)
     end

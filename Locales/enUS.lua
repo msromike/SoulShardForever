@@ -98,7 +98,7 @@ L["Deletes one Soul Shard if you are over the cap. In a macro, put /ssf delete o
 L["Opens WoW's key bindings menu to bind %s and %s."] = true
 L["Welcome to SSF"] = true
 L["Click for in-game tooltip help."] = true
--- %s: the "Create macros" button's label
+-- %s: the "Macros" button's label
 L["You won't see this welcome screen again on this character unless you click %s in the UI."] = true
 L["You learned Drain Soul"] = true
 L["no Drain Soul yet"] = true
@@ -111,9 +111,12 @@ L["SSF deletes one Soul Shard when you're over the cap. Use the %s keybind, the 
 L["In a macro, put /ssf delete on the line before the ability:"] = true
 L["Create recommended macros"] = true
 -- the phrase Welcome paints green, then the line that takes it as %s; its break is in the string
-L["reloads your UI"] = true
+L["may reload your UI"] = true
 L["Creates the macros, %s and opens the macro box after the reload."] = "Creates the macros, %s\nand opens the macro box after the reload."
-L["Create macros"] = true
+L["Macros"] = true
+L["Update macros"] = true
+L["Macros are up to date"] = true
+L["Have the macro stop your wand"] = true
 L["Opens the welcome screen to create the recommended macros."] = true
 L["No free macro slots. Delete a macro and try again."] = true
 

@@ -27,7 +27,6 @@
 --          after a Language change),
 --          OpenKeyBindings() (the bottom-right button).
 -- Listens: SSF_OPTIONS_REBUILT (Options rebuilt the table: re-dress and redraw),
---          SSF_MACROS_CHANGED (re-dress: "Create macros" shows or hides),
 --          SSF_OPTIONS_CHANGED (redraw after any change not made in the window),
 --          SSF_SHARD_DELETED, SSF_BAGS_CHANGED and SSF_QUIET_ENDED (redraw: the whole window
 --          is fed again, not only the count row), SSF_SOUND_BUSY (redraw: the pause sound
@@ -40,7 +39,7 @@
 -- Hooks:   AceConfigDialog.Open (AceHook), to style the group titles after every rebuild;
 --          attached at the first Feed, and again if a newer AceConfigDialog loaded later
 --          replaced Open.
--- Sends:   SSF_SHOW_WELCOME ("Create macros" clicked, out of a fight), SSF_WINDOW_OPENED
+-- Sends:   SSF_SHOW_WELCOME ("Macros" clicked, out of a fight), SSF_WINDOW_OPENED
 --          (after every open).
 -- Lib internals: the InlineGroup widgets AceConfigDialog builds (their type, titletext
 --          and frame, for the title style and strip), the window's first child, the
@@ -55,7 +54,7 @@
 --          titles with no strip, or a strip of a different shape.
 -- Game internals: the frame template BackdropTemplate, which the title strip behind each
 --          group title is made from.
--- Reads:   Combat:InFight (nothing opens in a fight), Macros:AnyMissing() for the "Create macros" button, Options.APP,
+-- Reads:   Combat:InFight (nothing opens in a fight), Options.APP,
 --          Help:IsOn/Toggle, KeyBindings:Open, Colors:Class/Gold and
 --          Colors.BLACK, Tooltip:Attach, SSF.VERSION, the BINDING_NAME_* labels KeyBindings
 --          sets; profile.window (the saved spot, at Open).
@@ -118,11 +117,10 @@ local function DressWindow(self)
     -- slot stays empty
     self.window:SetMiddleButton(nil)
 
-    -- "Create macros" far left, while any macro is missing, across from Key Bindings: it
-    -- opens the welcome note (Welcome listens), whose button makes them. Never calls
-    -- Welcome, so nothing loops.
-    local createText = SSF:GetModule("Macros"):AnyMissing() and L["Create macros"] or nil
-    self.window:SetActionButton(createText, function()
+    -- "Macros" far left, always, across from Key Bindings: it opens the welcome note
+    -- (Welcome listens), whose tick box and button make the macros or bring them in line
+    -- with the option, at any time. Never calls Welcome, so nothing loops.
+    self.window:SetActionButton(L["Macros"], function()
         if not InFight() then Window:SendMessage("SSF_SHOW_WELCOME") end
     end, on and L["Opens the welcome screen to create the recommended macros."] or nil)
 
@@ -281,9 +279,8 @@ function Window:OnOptionsChanged(_, _, source)
     if source ~= "window" then self:RefreshSoon() end
 end
 
--- The window's own strings or buttons may have changed: Options built and re-registered
--- the table (a Language change or a help toggle), or the player's macros changed ("Create
--- macros" shows or hides). Re-dress an existing window, then redraw.
+-- The window's own strings may have changed: Options built and re-registered the table (a
+-- Language change or a help toggle). Re-dress an existing window, then redraw.
 function Window:Redress()
     if self.window then DressWindow(self) end
     self:RefreshSoon()
@@ -331,7 +328,7 @@ function Window:Open()
             -- the screen size the spot belongs to (see Open)
             window.width, window.height = UIParent:GetWidth(), UIParent:GetHeight()
         end)
-        -- bottom row: Create macros far left while shown, Key Bindings far right, the
+        -- bottom row: Macros far left, Key Bindings far right, the
         -- version between them
         DressWindow(self)
         -- The first open of a session measures before every text size is settled (the
@@ -399,7 +396,6 @@ function Window:OnEnable()
     self:RegisterMessage("SSF_OPTIONS_REBUILT", "Redress")
     self:RegisterMessage("SSF_SHARD_DELETED", "RefreshSoon")
     self:RegisterMessage("SSF_OPTIONS_CHANGED", "OnOptionsChanged")
-    self:RegisterMessage("SSF_MACROS_CHANGED", "Redress")
     self:RegisterMessage("SSF_BAGS_CHANGED", "RefreshSoon")
     self:RegisterMessage("SSF_QUIET_ENDED", "RefreshSoon")
     self:RegisterMessage("SSF_SOUND_BUSY", "RefreshSoon")

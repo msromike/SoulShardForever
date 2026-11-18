@@ -103,13 +103,13 @@ test("a macro paragraph is a macro block for the panel, and a command inside a s
     local Colors = SSF:GetModule("Colors")
     local sentence = "In a macro, put /ssf delete on the line before the ability:"
     local news = sample()
-    news.text = { { text = sentence }, { text = "Create macros", macro = true }, sentence }
+    news.text = { { text = sentence }, { text = "Macros", macro = true }, sentence }
     fresh(news)
     NewsShow:OnWindowOpened()
     local blocks = asked.shown[1].opts.blocks
     eq(blocks[1].text, Colors:Commands(sentence), "the command painted, the sentence around it plain")
     ok(blocks[1].text ~= sentence, "and it did paint one")
-    eq(blocks[2].text, "Create macros", "a macro: its text as it is, the box colors it")
+    eq(blocks[2].text, "Macros", "a macro: its text as it is, the box colors it")
     eq(blocks[2].macro, true, "and marked a macro, so the panel boxes it")
     eq(blocks[1].macro, nil, "a sentence is not")
     eq(blocks[3].text, Colors:Commands(sentence), "a plain line's command too")

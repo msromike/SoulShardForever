@@ -15,6 +15,7 @@ Button      hidden enabled (no text: UIPanelCloseButton)
 Button      hidden enabled (no text: UIPanelCloseButton)
 FontString  shown  enabled vtest
 Button      shown  enabled Keybindings
+Button      shown  enabled Macros
 FontString  shown  enabled Soul Shards: 5
 Button      shown  greyed  Delete Shard / cap is 8
 FontString  shown  enabled Pause SSF
@@ -63,9 +64,9 @@ Button      shown  enabled (no text: UIPanelCloseButton)
 Button      shown  enabled (no text: 616343)
 FontString  shown  enabled Welcome to SSF
 FontString  shown  enabled Click for in-game tooltip help.
-FontString  shown  enabled You won't see this welcome screen again on this character unless you click Create macros in the UI.
+FontString  shown  enabled You won't see this welcome screen again on this character unless you click Macros in the UI.
 Button      shown  enabled Create recommended macros
-FontString  shown  enabled Creates the macros, reloads your UI / and opens the macro box after the reload.
+FontString  shown  enabled Creates the macros, may reload your UI / and opens the macro box after the reload.
 Button      shown  enabled (no text: UIPanelCloseButton)
 FontString  shown  enabled Delete in Combat is Live
 Button      shown  enabled Remind me later
@@ -73,19 +74,17 @@ Button      hidden enabled (no text: UIPanelCloseButton)
 FontString  shown  enabled Don't show this again
 FontString  shown  enabled vtest
 Button      shown  enabled Keybindings
-Button      shown  enabled Create macros
+Button      shown  enabled Macros
 FontString  shown  enabled SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use.
-FontString  shown  enabled How to use it:  put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:
-FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1454
-FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1120
-FontString  shown  enabled Tip:  /stopattack and /stopcasting make instant casts like Spell 980 go off on the first press, even while you're wanding or in melee:
-FontString  shown  enabled #showtooltip / /ssf delete / /stopattack / /stopcasting / /cast Spell 980
+FontString  shown  enabled New macros:  we reworked the recommended macros to go with it. There's a new Spell 1120 macro, and an option to have the macro stop your wand.
+FontString  shown  enabled How to get them:  click Create recommended macros in the panel on the right.
 FontString  shown  enabled Note:  I put /ssf delete into every offensive macro I use and it is working great.
 FontString  shown  enabled SSF deletes one Soul Shard when you're over the cap. Use the Delete Shard keybind, the Delete Shard button, a macro, or mix and match.
 FontString  shown  enabled In a macro, put /ssf delete on the line before the ability:
 FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1454
 FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 1120
 FontString  shown  enabled #showtooltip / /ssf delete / /cast Spell 980
+FontString  shown  enabled Have the macro stop your wand
 FontString  shown  enabled Soul Shards: 5
 Button      shown  greyed  Delete Shard / cap is 8
 FontString  shown  enabled Pause SSF

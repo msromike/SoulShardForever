@@ -3,7 +3,9 @@
 -- test_macros: Macros, the three recommended macros. What Create writes and where (the
 -- character's slots when all fit, else the account's, never split, else a red line and
 -- nothing); that it hands back /reload and opens the macro window on the first of them
--- once after that reload; that with nothing missing it only shows them; that in combat it
+-- once after that reload; that with nothing to do it only shows them; the wand option (a
+-- macro SSF made is rewritten in place to what the option says, with no reload, and one
+-- the player edited never is); that in combat it
 -- asks the game for nothing (the game refuses CreateMacro under lockdown); and that a
 -- burst of UPDATE_MACROS is one SSF_MACROS_CHANGED.
 -- Touches nothing else.
@@ -60,12 +62,12 @@ end)
 
 test("all missing: all made in the character's slots, then /reload", function()
     WoW.SetMacros({}, {})
-    eq(Macros:AnyMissing(), true, "missing to begin with")
+    eq(Macros:Pending(), "create", "missing to begin with")
     eq(Macros:Create(), "/reload", "hands back /reload for the note's button")
     eq(names(WoW.macroList.character), "SSF_LT SSF_DS SSF_BoA", "all in the character's slots")
     eq(#WoW.macroList.account, 0, "none in the account's")
     eq(WoW.macroList.character[1].body, Macros:Body("LT"), "with the text Body gives")
-    eq(Macros:AnyMissing(), false, "nothing missing after")
+    eq(Macros:Pending(), nil, "nothing left to do after")
     eq(SSF.db.profile.macroWindowAfterReload, true, "the macro window is owed after the reload")
 end)
 
@@ -108,6 +110,92 @@ test("nothing missing: Create only shows them, on the right tab", function()
     Macros:Create()
     eq(WoW.macroWindow.tab, 2, "the character tab for a character macro")
     eq(WoW.macroWindow.selected, 2, "selected by its place within the tab")
+end)
+
+-- all three made by SSF, as the option says now
+local function allMade()
+    WoW.SetMacros({}, {})
+    Macros:Create()
+end
+
+-- the texts of SSF's three macros, by key
+local function bodies()
+    local out = {}
+    for _, key in ipairs(Macros:Keys()) do
+        local _, _, body = GetMacroInfo(GetMacroIndexByName("SSF_" .. key))
+        out[key] = body
+    end
+    return out
+end
+
+test("the wand option: off to begin with; on, every macro carries /stopattack before the cast", function()
+    eq(Macros:StopWand(), false, "off")
+    eq(Macros:Body("DS", true), "#showtooltip\n/ssf delete\n/stopattack\n/cast Spell 1120", "with the line, asked for by hand")
+    Macros:SetStopWand(true)
+    eq(SSF.db.profile.macroStopWand, true, "saved")
+    eq(Macros:Body("LT"), "#showtooltip\n/ssf delete\n/stopattack\n/cast Spell 1454", "Body follows the option")
+    eq(Macros:Body("LT", false), "#showtooltip\n/ssf delete\n/cast Spell 1454", "and still hands the other text when asked")
+    Macros:SetStopWand(false)
+end)
+
+test("the option turned on with the macros made: a click rewrites them in place, no reload", function()
+    allMade()
+    eq(Macros:Pending(), nil, "made and matching: nothing to do")
+    Macros:SetStopWand(true)
+    eq(Macros:Pending(), "update", "the option changed: the click would update")
+    eq(Macros:Create(), nil, "no reload")
+    eq(bodies().LT, Macros:Body("LT", true), "Life Tap's has the line")
+    eq(bodies().DS, Macros:Body("DS", true), "Drain Soul's")
+    eq(bodies().BoA, Macros:Body("BoA", true), "Bane of Agony's")
+    eq(names(WoW.macroList.character), "SSF_LT SSF_DS SSF_BoA", "the same three macros, none made")
+    eq(SSF.db.profile.macroWindowAfterReload, true, "the macro window owed is still the first Create's")
+    eq(Macros:Pending(), nil, "nothing left to do")
+    Macros:SetStopWand(false)
+    eq(Macros:Pending(), "update", "off again: the click would take the line out")
+    Macros:Create()
+    eq(bodies().BoA, Macros:Body("BoA", false), "the line is gone")
+    SSF.db.profile.macroWindowAfterReload = false
+end)
+
+test("a macro the player edited is never rewritten; the game's own line ends do not count as an edit", function()
+    allMade()
+    local edited = "#showtooltip\n/ssf delete\n/stopcasting\n/cast Spell 980"
+    EditMacro(GetMacroIndexByName("SSF_BoA"), nil, nil, edited)
+    EditMacro(GetMacroIndexByName("SSF_LT"), nil, nil, Macros:Body("LT", false) .. "\r\n ")
+    Macros:SetStopWand(true)
+    eq(Macros:Pending(), "update", "the other two still want updating")
+    Macros:Create()
+    eq(bodies().BoA, edited, "the edited one is left as it is")
+    eq(bodies().LT, Macros:Body("LT", true), "one with a line end left on it is SSF's own: rewritten")
+    eq(bodies().DS, Macros:Body("DS", true), "and so is the untouched one")
+    eq(Macros:Pending(), nil, "only the edited one differs now: nothing to do")
+    Macros:SetStopWand(false)
+end)
+
+test("one missing with the option on: made with the line, the others rewritten, then /reload", function()
+    WoW.SetMacros({}, {})
+    Macros:Create()
+    table.remove(WoW.macroList.character, 2) -- SSF_DS gone: the two an older SSF made
+    Macros:SetStopWand(true)
+    eq(Macros:Pending(), "create", "a missing macro comes first")
+    eq(Macros:Create(), "/reload", "a macro was made: reload")
+    eq(bodies().DS, Macros:Body("DS", true), "the new one with the line")
+    eq(bodies().LT, Macros:Body("LT", true), "and the two that were there too")
+    eq(bodies().BoA, Macros:Body("BoA", true), "both")
+    Macros:SetStopWand(false)
+    SSF.db.profile.macroWindowAfterReload = false
+end)
+
+test("in combat a click rewrites nothing", function()
+    allMade()
+    Macros:SetStopWand(true)
+    WoW.combat = true
+    eq(Macros:Create(), nil, "nothing")
+    eq(#WoW.blocked, 0, "no protected call made")
+    eq(bodies().LT, Macros:Body("LT", false), "the macro is as it was")
+    WoW.combat = false
+    Macros:SetStopWand(false)
+    SSF.db.profile.macroWindowAfterReload = false
 end)
 
 test("after Create's reload the macro window opens once, on the first of them", function()

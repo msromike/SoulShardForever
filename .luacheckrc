@@ -35,7 +35,7 @@ read_globals = {
     "GetRealmName",
     "GetTime", "date", "debugstack", "UnitChannelInfo", "SpellIsTargeting", "issecretvalue",
     "ClearCursor", "GetCursorInfo", "DeleteCursorItem",
-    "GetMacroIndexByName", "GetNumMacros", "CreateMacro",
+    "GetMacroIndexByName", "GetNumMacros", "CreateMacro", "GetMacroInfo", "EditMacro",
     "PlaySoundFile", "MuteSoundFile", "UnmuteSoundFile",
     -- global strings
     "CLOSE",

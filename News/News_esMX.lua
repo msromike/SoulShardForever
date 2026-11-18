@@ -7,10 +7,10 @@ local L = {}
 
 L["Delete in Combat is Live"] = "Eliminar en combate ya está disponible"
 L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."] = "SSF ahora elimina fragmentos de alma dentro y fuera de combate. Tu atajo de teclado sigue funcionando, igual que tus macros viejas o nuevas."
-L["How to use it:"] = "Cómo usarlo:"
-L["put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:"] = "pon /ssf delete en la línea antes de los hechizos que más lanzas. Bastan dos o tres macros:"
-L["Tip:"] = "Consejo:"
-L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding or in melee:"] = "/stopattack y /stopcasting hacen que los hechizos instantáneos como %s salgan a la primera pulsación, incluso mientras disparas con la varita o estás en cuerpo a cuerpo:"
+L["New macros:"] = "Macros nuevos:"
+L["we reworked the recommended macros to go with it. There's a new %s macro, and an option to have the macro stop your wand."] = "rehicimos los macros recomendados para acompañarlo. Hay un nuevo macro de %s y una opción para que el macro detenga tu varita."
+L["How to get them:"] = "Cómo obtenerlos:"
+L["click %s in the panel on the right."] = "haz clic en %s en el panel de la derecha."
 L["Note:"] = "Nota:"
 L["I put /ssf delete into every offensive macro I use and it is working great."] = "Puse /ssf delete en todas las macros ofensivas que uso y funciona muy bien."
 

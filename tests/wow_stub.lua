@@ -585,6 +585,23 @@ GetMacroBody = function(index)
     local m = index > max and WoW.macroList.character[index - max] or WoW.macroList.account[index]
     return m and m.body
 end
+local function MacroAt(index)
+    local max = Constants.MacroConsts.MAX_ACCOUNT_MACROS
+    return index > max and WoW.macroList.character[index - max] or WoW.macroList.account[index]
+end
+GetMacroInfo = function(index)
+    local m = MacroAt(index)
+    if m then return m.name, m.icon, m.body end
+end
+-- nil for the name or the icon leaves it as it is, as in the game
+EditMacro = function(index, name, icon, body)
+    if Refused("EditMacro") then return nil end
+    local m = MacroAt(index)
+    if not m then return nil end
+    m.name, m.icon, m.body = name or m.name, icon or m.icon, body or m.body
+    WoW.FireEvent("UPDATE_MACROS")
+    return index
+end
 CreateMacro = function(name, icon, body, perCharacter)
     if Refused("CreateMacro") then return nil end
     local list = perCharacter and WoW.macroList.character or WoW.macroList.account

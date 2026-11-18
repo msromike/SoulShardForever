@@ -22,7 +22,9 @@
 --            blank = true }. spell = a key of SSF.SPELLS (Core) puts that spell's
 --            name, as the game gives it in the client's language, into the text's one
 --            %s: a macro's /cast line, right in every language, with no spell name in
---            any translation. macro = true: the text is a macro to copy, drawn in its own
+--            any translation. label = a line (a button's or a control's own words) put
+--            into the text's one %s the same way, looked up when shown, so a sentence
+--            that names a button never carries a copy of its label. macro = true: the text is a macro to copy, drawn in its own
 --            box in the code color. A macro names its spell and has no text: its text is
 --            Macros' (BodyFor), never typed here or in a translation. lines = a list of
 --            that macro's own lines, put before the cast (/stopattack). In any other text a command the player types (/ssf delete,
@@ -33,23 +35,23 @@
 local _, NS = ...
 local L = setmetatable({}, { __index = function(_, key) return key end })
 
--- The fifth announcement, with the full release of delete in combat: what it is and how
--- to use it, for every player. It replaced the two the beta carried (11600 and 11601,
+-- The sixth announcement, with the reworked macros: delete in combat first, for a player
+-- who skipped the release that brought it, then the new macros and where to get them (the
+-- welcome note beside it shows the macros, so this one carries none). It replaced the
+-- fifth (11602, delete in combat with three macros to copy and the /stopcasting tip),
+-- which had replaced the two the beta carried (11600 and 11601,
 -- thanks for trying the beta, with the second beta's note), which never shipped in a
 -- full release. Before those: "*New* SSF Beta Available" (11502), which 1.15.2 shipped
 -- to everyone, and the first, "Coming soon to SSF" (11400), shipped in 1.14.0 and
 -- switched off in 1.15.1.
 NS.news = {
-    id = 11602,
+    id = 11700,
     on = true,
     title = L["Delete in Combat is Live"],
     text = {
         { text = L["SSF now deletes shards in and out of combat. Your keybind still works, and so do any old or new macros you might use."], blank = true },
-        { lead = L["How to use it:"], text = L["put /ssf delete on the line before the spells you cast most. Two or three macros are all you need:"], blank = true },
-        { spell = "LIFE_TAP", macro = true, blank = true },
-        { spell = "DRAIN_SOUL", macro = true, blank = true },
-        { lead = L["Tip:"], text = L["/stopattack and /stopcasting make instant casts like %s go off on the first press, even while you're wanding or in melee:"], spell = "BANE_OF_AGONY", blank = true },
-        { spell = "BANE_OF_AGONY", macro = true, lines = { "/stopattack", "/stopcasting" }, blank = true },
+        { lead = L["New macros:"], text = L["we reworked the recommended macros to go with it. There's a new %s macro, and an option to have the macro stop your wand."], spell = "DRAIN_SOUL", blank = true },
+        { lead = L["How to get them:"], text = L["click %s in the panel on the right."], label = L["Create recommended macros"], blank = true },
         { lead = L["Note:"], text = L["I put /ssf delete into every offensive macro I use and it is working great."] },
     },
 }

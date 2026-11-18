@@ -10,8 +10,9 @@
 -- line, gold unless its text carries its own color, with its own divider under it: the two
 -- show together or not at all, so dividers never double), then the blocks (paragraphs
 -- left-justified, macros each in a dark box), a small note above the button, the button (a
--- secure action button, as wide as its text, centered), and a gold note line last. It
--- closes by its own X.
+-- secure action button, as wide as its text, centered; or, when the owner gives a tick box
+-- with it, at the right of one row with the tick box at the left, as the plain layout's
+-- row), and a gold note line last. It closes by its own X.
 --   The plain layout (look.plain; the announcement's): the title, a divider, the blocks
 -- (drawn as in the welcome layout: a macro in its dark box),
 -- a second divider, then one row with a tick box at the left and the button at the right,
@@ -42,7 +43,11 @@
 --            (a button as wide as its text; onClick runs on the click, before it, and a
 --            slash command it returns then runs as the click through the game's secure
 --            path, so /reload from it can't be blocked), buttonNote (a small line just above the
---            button: what a click does), buttonDisabled (greys the button), onClose
+--            button: what a click does), buttonDisabled (greys the button), buttonLabels
+--            (a list of every label the button may carry: it is as wide as the widest, so
+--            it keeps its size from one Show to the next), tick, ticked and onTick (a
+--            tick box at the button's left, as in the plain layout below; its tick never
+--            relabels the button here, the owner shows the note again), onClose
 --            (called once when the note closes). titleColor: { r, g, b } or nil.
 --            The plain layout reads title, blocks, button, onClick and onClose, and: tick
 --            (the tick box's label), ticked (true: the box starts ticked; every Show
@@ -54,11 +59,12 @@
 --          Layout(windowWidth) -> the note's width; SSFFrame calls it when the window's
 --            width changes.
 --          Close() -- hide and tell the owner once. Showing or not is AceGUI's own IsShown.
--- Lib internals: the plain layout's tick box is AceGUI's CheckBox, held for life (never
+-- Lib internals: the tick box (the plain layout's, and the welcome layout's when its owner
+--          gives one) is AceGUI's CheckBox, held for life (never
 --          released, so never pooled to another addon). Its checkbg (the box art) and text
 --          (the label) are read for their widths, to size the widget to its label: the
 --          CheckBox has no fit-to-label of its own. An AceGUI bump that renames either
---          errors on the first Show of the plain layout.
+--          errors on the first Show with a tick box.
 -- Game internals: the frame templates UIPanelCloseButton (the X), UIPanelButtonTemplate and
 --          SecureActionButtonTemplate (the button and its secure click) and BackdropTemplate (the
 --          panel's border and the macro boxes').
@@ -71,7 +77,7 @@
 --          the button's macro text and runs as the click (Macros hands it /reload).
 -- Touches nothing else.
 
-local Type, Version = "SSFSideNote", 4
+local Type, Version = "SSFSideNote", 5
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's colors (the addon is loaded by the time a widget is made)
@@ -210,15 +216,39 @@ local function Fit(self)
         return
     end
     if self.buttonNote:IsShown() then Place(self.buttonNote, self.buttonNote:GetStringHeight()) end
-    if self.button:IsShown() then Place(self.button, self.button:GetHeight()) end
+    if self.ticking and self.button:IsShown() then -- the tick box at the left, the button at the right, on one row
+        local check, button = self.check.frame, self.button
+        local row = math.max(check:GetHeight() or 0, button:GetHeight() or 0)
+        y = y + SIDE_ROW_GAP
+        check:ClearAllPoints()
+        check:SetPoint("TOPLEFT", self.layer, "TOPLEFT", SIDE_TEXT_PAD, -(y + (row - check:GetHeight()) / 2))
+        button:ClearAllPoints()
+        button:SetPoint("TOPRIGHT", self.layer, "TOPRIGHT", -SIDE_TEXT_PAD, -(y + (row - button:GetHeight()) / 2))
+        y = y + row
+    elseif self.button:IsShown() then
+        Place(self.button, self.button:GetHeight())
+    end
     if (self.note:GetText() or "") ~= "" then Place(self.note, self.note:GetStringHeight()) end
     self.frame:SetHeight(y + SIDE_PAD)
 end
 
+-- The tick box, made once per note and kept: AceGUI's CheckBox, held for life. A tick or
+-- untick tells the owner; in the plain layout it relabels the button first (self.labels).
+local function MakeCheck(self)
+    local check = AceGUI:Create("CheckBox")
+    check.frame:SetParent(self.layer)
+    check:SetCallback("OnValueChanged", function(_, _, ticked)
+        ticked = ticked == true
+        if self.labels then self.button:SetText(self.labels[ticked]) end
+        if self.onTick then self.onTick(ticked) end
+    end)
+    self.check = check
+    return check
+end
+
 -- The plain layout, set up once (AttachTo): everything the welcome layout draws and this
 -- one doesn't is hidden for good, the tick box is made, and a click on the button closes
--- the note. The tick box is AceGUI's CheckBox, held for life; a tick or untick relabels the
--- button and tells the owner.
+-- the note.
 local function MakePlain(self)
     self.plain = true
     -- bodyDivider stays: in this layout Fit lays it between the blocks and the tick row
@@ -226,15 +256,7 @@ local function MakePlain(self)
                               self.leadDivider, self.note, self.buttonNote, self.close }) do
         region:Hide()
     end
-    local check = AceGUI:Create("CheckBox")
-    check.frame:SetParent(self.layer)
-    check:SetCallback("OnValueChanged", function(_, _, ticked)
-        ticked = ticked == true
-        self.button:SetText(self.labels[ticked])
-        if self.onTick then self.onTick(ticked) end
-    end)
-    check.frame:Show()
-    self.check = check
+    MakeCheck(self).frame:Show()
     self.button:SetScript("PostClick", function() self:Close() end)
 end
 
@@ -257,12 +279,14 @@ end
 -- of its two, so it never changes size when the tick relabels it.
 local function SizeTickRow(self, opts)
     local button, check = self.button, self.check
-    self.labels = {
-        [false] = Pad(opts.button or ""),
-        [true] = Pad(opts.buttonTicked or opts.button or ""),
-    }
     local ticked = opts.ticked == true
-    SizeButton(button, self.labels[not ticked], self.labels[ticked])
+    if self.plain then
+        self.labels = {
+            [false] = Pad(opts.button or ""),
+            [true] = Pad(opts.buttonTicked or opts.button or ""),
+        }
+        SizeButton(button, self.labels[not ticked], self.labels[ticked])
+    end
     self.onTick = opts.onTick
     check:SetLabel(opts.tick or "")
     check:SetValue(ticked)
@@ -303,7 +327,7 @@ local methods = {
         local clearX = 2 * (self.close:GetWidth() or 0)
         local width = math.floor(math.max((windowWidth or 0) * SIDE_WIDTH,
             clearX + (self.title:GetUnboundedStringWidth() or 0)))
-        if self.plain then width = math.max(width, TickRowWidth(self)) end
+        if self.plain or self.ticking then width = math.max(width, TickRowWidth(self)) end
         self.frame:SetWidth(width)
         self.title:SetWidth(width - 2 * SIDE_PAD)
         for _, divider in ipairs({ self.divider, self.bodyDivider, self.leadDivider }) do
@@ -348,7 +372,12 @@ local methods = {
         for i = m + 1, #self.macros do self.macros[i]:Hide() end
         if opts.button then
             local button = self.button
-            SizeButton(button, Pad(opts.button)) -- as wide as its own label
+            -- as wide as its own label, or as the widest of the labels it may carry
+            -- (opts.buttonLabels), so it does not change size from one Show to the next
+            local labels = { Pad(opts.button) }
+            for i, label in ipairs(opts.buttonLabels or {}) do labels[i + 1] = Pad(label) end
+            labels[#labels + 1] = Pad(opts.button) -- the last one given is the one left on it
+            SizeButton(button, unpack(labels))
             self.onClick = opts.onClick -- run by PreClick; never SetScript OnClick, it would replace the secure handler
             button:RegisterForClicks(GetCVarBool("ActionButtonUseKeyDown") and "LeftButtonDown" or "LeftButtonUp")
             button:SetEnabled(not opts.buttonDisabled)
@@ -356,7 +385,13 @@ local methods = {
         self.button:SetShown(opts.button ~= nil)
         self.buttonNote:SetText(opts.buttonNote or "")
         self.buttonNote:SetShown(opts.button ~= nil and opts.buttonNote ~= nil)
-        if self.plain then SizeTickRow(self, opts) end
+        -- the welcome layout's tick box: only when the owner gives one, beside the button
+        if not self.plain then
+            self.ticking = opts.tick ~= nil and opts.button ~= nil
+            if self.ticking and not self.check then MakeCheck(self) end
+            if self.check then self.check.frame:SetShown(self.ticking) end
+        end
+        if self.plain or self.ticking then SizeTickRow(self, opts) end
         self.onClose = opts.onClose
         local width = self:Layout(self.owner and self.owner:GetWidth())
         if self.owner then
