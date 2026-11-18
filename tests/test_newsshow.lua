@@ -96,9 +96,10 @@ test("a paragraph's lead is gold, its text follows in white after two spaces", f
     eq(blocks[2].blank, nil, "and only where it was asked for")
 end)
 
--- What the player types or copies is in the code color: a macro paragraph whole, and in
--- any other text only the commands it names. The lines themselves carry no color.
-test("a macro paragraph is in the code color, and so is a command inside a sentence", function()
+-- What the player types or copies is in the code color. A macro is handed to the panel
+-- as a macro block, plain, and the panel draws it in its box in that color; in any other
+-- text only the commands it names are painted. The lines themselves carry no color.
+test("a macro paragraph is a macro block for the panel, and a command inside a sentence is painted", function()
     local Colors = SSF:GetModule("Colors")
     local sentence = "In a macro, put /ssf delete on the line before the ability:"
     local news = sample()
@@ -108,20 +109,22 @@ test("a macro paragraph is in the code color, and so is a command inside a sente
     local blocks = asked.shown[1].opts.blocks
     eq(blocks[1].text, Colors:Commands(sentence), "the command painted, the sentence around it plain")
     ok(blocks[1].text ~= sentence, "and it did paint one")
-    eq(blocks[2].text, Colors:Code("Create macros"), "a macro: the whole paragraph")
+    eq(blocks[2].text, "Create macros", "a macro: its text as it is, the box colors it")
+    eq(blocks[2].macro, true, "and marked a macro, so the panel boxes it")
+    eq(blocks[1].macro, nil, "a sentence is not")
     eq(blocks[3].text, Colors:Commands(sentence), "a plain line's command too")
 end)
 
 -- The recommended macro's text has one source, Macros. An announcement names the spell
 -- and never types the macro out.
 test("a macro paragraph with a spell and no text is Macros' text for that spell", function()
-    local Colors, Macros = SSF:GetModule("Colors"), SSF:GetModule("Macros")
+    local Macros = SSF:GetModule("Macros")
     local news = sample()
     news.text = { { spell = "LIFE_TAP", macro = true } }
     fresh(news)
     NewsShow:OnWindowOpened()
     local name = Macros:SpellNameOf(SSF.SPELLS.LIFE_TAP)
-    eq(asked.shown[1].opts.blocks[1].text, Colors:Code(Macros:BodyFor(name)), "Macros' template, in the code color")
+    eq(asked.shown[1].opts.blocks[1].text, Macros:BodyFor(name), "Macros' template")
     eq(Macros:BodyFor(name), Macros:Body("LT"), "the same text the Life Tap macro is made with")
 end)
 

@@ -22,8 +22,8 @@
 --            blank = true }. spell = a key of SSF.SPELLS (Core) puts that spell's
 --            name, as the game gives it in the client's language, into the text's one
 --            %s: a macro's /cast line, right in every language, with no spell name in
---            any translation. macro = true: the text is a macro to copy, drawn whole in
---            the code color. A macro with a spell and no text is the recommended macro
+--            any translation. macro = true: the text is a macro to copy, drawn in its own
+--            box in the code color. A macro with a spell and no text is the recommended macro
 --            for that spell, whose text is Macros' (BodyFor): it is never typed here. In any other text a command the player types (/ssf delete,
 --            /stopattack) is drawn in that color by NewsShow; no line here or in a
 --            translation carries a color.

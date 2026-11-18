@@ -20,8 +20,9 @@
 --          only while an announcement is owed).
 -- Reads:   NS.news from News\News.lua (the announcement: id, on, title, text);
 --          profile.newsSeen; Window:ShowLeftNote/RefreshLeftNote; Combat:InFight;
---          Colors:Gold (a paragraph's lead), Colors:Code (a macro paragraph) and
---          Colors:Commands (the commands in any other text); Macros:BodyFor (a macro
+--          Colors:Gold (a paragraph's lead) and Colors:Commands (the commands in any
+--          text that is not a macro; a macro is handed to the panel as a macro block,
+--          which draws it in its own box); Macros:BodyFor (a macro
 --          paragraph with a spell and no text) and Macros:SpellNameOf and SSF.SPELLS (a paragraph's
 --          spell, by key, put into its text's %s).
 -- Saves:   profile.newsSeen: the announcement's id while ticked, false again when unticked.
@@ -71,13 +72,15 @@ local function Note(self, news)
             if text and spellName then text = text:format(spellName) end
             -- a macro with a spell and no text: the recommended macro for it, Macros' text
             if part.macro and spellName and not text then text = Macros:BodyFor(spellName) end
-            -- a macro is drawn whole in the code color; in a sentence, only its commands
-            if text then text = part.macro and Colors:Code(text) or Colors:Commands(text) end
+            -- a macro goes to the panel as it is: the panel draws it in its own box, in
+            -- the code color. In a sentence, only its commands are painted
+            if text and not part.macro then text = Colors:Commands(text) end
             line = lead and text and (lead .. LEAD_GAP .. text) or lead or text or ""
         else
             line = Colors:Commands(L[part])
         end
-        blocks[i] = { text = line, blank = type(part) == "table" and part.blank or nil }
+        local isTable = type(part) == "table"
+        blocks[i] = { text = line, blank = isTable and part.blank or nil, macro = isTable and part.macro or nil }
     end
     return L[news.title], {
         blocks = blocks,

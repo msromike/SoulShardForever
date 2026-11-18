@@ -12,7 +12,8 @@
 -- left-justified, macros each in a dark box), a small note above the button, the button (a
 -- secure action button, as wide as its text, centered), and a gold note line last. It
 -- closes by its own X.
---   The plain layout (look.plain; the announcement's): the title, a divider, the blocks,
+--   The plain layout (look.plain; the announcement's): the title, a divider, the blocks
+-- (drawn as in the welcome layout: a macro in its dark box),
 -- a second divider, then one row with a tick box at the left and the button at the right,
 -- so the text and the controls read as two parts. The blocks sit half a line further
 -- from each of the two dividers than the rows are from each other (look.halfLine). No arrow, no "i", no gold lines, no X.
@@ -36,7 +37,7 @@
 --            (true: the plain layout).
 --          Show(title, body, note, opts, titleColor) -- opts, all optional: lead (the gold
 --            line under the body's divider, with its own divider), blocks (a list
---            of { text } paragraphs and { text, macro = true } macros; a paragraph with
+--            of { text } paragraphs and { text, macro = true } macros; either with
 --            blank = true has one blank line of its own font under it), button and onClick
 --            (a button as wide as its text; onClick runs on the click, before it, and a
 --            slash command it returns then runs as the click through the game's secure
@@ -70,7 +71,7 @@
 --          the button's macro text and runs as the click (Macros hands it /reload).
 -- Touches nothing else.
 
-local Type, Version = "SSFSideNote", 3
+local Type, Version = "SSFSideNote", 4
 local AceGUI = LibStub("AceGUI-3.0")
 
 -- SSF's colors (the addon is loaded by the time a widget is made)
@@ -188,6 +189,7 @@ local function Fit(self)
         if item.isMacro then
             SizeMacroBox(item)
             Place(item, item:GetHeight(), SIDE_TEXT_PAD + MACRO_INDENT)
+            if item.blank then y = y + item.text:GetLineHeight() end -- one blank line under it
         else
             item:SetWidth(inner)
             Place(item, item:GetStringHeight(), SIDE_TEXT_PAD)
@@ -332,6 +334,7 @@ local methods = {
                 m = m + 1
                 item = MacroBox(self, m)
                 item.text:SetText(block.text)
+                item.blank = block.blank -- kept boxes are reused: set on every Show
             else
                 p = p + 1
                 item = Paragraph(self, p)
