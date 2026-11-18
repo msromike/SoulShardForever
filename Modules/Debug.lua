@@ -33,8 +33,8 @@
 --   on, off    the switch (on: day, at)
 --   zone       the world loaded again, through a loading screen (at)
 --   login      one step of a watched login or reload (step: the addon enabled, the world
---              entered, the game said the bags are ready, the shard's item data arrived,
---              the watch ended; bags: every bag slot 0 up as "bag:slots kind", kind being
+--              entered, the game said the bags are ready, the shard's item data arrived;
+--              bags: every bag slot 0 up as "bag:slots kind", kind being
 --              what Bags takes the bag for: soul, plain, or other; at)
 --   mark       a name the player typed, to split the record by test (name, at)
 --   press      a delete press, before anything is deleted (decision: "delete" or
@@ -68,8 +68,9 @@
 --          SSF_SORTED, SSF_SORT_NOTED, SSF_SORT_RESUMED, SSF_SOUNDS_MUTED,
 --          SSF_SOUNDS_UNMUTED, SSF_SOUND_PLAYED, SSF_BAGS_CHANGED; PLAYER_ENTERING_WORLD,
 --          PLAYER_REGEN_DISABLED, PLAYER_REGEN_ENABLED, UNIT_SPELLCAST_CHANNEL_START,
---          UNIT_SPELLCAST_CHANNEL_STOP. During a watched login, for its first minute:
---          BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED.
+--          UNIT_SPELLCAST_CHANNEL_STOP. After a watched login, until the record is turned
+--          off: BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED, each noted only when the
+--          bags or the count differ from the last time it was noted.
 -- Hooks:   through AceHook (secure hooks, after the original): SSF.Print and SSF.Printf
 --          (the addon object's, from AceConsole), to note each line SSF prints. They
 --          attach the first time the record is turned on and stay for the session, doing
@@ -82,7 +83,7 @@
 -- Touches nothing else.
 
 local SSF = LibStub("AceAddon-3.0"):GetAddon("SSF")
-local Debug = SSF:NewModule("Debug", "AceEvent-3.0", "AceHook-3.0", "AceTimer-3.0")
+local Debug = SSF:NewModule("Debug", "AceEvent-3.0", "AceHook-3.0")
 
 local SHARD = SSF.SHARD_ITEM_ID
 
@@ -90,10 +91,11 @@ local SHARD = SSF.SHARD_ITEM_ID
 -- record is first turned on). Neither is saved: both are gone at a login or a reload.
 local on, sessionStart = false, nil
 
--- A watched login: how long after the addon is enabled the game's own "bags are ready" and
--- the shard's item data are noted, and whether that is going on now.
-local LOGIN_WATCH_SECONDS = 60
+-- A watched login: whether this session began as one, and what each of the game's two
+-- signals showed the last time it was noted (a signal is noted again only when the bags or
+-- the count differ from that).
 local watching = false
+local lastNoted = {}
 
 -- the count and the shard positions of the event before, for delta and for "did the
 -- shards move"
@@ -261,30 +263,31 @@ local function BagFacts()
     return table.concat(list, ", ")
 end
 
-local function LoginStep(step)
-    Record("login", { step = step, bags = BagFacts() }, true)
+-- One step of a watched login. A signal the game repeats all session (repeats = true) is
+-- noted only when the bags or the count differ from the last time that signal was noted.
+local function LoginStep(step, repeats)
+    local bags = BagFacts()
+    if repeats then
+        local seen = bags .. "|" .. SSF:GetModule("Bags"):Count()
+        if lastNoted[step] == seen then return end
+        lastNoted[step] = seen
+    end
+    Record("login", { step = step, bags = bags }, true)
 end
 
 function Debug:OnBagsReady()
-    LoginStep("bags ready")
+    LoginStep("bags ready", true)
 end
 
 function Debug:OnItemInfo(_, itemID)
-    if plain(itemID) == SHARD then LoginStep("shard data arrived") end
-end
-
-function Debug:EndLoginWatch()
-    watching = false
-    self:UnregisterEvent("BAG_UPDATE_DELAYED")
-    self:UnregisterEvent("GET_ITEM_INFO_RECEIVED")
-    LoginStep("watch over")
+    if plain(itemID) == SHARD then LoginStep("shard data arrived", true) end
 end
 
 -- A loading screen inside a session. At a login or a reload the record is off by then,
 -- unless the load is a watched one: then it is a step of that.
 function Debug:OnEnteringWorld(_, isLogin, isReload)
-    if watching then
-        LoginStep(isLogin and "world entered, login" or isReload and "world entered, reload" or "world entered")
+    if watching and (isLogin or isReload) then
+        LoginStep(isLogin and "world entered, login" or "world entered, reload")
     else
         Record("zone", nil, true)
     end
@@ -330,7 +333,6 @@ function Debug:Set(want)
         -- does, the record is off and nothing of it is left registered
         self:UnregisterAllMessages()
         self:UnregisterAllEvents()
-        self:CancelAllTimers()
         on, watching = false, false
         Record("off")
     end
@@ -354,10 +356,9 @@ function Debug:OnEnable()
     if not p.debugLogin then return end
     p.debugLogin = nil
     self:Set(true)
-    watching = true
+    watching, lastNoted = true, {}
     self:RegisterEvent("BAG_UPDATE_DELAYED", "OnBagsReady")
     self:RegisterEvent("GET_ITEM_INFO_RECEIVED", "OnItemInfo")
-    self:ScheduleTimer("EndLoginWatch", LOGIN_WATCH_SECONDS)
     LoginStep("addon enabled")
 end
 
