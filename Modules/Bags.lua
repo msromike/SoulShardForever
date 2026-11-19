@@ -244,9 +244,10 @@ end
 
 -- The one bag signal, sent the moment the game's burst of bag events is over. BAG_UPDATE
 -- fires in bursts (one per bag, then again as the server answers), and the game ends each
--- burst with BAG_UPDATE_DELAYED, when every bag reads right: the same event Blizzard's own
--- bag bar redraws a bag slot on, so a bag put on or taken off ends with it too. No wait
--- follows it: the burst's end is the game's word, not a guess about the server.
+-- burst with BAG_UPDATE_DELAYED, when every bag reads right. A bag put on or taken off
+-- ends with it too, right after BAG_CONTAINER_UPDATE (seen in game), so that one needs no
+-- listening of its own. No wait follows it: the burst's end is the game's word, not a
+-- guess about the server.
 function Bags:OnBagsChanged()
     self:SendMessage("SSF_BAGS_CHANGED")
 end
