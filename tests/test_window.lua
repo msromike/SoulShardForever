@@ -295,7 +295,8 @@ test("clicking Delete Shard in the window raises no error, with spare buttons po
     for click = 1, 4 do
         local button = find(Window.window)
         button.inner.frame:GetScript("OnClick")(button.inner.frame, "LeftButton")
-        WoW.Settle()
+        WoW.Settle() -- the server answers the delete; the sort held back for it runs now
+        WoW.Settle() -- and the server answers the sort's moves, so the next click can delete
     end
     eq(#WoW.deleted, 4, "four clicks, four deletes")
     eq(#WoW.errors, errors, "and no error the game would show in red")

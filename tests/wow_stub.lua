@@ -32,6 +32,8 @@
 --                                      since the last one now shows in the bags, the bag
 --                                      events go out and their timers run. Until then the
 --                                      bags still show each item where it was, as in the game
+--          WoW.Settle("refuse")        the server refuses instead: nothing asked for happens,
+--                                      the locks clear, no bag event goes out
 --          WoW.FireEvent(name, ...)    deliver a game event to every frame registered for it
 --          WoW.RunTimers()             run every C_Timer callback waiting, and any those
 --                                      queue, until none is left, in the order they fall
@@ -739,6 +741,14 @@ C_Item = {
 -- also recorded in WoW.picks, so a test can read what SSF asked for without settling. A
 -- locked slot gives nothing and takes nothing, and a slot stays locked from the asking
 -- until Settle (slotLocked, above).
+-- The lock events. Seen in the game's own record of a delete: ITEM_LOCK_CHANGED fires
+-- inside the pickup and again inside the delete, both in the instant of the press, and
+-- not at all when the server answers (the shard just goes, with the bag events). So here:
+-- one at a pickup that takes hold of an item, one when the cursor lets an item go, one at
+-- a delete, and none when a delete is confirmed. When a move is confirmed, and when the
+-- server refuses whatever was asked, one for each slot that was held: taken to be so, not
+-- seen in the game.
+local function LockChanged(bag, slot) WoW.FireEvent("ITEM_LOCK_CHANGED", bag, slot) end
 WoW.picks = {}
 WoW.deleted = {}
 C_Container.PickupContainerItem = function(bag, slot)
@@ -748,13 +758,20 @@ C_Container.PickupContainerItem = function(bag, slot)
     b.items = b.items or {}
     local held = WoW.cursor
     if not held then
-        if b.items[slot] then WoW.cursor = { bag = bag, slot = slot, item = b.items[slot] } end
+        if b.items[slot] then
+            WoW.cursor = { bag = bag, slot = slot, item = b.items[slot] }
+            LockChanged(bag, slot)
+        end
         return
     end
     pending[#pending + 1] = { held = held, bag = bag, slot = slot }
     WoW.cursor = nil
 end
-ClearCursor = function() WoW.cursor = nil end
+ClearCursor = function()
+    local held = WoW.cursor
+    WoW.cursor = nil
+    if held then LockChanged(held.bag, held.slot) end
+end
 GetCursorInfo = function()
     if WoW.cursor then return "item", WoW.cursor.item end
     return nil
@@ -765,22 +782,28 @@ DeleteCursorItem = function()
     pending[#pending + 1] = { held = held, delete = true }
     WoW.deleted[#WoW.deleted + 1] = held
     WoW.cursor = nil
+    LockChanged(held.bag, held.slot)
 end
-function WoW.Settle()
+function WoW.Settle(how)
     local asked = pending
     pending = {}
-    local touched = {}
+    local touched, unlocked = {}, {}
     for _, ask in ipairs(asked) do
         local from = bagOf(ask.held.bag)
-        touched[ask.held.bag] = true
-        if ask.delete then
+        if how == "refuse" then
+            unlocked[#unlocked + 1] = { ask.held.bag, ask.held.slot }
+        elseif ask.delete then
+            touched[ask.held.bag] = true
             from.items[ask.held.slot] = nil
         else
             local to = bagOf(ask.bag)
-            touched[ask.bag] = true
+            touched[ask.held.bag], touched[ask.bag] = true, true
             from.items[ask.held.slot], to.items[ask.slot] = to.items[ask.slot], from.items[ask.held.slot]
+            unlocked[#unlocked + 1] = { ask.held.bag, ask.held.slot }
+            unlocked[#unlocked + 1] = { ask.bag, ask.slot }
         end
     end
+    for _, at in ipairs(unlocked) do LockChanged(at[1], at[2]) end
     for bag in pairs(touched) do WoW.FireEvent("BAG_UPDATE", bag) end
     if next(touched) then WoW.FireEvent("BAG_UPDATE_DELAYED") end
     WoW.RunTimers()

@@ -5,8 +5,10 @@
 -- go before a soul bag's. Under SoulSort legacy Normal (Sorter:TopFirst) the walk takes a
 -- regular bag top slot first, so the shard deleted is the bottom-most one in the last
 -- regular bag; otherwise the top-most.
--- Then it runs one Sorter pass. Nothing else. The delete goes first: a pass's moves lock
--- the shards they move, and those are the ones LastShard would pick.
+-- Then it asks for one Sorter pass. Nothing else. The delete goes first: a pass's moves lock
+-- the shards they move, and those are the ones LastShard would pick. After a delete the
+-- pass does not move anything at once: Sorter holds it back until the server has answered
+-- the delete, and a press that deleted nothing sorts at the press as before.
 -- One delete in flight at most: while the server still holds any shard (Bags:AnyShardLocked:
 -- a delete or a move not yet answered) a press deletes nothing, because the count may still
 -- include a shard on its way out and a second delete would go under the cap. The game's

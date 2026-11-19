@@ -15,7 +15,8 @@
 -- picks and deletes, an empty chat, no sound muted, SSF's two macros and no other, no
 -- macro window, nothing refused. So no test depends on another, and the order they run in is free.
 -- A test fails on a failed check, on an error, and on any error the game would have shown
--- in red while it ran (WoW.errors).
+-- in red while it ran (WoW.errors). The timers a test leaves waiting run when it ends,
+-- inside the test, as they would in the game.
 --
 -- Public:  test(name, fn) -- one test, from the clean start above. Inside fn:
 --            eq(got, want, label) and ok(cond, label) record one check each.
@@ -110,6 +111,10 @@ function test(name, fn)
     local seen = #WoW.errors
     local okay, err = pcall(fn)
     if not okay then record(false, "error", tostring(err)) end
+    -- the timers the test left waiting run now, as they would in the game: dropped unrun,
+    -- AceBucket would keep its bucket marked as scheduled and never fire it again
+    okay, err = pcall(WoW.RunTimers)
+    if not okay then record(false, "error in a timer the test left waiting", tostring(err)) end
     for i = seen + 1, #WoW.errors do
         record(false, "an error the game would show in red", WoW.errors[i]:match("^[^\n]*"))
     end

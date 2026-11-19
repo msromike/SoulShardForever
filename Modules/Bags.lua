@@ -3,7 +3,11 @@
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
 -- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
 -- moves or deletes anything. Every other module reads the bags through these methods and
--- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE. Two
+-- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE, and about
+-- a lock going on or off through SSF_LOCKS_CHANGED. A lock can clear with no change in the
+-- bags (a move the server refused, an item picked up and put back), and after a delete the
+-- game fires no lock event at all when the server answers: the shard just goes, which is a
+-- change in the bags. So whoever waits for the server listens to both. Two
 -- exceptions, both for the moment of a login, which the bucket is too late for: Status
 -- listens to the game's BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED at a fresh login, to
 -- ask CountAgrees before its login line; and Debug to the same two at a watched login, to
@@ -47,8 +51,11 @@
 --          AnyShardLocked() -> bool;
 --          LastShard(topFirst) -> bag, slot or nil. Every one is also the headless
 --          tests' handle on the bags.
--- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s.
--- Sends:   SSF_BAGS_CHANGED, once per bucket.
+-- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s;
+--          ITEM_LOCK_CHANGED, gathered to the next tick (a bucket of length zero).
+-- Sends:   SSF_BAGS_CHANGED, once per bucket;
+--          SSF_LOCKS_CHANGED, on the tick after any item's lock went on or off. It says
+--          only that a lock changed: a listener asks AnyShardLocked or IsLocked itself.
 -- Game internals: ItemLocation.CreateFromBagAndSlot, Blizzard's Lua helper (not a documented
 --          API call), which makes the location C_Item's questions take.
 -- Owns no state. Touches nothing else.
@@ -239,6 +246,15 @@ function Bags:OnBagsChanged()
     self:SendMessage("SSF_BAGS_CHANGED")
 end
 
+-- The one lock signal. The game fires ITEM_LOCK_CHANGED inside the very call that picks an
+-- item up, SSF's own pickups too, so the message goes out on the next tick: no listener
+-- ever runs in the middle of a delete or a move. The bucket's length is zero on purpose:
+-- it stands for no server time, it only gathers one tick's burst.
+function Bags:OnLocksChanged()
+    self:SendMessage("SSF_LOCKS_CHANGED")
+end
+
 function Bags:OnEnable()
     self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "OnBagsChanged")
+    self:RegisterBucketEvent("ITEM_LOCK_CHANGED", 0, "OnLocksChanged")
 end

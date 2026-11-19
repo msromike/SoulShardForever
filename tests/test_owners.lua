@@ -4,10 +4,10 @@
 -- questions told apart (the lockdown; in a fight, which starts a moment sooner).
 -- Cap:IsOver, the delete gate. Cap:SetLowMark, the low mark's one setter, and LowMark,
 -- never read above the cap. Trimmer:Paused, the pause gate, which Sorter:Pass asks
--- itself: paused, no pass moves a shard, whoever calls it, and leftovers waiting from
--- before the pause are dropped. Colors refuses a state that is not on its scale.
+-- itself: paused, no pass moves a shard, whoever calls it, and a pass held back from
+-- before the pause is dropped. Colors refuses a state that is not on its scale.
 -- Reads:   Combat, Cap, Trimmer, Sorter, Bags, Colors, Window; WoW.combat, WoW.flagged,
---          WoW.picks, WoW.Settle.
+--          WoW.picks, WoW.Settle, WoW.FireEvent, WoW.RunTimers.
 -- Saves:   profile.paused, autoMax, maxShards, lowMark, for the test at hand.
 -- Touches nothing else.
 
@@ -96,21 +96,22 @@ test("paused, Sorter:Pass moves nothing, whoever calls it", function()
     eq(Sorter:Pass(), 1, "unpaused, the same call moves the shard")
 end)
 
-test("a pause in the middle of a sort drops the leftovers", function()
-    -- two loose shards, the second still locked by the server: the pass moves one and
-    -- waits for a bag change to move the other
+test("a pause while a pass is held back drops it", function()
+    -- two loose shards, the second still locked by the server: the pass is held back
+    -- until the lock clears
     WoW.SetBags({ [0] = WoW.PlainBag(16, { [3] = SHARD, [5] = SHARD }, { [5] = true }), [4] = WoW.SoulBag(4) })
     profile.paused = false
-    eq(Sorter:Pass(), 1, "one moved, one left for the follow-up")
+    eq(Sorter:Pass(), 0, "a shard is locked: the pass is held back")
     profile.paused = true
     WoW.bags[0].locked = {}
-    local before = #WoW.picks
-    WoW.Settle() -- the bags change: the follow-up would run now
-    eq(#WoW.picks, before, "paused in between: the follow-up moves nothing")
+    WoW.FireEvent("ITEM_LOCK_CHANGED", 0, 5) -- the lock clears: the held pass would run now
+    WoW.RunTimers()
+    eq(#WoW.picks, 0, "paused in between: the held pass moves nothing")
     profile.paused = false
-    before = #WoW.picks
-    WoW.Settle()
-    eq(#WoW.picks, before, "and nothing is left waiting to run after the unpause")
+    WoW.FireEvent("ITEM_LOCK_CHANGED", 0, 5)
+    WoW.FireEvent("BAG_UPDATE", 0)
+    WoW.RunTimers()
+    eq(#WoW.picks, 0, "and nothing is left waiting to run after the unpause")
 end)
 
 test("paused when the fight ends, the noted sort does not run", function()

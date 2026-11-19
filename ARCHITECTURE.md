@@ -37,7 +37,7 @@ Core and modules:
 - Modules\Cap.lua: the thresholds, and whether Drain Soul is known (the quiet state).
   Public: Cap.MIN, Cap.MAX, Cap.QUIET_UNTIL (the spell id); Get() -> cap, IsAuto() -> bool, LowMark() -> the low mark (never above the cap), SetLowMark(n) (Options' slider: held between MIN and the cap), State(count) -> "paused" | "quiet" | "low" | "ok" | "over" (for a color or a glow: Colors maps them, LowGlow compares "low"; no delete, sort or setting is decided by comparing these words), IsOver(count) -> bool (over the cap: a press would delete), IsFull(count) -> bool, IsQuiet() -> bool, SetManual(n) (Options' slider and /ssf setmax; turning AutoMax off is the caller's job), Recompute().
 - Modules\Sorter.lua: one pass moves shards into free soul bag slots (SSF Mode): every shard that sits in a later bag than a free soul bag slot (Bags header order) is picked up, dropped into that slot, cursor cleared.
-  Public: Pass() -> moves fired (0 while paused or in combat); TopFirst() -> true under SoulSort legacy Normal.
+  Public: Pass() -> moves fired (0 while paused, in combat, or held back by a lock); TopFirst() -> true under SoulSort legacy Normal.
 - Modules\Sounds.lua: SSF's own sounds: in LibSharedMedia's "sound" list, playing one by its LSM name, and what a volume level means.
   Public: Play(name, volume) -- an LSM sound name and a volume 0-1 (nil = full). A name LSM no longer knows (a sound pack removed) falls back to the default; a nil name plays nothing (LSM:IsValid is true for nil). PlayPause() -- the pause sound at the saved notch (profile.pauseSoundName, pauseSoundLevel), nothing at notch 0: a paused press out of combat (Trimmer decides when) and the slider's preview. Busy() -> true while an own sound plays (a play asked for now would be silent). DefaultName() -> the default sound's LSM name (Core's profile default). LevelStep() -> the distance between two notches (the slider's step; its scale is 0 to 1); LevelVolume(level) -> the volume a notch plays, 0 for notch 0 (a number between two notches plays as the nearest); LevelFromOld(on, volume) -> the notch for the two values saved before the slider (volume nil = the old default, full; a volume that was no level = full, the old rule).
 - Modules\MoveSounds.lua: whether the game's item sounds are heard around SSF's own shard moves.
@@ -106,6 +106,7 @@ News:
 | SSF_DELETE_FAILED | Trimmer | Debug | failed |
 | SSF_DELETE_PRESSED | Trimmer | Debug | why or "delete", count, cap |
 | SSF_HELP_CHANGED | Help | Options | self.on |
+| SSF_LOCKS_CHANGED | Bags | Sorter |  |
 | SSF_MACROS_CHANGED | Macros | MacroControls |  |
 | SSF_MACRO_WINDOW_SHOWN | Macros | MacroGlow |  |
 | SSF_OPTIONS_CHANGED | Options, Settings | Broker, Counter, Window | key, "window" |
@@ -126,7 +127,7 @@ News:
 
 | Module | Events |
 |---|---|
-| Bags | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s) |
+| Bags | bucket BAG_UPDATE, BAG_CONTAINER_UPDATE (0.5s); bucket ITEM_LOCK_CHANGED (0s) |
 | Cap | PLAYER_ENTERING_WORLD; LEARNED_SPELL_IN_SKILL_LINE; SPELLS_CHANGED |
 | Sorter | PLAYER_REGEN_ENABLED |
 | Sounds | SOUNDKIT_FINISHED |
@@ -178,7 +179,7 @@ on the right and the file on the left breaks; the check fails first.
 | Core | KeyBindings: ApplyLabels; Sounds: DefaultName, LevelFromOld |
 | Bags | SSF: SHARD_ITEM_ID |
 | Cap | Bags: HasSoulBag, SoulBagSlots; SSF: SPELLS; Trimmer: Paused |
-| Sorter | Bags: ForEachSlot, IsFreeAt, IsLocked, IsShardAt, IsSoulBag, IsSwappableAt; Combat: Locked; MoveSounds: Moving; Trimmer: Paused |
+| Sorter | Bags: AnyShardLocked, ForEachSlot, IsFreeAt, IsShardAt, IsSoulBag, IsSwappableAt; Combat: Locked; MoveSounds: Moving; Trimmer: Paused |
 | MoveSounds | Combat: Locked |
 | Trimmer | Bags: AnyShardLocked, Count, LastShard; Cap: Get, IsFull, IsOver, IsQuiet; Combat: Locked; MoveSounds: Moving; SSF: SHARD_ITEM_ID; Sorter: Pass, TopFirst; Sounds: PlayPause; Status: DeletedText, PausedPressText |
 | DeleteButton | Trimmer: Delete |

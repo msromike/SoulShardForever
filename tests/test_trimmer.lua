@@ -80,8 +80,8 @@ test("in combat, over the cap: one press deletes one shard and moves nothing", f
     WoW.picks = {}
     bags()
     PressCountingDeletes()
+    WoW.Settle() -- out of combat the sort waits for the server's answer to the delete
     ok(#WoW.picks > 1, "the same press out of combat does sort, so the line above proves the gate")
-    SSF:GetModule("Sorter").reruns = nil
     profile.maxShards = 8
 end)
 

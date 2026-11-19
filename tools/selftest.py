@@ -493,7 +493,7 @@ CASES = [
          "C_Container.PickupContainerItem(move[3], move[4])", "C_Container.PickupContainerItem(move[1], move[2])",
          "once the server confirms, every shard is in the soul bag"),
     Case("tests: the bags never say they changed", TESTS, "Modules/Bags.lua",
-         '"BAG_UPDATE"', '"BAG_UPDATED"', "the bag change that follows reruns the pass"),
+         '"BAG_UPDATE"', '"BAG_UPDATED"', "the bag change that follows the delete lets the held pass run"),
     Case("tests: SSF calls a frame method the game does not have", TESTS, "Modules/Counter.lua",
          "function Counter:OnEnable()", "function Counter:OnEnable()\n    UIParent:NoSuchMethod()", "the game has no method NoSuchMethod on a Frame"),
     Case("tests: the fake game's timers fire in the order they were made", TESTS, "tests/wow_stub.lua",
