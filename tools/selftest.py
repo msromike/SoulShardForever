@@ -543,7 +543,7 @@ CASES = [
          "in function 'StyleGroupTitles'"),
     Case("tests: a fifth answer from WhyNot with no text on the button", TESTS, "Modules/Trimmer.lua",
          'and "atcap" or "undercap"', 'and "atcap" or "nearcap"', "the Delete Shard button has a text for every answer"),
-    Case("tests: a press no longer waits for a shard the server still holds", TESTS, "Modules/Trimmer.lua",
+    Case("tests: a press no longer waits for a delete not yet answered", TESTS, "Modules/Trimmer.lua",
          'if Bags:AnyShardLocked() then return "locked" end', 'if false then return "locked" end',
          "the second press, before the server confirms: nothing"),
     Case("tests: the old word announce shows up in the command list", TESTS, "Modules/Options.lua",

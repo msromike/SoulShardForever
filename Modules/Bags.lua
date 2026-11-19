@@ -93,7 +93,8 @@ function Bags:IsFreeAt(bag, slot)
     return C_Container.GetContainerItemID(bag, slot) == nil
 end
 
--- The server still holds the slot's item (a move or delete in flight). An empty slot is
+-- The slot's item is locked on the client: a move or a delete asked for and not yet
+-- answered, locked until the answer's burst of bag events arrives. An empty slot is
 -- unlocked; otherwise only a plain false counts as unlocked.
 function Bags:IsLocked(bag, slot)
     local loc = ItemLocation:CreateFromBagAndSlot(bag, slot)
@@ -207,8 +208,9 @@ function Bags:CountAgrees()
     return game == nil or self:Count() == game
 end
 
--- The server still holds some shard: a delete or a move asked for and not yet answered, or
--- a shard on the cursor or in a trade. While this is true Count() may still include a
+-- Some shard is locked on the client: a delete or a move asked for and not yet answered
+-- (locked until the answer's burst of bag events arrives), or a shard on the cursor or in
+-- a trade. While this is true Count() may still include a
 -- shard that is on its way out. Only shards count: another item locked says nothing here.
 function Bags:AnyShardLocked()
     local locked = false

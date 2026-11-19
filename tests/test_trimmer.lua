@@ -3,7 +3,8 @@
 -- test_trimmer: WhyNot, the one gate the Delete Shard button and the press share; the press
 -- in combat (it deletes, moves nothing, and a paused press stays silent); what the
 -- bags hold once the server confirms a press (WoW.Settle); and that a press waits while
--- the server still holds a shard, so presses faster than the server never go under the cap.
+-- a shard is locked (a delete not yet answered), so presses faster than the server never
+-- go under the cap.
 -- Saves:   profile.paused, maxShards, autoMax, pauseLog, for the test at hand.
 -- Touches nothing else.
 
@@ -104,7 +105,7 @@ test("a press over the cap: one shard gone once the server confirms, and the res
     eq(PressCountingDeletes(), 0, "at the cap now: the next press deletes nothing")
 end)
 
-test("WhyNot: locked when over the cap and the server still holds a shard; the cap answers come first", function()
+test("WhyNot: locked when over the cap and a shard is locked; the cap answers come first", function()
     WoW.SetBags({ [0] = WoW.PlainBag(16, { [1] = SHARD, [2] = SHARD, [3] = SHARD }, { [2] = true }) })
     profile.paused = false
     profile.autoMax = false

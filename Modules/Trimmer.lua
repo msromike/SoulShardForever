@@ -9,8 +9,9 @@
 -- the shards they move, and those are the ones LastShard would pick. After a delete the
 -- pass does not move anything at once: Sorter holds it back until the server has answered
 -- the delete, and a press that deleted nothing sorts at the press as before.
--- One delete in flight at most: while the server still holds any shard (Bags:AnyShardLocked:
--- a delete or a move not yet answered) a press deletes nothing, because the count may still
+-- One delete in flight at most: while any shard is locked (Bags:AnyShardLocked: a delete or
+-- a move asked for and not yet answered, the shard locked on the client until the answer's
+-- burst of bag events arrives) a press deletes nothing, because the count may still
 -- include a shard on its way out and a second delete would go under the cap. The game's
 -- lock is asked at the press; nothing is remembered and nothing is timed. Deliberate: the
 -- rule sits in WhyNot, the one gate, so every way to delete and the window's button get it.
@@ -29,7 +30,7 @@
 --          WhyNot(count) -> why a press would not delete, or nil if it would:
 --          "paused" (a mode: the only answer while paused, whatever the count), "quiet"
 --          (no Drain Soul yet, Cap:IsQuiet), "atcap", "undercap", "locked" (over the cap,
---          but the server still holds a shard). The window's Delete
+--          but a shard is locked: a delete or a move not yet answered). The window's Delete
 --          Shard button greys on it with the reason under it. No combat reason: a press
 --          deletes in a fight too, and the window is shut in one.
 -- Sends:   SSF_DELETE_PRESSED (what the press decided: "delete" or WhyNot's answer; then
