@@ -3,12 +3,12 @@
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
 -- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
 -- moves or deletes anything. Every other module reads the bags through these methods and
--- hears about changes through SSF_BAGS_CHANGED, never through its own BAG_UPDATE, and about
+-- hears about changes through SSF_BAGS_CHANGED, never through the game's bag events, and about
 -- a lock going on or off through SSF_LOCKS_CHANGED. A lock can clear with no change in the
 -- bags (a move the server refused, an item picked up and put back), and after a delete the
 -- game fires no lock event at all when the server answers: the shard just goes, which is a
 -- change in the bags. So whoever waits for the server listens to both. Two
--- exceptions, both for the moment of a login, which the bucket is too late for: Status
+-- exceptions, both for the moment of a login: Status
 -- listens to the game's BAG_UPDATE_DELAYED and GET_ITEM_INFO_RECEIVED at a fresh login, to
 -- ask CountAgrees before its login line; and Debug to the same two at a watched login, to
 -- note what the bags looked like at each, on purpose the game's own signals and not Bags'.
@@ -22,7 +22,7 @@
 -- the two side by side.
 -- Right after a delete the bags still show the deleted shard until the server confirms:
 -- a listener to SSF_SHARD_DELETED that reads Bags:Count() gets the old number, and the
--- right one with the SSF_BAGS_CHANGED that follows within half a second. The message
+-- right one with the SSF_BAGS_CHANGED that the server's answer brings. The message
 -- carries the count after the delete; use that when the moment matters. Until then the
 -- count is one too high, so the delete gate (Trimmer:WhyNot) asks AnyShardLocked before it
 -- trusts the count: no shard locked, no delete or move still in flight.
@@ -51,9 +51,9 @@
 --          AnyShardLocked() -> bool;
 --          LastShard(topFirst) -> bag, slot or nil. Every one is also the headless
 --          tests' handle on the bags.
--- Listens: BAG_UPDATE and BAG_CONTAINER_UPDATE, bucketed to one tick every 0.5 s;
+-- Listens: BAG_UPDATE_DELAYED, the game's own word that a burst of bag events is over;
 --          ITEM_LOCK_CHANGED, gathered to the next tick (a bucket of length zero).
--- Sends:   SSF_BAGS_CHANGED, once per bucket;
+-- Sends:   SSF_BAGS_CHANGED, at each BAG_UPDATE_DELAYED;
 --          SSF_LOCKS_CHANGED, on the tick after any item's lock went on or off. It says
 --          only that a lock changed: a listener asks AnyShardLocked or IsLocked itself.
 -- Game internals: ItemLocation.CreateFromBagAndSlot, Blizzard's Lua helper (not a documented
@@ -240,8 +240,11 @@ function Bags:LastShard(topFirst)
     return vbag, vslot
 end
 
--- The one bag signal. BAG_UPDATE fires in bursts (one per bag, then again as the server
--- confirms), so one bucket here replaces a bucket in every listener.
+-- The one bag signal, sent the moment the game's burst of bag events is over. BAG_UPDATE
+-- fires in bursts (one per bag, then again as the server answers), and the game ends each
+-- burst with BAG_UPDATE_DELAYED, when every bag reads right: the same event Blizzard's own
+-- bag bar redraws a bag slot on, so a bag put on or taken off ends with it too. No wait
+-- follows it: the burst's end is the game's word, not a guess about the server.
 function Bags:OnBagsChanged()
     self:SendMessage("SSF_BAGS_CHANGED")
 end
@@ -255,6 +258,6 @@ function Bags:OnLocksChanged()
 end
 
 function Bags:OnEnable()
-    self:RegisterBucketEvent({ "BAG_UPDATE", "BAG_CONTAINER_UPDATE" }, 0.5, "OnBagsChanged")
+    self:RegisterEvent("BAG_UPDATE_DELAYED", "OnBagsChanged")
     self:RegisterBucketEvent("ITEM_LOCK_CHANGED", 0, "OnLocksChanged")
 end

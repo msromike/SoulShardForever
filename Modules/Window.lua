@@ -246,7 +246,7 @@ end
 -- Keep the status line and the AutoMax state fresh while a window is open.
 -- NOT on SSF_CAP_CHANGED: AceConfigDialog calls the slider's set on every drag tick, and a
 -- rebuild from inside that loop recreates the slider under the mouse. AceConfig already
--- refreshes after a release or a button click; the bag bucket covers everything else.
+-- refreshes after a release or a button click; SSF_BAGS_CHANGED covers everything else.
 -- NotifyChange covers the Interface Options panel; the standalone window is our own
 -- container, which AceConfigDialog does not track, so it is re-fed here while shown.
 function Window:Refresh()

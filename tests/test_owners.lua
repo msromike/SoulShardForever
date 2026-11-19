@@ -109,7 +109,7 @@ test("a pause while a pass is held back drops it", function()
     eq(#WoW.picks, 0, "paused in between: the held pass moves nothing")
     profile.paused = false
     WoW.FireEvent("ITEM_LOCK_CHANGED", 0, 5)
-    WoW.FireEvent("BAG_UPDATE", 0)
+    WoW.FireEvent("BAG_UPDATE_DELAYED")
     WoW.RunTimers()
     eq(#WoW.picks, 0, "and nothing is left waiting to run after the unpause")
 end)

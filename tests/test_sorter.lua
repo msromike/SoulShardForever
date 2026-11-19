@@ -92,7 +92,7 @@ test("a locked shard holds the whole pass back; it runs once when the lock clear
     eq(shards(), "1:3 1:4", "once the server confirms, both are in the soul bag")
     WoW.picks = {}
     WoW.FireEvent("ITEM_LOCK_CHANGED", 0, 9)
-    WoW.FireEvent("BAG_UPDATE", 0)
+    WoW.FireEvent("BAG_UPDATE_DELAYED")
     WoW.RunTimers()
     eq(#WoW.picks, 0, "it ran once: later changes run nothing")
 end)
@@ -120,7 +120,7 @@ test("a move the server refused is left alone until the next press", function()
     WoW.Settle("refuse")
     eq(shards(), "0:2", "refused: the shard is where it was")
     WoW.picks = {}
-    WoW.FireEvent("BAG_UPDATE", 0)
+    WoW.FireEvent("BAG_UPDATE_DELAYED")
     WoW.FireEvent("ITEM_LOCK_CHANGED", 0, 2)
     WoW.RunTimers()
     eq(#WoW.picks, 0, "no second try by itself, whatever changes afterwards")
@@ -149,7 +149,7 @@ test("a server that never answers: the lock stays on and nothing runs", function
     eq(Sorter:Pass(), 1, "one move asked for; the server says nothing")
     WoW.picks = {}
     WoW.RunTimers()
-    WoW.FireEvent("BAG_UPDATE", 0) -- other things happen in the bags meanwhile
+    WoW.FireEvent("BAG_UPDATE_DELAYED") -- other things happen in the bags meanwhile
     WoW.RunTimers()
     eq(Sorter:Pass(), 0, "a press, at any later time: the shard is still locked, nothing moves")
     eq(Sorter:Pass(), 0, "and the same at the press after it")

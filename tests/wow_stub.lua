@@ -737,7 +737,7 @@ C_Item = {
 -- item to be deleted. As in the game, asking empties the cursor at once but the bags do
 -- not change yet: they still show the item where it was until the server confirms, which
 -- here is WoW.Settle(). Settle applies everything asked for, in order, then sends the bag
--- events the game sends and runs the timers they start (the bag bucket). Every pickup is
+-- events the game sends and runs the timers they start (the next-tick signals). Every pickup is
 -- also recorded in WoW.picks, so a test can read what SSF asked for without settling. A
 -- locked slot gives nothing and takes nothing, and a slot stays locked from the asking
 -- until Settle (slotLocked, above).
