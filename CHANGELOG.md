@@ -1,5 +1,13 @@
 # Changelog
 
+## 1.17.1 (2026-11-19)
+
+- Fixed: spam clicking the Delete Shard button kept landing on a grey button. It lights
+  up again the moment the game has removed the shard, not half a second later, so each
+  click deletes as fast as the game allows.
+- The shard count on your bag updates the moment the game has removed or moved a shard,
+  about half a second sooner than before.
+
 ## 1.17.0 (2026-11-18)
 
 - Three recommended macros now: a Drain Soul macro joins Life Tap and Bane of Agony.
