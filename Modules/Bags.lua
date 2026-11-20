@@ -1,8 +1,8 @@
 -- Soul Shards Forever (SSF). MIT, see LICENSE.
 --
 -- Bags: read-only queries over the player's bags, backpack through the reagent slot (bag 5,
--- where a soul pouch equips on Forever), and the one signal that the bags changed. Never
--- moves or deletes anything. Every other module reads the bags through these methods and
+-- where a soul pouch equips on Forever), and the two signals other modules hear from them:
+-- that the bags changed, and that a lock went on or off. Never moves or deletes anything. Every other module reads the bags through these methods and
 -- hears about changes through SSF_BAGS_CHANGED, never through the game's bag events, and about
 -- a lock going on or off through SSF_LOCKS_CHANGED. A lock can clear with no change in the
 -- bags (a move the server refused, an item picked up and put back), and after a delete the
